@@ -1,0 +1,31 @@
+{
+  "parser": "babel-eslint",
+  "extends": [
+    "airbnb"
+  ],
+  "env": {
+    "jest": true
+  },
+  "globals" : {
+    "__DEV__": true
+  },
+  "plugins" : ["flowtype", "import", "babel"],
+  "rules" : {
+    "no-duplicate-imports": 0,
+    "no-unused-vars": ["error", { "args": "none" }],
+    "keyword-spacing": [2, {"before": true, "after": true}],
+    "array-bracket-spacing": 0,
+    "babel/array-bracket-spacing": 2,
+    "import/no-duplicates": 2,
+    "flowtype/define-flow-type": 2,
+    "flowtype/require-valid-file-annotation": 2,
+    "flowtype/space-after-type-colon": 2,
+    "flowtype/space-before-type-colon": [2, "never"],
+    "flowtype/space-before-generic-bracket": [2, "never"],
+    "flowtype/union-intersection-spacing": [2, "always"],
+    "flowtype/generic-spacing": 2,
+    "flowtype/require-parameter-type": 2,
+    "flowtype/use-flow-type": 2,
+    "flowtype/valid-syntax": 2
+  }
+}
