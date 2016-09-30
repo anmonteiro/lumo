@@ -1,10 +1,8 @@
-[libs]
-interfaces/
-
 [ignore]
-.*/node_modules
-.*/target
-.*/tmp
+<PROJECT_ROOT>/node_modules
+<PROJECT_ROOT>/target
+<PROJECT_ROOT>/tmp
+<PROJECT_ROOT>/bundle.js
 
 [options]
 suppress_comment=\\(.\\|\n\\)*\\$FlowIssue
@@ -12,4 +10,4 @@ suppress_comment=\\(.\\|\n\\)*\\$FlowFixMe
 suppress_comment=\\(.\\|\n\\)*\\$FlowExpectedError
 
 [version]
-^0.32.0
+^0.33.0

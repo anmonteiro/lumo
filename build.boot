@@ -2,7 +2,7 @@
  :source-paths    #{"src/cljs"}
  :resource-paths  #{"src/js"}
  :dependencies '[[org.clojure/clojurescript   "1.9.229"        :scope "provided"]
-                 [com.cognitect/transit-clj   "0.8.288"        :scope "test"]
+                 [com.cognitect/transit-clj   "0.8.290"        :scope "test"]
                  [com.cemerick/piggieback     "0.2.1"          :scope "test"]
                  [adzerk/boot-cljs            "1.7.228-1"      :scope "test"]
                  [adzerk/boot-cljs-repl       "0.3.3"          :scope "test"]
