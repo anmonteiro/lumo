@@ -2,7 +2,6 @@
 <PROJECT_ROOT>/node_modules/.*
 <PROJECT_ROOT>/target/.*
 <PROJECT_ROOT>/tmp/.*
-<PROJECT_ROOT>/bundle.js
 
 [options]
 suppress_comment=\\(.\\|\n\\)*\\$FlowIssue
