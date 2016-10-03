@@ -11,16 +11,15 @@ const rl = readline.createInterface({
 // eslint-disable-next-line no-use-before-define
 prompt('cljs.user=> ');
 
-// $FlowExpectedError: this is only available when CLJS artifacts are built
-const cljs = require('./main'); // eslint-disable-line import/no-unresolved
+const cljs = require('./cljs');
 
-function prompt(p: string = `${cljs.lumo.repl.get_current_ns()}=> `) {
+function prompt(p: string = `${cljs.currentNS()}=> `) {
   rl.setPrompt(p);
   rl.prompt();
 }
 
 rl.on('line', (line: string) => {
-  cljs.lumo.repl.read_eval_print_str(line);
+  cljs.eval(line);
   prompt();
 });
 
