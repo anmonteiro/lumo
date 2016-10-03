@@ -1,6 +1,8 @@
 (set-env!
  :source-paths    #{"src/cljs"}
- :dependencies '[[org.clojure/clojurescript   "1.9.229"        :scope "provided"]
+ :resource-paths #{"src/js"}
+ :dependencies '[[org.clojure/clojurescript   "1.9.274"]
+                 [org.clojure/tools.reader    "1.0.0-beta3"]
                  [com.cognitect/transit-clj   "0.8.290"        :scope "test"]
                  [com.cemerick/piggieback     "0.2.1"          :scope "test"]
                  [adzerk/boot-cljs            "1.7.228-1"      :scope "test"]
@@ -38,6 +40,7 @@
                              :target :nodejs
                              :optimizations :simple
                              :main 'lumo.core
+                             :cache-analysis true
                              :source-map nil
                              :verbose true
                              :compiler-stats true
