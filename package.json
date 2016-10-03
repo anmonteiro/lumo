@@ -1,9 +1,10 @@
 {
   "scripts": {
-    "nexe": "nexe -i bundle.js -o main",
+    "nexe": "nexe -i target/index.js -o main",
     "filter:main": "find out ! -name 'main.js' ! -name 'out' -exec rm -rf {} +",
     "build": "webpack --progress --display-error-details",
     "package": "npm run build && npm run nexe",
+    "babel": "babel -d lib/ src/js",
     "type:check": "flow check",
     "lint": "eslint src/js"
   },
@@ -11,7 +12,7 @@
   "dependencies": {},
   "devDependencies": {
     "babel-cli": "^6.16.0",
-    "babel-core": "^6.16.0",
+    "babel-core": "^6.17.0",
     "babel-eslint": "^7.0.0",
     "babel-jest": "^15.0.0",
     "babel-loader": "^6.2.5",
