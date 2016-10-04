@@ -23,11 +23,6 @@ rl.on('line', (line: string) => {
   prompt();
 });
 
-rl.on('close', () => {
-  // $FlowIssue: missing property in interface
-  rl.output.write('closing!');
-});
-
 rl.on('SIGINT', () => {
   // $FlowIssue: missing property in interface
   rl.output.write('\n');
