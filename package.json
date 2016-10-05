@@ -23,6 +23,7 @@
     "eslint-plugin-flowtype": "^2.15.0",
     "eslint-plugin-import": "^2.0.0",
     "eslint-plugin-jsx-a11y": "^2.2.1",
+    "eslint-plugin-react": "^6.3.0",
     "flow-bin": "^0.33.0",
     "jest-cli": "^16.0.0",
     "nexe": "github:jaredallard/nexe"
