@@ -22,7 +22,7 @@ browserify({
 }).transform('babelify')
   .transform(envify({
     _: 'purge',
-    NODE_ENV: process.env.BUILD_DEV ? 'development' : 'production',
+    NODE_ENV: isDevBuild ? 'development' : 'production'
   }))
   .exclude('nexeres')
   .bundle((err, buf) => {
