@@ -1,25 +1,11 @@
 (ns lumo.core
   (:require [cljs.nodejs :as nodejs]))
 
-(nodejs/enable-util-print!)
+(defn init-runtime!
+  []
+  ;; create the 'cljs.user namespace
+  (set! (.-user js/cljs) #js {})
+  ;; setup printing
+  (nodejs/enable-util-print!))
 
-
-;; (def readline (nodejs/require "readline"))
-
-;; (def rl
-;;   (.createInterface readline
-;;     #js {:input (. nodejs/process -stdin)
-;;          :output (. nodejs/process -stdout)
-;;          :terminal true
-;;          :prompt "cljs.user=> "}))
-
-;; (.on rl "line"
-;;   (fn [line]
-;;     (println line)
-;;     (.prompt rl)))
-
-;; (defn main []
-;;   (println "Hello cenas!")
-;;   (.prompt rl))
-
-(set! *main-cli-fn* (fn []))
+(set! *main-cli-fn* init-runtime!)
