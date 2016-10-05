@@ -1,7 +1,7 @@
 (set-env!
  :source-paths    #{"src/cljs"}
- :resource-paths #{"src/js"}
- :dependencies '[[org.clojure/clojurescript   "1.9.274"]
+ :dependencies '[[org.clojure/clojure        "1.9.0-alpha13"]
+                 [org.clojure/clojurescript   "1.9.274"]
                  [org.clojure/tools.reader    "1.0.0-beta3"]
                  [com.cognitect/transit-clj   "0.8.290"        :scope "test"]
                  [com.cemerick/piggieback     "0.2.1"          :scope "test"]
@@ -27,9 +27,10 @@
           (dosh "npm" "install"))
         (util/info "Node dependencies already installed, skipping `npm install`")))))
 
-(deftask build-js []
+(deftask bundle-js
+  [d dev     bool  "Development build"]
   (with-pass-thru _
-    (dosh "./bundle-js.sh")))
+    (dosh "node" "scripts/build.js" (when dev "--dev"))))
 
 (deftask dev []
   (comp
@@ -46,11 +47,11 @@
                              :compiler-stats true
                              :parallel-build true})
     (target)
-    (build-js)))
+    (bundle-js :dev true)))
 
-(deftask bundle-executable []
+(deftask package-executable []
   (with-pass-thru _
-    (dosh "npm" "run" "nexe")))
+    (dosh "node" "scripts/package")))
 
 (deftask release []
   (comp
@@ -65,5 +66,5 @@
                              :compiler-stats true
                              :parallel-build true})
     (target)
-    (build-js)
-    (bundle-executable)))
+    (bundle-js)
+    (package-executable)))

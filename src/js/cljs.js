@@ -1,8 +1,18 @@
 /* @flow */
 
 const vm = require('vm');
-// $FlowExpectedError: only present after building CLJS
-const cljsSrc = require('./main.js'); // eslint-disable-line import/no-unresolved
+const fs = require('fs');
+
+let cljsSrc;
+
+if (__DEV__) {
+  cljsSrc = fs.readFileSync('./target/main.js', 'utf8');
+} else {
+  // $FlowExpectedError: only exists in the Nexe bundle.
+  const nexeres = require('nexeres');
+
+  cljsSrc = nexeres.get('main.js');
+}
 
 const cljsScript = new vm.Script(cljsSrc, {});
 

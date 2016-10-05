@@ -1,7 +1,11 @@
 [ignore]
-<PROJECT_ROOT>/node_modules/.*
+# <PROJECT_ROOT>/node_modules/.*
 <PROJECT_ROOT>/target/.*
 <PROJECT_ROOT>/tmp/.*
+<PROJECT_ROOT>/scripts/.*
+
+[libs]
+lib/
 
 [options]
 suppress_comment=\\(.\\|\n\\)*\\$FlowIssue
