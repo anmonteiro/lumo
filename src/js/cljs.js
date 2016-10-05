@@ -2,17 +2,9 @@
 
 const vm = require('vm');
 const fs = require('fs');
+const lumo = require('./lumo');
 
-let cljsSrc;
-
-if (__DEV__) {
-  cljsSrc = fs.readFileSync('./target/main.js', 'utf8');
-} else {
-  // $FlowExpectedError: only exists in the Nexe bundle.
-  const nexeres = require('nexeres'); // eslint-disable-line
-
-  cljsSrc = nexeres.get('main.js');
-}
+const cljsSrc = lumo.load('main.js');
 
 const cljsScript = new vm.Script(cljsSrc, {});
 
@@ -22,6 +14,7 @@ function newContext() {
     require,
     process,
     console,
+    LUMO_LOAD: lumo.load
   };
 
   context.global = context;

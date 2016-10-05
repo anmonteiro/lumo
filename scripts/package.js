@@ -1,6 +1,11 @@
 const nexe = require('nexe');
 
 const outputPath = 'main';
+const resources = [
+  'target/main.js',
+  'target/cljs/core$macros.cljc.cache.json',
+  'target/cljs/core.cljs.cache.aot.json',
+];
 
 nexe.compile({
   input: 'target/bundle.js',
@@ -12,8 +17,8 @@ nexe.compile({
   // By default "nosign" option will be specified
   // You can check all available options and its default values here:
   // https://github.com/nodejs/node/blob/master/vcbuild.bat
-  resourceFiles: ['target/main.js'], // array of files to embed.
-  browserifyExcludes: ['target/main.js'],
+  resourceFiles: resources,
+  browserifyExcludes: resources,
   resourceRoot: 'target',
   flags: true, // use this for applications that need command line flags.
   jsFlags: '--use_strict', // v8 flags
