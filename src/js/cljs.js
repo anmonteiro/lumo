@@ -9,7 +9,7 @@ if (__DEV__) {
   cljsSrc = fs.readFileSync('./target/main.js', 'utf8');
 } else {
   // $FlowExpectedError: only exists in the Nexe bundle.
-  const nexeres = require('nexeres');
+  const nexeres = require('nexeres'); // eslint-disable-line
 
   cljsSrc = nexeres.get('main.js');
 }
