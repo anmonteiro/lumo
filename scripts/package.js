@@ -27,7 +27,7 @@ function deflate(fname) {
 
 const outputPath = 'main';
 const resources = getDirContents('target')
-  .filter((fname) => fname.endsWith('.json') || /main\.js/.test(fname));
+  .filter((fname) => fname.endsWith('.json') || /(clojurescript-version|main\.js)/.test(fname));
 
 resources.forEach(deflate);
 

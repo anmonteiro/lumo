@@ -1,10 +1,11 @@
 /* @flow */
 
+import type { CLIOptsType } from './cli';
+
 const vm = require('vm');
 const lumo = require('./lumo');
 
 const cljsSrc = lumo.load('main.js');
-
 const cljsScript = new vm.Script(cljsSrc, {});
 
 function newContext() {
@@ -34,7 +35,17 @@ function getCurrentNS(): string {
   return defaultContext.lumo.repl.get_current_ns();
 }
 
+function setRuntimeOpts(opts: CLIOptsType) {
+  const autoCache = opts['auto-cache'];
+  const { verbose, cache } = opts;
+  const cachePath = cache || (autoCache ? defaultCachePath : null);
+
+  // $FlowIssue: context can have globals
+  defaultContext.lumo.repl.init(verbose, cachePath);
+}
+
 module.exports = {
   eval: evalInContext,
   currentNS: getCurrentNS,
+  setRuntimeOpts,
 };

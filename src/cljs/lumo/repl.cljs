@@ -15,6 +15,8 @@
 
 (defonce ^:private current-ns (volatile! 'cljs.user))
 
+(defonce ^:private app-opts (volatile! nil))
+
 (def ^:private ^:const could-not-eval-regex #"Could not eval")
 
 (def out-dir "target")
@@ -246,7 +248,7 @@
         source-str
         source-str
         {:ns            @current-ns
-         :verbose       true
+         :verbose       (:verbose @app-opts)
          :static-fns    false
          :context       :expr
          :def-emits-var true}
@@ -261,5 +263,7 @@
 (defn ^:export get-current-ns []
   @current-ns)
 
-(defn init! []
+(defn ^:export init [verbose cache-path]
+  (vreset! app-opts {:verbose verbose
+                     :cache-path cache-path})
   (load-core-analysis-caches))

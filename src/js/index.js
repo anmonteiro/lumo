@@ -1,39 +1,27 @@
 /* @flow */
 
-const readline = require('readline');
+import type { CLIOptsType } from './cli';
 
-const rl = readline.createInterface({
-  input: process.stdin,
-  output: process.stdout,
-  terminal: true,
-});
+const repl = require('./repl');
+const cli = require('./cli');
 
-// eslint-disable-next-line no-use-before-define
-prompt('cljs.user=> ');
+function processRuntimeOpts({ help, quiet, ...opts }: CLIOptsType): void {
+  // if help, print help and bail
+  if (help) {
+    return cli.printHelp();
+  }
 
-const cljs = require('./cljs');
+  if (!quiet) {
+    cli.printBanner();
+  }
 
-function prompt(p: string = `${cljs.currentNS()}=> `) {
-  rl.setPrompt(p);
-  rl.prompt();
+  return repl.start(opts);
 }
 
-rl.on('line', (line: string) => {
-  cljs.eval(line);
-  prompt();
-});
+function main(): void {
+  const cliOpts = cli.getCLIOpts();
 
-rl.on('SIGINT', () => {
-  // $FlowIssue: missing property in interface
-  rl.output.write('\n');
+  processRuntimeOpts(cliOpts);
+}
 
-  readline.clearLine(process.stdout, 0);
-  readline.cursorTo(process.stdout, 0);
-
-  rl.write(null, {
-    ctrl: true,
-    name: 'u',
-  });
-
-  prompt();
-});
+main();
