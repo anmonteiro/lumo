@@ -1,6 +1,7 @@
 /* @flow */
 
 const fs = require('fs');
+const zlib = require('zlib');
 
 let nexeres;
 
@@ -9,15 +10,17 @@ if (!__DEV__) {
   nexeres = require('nexeres'); // eslint-disable-line
 }
 
-function load(path: string): string {
-  let res;
-  if (__DEV__) {
-    res = fs.readFileSync(`./target/${path}`, 'utf8');
-  } else {
-    res = nexeres.get(path);
-  }
+function load(path: string): ?string {
+  try {
+    if (__DEV__) {
+      return fs.readFileSync(`./target/${path}`, 'utf8');
+    }
+    const gzipped = nexeres.get(path);
 
-  return res;
+    return zlib.inflateSync(gzipped);
+  } catch (e) {
+    return null;
+  }
 }
 
 module.exports = {

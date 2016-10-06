@@ -1,7 +1,6 @@
 /* @flow */
 
 const vm = require('vm');
-const fs = require('fs');
 const lumo = require('./lumo');
 
 const cljsSrc = lumo.load('main.js');
@@ -14,7 +13,7 @@ function newContext() {
     require,
     process,
     console,
-    LUMO_LOAD: lumo.load
+    LUMO_LOAD: lumo.load,
   };
 
   context.global = context;

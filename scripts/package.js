@@ -1,11 +1,35 @@
 const nexe = require('nexe');
+const fs = require('fs');
+const path = require('path');
+const zlib = require('zlib');
+
+function getDirContents(dir, accumPath = dir) {
+  let filenames = fs.readdirSync(dir);
+
+  return filenames.reduce((ret, filename) => {
+    const fname = path.resolve(accumPath, filename);
+    const fStat = fs.statSync(fname);
+
+    if (fStat.isDirectory()) {
+      const newAccum = path.join(accumPath, filename);
+      return ret.concat(getDirContents(newAccum, newAccum));
+    } else {
+      ret.push(path.join(accumPath, filename));
+      return ret;
+    }
+  }, []);
+};
+
+function deflate(fname) {
+  const input = fs.readFileSync(fname);
+  fs.writeFileSync(fname, zlib.deflateSync(input));
+}
 
 const outputPath = 'main';
-const resources = [
-  'target/main.js',
-  'target/cljs/core$macros.cljc.cache.json',
-  'target/cljs/core.cljs.cache.aot.json',
-];
+const resources = getDirContents('target')
+  .filter((fname) => fname.endsWith('.json') || /main\.js/.test(fname));
+
+resources.forEach(deflate);
 
 nexe.compile({
   input: 'target/bundle.js',

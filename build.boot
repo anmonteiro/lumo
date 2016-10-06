@@ -2,7 +2,7 @@
  :source-paths    #{"src/cljs"}
  :resource-paths #{"src/js"}
  :dependencies '[[org.clojure/clojure        "1.9.0-alpha13"]
-                 [org.clojure/clojurescript   "1.9.274"]
+                 [org.clojure/clojurescript   "1.9.277"]
                  [org.clojure/tools.reader    "1.0.0-beta3"]
                  [com.cognitect/transit-cljs  "0.8.239"]
                  [com.cognitect/transit-clj   "0.8.290"        :scope "test"]
@@ -67,7 +67,8 @@
        'org.clojure/clojurescript
        #"^cljs/(test\.cljc|core\.cljs\.cache\.aot\.edn|spec(\.cljc|/test\.clj[sc]|/impl/gen\.cljc))$"}
       :move {#"^main.out/((cljs|clojure).*)" "$1"})
-    (sift :include #{#"^main.js" #"^bundle.js" #"^cljs(?!\.js)" #"^clojure"})))
+    (sift :include #{#"^main.js" #"^bundle.js" #"^cljs(?!\.js)"
+                     #"^clojure" #"^cognitect"})))
 
 (deftask dev []
   (comp
