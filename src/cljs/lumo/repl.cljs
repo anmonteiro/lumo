@@ -18,6 +18,9 @@
 (defonce ^:private app-opts (volatile! nil))
 
 (def ^:private ^:const could-not-eval-regex #"Could not eval")
+(def ^:private ^:const MACROS_SUFFIX "$macros")
+(def ^:private ^:const JS_EXT ".js")
+(def ^:private ^:const JSON_EXT ".json")
 
 (def ^:private out-dir "target")
 
@@ -53,12 +56,36 @@
 ;; =============================================================================
 ;; Node.js filesystem API bridging
 
+(defn- read-file
+  "Accepts a filename to read and a callback. Upon success, invokes
+  callback with the source. Otherwise invokes the callback with nil."
+  [filename cb]
+  (.readFile fs filename "utf-8"
+    (fn [err source]
+      (cb (when-not err
+            source)))))
 
 (defn- read-file-sync
   [filename]
   (try
     (.readFileSync fs filename "utf8")
     (catch :default _)))
+
+(defn- write-file
+  [filename data cb]
+  (.writeFile fs filename data "utf-8" #(cb %)))
+
+(defn- ensure-dir
+  [path cb]
+  (.stat fs path
+    (fn [err stats]
+      (cond
+        err (.mkdir fs path #(cb))
+
+        (not (.isDirectory stats))
+        (throw (ex-info (str "Cache path `" path "` exists but is not a directory.") {}))
+
+        :else (cb)))))
 
 ;; =============================================================================
 ;; Dependency loading
@@ -151,49 +178,64 @@
         com.cognitect.transit.impl.writer})
    name))
 
-(defn- load-bundled [path cb]
+(defn- load-bundled [path source cb]
   (when-let [cache-json (js/LUMO_LOAD (str path ".cache.json"))]
-    (cb {:source ""
+    (cb {:source source
          :lang :js
          :cache (transit-json->cljs cache-json)})
     :loaded))
 
+;; TODO: can be optimized e.g. to just analyze CLJ source
+;; if JS present but no analysis cache
 (defn- load-external
-  "Reads the first filename in a sequence of supplied filenames,
-  using a supplied read-file-fn, calling back upon first successful
-  read, otherwise calling back with nil. Before calling back, first
-  attempts to read AOT artifacts (JavaScript and cache edn)."
-  [filename cb]
-  (let [filename (str out-dir "/" filename)]
-    (when-let [source (read-file-sync filename)]
-      (let [ret {:lang   (filename->lang filename)
-                 :file   filename
-                 :source source}]
-        (if (or (string/ends-with? filename ".cljs")
-                (string/ends-with? filename ".cljc"))
-          (if-let [javascript-source (read-file-sync (replace-extension filename ".js"))]
-            (if-let [cache-edn (read-file-sync (str filename ".cache.edn"))]
-              (cb {:lang   :js
-                   :source javascript-source
-                   :cache  (parse-edn cache-edn)})
-              (cb ret))
-            (cb ret))
-          (cb ret)))
-      :loaded)))
+  [path file-path macros? cb]
+  ;; first check if the source is cached
+  (let [cache-dir (:cache-path @app-opts)
+        cache-prefix (str cache-dir "/" (munge path) (when macros? MACROS_SUFFIX))]
+    (if-let [cached-source (and cache-dir
+                                (js/LUMO_READ_FILE (str cache-prefix JS_EXT)))]
+      (let [cached-analysis (js/LUMO_READ_FILE (str cache-prefix ".cache.json"))]
+        (cb {:lang :js
+             :source cached-source
+             :filename (str cache-prefix JS_EXT)
+             :cache cached-analysis})
+        :loaded)
+      (let [filename (str out-dir "/" file-path)]
+        (when-let [source (read-file-sync filename)]
+          (let [ret {:lang   (filename->lang filename)
+                     :file   filename
+                     :source source}]
+            (if (or (string/ends-with? filename ".cljs")
+                    (string/ends-with? filename ".cljc"))
+              (if-let [javascript-source (read-file-sync (replace-extension filename JS_EXT))]
+                (if-let [cache-edn (read-file-sync (str filename ".cache.edn"))]
+                  (cb {:lang   :js
+                       :source javascript-source
+                       :cache  (parse-edn cache-edn)})
+                  ;; one last attempt to read analysis cache
+                  (if-let [cache-json (read-file-sync (str filename ".cache.json"))]
+                    (cb {:lang   :js
+                         :source javascript-source
+                         :cache  (transit-json->cljs cache-json)})
+                    (cb ret)))
+                (cb ret))
+              (cb ret)))
+          :loaded)))))
 
 (defn- load-and-cb!
-  [name path macros? cb]
-  (cond
-    (skip-load-js? name macros?)
-    (load-bundled path cb)
+  [name path file-path macros? cb]
+  (let [bundled-source (js/LUMO_LOAD (str file-path (when macros? MACROS_SUFFIX) JS_EXT))]
+    (cond
+      (or bundled-source (skip-load-js? name macros?))
+      (load-bundled file-path (or bundled-source "") cb)
 
-    :else
-    (load-external path cb)))
+      :else
+      (load-external path file-path macros? cb))))
 
 (defn- load-other [{:keys [name path macros file]} cb]
   (loop [paths (filenames-to-try src-paths macros path)]
-    (if-let [path (first paths)]
-      (let [cb-res (load-and-cb! name path macros cb)]
+    (if-let [file-path (first paths)]
+      (let [cb-res (load-and-cb! name path file-path macros cb)]
         (when-not cb-res
             (recur (next paths))))
       (cb nil))))
@@ -209,11 +251,33 @@
 
     :else (load-other m cb)))
 
-(defn node-eval
-  "Evaluates JavaScript in node."
-  [{:keys [name source]}]
+(defn- macros-cache? [cache]
+  (.endsWith (str (:name cache)) MACROS_SUFFIX))
+
+(defn- handle-caching-error
+  [error]
+  (throw (ex-info (str "Failed writing cache to " (.-path error))
+           {:js-error error})))
+
+(defn- write-cache
+  [name path source cache prefix-path]
+  (ensure-dir prefix-path
+    (fn []
+      (let [macros? (macros-cache? cache)
+            filename-prefix (str prefix-path "/" (munge path) (when macros? MACROS_SUFFIX))
+            cache-json (cljs->transit-json cache)
+            cb #(when % (handle-caching-error %))]
+        (write-file (str filename-prefix JS_EXT) source cb)
+        (write-file (str filename-prefix ".cache.json") cache-json cb)))))
+
+(defn- caching-node-eval
+  "Evaluates JavaScript in node, writing source and analysis cache to disk
+   when desired."
+  [{:keys [name source cache path] :as m}]
+  (when-let [cache-path (and source cache path (:cache-path @app-opts))]
+    (write-cache name path source cache cache-path))
   (if-not js/COMPILED
-    (.runInThisContext vm source (str (munge name) ".js"))
+    (.runInThisContext vm source (str (munge name) JS_EXT))
     (js/eval source)))
 
 (defn- ^:boolean could-not-eval? [msg]
@@ -240,7 +304,7 @@
 
 (defn ^:export read-eval-print-str
   [source-str]
-  (binding [cljs/*eval-fn* node-eval
+  (binding [cljs/*eval-fn* caching-node-eval
             cljs/*load-fn* load
             ana/*cljs-ns* @current-ns
             *ns* (create-ns @current-ns)

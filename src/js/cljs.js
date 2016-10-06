@@ -7,6 +7,7 @@ const lumo = require('./lumo');
 
 const cljsSrc = lumo.load('main.js');
 const cljsScript = new vm.Script(cljsSrc, {});
+const defaultCachePath = '.lumo_cache';
 
 function newContext() {
   const context: Object = {
@@ -15,6 +16,7 @@ function newContext() {
     process,
     console,
     LUMO_LOAD: lumo.load,
+    LUMO_READ_FILE: lumo.readFile,
   };
 
   context.global = context;

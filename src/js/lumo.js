@@ -17,12 +17,21 @@ function load(path: string): ?string {
     }
     const gzipped = nexeres.get(path);
 
-    return zlib.inflateSync(gzipped);
-  } catch (e) {
+    return zlib.inflateSync(gzipped).toString();
+  } catch (_) {
+    return null;
+  }
+}
+
+function readFile(path: string): ?string {
+  try {
+    return fs.readFileSync(path, 'utf8');
+  } catch (_) {
     return null;
   }
 }
 
 module.exports = {
   load,
+  readFile,
 };
