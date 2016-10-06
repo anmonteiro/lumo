@@ -19,12 +19,12 @@
 
 (def ^:private ^:const could-not-eval-regex #"Could not eval")
 
-(def out-dir "target")
+(def ^:private out-dir "target")
 
-(def src-paths [out-dir])
+(def ^:private src-paths [out-dir])
 
-(def fs (js/require "fs"))
-(def vm (js/require "vm"))
+(def fs (nodejs/require "fs"))
+(def vm (nodejs/require "vm"))
 
 ;; =============================================================================
 ;; Analysis cache
@@ -43,16 +43,16 @@
   [ns-sym file-prefix]
   (let [keys        [:use-macros :excludes :name :imports :requires
                      :uses :defs :require-macros ::ana/constants :doc]
-        cache (transit-json->cljs (js/LUMO_LOAD (str file-prefix "json")))]
+        cache (transit-json->cljs (js/LUMO_LOAD (str file-prefix JSON_EXT)))]
     (cljs/load-analysis-cache! st ns-sym cache)))
 
-(defn- load-core-analysis-caches
-  []
-  (load-core-analysis-cache 'cljs.core "cljs/core.cljs.cache.aot.")
-  (load-core-analysis-cache 'cljs.core$macros "cljs/core$macros.cljc.cache."))
+(defn- load-core-analysis-caches []
+  (load-core-analysis-cache 'cljs.core "cljs/core.cljs.cache.aot")
+  (load-core-analysis-cache 'cljs.core$macros "cljs/core$macros.cljc.cache"))
 
 ;; =============================================================================
-;; Dependency loading
+;; Node.js filesystem API bridging
+
 
 (defn- read-file-sync
   [filename]
@@ -60,25 +60,28 @@
     (.readFileSync fs filename "utf8")
     (catch :default _)))
 
+;; =============================================================================
+;; Dependency loading
+
 (defn- filename->lang
   "Converts a filename to a lang keyword by inspecting the file
   extension."
   [filename]
-  (if (string/ends-with? filename ".js")
+  (if (string/ends-with? filename JS_EXT)
     :js
     :clj))
 
-(defn replace-extension
+(defn- replace-extension
   "Replaces the extension on a file."
   [filename new-extension]
   (string/replace filename #".clj[sc]?$" new-extension))
 
-(defn parse-edn
+(defn- parse-edn
   "Parses edn source to Clojure data."
   [edn-source]
   (reader/read-string edn-source))
 
-(defn filenames-to-try
+(defn- filenames-to-try
   "Produces a sequence of filenames to try reading, in the
   order they should be tried."
   [src-paths macros path]
@@ -88,7 +91,7 @@
     (for [extension extensions]
       (str path extension))))
 
-(defn load-goog
+(defn- load-goog
   "Loads a Google Closure implementation source file. `goog` namespaces are
    actually already included in the bundle because we compile with simple
    optimizations."

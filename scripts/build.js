@@ -3,6 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const envify = require('envify/custom');
 const derequire = require('derequire');
+const uglify = require('uglify-js');
 
 const argv = process.argv.slice(2);
 const isDevBuild = /(--dev|-d)$/.test(argv[0]);
@@ -28,6 +29,15 @@ function writeClojureScriptVersion() {
       fs.writeFileSync('target/clojurescript-version', cljsVersion, 'utf8');
     });
 }
+
+function minify(filename){
+  const { code } = uglify.minify(filename, {
+    warnings: true,
+  });
+  const matches = /(.*)(\.[^.]+)$/.exec(filename);
+  fs.writeFile(`${matches[1]}.min${matches[2]}`, code, 'utf8');
+}
+
 writeClojureScriptVersion();
 
 console.log(`Building ${isDevBuild ? 'development' : 'production'} bundle with Browserify...`);
@@ -53,6 +63,13 @@ browserify({
       throw err;
     }
     const code = buf.toString();
-
-    fs.writeFile(path.join('target', 'bundle.js'), derequire(code), 'utf8');
-});
+    const bundleFilename = path.join('target', 'bundle.js');
+    fs.writeFile(bundleFilename, derequire(code), 'utf8', (err) => {
+      if (err) {
+        throw err;
+      }
+      if (!isDevBuild) {
+        minify(bundleFilename);
+      }
+    });
+  });
