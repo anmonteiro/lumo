@@ -133,7 +133,17 @@
         cljs.compiler.macros
         cljs.tools.reader.reader-types}
      '#{cljs.core
-        cljs.pprint})
+        cljs.pprint
+        com.cognitect.transit
+        com.cognitect.transit.delimiters
+        com.cognitect.transit.handlers
+        com.cognitect.transit.util
+        com.cognitect.transit.caching
+        com.cognitect.transit.types
+        com.cognitect.transit.eq
+        com.cognitect.transit.impl.decoder
+        com.cognitect.transit.impl.reader
+        com.cognitect.transit.impl.writer})
    name))
 
 (defn- load-bundled [path cb]

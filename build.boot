@@ -66,7 +66,7 @@
       {'org.clojure/clojure #"^clojure/template\.clj"
        'org.clojure/clojurescript
        #"^cljs/(test\.cljc|core\.cljs\.cache\.aot\.edn|spec(\.cljc|/test\.clj[sc]|/impl/gen\.cljc))$"}
-      :move {#"^main.out/((cljs|clojure).*)" "$1"})
+      :move {#"^main.out/((cljs|clojure|cognitect).*)" "$1"})
     (sift :include #{#"^main.js" #"^bundle.js" #"^cljs(?!\.js)"
                      #"^clojure" #"^cognitect"})))
 
