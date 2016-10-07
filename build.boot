@@ -81,6 +81,9 @@
                              :main 'lumo.core
                              :cache-analysis true
                              :source-map nil
+                             :dump-core false
+                             :static-fns true
+                             :optimize-constants true
                              :verbose true
                              :compiler-stats true
                              :parallel-build true})
@@ -114,6 +117,9 @@
                              :main 'lumo.core
                              :cache-analysis true
                              :source-map nil
+                             :dump-core false
+                             :static-fns true
+                             :optimize-constants true
                              :verbose true
                              :compiler-stats true
                              :parallel-build true})
