@@ -136,6 +136,7 @@
        'cljs.compiler
        'cljs.env
        'cljs.js
+       'cljs.nodejs
        'cljs.reader
        'cljs.source-map
        'cljs.source-map.base64
@@ -224,10 +225,13 @@
 
 (defn- load-and-cb!
   [name path file-path macros? cb]
-  (let [bundled-source (js/LUMO_LOAD (str file-path (when macros? MACROS_SUFFIX) JS_EXT))]
+  (let [bundled-src-prefix (cond-> path
+                             macros? (str MACROS_SUFFIX))
+        bundled-source (js/LUMO_LOAD (str bundled-src-prefix JS_EXT))]
     (cond
       (or bundled-source (skip-load-js? name macros?))
-      (load-bundled file-path (or bundled-source "") cb)
+      ;; bundled source are AOTed macros which don't have the `.clj[sc]*` extension
+      (load-bundled (if bundled-source bundled-src-prefix file-path) (or bundled-source "") cb)
 
       :else
       (load-external path file-path macros? cb))))

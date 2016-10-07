@@ -93,6 +93,17 @@
   (with-pass-thru _
     (dosh "node" "scripts/package")))
 
+(deftask backup-resources
+  "Backup resources to be gzipped in the 2nd stage binary
+   without having to recompile CLJS"
+  []
+  (with-pass-thru _
+    (dosh "cp" "-R" "target" "resources_bak")))
+
+(deftask aot-macros []
+  (with-pass-thru _
+    (dosh "./scripts/aot-bundle-macros.sh")))
+
 (deftask release []
   (comp
     (check-node-modules)
@@ -110,4 +121,9 @@
     (cache-edn->transit)
     (target)
     (bundle-js)
+    (backup-resources)
+    ;; Package first stage binary
+    (package-executable)
+    (aot-macros)
+    ;; Package final executable
     (package-executable)))

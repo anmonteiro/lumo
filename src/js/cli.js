@@ -39,6 +39,7 @@ Usage:  lumo [init-opt*] [main-opt] [arg*]
     -k, --cache path         If dir exists at path, use it for cache
     -q, --quiet              Quiet mode; doesn't print the banner initially
     -v, --verbose            Emit verbose diagnostic output
+    -d, --dumb-terminal      Disable line editing / VT100 terminal control
 
   main options:
     -m, --main ns-name       Call the -main function from a namespace with args
@@ -57,7 +58,7 @@ Usage:  lumo [init-opt*] [main-opt] [arg*]
 
 function getCLIOpts(): CLIOptsType {
   return minimist(process.argv.slice(2), {
-    boolean: ['verbose', 'help', 'repl', 'auto-cache', 'quiet'],
+    boolean: ['verbose', 'help', 'repl', 'auto-cache', 'quiet', 'dumb-terminal'],
     string: ['eval', 'cache'],
     alias: {
       v: 'verbose',
@@ -67,6 +68,7 @@ function getCLIOpts(): CLIOptsType {
       K: 'auto-cache',
       k: 'cache',
       q: 'quiet',
+      d: 'dumb-terminal',
     },
   });
 }

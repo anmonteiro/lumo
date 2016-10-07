@@ -13,10 +13,12 @@ function prompt(p: string = `${cljs.currentNS()}=> `) {
 }
 
 function startREPL(opts: CLIOptsType) {
+  const dumbTerminal = opts['dumb-terminal'];
+
   rl = readline.createInterface({
     input: process.stdin,
     output: process.stdout,
-    terminal: true,
+    terminal: !dumbTerminal,
   });
 
   prompt('cljs.user=> ');
