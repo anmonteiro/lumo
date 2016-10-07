@@ -229,11 +229,15 @@
   [name path file-path macros? cb]
   (let [bundled-src-prefix (cond-> path
                              macros? (str MACROS_SUFFIX))
-        bundled-source (js/LUMO_LOAD (str bundled-src-prefix JS_EXT))]
+        bundled-source (js/LUMO_LOAD (str bundled-src-prefix JS_EXT))
+        skip-load-js? (skip-load-js? name macros?)]
     (cond
-      (or bundled-source (skip-load-js? name macros?))
+      skip-load-js?
+      (load-bundled file-path "" cb)
+
+      bundled-source
       ;; bundled source are AOTed macros which don't have the `.clj[sc]*` extension
-      (load-bundled (if bundled-source bundled-src-prefix file-path) (or bundled-source "") cb)
+      (load-bundled bundled-src-prefix bundled-source cb)
 
       :else
       (load-external path file-path macros? cb))))
