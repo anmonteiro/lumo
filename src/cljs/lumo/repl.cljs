@@ -131,31 +131,32 @@
    we might need to load the corresponding analysis cache."
   [name macros]
   (and (not macros)
-    (#{'cljs.analyzer
-       'cljs.analyzer.api
-       'cljs.compiler
-       'cljs.env
-       'cljs.js
-       'cljs.nodejs
-       'cljs.reader
-       'cljs.source-map
-       'cljs.source-map.base64
-       'cljs.source-map.base64-vlq
-       'cljs.spec
-       'cljs.spec.impl.gen
-       'cljs.tagged-literals
-       'cljs.test
-       'cljs.tools.reader
-       'cljs.tools.reader.reader-types
-       'cljs.tools.reader.impl.commons
-       'cljs.tools.reader.impl.utils
-       'clojure.core.reducers
-       'clojure.data
-       'clojure.string
-       'clojure.set
-       'clojure.zip
-       'clojure.walk
-       'cognitect.transit} name)))
+    ('#{cljs.analyzer
+        cljs.analyzer.api
+        cljs.compiler
+        cljs.env
+        cljs.js
+        cljs.nodejs
+        cljs.pprint
+        cljs.reader
+        cljs.source-map
+        cljs.source-map.base64
+        cljs.source-map.base64-vlq
+        cljs.spec
+        cljs.spec.impl.gen
+        cljs.tagged-literals
+        cljs.test
+        cljs.tools.reader
+        cljs.tools.reader.reader-types
+        cljs.tools.reader.impl.commons
+        cljs.tools.reader.impl.utils
+        clojure.core.reducers
+        clojure.data
+        clojure.string
+        clojure.set
+        clojure.zip
+        clojure.walk
+        cognitect.transit} name)))
 
 (defn- skip-load?
   [name macros?]
@@ -168,7 +169,6 @@
         cljs.compiler.macros
         cljs.tools.reader.reader-types}
      '#{cljs.core
-        cljs.pprint
         com.cognitect.transit
         com.cognitect.transit.delimiters
         com.cognitect.transit.handlers
