@@ -297,8 +297,7 @@
       (let [message (ex-message cause)
             {:keys [column]} (ex-data cause)
             column-indicator-str (str (apply str
-                                        (take (+ (count (name @current-ns)) 3 column)
-                                          (repeat " ")))
+                                        (repeat (+ (count (name @current-ns)) 3 column) " "))
                                    "⬆")]
         (println column-indicator-str)
         (println message))
