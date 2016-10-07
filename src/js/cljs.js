@@ -28,8 +28,10 @@ function newContext() {
 const defaultContext = newContext();
 
 function evalInContext(code: string) {
-  // $FlowIssue: context can have globals
-  defaultContext.lumo.repl.read_eval_print_str(code);
+  if (/\S/.test(code)) {
+    // $FlowIssue: context can have globals
+    defaultContext.lumo.repl.eval_source(code);
+  }
 }
 
 function getCurrentNS(): string {

@@ -1,12 +1,15 @@
 (ns lumo.repl
+  (:refer-clojure :exclude [load-file*])
   (:require [cljs.analyzer :as ana]
             [cljs.env :as env]
             [cljs.js :as cljs]
             [cljs.nodejs :as nodejs]
             [cljs.reader :as reader]
             [cljs.tools.reader :as r]
+            [cljs.tools.reader.reader-types :as rt]
             [clojure.string :as string]
-            [cognitect.transit :as transit]))
+            [cognitect.transit :as transit]
+            [lumo.repl-resources :refer [repl-special-doc-map]]))
 
 ;; =============================================================================
 ;; Globals
@@ -203,7 +206,7 @@
              :filename (str cache-prefix JS_EXT)
              :cache cached-analysis})
         :loaded)
-      (let [filename (str out-dir "/" file-path)]
+      (let [filename file-path]
         (when-let [source (read-file-sync filename)]
           (let [ret {:lang   (filename->lang filename)
                      :file   filename
@@ -245,13 +248,20 @@
 (defn- load-other [{:keys [name path macros file]} cb]
   (loop [paths (filenames-to-try src-paths macros path)]
     (if-let [file-path (first paths)]
-      (let [cb-res (load-and-cb! name path file-path macros cb)]
-        (when-not cb-res
-            (recur (next paths))))
+      (when-not (load-and-cb! name path file-path macros cb)
+        (recur (next paths)))
       (cb nil))))
+
+(defn- load-file* [filename cb]
+  (println "loading file" filename)
+  (when-not (load-and-cb! nil filename filename false cb)
+    (cb nil)))
 
 (defn- load [{:keys [name macros path file] :as m} cb]
   (cond
+    file
+    (load-file* file cb)
+
     (skip-load? name macros)
     (cb {:source ""
          :lang :js})
@@ -290,6 +300,16 @@
     (.runInThisContext vm source (str (munge name) JS_EXT))
     (js/eval source)))
 
+;; =============================================================================
+;; REPL plumbing
+
+(defn make-eval-opts []
+  {:ns            @current-ns
+   :verbose       (:verbose @app-opts)
+   :static-fns    false
+   :context       :expr
+   :def-emits-var true})
+
 (defn- ^:boolean could-not-eval? [msg]
   (boolean (re-find could-not-eval-regex msg)))
 
@@ -311,29 +331,116 @@
       :else
       (println error))))
 
-(defn ^:export read-eval-print-str
+(defn- compiler-state-backup []
+  {:st     @st
+   :loaded @cljs/*loaded*})
+
+(defn- restore-compiler-state! [backup]
+  (reset! st (:st backup))
+  (reset! cljs/*loaded* (:loaded backup)))
+
+(defn- wrap-self
+  "Takes a self-ish fn and returns it wrapped with exception handling.
+  Compiler state is restored if self-ish fn fails."
+  [f]
+  (fn g
+    ([a]
+     (let [backup (compiler-state-backup)]
+       (try
+         (f a)
+         (catch :default e
+           (restore-compiler-state! backup)
+           (throw e)))))))
+
+(defn- wrap-special-fns
+  [wfn fns]
+  "Wrap wfn around all (fn) values in fns hashmap."
+  (into {} (for [[k v] fns] [k (wfn v)])))
+
+(declare eval-source)
+
+(def ^:private repl-special-fns
+  (let [load-file-fn
+        (fn self
+          ([[_ file :as form]]
+           (load {:file file}
+             (fn [{:keys [lang source cache]}]
+               (if source
+                 (eval-source source)
+                 (handle-repl-error (ex-info (str "Could not load file " file) {})))))))
+        in-ns-fn
+        (fn self
+          ([[_ maybe-quoted :as form]]
+           (let [eval-opts (make-eval-opts)]
+             (cljs/eval st maybe-quoted eval-opts
+               (fn [{:keys [error value]}]
+                 (if error
+                   (handle-repl-error error)
+                   (let [ns-name value]
+                     (if-not (symbol? ns-name)
+                       (binding [*print-fn* *print-err-fn*]
+                         (println "Argument to in-ns must be a symbol."))
+                       (if (ana/get-namespace ns-name)
+                         (vreset! current-ns ns-name)
+                         ;; TODO: REPL requires
+                         (let [ns-form `(~'ns ~ns-name)]
+                           (cljs/eval st ns-form eval-opts
+                             (fn [{:keys [error value]}]
+                               (if error
+                                 (handle-repl-error error)
+                                 (vreset! current-ns ns-name))))))))))))))]
+    (wrap-special-fns wrap-self
+      {'in-ns in-ns-fn
+       'clojure.core/in-ns in-ns-fn
+       'load-file load-file-fn
+       'clojure.core/load-file load-file-fn
+       ;; 'load-namespace
+       ;; (fn self
+       ;;   ([repl-env env form]
+       ;;    (self env repl-env form nil))
+       ;;   ([repl-env env [_ ns :as form] opts]
+       ;;    (load-namespace repl-env ns opts)))
+       })))
+
+(defn- current-alias-map []
+  (let [cur-ns @current-ns]
+    (into {} (remove (fn [[k v]] (= k v)))
+      (merge (get-in @st [::ana/namespaces cur-ns :requires])
+        (get-in @st [::ana/namespaces cur-ns :require-macros])))))
+
+(defn- repl-special? [form]
+  (and (seq? form) (contains? repl-special-fns (first form))))
+
+(defn- repl-read-string
+  [source]
+  (let [reader (rt/string-push-back-reader source)]
+    (r/read {:read-cond :allow :features #{:cljs}} reader)))
+
+;; TODO: need to separate execution paths of coming from the REPL vs. not
+;; wrt. to special fns visibility (which must not be seen when executing a source file)
+(defn ^:export eval-source
   [source-str]
-  (binding [cljs/*eval-fn* caching-node-eval
-            cljs/*load-fn* load
-            ana/*cljs-ns* @current-ns
-            *ns* (create-ns @current-ns)
-            env/*compiler* st
-            r/resolve-symbol ana/resolve-symbol]
-      (cljs/eval-str
-        st
-        source-str
-        source-str
-        {:ns            @current-ns
-         :verbose       (:verbose @app-opts)
-         :static-fns    false
-         :context       :expr
-         :def-emits-var true}
-        (fn [{:keys [ns value error] :as ret}]
-          (if-not error
-            (do
-              (println (pr-str value))
-              (vreset! current-ns ns))
-            (handle-repl-error error)))))
+  (binding [cljs/*eval-fn*   caching-node-eval
+            cljs/*load-fn*   load
+            ana/*cljs-ns*    @current-ns
+            *ns*             (create-ns @current-ns)
+            env/*compiler*   st
+            r/resolve-symbol ana/resolve-symbol
+            r/*alias-map*    (current-alias-map)]
+    (let [form (repl-read-string source-str)]
+      (if (repl-special? form)
+        ((get repl-special-fns (first form)) form)
+        (cljs/eval-str
+          st
+          source-str
+          source-str
+          (make-eval-opts)
+          (fn [{:keys [ns value error] :as ret}]
+            (if-not error
+              (do
+                (println (pr-str value))
+                (vreset! current-ns ns))
+              (handle-repl-error error)))))))
   nil)
 
 (defn ^:export get-current-ns []
