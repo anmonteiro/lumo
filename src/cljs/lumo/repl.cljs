@@ -142,6 +142,7 @@
        'cljs.source-map.base64
        'cljs.source-map.base64-vlq
        'cljs.spec
+       'cljs.spec.impl.gen
        'cljs.tagged-literals
        'cljs.test
        'cljs.tools.reader
@@ -149,6 +150,7 @@
        'cljs.tools.reader.impl.commons
        'cljs.tools.reader.impl.utils
        'clojure.core.reducers
+       'clojure.data
        'clojure.string
        'clojure.set
        'clojure.zip
