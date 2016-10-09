@@ -21,6 +21,7 @@ describe('getCliOpts', () => {
     expect(parsedOpts.K).toBe(true);
     expect(parsedOpts['auto-cache']).toBe(true);
   });
+
   it('parses single dash properties when they appear together', () => {
     const args = '-e :foo -e :bar';
     Object.defineProperty(process, 'argv', {
