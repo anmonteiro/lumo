@@ -33,7 +33,7 @@ Usage:  lumo [init-opt*] [main-opt] [arg*]
   init options:
     -i, --init path          Load a file or resource
     -e, --eval string        Evaluate expressions in string; print non-nil values
-    -c cp, --classpath=cp    Use colon-delimited cp for source directories and
+    -c cp, --classpath cp    Use colon-delimited cp for source directories and
                              JARs
     -K, --auto-cache         Create and use .planck_cache dir for cache
     -k, --cache path         If dir exists at path, use it for cache
@@ -59,10 +59,12 @@ Usage:  lumo [init-opt*] [main-opt] [arg*]
 function getCLIOpts(): CLIOptsType {
   return minimist(process.argv.slice(2), {
     boolean: ['verbose', 'help', 'repl', 'auto-cache', 'quiet', 'dumb-terminal'],
-    string: ['eval', 'cache'],
+    string: ['eval', 'cache', 'classpath'],
     alias: {
+      c: 'classpath',
       v: 'verbose',
       h: 'help',
+      '?': 'help',
       e: 'eval',
       r: 'repl',
       K: 'auto-cache',
