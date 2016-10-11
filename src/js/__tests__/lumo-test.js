@@ -84,6 +84,7 @@ describe('lumo', () => {
 
       expect(source).toBe(null);
       expect(mockCalls.length).toBe(3);
+      // eslint-disable-next-line arrow-parens
       expect(mockCalls.map((x: string[]) => x[0])).toEqual(srcPaths.map((path: string) => `${path}/bar/baz`));
     });
   });

@@ -6,6 +6,7 @@ const vm = require('vm');
 const lumo = require('./lumo');
 
 const cljsSrc = lumo.load('main.js');
+// $FlowFixMe: we know for sure this file will exist.
 const cljsScript = new vm.Script(cljsSrc, {});
 const defaultCachePath = '.lumo_cache';
 
