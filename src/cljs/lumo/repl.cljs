@@ -25,10 +25,6 @@
 (def ^:private ^:const JS_EXT ".js")
 (def ^:private ^:const JSON_EXT ".json")
 
-(def ^:private out-dir "target")
-
-(def ^:private src-paths [out-dir])
-
 (def fs (nodejs/require "fs"))
 (def vm (nodejs/require "vm"))
 
@@ -58,21 +54,6 @@
 
 ;; =============================================================================
 ;; Node.js filesystem API bridging
-
-(defn- read-file
-  "Accepts a filename to read and a callback. Upon success, invokes
-  callback with the source. Otherwise invokes the callback with nil."
-  [filename cb]
-  (.readFile fs filename "utf-8"
-    (fn [err source]
-      (cb (when-not err
-            source)))))
-
-(defn- read-file-sync
-  [filename]
-  (try
-    (.readFileSync fs filename "utf8")
-    (catch :default _)))
 
 (defn- write-file
   [filename data cb]
@@ -114,7 +95,7 @@
 (defn- filenames-to-try
   "Produces a sequence of filenames to try reading, in the
   order they should be tried."
-  [src-paths macros path]
+  [macros path]
   (let [extensions (if macros
                      [".clj" ".cljc"]
                      [".cljs" ".cljc" ".js"])]
@@ -199,27 +180,27 @@
   (let [cache-dir (:cache-path @app-opts)
         cache-prefix (str cache-dir "/" (munge path) (when macros? MACROS_SUFFIX))]
     (if-let [cached-source (and cache-dir
-                                (js/LUMO_READ_FILE (str cache-prefix JS_EXT)))]
-      (let [cached-analysis (js/LUMO_READ_FILE (str cache-prefix ".cache.json"))]
+                                (js/LUMO_READ_CACHE (str cache-prefix JS_EXT)))]
+      (let [cached-analysis (js/LUMO_READ_CACHE (str cache-prefix ".cache.json"))]
         (cb {:lang :js
              :source cached-source
              :filename (str cache-prefix JS_EXT)
              :cache cached-analysis})
         :loaded)
       (let [filename file-path]
-        (when-let [source (read-file-sync filename)]
+        (when-let [source (js/LUMO_READ_SOURCE filename)]
           (let [ret {:lang   (filename->lang filename)
                      :file   filename
                      :source source}]
             (if (or (string/ends-with? filename ".cljs")
                     (string/ends-with? filename ".cljc"))
-              (if-let [javascript-source (read-file-sync (replace-extension filename JS_EXT))]
-                (if-let [cache-edn (read-file-sync (str filename ".cache.edn"))]
+              (if-let [javascript-source (js/LUMO_READ_SOURCE (replace-extension filename JS_EXT))]
+                (if-let [cache-edn (js/LUMO_READ_SOURCE (str filename ".cache.edn"))]
                   (cb {:lang   :js
                        :source javascript-source
                        :cache  (parse-edn cache-edn)})
                   ;; one last attempt to read analysis cache
-                  (if-let [cache-json (read-file-sync (str filename ".cache.json"))]
+                  (if-let [cache-json (js/LUMO_READ_SOURCE (str filename ".cache.json"))]
                     (cb {:lang   :js
                          :source javascript-source
                          :cache  (transit-json->cljs cache-json)})
@@ -246,7 +227,7 @@
       (load-external path file-path macros? cb))))
 
 (defn- load-other [{:keys [name path macros file]} cb]
-  (loop [paths (filenames-to-try src-paths macros path)]
+  (loop [paths (filenames-to-try macros path)]
     (if-let [file-path (first paths)]
       (when-not (load-and-cb! name path file-path macros cb)
         (recur (next paths)))

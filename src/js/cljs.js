@@ -16,7 +16,8 @@ function newContext() {
     process,
     console,
     LUMO_LOAD: lumo.load,
-    LUMO_READ_FILE: lumo.readFile,
+    LUMO_READ_CACHE: lumo.readCache,
+    LUMO_READ_SOURCE: lumo.readSource,
   };
 
   context.global = context;

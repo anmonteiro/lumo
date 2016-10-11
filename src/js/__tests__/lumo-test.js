@@ -64,13 +64,27 @@ describe('lumo', () => {
     });
   });
 
-  describe('readFile', () => {
-    it('returns the contents of a (bundled) file when it exists', () => {
-      expect(lumo.readFile('foo')).toBe('fooContents');
+  describe('readCache', () => {
+    it('returns the contents of a (cached) file when it exists', () => {
+      expect(lumo.readCache('foo')).toBe('fooContents');
     });
 
     it('returns null when a file doesn\'t exist', () => {
-      expect(lumo.readFile('nonExistent')).toBe(null);
+      expect(lumo.readCache('nonExistent')).toBe(null);
+    });
+  });
+
+
+  describe('readSource', () => {
+    it('cycles through the source paths', () => {
+      const srcPaths = ['a', 'b', 'c'];
+      lumo.setSourcePaths(srcPaths);
+      const source = lumo.readSource('bar/baz');
+      const mockCalls = fs.readFileSync.mock.calls;
+
+      expect(source).toBe(null);
+      expect(mockCalls.length).toBe(3);
+      expect(mockCalls.map((x: string[]) => x[0])).toEqual(srcPaths.map((path: string) => `${path}/bar/baz`));
     });
   });
 });

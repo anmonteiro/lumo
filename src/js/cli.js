@@ -4,6 +4,7 @@ const lumo = require('./lumo');
 const minimist = require('minimist');
 const version = require('./version');
 
+// eslint-disable-next-line import/prefer-default-export
 export type CLIOptsType = {
   _: string[],
   [key:string]: boolean | string,

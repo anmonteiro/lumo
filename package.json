@@ -28,18 +28,24 @@
     "flow-bin": "^0.33.0",
     "jest-cli": "^16.0.1",
     "minimist": "^1.2.0",
-    "nexe": "github:jaredallard/nexe"
+    "nexe": "github:jaredallard/nexe",
+    "uglify-js": "^2.7.3"
   },
   "jest": {
     "verbose": true,
     "setupFiles": [
       "scripts/jest/environment.js"
     ],
-    "collectCoverageFrom" : [
+    "collectCoverageFrom": [
       "src/js/**/*.js"
     ],
     "coverageDirectory": "./coverage/",
-    "coveragePathIgnorePatterns": ["<rootDir>/lib", "<rootDir>/node_modules"],
-    "testPathDirs": ["src/js"]
+    "coveragePathIgnorePatterns": [
+      "<rootDir>/lib",
+      "<rootDir>/node_modules"
+    ],
+    "testPathDirs": [
+      "src/js"
+    ]
   }
 }
