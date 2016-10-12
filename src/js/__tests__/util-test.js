@@ -1,7 +1,8 @@
 /* flow */
 
+import { srcPathsFromClasspathStrings } from '../util';
+
 const os = require('os');
-const util = require('../util');
 
 describe('srcPathsFromClasspathStrings', () => {
   const homedir = os.homedir;
@@ -16,11 +17,11 @@ describe('srcPathsFromClasspathStrings', () => {
 
 
   it('splits multiple paths on \':\' ', () => {
-    expect(util.srcPathsFromClasspathStrings(['a:b', 'c:d', 'e'])).toEqual(['a', 'b', 'c', 'd', 'e']);
+    expect(srcPathsFromClasspathStrings(['a:b', 'c:d', 'e'])).toEqual(['a', 'b', 'c', 'd', 'e']);
   });
 
   it('expands ', () => {
-    const ret = util.srcPathsFromClasspathStrings(['a:~/b', '~/c:~/d']);
+    const ret = srcPathsFromClasspathStrings(['a:~/b', '~/c:~/d']);
     expect(ret).toEqual(['a', '/Users/foo/b', '/Users/foo/c', '/Users/foo/d']);
   });
 });

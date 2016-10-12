@@ -1,6 +1,6 @@
 /* flow */
 
-const cli = require('../cli');
+import * as cli from '../cli';
 
 const originalArgv = process.argv;
 

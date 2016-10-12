@@ -1,9 +1,10 @@
 /* @flow */
 
+import * as lumo from './lumo';
+
 import type { CLIOptsType } from './cli';
 
 const vm = require('vm');
-const lumo = require('./lumo');
 
 const cljsSrc = lumo.load('main.js');
 // $FlowFixMe: we know for sure this file will exist.

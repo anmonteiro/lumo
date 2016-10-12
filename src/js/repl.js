@@ -12,7 +12,7 @@ function prompt(p: string = `${cljs.currentNS()}=> `) {
   rl.prompt();
 }
 
-function startREPL(opts: CLIOptsType) {
+export default function startREPL(opts: CLIOptsType) {
   const dumbTerminal = opts['dumb-terminal'];
 
   rl = readline.createInterface({
@@ -47,7 +47,3 @@ function startREPL(opts: CLIOptsType) {
     prompt();
   });
 }
-
-module.exports = {
-  start: startREPL,
-};

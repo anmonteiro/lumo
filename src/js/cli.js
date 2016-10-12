@@ -1,8 +1,9 @@
 /* flow */
 
-const lumo = require('./lumo');
+import * as lumo from './lumo';
+import version from './version';
+
 const minimist = require('minimist');
-const version = require('./version');
 
 // eslint-disable-next-line import/prefer-default-export
 export type CLIOptsType = {
@@ -10,22 +11,22 @@ export type CLIOptsType = {
   [key:string]: boolean | string,
 };
 
-function getClojureScriptVersionString(): string {
+export function getClojureScriptVersionString(): string {
   return `ClojureScript ${lumo.load('clojurescript-version')}`;
 }
 
-function getVersionString(): string {
+export function getVersionString(): string {
   return `Lumo ${version}`;
 }
 
-function printBanner(): void {
+export function printBanner(): void {
   process.stdout.write(`${getVersionString()}
 ${getClojureScriptVersionString()}
  Exit: Control+D or :cljs/quit
 `);
 }
 
-function printHelp(): void {
+export function printHelp(): void {
   process.stdout.write(`${getVersionString()}
 Usage:  lumo [init-opt*] [main-opt] [arg*]
 
@@ -57,7 +58,7 @@ Usage:  lumo [init-opt*] [main-opt] [arg*]
 `);
 }
 
-function getCLIOpts(): CLIOptsType {
+export function getCLIOpts(): CLIOptsType {
   return minimist(process.argv.slice(2), {
     boolean: ['verbose', 'help', 'repl', 'auto-cache', 'quiet', 'dumb-terminal'],
     string: ['eval', 'cache', 'classpath'],
@@ -75,11 +76,3 @@ function getCLIOpts(): CLIOptsType {
     },
   });
 }
-
-module.exports = {
-  getCLIOpts,
-  printHelp,
-  getVersionString,
-  getClojureScriptVersionString,
-  printBanner,
-};

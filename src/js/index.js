@@ -1,11 +1,11 @@
 /* @flow */
 
-import type { CLIOptsType } from './cli';
+import * as cli from './cli';
+import * as lumo from './lumo';
+import startREPL from './repl';
+import * as util from './util';
 
-const cli = require('./cli');
-const lumo = require('./lumo');
-const repl = require('./repl');
-const util = require('./util');
+import type { CLIOptsType } from './cli';
 
 function processRuntimeOpts({ help, quiet, classpath, ...opts }: CLIOptsType): void {
   // if help, print help and bail
@@ -24,7 +24,7 @@ function processRuntimeOpts({ help, quiet, classpath, ...opts }: CLIOptsType): v
     lumo.setSourcePaths(srcPaths);
   }
 
-  return repl.start(opts);
+  return startREPL(opts);
 }
 
 function main(): void {

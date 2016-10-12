@@ -12,7 +12,7 @@ if (!__DEV__) {
   nexeres = require('nexeres'); // eslint-disable-line
 }
 
-function load(filename: string): ?string {
+export function load(filename: string): ?string {
   try {
     if (__DEV__) {
       return fs.readFileSync(`./target/${filename}`, 'utf8');
@@ -25,7 +25,7 @@ function load(filename: string): ?string {
   }
 }
 
-function readSource(filename: string): ?string {
+export function readSource(filename: string): ?string {
   for (const srcPath of sourcePaths) {
     try {
       return fs.readFileSync(path.join(srcPath, filename), 'utf8');
@@ -34,7 +34,7 @@ function readSource(filename: string): ?string {
   return null;
 }
 
-function readCache(filename: string): ?string {
+export function readCache(filename: string): ?string {
   try {
     return fs.readFileSync(filename, 'utf8');
   } catch (_) {
@@ -42,13 +42,6 @@ function readCache(filename: string): ?string {
   }
 }
 
-function setSourcePaths(srcPaths: string[]): void {
+export function setSourcePaths(srcPaths: string[]): void {
   sourcePaths = srcPaths;
 }
-
-module.exports = {
-  load,
-  readSource,
-  readCache,
-  setSourcePaths,
-};
