@@ -5,14 +5,7 @@ import type { CLIOptsType } from './cli';
 const cli = require('./cli');
 const lumo = require('./lumo');
 const repl = require('./repl');
-
-function srcPathsFromClasspathStrings(cpStrs: string[]): string[] {
-  return cpStrs.reduce((ret: string[], colonSepPaths: string) => {
-    const paths = colonSepPaths.split(':');
-
-    return ret.concat(paths);
-  }, []);
-}
+const util = require('./util');
 
 function processRuntimeOpts({ help, quiet, classpath, ...opts }: CLIOptsType): void {
   // if help, print help and bail
@@ -26,7 +19,7 @@ function processRuntimeOpts({ help, quiet, classpath, ...opts }: CLIOptsType): v
 
   if (classpath != null) {
     const cp = Array.isArray(classpath) ? classpath : [classpath];
-    const srcPaths = srcPathsFromClasspathStrings(cp);
+    const srcPaths = util.srcPathsFromClasspathStrings(cp);
 
     lumo.setSourcePaths(srcPaths);
   }
