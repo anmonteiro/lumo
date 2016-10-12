@@ -24,4 +24,9 @@ describe('srcPathsFromClasspathStrings', () => {
     const ret = srcPathsFromClasspathStrings(['a:~/b', '~/c:~/d']);
     expect(ret).toEqual(['a', '/Users/foo/b', '/Users/foo/c', '/Users/foo/d']);
   });
+
+  it('normalizes paths', () => {
+    const ret = srcPathsFromClasspathStrings(['a//c/x/:~//b', '~/c//']);
+    expect(ret).toEqual(['a/c/x/', '/Users/foo/b', '/Users/foo/c/']);
+  });
 });
