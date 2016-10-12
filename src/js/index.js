@@ -7,7 +7,9 @@ import * as util from './util';
 
 import type { CLIOptsType } from './cli';
 
-function processRuntimeOpts({ help, quiet, classpath, ...opts }: CLIOptsType): void {
+function processRuntimeOpts(opts: CLIOptsType): void {
+  const { help, quiet, classpath } = opts;
+
   // if help, print help and bail
   if (help) {
     return cli.printHelp();

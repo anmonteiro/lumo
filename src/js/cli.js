@@ -1,4 +1,4 @@
-/* flow */
+/* @flow */
 
 import * as lumo from './lumo';
 import version from './version';
@@ -8,10 +8,30 @@ const minimist = require('minimist');
 // eslint-disable-next-line import/prefer-default-export
 export type CLIOptsType = {
   _: string[],
+  verbose: boolean,
+  v: boolean,
+  help: boolean,
+  h: boolean,
+  '?': boolean,
+  repl: boolean,
+  r: boolean,
+  'auto-cache': boolean,
+  K: boolean,
+  quiet: boolean,
+  q: boolean,
+  'dumb-terminal': boolean,
+  d: boolean,
+  eval?: string | string[],
+  e?: string | string[],
+  cache?: string,
+  k?: string,
+  classpath?: string | string[],
+  c?: string | string[],
   [key:string]: boolean | string,
 };
 
 export function getClojureScriptVersionString(): string {
+  // $FlowFixMe: we know for sure this file will exist.
   return `ClojureScript ${lumo.load('clojurescript-version')}`;
 }
 

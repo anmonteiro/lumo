@@ -1,4 +1,4 @@
-/* flow */
+/* @flow */
 
 let lumo = require('../lumo');
 const fs = require('fs');

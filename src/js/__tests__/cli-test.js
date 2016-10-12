@@ -1,4 +1,4 @@
-/* flow */
+/* @flow */
 
 import * as cli from '../cli';
 

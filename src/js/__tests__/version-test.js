@@ -1,4 +1,4 @@
-/* flow */
+/* @flow */
 
 import version from '../version';
 

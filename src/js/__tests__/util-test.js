@@ -1,4 +1,4 @@
-/* flow */
+/* @flow */
 
 import { srcPathsFromClasspathStrings } from '../util';
 
