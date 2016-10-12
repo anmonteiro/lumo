@@ -1,3 +1,3 @@
 /* @flow */
 
-module.exports = '1.0.0-alpha';
+export default '1.0.0-alpha';
