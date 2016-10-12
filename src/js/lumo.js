@@ -3,6 +3,7 @@
 const fs = require('fs');
 const path = require('path');
 const zlib = require('zlib');
+const JSZip = require('jszip');
 
 let nexeres;
 let sourcePaths = [''];
@@ -25,9 +26,22 @@ export function load(filename: string): ?string {
   }
 }
 
+// TODO: cache JARs that we know have a given file / path
 export function readSource(filename: string): ?string {
   for (const srcPath of sourcePaths) {
     try {
+      if (srcPath.endsWith('.jar')) {
+        const data = fs.readFileSync(srcPath);
+        const zip = new JSZip().load(data);
+
+        const source = zip.file(filename);
+
+
+        if (source != null) {
+          return source.asText();
+        }
+      }
+
       return fs.readFileSync(path.join(srcPath, filename), 'utf8');
     } catch (_) {} // eslint-disable-line no-empty
   }

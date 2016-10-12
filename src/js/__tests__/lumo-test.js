@@ -4,6 +4,8 @@ let lumo = require('../lumo');
 const fs = require('fs');
 const zlib = require('zlib');
 
+jest.mock('jszip');
+
 describe('lumo', () => {
   const readFileSync = fs.readFileSync;
   beforeEach(() => {
@@ -74,8 +76,11 @@ describe('lumo', () => {
     });
   });
 
-
   describe('readSource', () => {
+    afterEach(() => {
+      lumo.setSourcePaths([]);
+    });
+
     it('cycles through the source paths', () => {
       const srcPaths = ['a', 'b', 'c'];
       lumo.setSourcePaths(srcPaths);
@@ -86,6 +91,26 @@ describe('lumo', () => {
       expect(mockCalls.length).toBe(3);
       // eslint-disable-next-line arrow-parens
       expect(mockCalls.map((x: string[]) => x[0])).toEqual(srcPaths.map((path: string) => `${path}/bar/baz`));
+    });
+
+    describe('reads JAR archives', () => {
+      it('should return the source when JAR has the source', () => {
+        const srcPaths = ['foo.jar'];
+        lumo.setSourcePaths(srcPaths);
+
+        const source = lumo.readSource('some/thing');
+
+        expect(source).toBe('zipContents');
+      });
+
+      it('should return null when the JAR doesn\'t have the source', () => {
+        const srcPaths = ['other.jar'];
+        lumo.setSourcePaths(srcPaths);
+
+        const source = lumo.readSource('some/thing');
+
+        expect(source).toBe(null);
+      });
     });
   });
 });

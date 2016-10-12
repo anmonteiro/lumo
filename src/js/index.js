@@ -19,6 +19,7 @@ function processRuntimeOpts(opts: CLIOptsType): void {
     cli.printBanner();
   }
 
+  // TODO: print classpath to stdout if `:verbose`
   if (classpath != null) {
     const cp = Array.isArray(classpath) ? classpath : [classpath];
     const srcPaths = util.srcPathsFromClasspathStrings(cp);
