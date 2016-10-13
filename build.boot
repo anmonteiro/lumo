@@ -29,9 +29,9 @@
     (let [nm (io/file "node_modules")]
       (if-not (and (.exists nm) (.isDirectory nm))
         (do
-          (util/info "Installing node dependencies with `npm install`\n")
-          (dosh "npm" "install"))
-        (util/info "Node dependencies already installed, skipping `npm install`\n")))))
+          (util/info "Installing node dependencies with `yarn install`\n")
+          (dosh "yarn" "install"))
+        (util/info "Node dependencies already installed, skipping `yarn install`\n")))))
 
 (deftask bundle-js
   [d dev     bool  "Development build"]
