@@ -13,10 +13,10 @@ function getDirContents(dir, accumPath = dir) {
     if (fStat.isDirectory()) {
       const newAccum = path.join(accumPath, filename);
       return ret.concat(getDirContents(newAccum, newAccum));
-    } else {
-      ret.push(path.join(accumPath, filename));
-      return ret;
     }
+
+    ret.push(path.join(accumPath, filename));
+    return ret;
   }, []);
 };
 
@@ -27,14 +27,14 @@ function deflate(fname) {
 
 const outputPath = 'main';
 const resources = getDirContents('target')
-  .filter((fname) => fname.endsWith('.json') ||
-          /(clojurescript-version|main\.js)/.test(fname) ||
-          /\$macros\.js$/.test(fname));
+      .filter(fname => fname.endsWith('.json') ||
+              /(clojurescript-version|main\.js)/.test(fname) ||
+              /\$macros\.js$/.test(fname));
 
 resources.forEach(deflate);
 
 nexe.compile({
-  input: 'target/bundle.js',
+  input: 'target/bundle.min.js',
   output: outputPath,
   nodeTempDir: 'tmp',
   nodeConfigureArgs: ['opt', 'val'], // for all your configure arg needs.
@@ -50,7 +50,7 @@ nexe.compile({
   jsFlags: '--use_strict', // v8 flags
   framework: 'node',
   nodeVersion: '6.8.0',
-}, function(err) {
+}, err => {
   if (err) {
     throw err;
   }
