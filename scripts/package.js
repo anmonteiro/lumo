@@ -49,7 +49,7 @@ nexe.compile({
   flags: true, // use this for applications that need command line flags.
   jsFlags: '--use_strict', // v8 flags
   framework: 'node',
-  nodeVersion: '6.7.0',
+  nodeVersion: '6.8.0',
 }, function(err) {
   if (err) {
     throw err;
