@@ -9,7 +9,6 @@ const vm = require('vm');
 const cljsSrc = lumo.load('main.js');
 // $FlowFixMe: we know for sure this file will exist.
 const cljsScript = new vm.Script(cljsSrc, {});
-const defaultCachePath = '.lumo_cache';
 
 function newContext() {
   const context: Object = {
@@ -43,12 +42,10 @@ function getCurrentNS(): string {
 }
 
 function setRuntimeOpts(opts: CLIOptsType) {
-  const autoCache = opts['auto-cache'];
-  const { verbose, cache } = opts;
-  const cachePath = cache || (autoCache ? defaultCachePath : null);
+  const { cache, verbose } = opts;
 
   // $FlowIssue: context can have globals
-  defaultContext.lumo.repl.init(verbose, cachePath);
+  defaultContext.lumo.repl.init(verbose, cache);
 }
 
 module.exports = {

@@ -59,18 +59,6 @@
   [filename data cb]
   (.writeFile fs filename data "utf-8" #(cb %)))
 
-(defn- ensure-dir
-  [path cb]
-  (.stat fs path
-    (fn [err stats]
-      (cond
-        err (.mkdir fs path #(cb))
-
-        (not (.isDirectory stats))
-        (throw (ex-info (str "Cache path `" path "` exists but is not a directory.") {}))
-
-        :else (cb)))))
-
 ;; =============================================================================
 ;; Dependency loading
 
@@ -262,14 +250,12 @@
 
 (defn- write-cache
   [name path source cache prefix-path]
-  (ensure-dir prefix-path
-    (fn []
-      (let [macros? (macros-cache? cache)
-            filename-prefix (str prefix-path "/" (munge path) (when macros? MACROS_SUFFIX))
-            cache-json (cljs->transit-json cache)
-            cb #(when % (handle-caching-error %))]
-        (write-file (str filename-prefix JS_EXT) source cb)
-        (write-file (str filename-prefix ".cache.json") cache-json cb)))))
+  (let [macros? (macros-cache? cache)
+        filename-prefix (str prefix-path "/" (munge path) (when macros? MACROS_SUFFIX))
+        cache-json (cljs->transit-json cache)
+        cb #(when % (handle-caching-error %))]
+    (write-file (str filename-prefix JS_EXT) source cb)
+    (write-file (str filename-prefix ".cache.json") cache-json cb)))
 
 (defn- caching-node-eval
   "Evaluates JavaScript in node, writing source and analysis cache to disk

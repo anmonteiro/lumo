@@ -7,8 +7,10 @@ import * as util from './util';
 
 import type { CLIOptsType } from './cli';
 
-function processRuntimeOpts(opts: CLIOptsType): void {
-  const { help, quiet, classpath } = opts;
+function processRuntimeOpts(cliOpts: CLIOptsType): void {
+  const opts = { ...cliOpts };
+  const { cache, classpath, help, quiet, verbose } = opts;
+  const autoCache = opts['auto-cache'];
 
   // if help, print help and bail
   if (help) {
@@ -17,6 +19,13 @@ function processRuntimeOpts(opts: CLIOptsType): void {
 
   if (!quiet) {
     cli.printBanner();
+  }
+
+  if (cache || autoCache) {
+    const cachePath = cache || '.lumo_cache';
+    util.ensureDir(cachePath);
+
+    opts.cache = cachePath;
   }
 
   // TODO: print classpath to stdout if `:verbose`

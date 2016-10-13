@@ -1,5 +1,6 @@
 /* @flow */
 
+const fs = require('fs');
 const os = require('os');
 const path = require('path');
 
@@ -15,4 +16,17 @@ export function srcPathsFromClasspathStrings(cpStrs: string[]): string[] {
 
     return ret.concat(paths.map(expandPath).map(path.normalize));
   }, []);
+}
+
+/* eslint-disable consistent-return */
+export function ensureDir(dir: string): void {
+  if (!fs.existsSync(dir)) {
+    return fs.mkdirSync(dir);
+  }
+
+  const stats = fs.statSync(dir);
+
+  if (!stats.isDirectory()) {
+    throw new Error(`${dir} exists but is not a directory.`);
+  }
 }
