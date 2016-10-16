@@ -56,6 +56,14 @@ export function readCache(filename: string): ?string {
   }
 }
 
+export function writeCache(filename: string, source: string): ?Error {
+  try {
+    return fs.writeFileSync(filename, source, 'utf8');
+  } catch (e) {
+    return e;
+  }
+}
+
 export function setSourcePaths(srcPaths: string[]): void {
   sourcePaths = srcPaths;
 }

@@ -8,14 +8,12 @@
                  [com.cognitect/transit-clj   "0.8.290"        :scope "test"]
                  [com.cemerick/piggieback     "0.2.1"          :scope "test"]
                  [adzerk/boot-cljs            "1.7.228-1"      :scope "test"]
-                 [adzerk/boot-cljs-repl       "0.3.3"          :scope "test"]
                  [adzerk/boot-reload          "0.4.12"         :scope "test"]
                  [org.clojure/tools.nrepl     "0.2.12"         :scope "test"]
                  [weasel                      "0.7.0"          :scope "test"]])
 
 (require
  '[adzerk.boot-cljs      :refer [cljs]]
- '[adzerk.boot-cljs-repl :refer [cljs-repl-env start-repl]]
  '[adzerk.boot-reload    :refer [reload]]
  '[boot.util             :as util]
  '[clojure.edn           :as edn]
@@ -92,6 +90,10 @@
     (target)
     (bundle-js :dev true)))
 
+(deftask prepare-snapshot []
+  (with-pass-thru _
+    (dosh "node" "scripts/prepare_snapshot.js")))
+
 (deftask package-executable []
   (with-pass-thru _
     (dosh "node" "scripts/package")))
@@ -127,6 +129,7 @@
     (cache-edn->transit)
     (target)
     (bundle-js)
+    (prepare-snapshot)
     (backup-resources)
     ;; Package first stage binary
     (package-executable)

@@ -3,7 +3,6 @@
   (:require [cljs.analyzer :as ana]
             [cljs.env :as env]
             [cljs.js :as cljs]
-            [cljs.nodejs :as nodejs]
             [cljs.reader :as reader]
             [cljs.tools.reader :as r]
             [cljs.tools.reader.reader-types :as rt]
@@ -24,9 +23,6 @@
 (def ^:private ^:const MACROS_SUFFIX "$macros")
 (def ^:private ^:const JS_EXT ".js")
 (def ^:private ^:const JSON_EXT ".json")
-
-(def fs (nodejs/require "fs"))
-(def vm (nodejs/require "vm"))
 
 ;; =============================================================================
 ;; Analysis cache
@@ -51,13 +47,6 @@
 (defn- load-core-analysis-caches []
   (load-core-analysis-cache 'cljs.core "cljs/core.cljs.cache.aot")
   (load-core-analysis-cache 'cljs.core$macros "cljs/core$macros.cljc.cache"))
-
-;; =============================================================================
-;; Node.js filesystem API bridging
-
-(defn- write-file
-  [filename data cb]
-  (.writeFile fs filename data "utf-8" #(cb %)))
 
 ;; =============================================================================
 ;; Dependency loading
@@ -250,12 +239,14 @@
 
 (defn- write-cache
   [name path source cache prefix-path]
-  (let [macros? (macros-cache? cache)
-        filename-prefix (str prefix-path "/" (munge path) (when macros? MACROS_SUFFIX))
-        cache-json (cljs->transit-json cache)
-        cb #(when % (handle-caching-error %))]
-    (write-file (str filename-prefix JS_EXT) source cb)
-    (write-file (str filename-prefix ".cache.json") cache-json cb)))
+  (letfn [(wrap-error [err]
+            (when err
+              (handle-caching-error err)))]
+    (let [macros? (macros-cache? cache)
+          filename-prefix (str prefix-path "/" (munge path) (when macros? MACROS_SUFFIX))
+          cache-json (cljs->transit-json cache)]
+      (wrap-error (js/LUMO_WRITE_CACHE (str filename-prefix JS_EXT) source))
+      (wrap-error (js/LUMO_WRITE_CACHE (str filename-prefix ".cache.json") cache-json)))))
 
 (defn- caching-node-eval
   "Evaluates JavaScript in node, writing source and analysis cache to disk
@@ -263,9 +254,7 @@
   [{:keys [name source cache path] :as m}]
   (when-let [cache-path (and source cache path (:cache-path @app-opts))]
     (write-cache name path source cache cache-path))
-  (if-not js/COMPILED
-    (.runInThisContext vm source (str (munge name) JS_EXT))
-    (js/eval source)))
+  (js/eval source))
 
 ;; =============================================================================
 ;; REPL plumbing

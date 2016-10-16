@@ -28,7 +28,7 @@ function deflate(fname) {
 const outputPath = 'main';
 const resources = getDirContents('target')
       .filter(fname => fname.endsWith('.json') ||
-              /(clojurescript-version|main\.js)/.test(fname) ||
+              /clojurescript-version/.test(fname) ||
               /\$macros\.js$/.test(fname));
 
 resources.forEach(deflate);
@@ -39,7 +39,7 @@ nexe.compile({
   nodeTempDir: 'tmp',
   nodeConfigureArgs: ['opt', 'val'], // for all your configure arg needs.
   // nodeMakeArgs: ["-j", "4"], // when you want to control the make process.
-  nodeVCBuildArgs: ['nosign', 'x64'], // when you want to control the make process for windows.
+  // nodeVCBuildArgs: ['nosign', 'x64'], // when you want to control the make process for windows.
   // By default "nosign" option will be specified
   // You can check all available options and its default values here:
   // https://github.com/nodejs/node/blob/master/vcbuild.bat
@@ -48,8 +48,9 @@ nexe.compile({
   resourceRoot: 'target',
   flags: true, // use this for applications that need command line flags.
   jsFlags: '--use_strict', // v8 flags
+  startupSnapshot: 'target/main.js',
   framework: 'node',
-  nodeVersion: '6.8.0',
+  nodeVersion: '6.8.1',
 }, err => {
   if (err) {
     throw err;

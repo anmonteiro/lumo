@@ -6,28 +6,47 @@ import type { CLIOptsType } from './cli';
 
 const vm = require('vm');
 
-const cljsSrc = lumo.load('main.js');
-// $FlowFixMe: we know for sure this file will exist.
-const cljsScript = new vm.Script(cljsSrc, {});
+let newContext;
 
-function newContext() {
-  const context: Object = {
-    module,
-    require,
-    process,
-    console,
-    LUMO_LOAD: lumo.load,
-    LUMO_READ_CACHE: lumo.readCache,
-    LUMO_READ_SOURCE: lumo.readSource,
+if (__DEV__) {
+  const cljsSrc = lumo.load('main.js');
+  // $FlowFixMe: we know for sure this file will exist.
+  const cljsScript = new vm.Script(cljsSrc, {});
+
+  newContext = function newCtx() {
+    const context: Object = {
+      module,
+      require,
+      process,
+      console,
+      LUMO_LOAD: lumo.load,
+      LUMO_READ_CACHE: lumo.readCache,
+      LUMO_READ_SOURCE: lumo.readSource,
+    };
+
+    context.global = context;
+
+    const ctx = vm.createContext(context);
+    cljsScript.runInContext(ctx);
+    return ctx;
   };
+} else {
+  newContext = function newCtx() {
+    global.LUMO_LOAD = lumo.load;
+    global.LUMO_READ_CACHE = lumo.readCache;
+    global.LUMO_READ_SOURCE = lumo.readSource;
+    global.LUMO_WRITE_CACHE = lumo.writeCache;
 
-  context.global = context;
-  const ctx = vm.createContext(context);
-  cljsScript.runInContext(ctx);
-  return ctx;
+    return global;
+  };
 }
 
 const defaultContext = newContext();
+
+if (!__DEV__) {
+  // $FlowExpectedError: only exists in the custom V8 startup snapshot
+  initialize(); // eslint-disable-line no-undef
+}
 
 function evalInContext(code: string) {
   if (/\S/.test(code)) {
