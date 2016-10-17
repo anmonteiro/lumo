@@ -48,6 +48,11 @@ if (!__DEV__) {
   initialize(); // eslint-disable-line no-undef
 }
 
+// $FlowIssue: context can have globals
+defaultContext.cljs.user = {};
+// $FlowIssue: context can have globals
+defaultContext.cljs.nodejs.enable_util_print_BANG_(); // eslint-disable-line no-underscore-dangle
+
 function evalInContext(code: string) {
   if (/\S/.test(code)) {
     // $FlowIssue: context can have globals

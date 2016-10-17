@@ -1,9 +1,7 @@
 const fs = require('fs');
-const spawn = require( 'child_process' ).spawnSync;
 
-var x = fs.readFileSync('target/main.js', 'utf8');
+const x = fs.readFileSync('target/main.js', 'utf8');
 
-// Assumes the `cljs.nodejs` namespace is at the end of the file
-var str = x.split(/(?=cljs.nodejs={})/, 2);
+const str = x.replace(/(cljs\.nodejs={};[\s\S]+?a;return b}\(\);return null};)/, 'this.initialize=(function(){$1});');
 
-fs.writeFileSync('target/main.js', str.join('\nthis.initialize=(function(){') + '});', 'utf8');
+fs.writeFileSync('target/main.js', str.replace(/var boot={cljs:{}};[\s\S]+?not set"\);/, ''), 'utf8');
