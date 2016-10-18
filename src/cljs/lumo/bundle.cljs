@@ -4,6 +4,7 @@
     clojure.core.reducers
     clojure.zip
     clojure.data
+    cljs.nodejs
     cljs.pprint
     cljs.spec
     cljs.test
@@ -57,8 +58,7 @@
     goog.format
     goog.format.EmailAddress
     goog.format.HtmlPrettyPrinter
-    ;; Nexe doesn't like the regexes in this one:
-    ;; goog.format.InternationalizedEmailAddress
+    goog.format.InternationalizedEmailAddress
     goog.format.JsonPrettyPrinter
     goog.i18n.BidiFormatter
     goog.i18n.CharListDecompressor
