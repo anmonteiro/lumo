@@ -8,6 +8,7 @@
             [cljs.tools.reader.reader-types :as rt]
             [clojure.string :as string]
             [cognitect.transit :as transit]
+            [lumo.js-deps :as deps]
             [lumo.repl-resources :refer [repl-special-doc-map]]))
 
 ;; =============================================================================
@@ -149,6 +150,15 @@
          :cache (transit-json->cljs cache-json)})
     :loaded))
 
+;; TODO: we could be smarter and only load the libs that we haven't already loaded
+(defn- load-foreign-lib
+  [name cb]
+  (let [files (deps/files-to-load name)
+        sources (map js/LUMO_READ_SOURCE files)]
+    (println "loading" cljs/*loaded*)
+    (cb {:lang :js
+         :source (string/join "\n" sources)})))
+
 ;; TODO: can be optimized e.g. to just analyze CLJ source
 ;; if JS present but no analysis cache
 (defn- load-external
@@ -199,6 +209,9 @@
       bundled-source
       ;; bundled source are AOTed macros which don't have the `.clj[sc]*` extension
       (load-bundled bundled-src-prefix bundled-source cb)
+
+      (deps/foreign-lib? name)
+      (load-foreign-lib name cb)
 
       :else
       (load-external path file-path macros? cb))))
@@ -405,4 +418,5 @@
 (defn ^:export init [verbose cache-path]
   (vreset! app-opts {:verbose verbose
                      :cache-path cache-path})
-  (load-core-analysis-caches))
+  (load-core-analysis-caches)
+  (deps/index-upstream-foreign-libs))

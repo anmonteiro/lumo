@@ -33,9 +33,7 @@ export function readSource(filename: string): ?string {
       if (srcPath.endsWith('.jar')) {
         const data = fs.readFileSync(srcPath);
         const zip = new JSZip().load(data);
-
         const source = zip.file(filename);
-
 
         if (source != null) {
           return source.asText();
@@ -62,6 +60,23 @@ export function writeCache(filename: string, source: string): ?Error {
   } catch (e) {
     return e;
   }
+}
+
+export function loadUpstreamForeignLibs(): string[] {
+  let ret = [];
+
+  for (const srcPath of sourcePaths) {
+    if (srcPath.endsWith('.jar')) {
+      const data = fs.readFileSync(srcPath);
+      const zip = new JSZip().load(data);
+      const source = zip.file('deps.cljs');
+
+      if (source != null) {
+        ret.push(source.asText());
+      }
+    }
+  }
+  return ret;
 }
 
 export function setSourcePaths(srcPaths: string[]): void {

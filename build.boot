@@ -8,17 +8,43 @@
                  [com.cognitect/transit-clj   "0.8.290"        :scope "test"]
                  [com.cemerick/piggieback     "0.2.1"          :scope "test"]
                  [adzerk/boot-cljs            "1.7.228-1"      :scope "test"]
+                 [crisptrutski/boot-cljs-test "0.2.2-SNAPSHOT" :scope "test"]
                  [org.clojure/tools.nrepl     "0.2.12"         :scope "test"]
                  [weasel                      "0.7.0"          :scope "test"]])
 
 (require
  '[adzerk.boot-cljs      :refer [cljs]]
+ '[crisptrutski.boot-cljs-test :refer [test-cljs]]
  '[boot.util             :as util]
  '[clojure.edn           :as edn]
  '[clojure.java.io       :as io]
  '[cognitect.transit     :as transit])
 
 (import [java.io ByteArrayOutputStream FileInputStream])
+
+(deftask testing []
+  (set-env! :source-paths #(conj % "test"))
+  identity)
+
+(ns-unmap 'boot.user 'test)
+
+(deftask test
+  [e exit?     bool  "Enable flag."]
+  (let [exit? (cond-> exit?
+                (nil? exit?) not)]
+    (comp
+      (testing)
+      (test-cljs
+        :js-env :node
+        :namespaces #{'lumo.js-deps-tests}
+        :cljs-opts {:parallel-build true}
+        :exit? exit?))))
+
+(deftask auto-test []
+  (comp
+    (watch)
+    (speak)
+    (test :exit? false)))
 
 (deftask check-node-modules []
   (with-pass-thru _

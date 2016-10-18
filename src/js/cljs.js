@@ -22,6 +22,7 @@ if (__DEV__) {
       LUMO_LOAD: lumo.load,
       LUMO_READ_CACHE: lumo.readCache,
       LUMO_READ_SOURCE: lumo.readSource,
+      LUMO_LOAD_UPS_DEPS_CLJS: lumo.loadUpstreamForeignLibs,
     };
 
     context.global = context;
@@ -36,6 +37,7 @@ if (__DEV__) {
     global.LUMO_READ_CACHE = lumo.readCache;
     global.LUMO_READ_SOURCE = lumo.readSource;
     global.LUMO_WRITE_CACHE = lumo.writeCache;
+    global.LUMO_LOAD_UPS_DEPS_CLJS = lumo.loadUpstreamForeignLibs;
 
     return global;
   };
