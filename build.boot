@@ -2,19 +2,17 @@
  :source-paths    #{"src/cljs"}
  :resource-paths #{"src/js"}
  :dependencies '[[org.clojure/clojure        "1.9.0-alpha13"]
-                 [org.clojure/clojurescript   "1.9.277"]
+                 [org.clojure/clojurescript   "1.9.288"]
                  [org.clojure/tools.reader    "1.0.0-beta3"]
                  [com.cognitect/transit-cljs  "0.8.239"]
                  [com.cognitect/transit-clj   "0.8.290"        :scope "test"]
                  [com.cemerick/piggieback     "0.2.1"          :scope "test"]
                  [adzerk/boot-cljs            "1.7.228-1"      :scope "test"]
-                 [adzerk/boot-reload          "0.4.12"         :scope "test"]
                  [org.clojure/tools.nrepl     "0.2.12"         :scope "test"]
                  [weasel                      "0.7.0"          :scope "test"]])
 
 (require
  '[adzerk.boot-cljs      :refer [cljs]]
- '[adzerk.boot-reload    :refer [reload]]
  '[boot.util             :as util]
  '[clojure.edn           :as edn]
  '[clojure.java.io       :as io]
@@ -78,7 +76,7 @@
                              :optimizations :simple
                              :main 'lumo.core
                              :cache-analysis true
-                             :source-map nil
+                             :source-map false
                              :dump-core false
                              :static-fns true
                              :optimize-constants true
@@ -118,7 +116,7 @@
                              :optimizations :simple
                              :main 'lumo.core
                              :cache-analysis true
-                             :source-map nil
+                             :source-map false
                              :dump-core false
                              :static-fns true
                              :optimize-constants true
