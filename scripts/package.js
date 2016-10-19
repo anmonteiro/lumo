@@ -50,7 +50,7 @@ nexe.compile({
   jsFlags: '--use_strict', // v8 flags
   startupSnapshot: 'target/main.js',
   framework: 'node',
-  nodeVersion: '6.8.1',
+  nodeVersion: '6.9.0',
 }, err => {
   if (err) {
     throw err;

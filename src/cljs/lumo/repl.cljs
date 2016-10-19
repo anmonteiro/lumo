@@ -118,7 +118,10 @@
         clojure.set
         clojure.zip
         clojure.walk
-        cognitect.transit} name)))
+        cognitect.transit
+        lumo.repl
+        lumo.repl-resources
+        lumo.js-deps} name)))
 
 (defn- skip-load?
   [name macros?]
@@ -155,7 +158,6 @@
   [name cb]
   (let [files (deps/files-to-load name)
         sources (map js/LUMO_READ_SOURCE files)]
-    (println "loading" cljs/*loaded*)
     (cb {:lang :js
          :source (string/join "\n" sources)})))
 
