@@ -8,9 +8,10 @@
   "dependencies": {
     "jszip": "2.6.1",
     "minimist": "^1.2.0",
+    "readline-history": "^1.2.0",
     "uglify-js": "^2.7.3"
   },
-  "devDependencies" : {
+  "devDependencies": {
     "babel-core": "^6.17.0",
     "babel-eslint": "^7.0.0",
     "babel-jest": "^16.0.0",
