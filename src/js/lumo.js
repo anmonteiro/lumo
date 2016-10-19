@@ -63,7 +63,7 @@ export function writeCache(filename: string, source: string): ?Error {
 }
 
 export function loadUpstreamForeignLibs(): string[] {
-  let ret = [];
+  const ret = [];
 
   for (const srcPath of sourcePaths) {
     if (srcPath.endsWith('.jar')) {

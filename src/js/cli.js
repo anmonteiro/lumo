@@ -1,6 +1,8 @@
 /* @flow */
 
+import startClojureScriptEngine from './cljs';
 import * as lumo from './lumo';
+import * as util from './util';
 import version from './version';
 
 const minimist = require('minimist');
@@ -21,6 +23,8 @@ export type CLIOptsType = {
   q: boolean,
   'dumb-terminal': boolean,
   d: boolean,
+  init?: string | string[],
+  i?: string | string[],
   eval?: string | string[],
   e?: string | string[],
   cache?: string,
@@ -30,23 +34,23 @@ export type CLIOptsType = {
   [key:string]: boolean | string,
 };
 
-export function getClojureScriptVersionString(): string {
+function getClojureScriptVersionString(): string {
   // $FlowFixMe: we know for sure this file will exist.
   return `ClojureScript ${lumo.load('clojurescript-version')}`;
 }
 
-export function getVersionString(): string {
+function getVersionString(): string {
   return `Lumo ${version}`;
 }
 
-export function printBanner(): void {
+function printBanner(): void {
   process.stdout.write(`${getVersionString()}
 ${getClojureScriptVersionString()}
  Exit: Control+D or :cljs/quit
 `);
 }
 
-export function printHelp(): void {
+function printHelp(): void {
   process.stdout.write(`${getVersionString()}
 Usage:  lumo [init-opt*] [main-opt] [arg*]
 
@@ -78,7 +82,7 @@ Usage:  lumo [init-opt*] [main-opt] [arg*]
 `);
 }
 
-export function getCLIOpts(): CLIOptsType {
+function getCLIOpts(): CLIOptsType {
   return minimist(process.argv.slice(2), {
     boolean: ['verbose', 'help', 'repl', 'auto-cache', 'quiet', 'dumb-terminal'],
     string: ['eval', 'cache', 'classpath'],
@@ -87,6 +91,7 @@ export function getCLIOpts(): CLIOptsType {
       v: 'verbose',
       h: 'help',
       '?': 'help',
+      i: 'init',
       e: 'eval',
       r: 'repl',
       K: 'auto-cache',
@@ -95,4 +100,70 @@ export function getCLIOpts(): CLIOptsType {
       d: 'dumb-terminal',
     },
   });
+}
+
+function addScriptsType(scripts: string[] | string, type: string): [string, string][] {
+  // eslint-disable-next-line arrow-parens
+  return util.ensureArray(scripts).map((script: string) => [type, script]);
+}
+
+function processOpts(cliOpts: CLIOptsType): Object {
+  const opts = { ...cliOpts };
+  const { cache, classpath, init, repl } = opts;
+  const evl = opts.eval;
+  const autoCache = opts['auto-cache'];
+  const scripts = [];
+
+  if (cache || autoCache) {
+    const cachePath = cache || '.lumo_cache';
+    util.ensureDir(cachePath);
+
+    opts.cache = cachePath;
+  }
+
+  // TODO: print classpath to stdout if `:verbose`
+  if (classpath != null) {
+    // if (verbose) {
+    //   console.log(`Classpath resolves to: `);
+    // }
+
+    const cp = util.ensureArray(classpath);
+    const srcPaths = util.srcPathsFromClasspathStrings(cp);
+
+    lumo.setSourcePaths(srcPaths);
+  }
+
+  // process scripts (--eval and --init)
+  // TODO: these should be processed in order.
+  // atm --init foo.cljs --eval :foo --init bar.cljs will be executed in this order:
+  // foo.cljs -> bar.cljs -> :foo
+  // we want: foo.cljs -> :foo -> bar.cljs
+  if (init != null) {
+    scripts.push(...addScriptsType(init, 'path'));
+  }
+
+  if (evl != null) {
+    scripts.push(...addScriptsType(evl, 'text'));
+  }
+
+  opts.repl = scripts.length === 0 || repl;
+  opts.scripts = scripts;
+
+  return opts;
+}
+
+export default function startCLI(): void {
+  const opts = processOpts(getCLIOpts());
+  const { help, repl, quiet } = opts;
+
+  // if help, print help and bail
+  if (help) {
+    return printHelp();
+  }
+
+  if (repl && !quiet) {
+    printBanner();
+  }
+
+  return startClojureScriptEngine(opts);
 }

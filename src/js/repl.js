@@ -1,13 +1,14 @@
 /* @flow */
 
+import * as cljs from './cljs';
+
 import type { CLIOptsType } from './cli';
 
 const readline = require('readline');
 
 let rl;
-let cljs;
 
-function prompt(p: string = `${cljs.currentNS()}=> `) {
+export function prompt(p: string = `${cljs.getCurrentNamespace()}=> `) {
   rl.setPrompt(p);
   rl.prompt();
 }
@@ -23,12 +24,8 @@ export default function startREPL(opts: CLIOptsType) {
 
   prompt('cljs.user=> ');
 
-  // eslint-disable-next-line global-require
-  cljs = require('./cljs');
-  cljs.setRuntimeOpts(opts);
-
   rl.on('line', (line: string) => {
-    cljs.eval(line);
+    cljs.execute(line);
     prompt();
   });
 

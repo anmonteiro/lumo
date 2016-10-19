@@ -202,10 +202,9 @@
   [name path file-path macros? cb]
   (let [bundled-src-prefix (cond-> path
                              macros? (str MACROS_SUFFIX))
-        bundled-source (js/LUMO_LOAD (str bundled-src-prefix JS_EXT))
-        skip-load-js? (skip-load-js? name macros?)]
+        bundled-source (js/LUMO_LOAD (str bundled-src-prefix JS_EXT))]
     (cond
-      skip-load-js?
+      (skip-load-js? name macros?)
       (load-bundled file-path "" cb)
 
       bundled-source
@@ -226,7 +225,6 @@
       (cb nil))))
 
 (defn- load-file* [filename cb]
-  (println "loading file" filename)
   (when-not (load-and-cb! nil filename filename false cb)
     (cb nil)))
 
@@ -277,9 +275,7 @@
 (defn make-eval-opts []
   {:ns            @current-ns
    :verbose       (:verbose @app-opts)
-   :static-fns    false
-   :context       :expr
-   :def-emits-var true})
+   :static-fns    false})
 
 (defn- ^:boolean could-not-eval? [msg]
   (boolean (re-find could-not-eval-regex msg)))
@@ -328,38 +324,40 @@
   "Wrap wfn around all (fn) values in fns hashmap."
   (into {} (for [[k v] fns] [k (wfn v)])))
 
-(declare eval-source)
+(declare execute execute-source)
+
+(defn- execute-path [filename opts]
+  (load {:file filename}
+    (fn [{:keys [lang source cache]}]
+      (if source
+        (execute-source source (assoc opts :type "text"))
+        (handle-repl-error (ex-info (str "Could not load file " filename) {}))))))
 
 (def ^:private repl-special-fns
   (let [load-file-fn
         (fn self
-          ([[_ file :as form]]
-           (load {:file file}
-             (fn [{:keys [lang source cache]}]
-               (if source
-                 (eval-source source)
-                 (handle-repl-error (ex-info (str "Could not load file " file) {})))))))
+          ([[_ file :as form] opts]
+           (execute-path file (assoc opts :expression? false))))
         in-ns-fn
         (fn self
-          ([[_ maybe-quoted :as form]]
-           (let [eval-opts (make-eval-opts)]
-             (cljs/eval st maybe-quoted eval-opts
-               (fn [{:keys [error value]}]
-                 (if error
-                   (handle-repl-error error)
-                   (let [ns-name value]
-                     (if-not (symbol? ns-name)
-                       (binding [*print-fn* *print-err-fn*]
-                         (println "Argument to in-ns must be a symbol."))
-                       (if (ana/get-namespace ns-name)
-                         (vreset! current-ns ns-name)
-                         ;; TODO: REPL requires
-                         (let [ns-form `(~'ns ~ns-name)]
-                           (cljs/eval st ns-form eval-opts
-                             (fn [{:keys [error value]}]
-                               (if error
-                                 (handle-repl-error error)
-                                 (vreset! current-ns ns-name))))))))))))))]
+          ([[_ maybe-quoted :as form] opts]
+           (cljs/eval st maybe-quoted opts
+             (fn [{:keys [error value]}]
+               (if error
+                 (handle-repl-error error)
+                 (let [ns-name value]
+                   (if-not (symbol? ns-name)
+                     (binding [*print-fn* *print-err-fn*]
+                       (println "Argument to in-ns must be a symbol."))
+                     (if (ana/get-namespace ns-name)
+                       (vreset! current-ns ns-name)
+                       ;; TODO: REPL requires
+                       (let [ns-form `(~'ns ~ns-name)]
+                         (cljs/eval st ns-form opts
+                           (fn [{:keys [error value]}]
+                             (if error
+                               (handle-repl-error error)
+                               (vreset! current-ns ns-name)))))))))))))]
     (wrap-special-fns wrap-self
       {'in-ns in-ns-fn
        'clojure.core/in-ns in-ns-fn
@@ -387,10 +385,8 @@
   (let [reader (rt/string-push-back-reader source)]
     (r/read {:read-cond :allow :features #{:cljs}} reader)))
 
-;; TODO: need to separate execution paths of coming from the REPL vs. not
-;; wrt. to special fns visibility (which must not be seen when executing a source file)
-(defn ^:export eval-source
-  [source-str]
+(defn- execute-text
+  [source {:keys [expression?] :as opts}]
   (binding [cljs/*eval-fn*   caching-node-eval
             cljs/*load-fn*   load
             ana/*cljs-ns*    @current-ns
@@ -398,24 +394,47 @@
             env/*compiler*   st
             r/resolve-symbol ana/resolve-symbol
             r/*alias-map*    (current-alias-map)]
-    (let [form (repl-read-string source-str)]
+    (let [form (repl-read-string source)]
       (if (repl-special? form)
-        ((get repl-special-fns (first form)) form)
+        ((get repl-special-fns (first form)) form opts)
         (cljs/eval-str
           st
-          source-str
-          source-str
-          (make-eval-opts)
+          source
+          source
+          (merge (make-eval-opts)
+            (when expression?
+              {:context :expr
+               :def-emits-var true}))
           (fn [{:keys [ns value error] :as ret}]
             (if-not error
               (do
-                (println (pr-str value))
+                (when expression?
+                  (println (pr-str value)))
                 (vreset! current-ns ns))
               (handle-repl-error error)))))))
   nil)
 
+(defn- execute-source
+  [source-or-path {:keys [type] :as opts}]
+  (if-not (= type "text")
+    (execute-path source-or-path opts)
+    (execute-text source-or-path opts)))
+
+;; TODO: need to separate execution paths of coming from the REPL vs. not
+;; wrt. to special fns visibility (which must not be seen when executing a source file)
+(defn ^:export execute
+  [type source-or-path expression? setNS]
+  (when setNS
+    (vreset! current-ns (symbol setNS)))
+  (execute-source source-or-path {:type type
+                                  :expression? expression?}))
+
 (defn ^:export get-current-ns []
   @current-ns)
+
+(defn ^:export set-ns [ns-str]
+  (vreset! current-ns (symbol ns-str)))
+
 
 (defn ^:export init [verbose cache-path]
   (vreset! app-opts {:verbose verbose

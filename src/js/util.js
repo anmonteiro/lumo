@@ -8,8 +8,6 @@ function expandPath(somePath: string): string {
   return somePath.startsWith('~') ? somePath.replace(/^~/, os.homedir) : somePath;
 }
 
-// this module will most probably include more exports
-// eslint-disable-next-line import/prefer-default-export
 export function srcPathsFromClasspathStrings(cpStrs: string[]): string[] {
   return cpStrs.reduce((ret: string[], colonSepPaths: string) => {
     const paths = colonSepPaths.split(':');
@@ -29,4 +27,8 @@ export function ensureDir(dir: string): void {
   if (!stats.isDirectory()) {
     throw new Error(`${dir} exists but is not a directory.`);
   }
+}
+
+export function ensureArray<T>(maybeArray: T[] | T): T[] {
+  return Array.isArray(maybeArray) ? maybeArray : [maybeArray];
 }
