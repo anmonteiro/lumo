@@ -8,7 +8,6 @@
   "dependencies": {
     "jszip": "2.6.1",
     "minimist": "^1.2.0",
-    "readline-history": "^1.2.0",
     "uglify-js": "^2.7.3"
   },
   "devDependencies": {

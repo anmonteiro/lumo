@@ -1,17 +1,15 @@
 /* @flow */
 
 import * as cljs from './cljs';
+import replHistory from './replHistory';
 
 import type { CLIOptsType } from './cli';
 
-const readline = require('readline');
-const readlineHist = require('readline-history');
-const path = require('path');
 const os = require('os');
+const path = require('path');
+const readline = require('readline');
 
-let rl;
-
-export function prompt(p: string = `${cljs.getCurrentNamespace()}=> `) {
+export function prompt(rl: readline$Interface, p: string = `${cljs.getCurrentNamespace()}=> `) {
   rl.setPrompt(p);
   rl.prompt();
 }
@@ -19,37 +17,33 @@ export function prompt(p: string = `${cljs.getCurrentNamespace()}=> `) {
 export default function startREPL(opts: CLIOptsType) {
   const dumbTerminal = opts['dumb-terminal'];
 
-  process.stdout.write('cljs.user=> ');
-
-  readlineHist.createInterface({
+  const rl = replHistory({
     path: path.join(os.homedir(), '.lumo_history'),
-    maxLength: 200,
+    historySize: 200,
     input: process.stdin,
     output: process.stdout,
     terminal: !dumbTerminal,
-    next: (rli: readline$Interface) => {
-      rl = rli;
-      prompt('cljs.user=> ');
+  });
 
-      rl.on('line', (line: string) => {
-        cljs.execute(line);
-        prompt();
-      });
+  prompt(rl, 'cljs.user=> ');
 
-      rl.on('SIGINT', () => {
-        // $FlowIssue: missing property in interface
-        rl.output.write('\n');
+  rl.on('line', (line: string) => {
+    cljs.execute(line);
+    prompt(rl);
+  });
 
-        readline.clearLine(process.stdout, 0);
-        readline.cursorTo(process.stdout, 0);
+  rl.on('SIGINT', () => {
+    // $FlowIssue: missing property in interface
+    rl.output.write('\n');
 
-        rl.write(null, {
-          ctrl: true,
-          name: 'u',
-        });
+    readline.clearLine(process.stdout, 0);
+    readline.cursorTo(process.stdout, 0);
 
-        prompt();
-      });
-    },
+    rl.write(null, {
+      ctrl: true,
+      name: 'u',
+    });
+
+    prompt(rl);
   });
 }
