@@ -355,7 +355,7 @@
   (load {:file filename}
     (fn [{:keys [lang source cache]}]
       (if source
-        (execute-source source (assoc opts :type "text"))
+        (execute-source source (assoc opts :type "text" :filename filename))
         (handle-repl-error (ex-info (str "Could not load file " filename) {}))))))
 
 (def ^:private repl-special-fns
@@ -411,7 +411,7 @@
     (r/read {:read-cond :allow :features #{:cljs}} reader)))
 
 (defn- execute-text
-  [source {:keys [expression?] :as opts}]
+  [source {:keys [expression? filename] :as opts}]
   (binding [cljs/*eval-fn*   caching-node-eval
             cljs/*load-fn*   load
             ana/*cljs-ns*    @current-ns
@@ -425,7 +425,10 @@
         (cljs/eval-str
           st
           source
-          (if expression? source "source")
+          (cond
+            expression? source
+            filename filename
+            :else "source")
           (merge (make-eval-opts)
             (when expression?
               {:context :expr
