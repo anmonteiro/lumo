@@ -5,6 +5,7 @@
                  [org.clojure/clojurescript   "1.9.293"]
                  [org.clojure/tools.reader    "1.0.0-beta3"]
                  [com.cognitect/transit-cljs  "0.8.239"]
+                 [malabarba/lazy-map          "1.3"]
                  [com.cognitect/transit-clj   "0.8.290"        :scope "test"]
                  [com.cemerick/piggieback     "0.2.1"          :scope "test"]
                  [adzerk/boot-cljs            "1.7.228-1"      :scope "test"]
@@ -82,35 +83,58 @@
             (write-cache! (edn/read-string (slurp in-file)) out-file)))
         (-> fileset (add-resource tmp) commit!)))))
 
+(deftask write-core-analysis-caches []
+  (let [core-caches-re #"^cljs\/core(\$macros)?\.(cljs\.cache\.aot|cljc\.cache)\.json$"
+        tmp (tmp-dir!)]
+    (comp
+      (with-pre-wrap fileset
+        (empty-dir! tmp)
+        (let [inputs (input-files fileset)
+              caches (by-re [core-caches-re] inputs)]
+          (doseq [cache caches]
+            (let [cache-file (tmp-file cache)
+                  cache-edn (transit/read (transit/reader (FileInputStream. cache-file) :json))]
+              (doseq [key (keys cache-edn)]
+                (let [out-path (str/replace (tmp-path cache) #"(\.json)$" (str "." (munge key) "$1"))
+                      out-file (io/file tmp out-path)]
+                  (write-cache! (key cache-edn) out-file)))))
+          (-> fileset (add-resource tmp) commit!)))
+      (sift :include #{core-caches-re} :invert true))))
+
 (deftask sift-cljs-resources []
   (comp
     (sift :add-jar
       {'org.clojure/clojure #"^clojure/template\.clj"
        'org.clojure/clojurescript
        #"^cljs/(test\.cljc|core\.cljs\.cache\.aot\.edn|spec(\.cljc|/test\.clj[sc]|/impl/gen\.cljc))$"}
-      :move {#"^main.out/((cljs|clojure|cognitect|lumo).*)" "$1"})
+      :move {#"^main.out/((cljs|clojure|cognitect|lumo|lazy_map).*)" "$1"})
     (sift :include #{#"^main.js" #"^bundle.js" #"^cljs(?!\.js)"
-                     #"^clojure" #"^cognitect" #"^lumo/"})))
+                     #"^clojure" #"^cognitect" #"^lumo/" #"^lazy_map/"})
+    (sift :include #{#"^cljs\/core\.cljs\.cache\.json$"} :invert true)))
+
+(deftask compile-cljs []
+  (cljs :compiler-options {:hashbang false
+                           :target :nodejs
+                           :optimizations :simple
+                           :main 'lumo.core
+                           :cache-analysis true
+                           :source-map false
+                           :dump-core false
+                           :static-fns true
+                           :optimize-constants true
+                           :verbose true
+                           :compiler-stats true
+                           :parallel-build true}))
 
 (deftask dev []
   (comp
     (check-node-modules)
     (watch)
     (speak)
-    (cljs :compiler-options {:hashbang false
-                             :target :nodejs
-                             :optimizations :simple
-                             :main 'lumo.core
-                             :cache-analysis true
-                             :source-map false
-                             :dump-core false
-                             :static-fns true
-                             :optimize-constants true
-                             :verbose true
-                             :compiler-stats true
-                             :parallel-build true})
+    (compile-cljs)
     (sift-cljs-resources)
     (cache-edn->transit)
+    (write-core-analysis-caches)
     (target)
     (bundle-js :dev true)))
 
@@ -137,20 +161,10 @@
   (comp
     (check-node-modules)
     (speak)
-    (cljs :compiler-options {:hashbang false
-                             :target :nodejs
-                             :optimizations :simple
-                             :main 'lumo.core
-                             :cache-analysis true
-                             :source-map false
-                             :dump-core false
-                             :static-fns true
-                             :optimize-constants true
-                             :verbose true
-                             :compiler-stats true
-                             :parallel-build true})
+    (compile-cljs)
     (sift-cljs-resources)
     (cache-edn->transit)
+    (write-core-analysis-caches)
     (target)
     (bundle-js)
     (prepare-snapshot)

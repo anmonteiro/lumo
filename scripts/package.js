@@ -21,8 +21,12 @@ function getDirContents(dir, accumPath = dir) {
 };
 
 function deflate(fname) {
-  const input = fs.readFileSync(fname);
-  fs.writeFileSync(fname, zlib.deflateSync(input));
+  return new Promise((resolve, reject) => {
+    fs.readFile(fname, (err, input) => {
+      fs.writeFileSync(fname, zlib.deflateSync(input));
+      resolve();
+    });
+  });
 }
 
 const outputPath = 'main';
@@ -31,30 +35,38 @@ const resources = getDirContents('target')
               /clojurescript-version/.test(fname) ||
               /\$macros\.js$/.test(fname));
 
-resources.forEach(deflate);
+const promises = [];
 
-nexe.compile({
-  input: 'target/bundle.min.js',
-  output: outputPath,
-  nodeTempDir: 'tmp',
-  nodeConfigureArgs: ['opt', 'val'], // for all your configure arg needs.
-  // nodeMakeArgs: ["-j", "4"], // when you want to control the make process.
-  // nodeVCBuildArgs: ['nosign', 'x64'], // when you want to control the make process for windows.
-  // By default "nosign" option will be specified
-  // You can check all available options and its default values here:
-  // https://github.com/nodejs/node/blob/master/vcbuild.bat
-  resourceFiles: resources,
-  browserifyExcludes: resources,
-  resourceRoot: 'target',
-  flags: true, // use this for applications that need command line flags.
-  jsFlags: '--use_strict', // v8 flags
-  startupSnapshot: 'target/main.js',
-  framework: 'node',
-  nodeVersion: '6.9.0',
-}, err => {
-  if (err) {
-    throw err;
-  }
+resources.forEach((resource) => {
+  promises.push(deflate(resource));
+});
 
-  console.log(`Finished bundling. Nexe binary can be found in ${outputPath}`);
+Promise.all(promises).then(() => {
+
+  nexe.compile({
+    input: 'target/bundle.min.js',
+    output: outputPath,
+    nodeTempDir: 'tmp',
+    nodeConfigureArgs: ['opt', 'val'], // for all your configure arg needs.
+    // nodeMakeArgs: ["-j", "4"], // when you want to control the make process.
+    // nodeVCBuildArgs: ['nosign', 'x64'], // when you want to control the make process for windows.
+    // By default "nosign" option will be specified
+    // You can check all available options and its default values here:
+    // https://github.com/nodejs/node/blob/master/vcbuild.bat
+    resourceFiles: resources,
+    browserifyExcludes: resources,
+    resourceRoot: 'target',
+    flags: true, // use this for applications that need command line flags.
+    jsFlags: '--use_strict', // v8 flags
+    startupSnapshot: 'target/main.js',
+    framework: 'node',
+    nodeVersion: '6.9.1',
+  }, err => {
+    if (err) {
+      throw err;
+    }
+
+    console.log(`Finished bundling. Nexe binary can be found in ${outputPath}`);
+  });
+
 });

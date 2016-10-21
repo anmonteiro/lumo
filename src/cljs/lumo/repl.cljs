@@ -8,6 +8,7 @@
             [cljs.tools.reader.reader-types :as rt]
             [clojure.string :as string]
             [cognitect.transit :as transit]
+            [lazy-map.core :refer [lazy-map]]
             [lumo.js-deps :as deps]
             [lumo.repl-resources :refer [repl-special-doc-map]]))
 
@@ -40,14 +41,35 @@
 
 (defn- load-core-analysis-cache
   [ns-sym file-prefix]
-  (let [keys        [:use-macros :excludes :name :imports :requires
-                     :uses :defs :require-macros ::ana/constants :doc]
-        cache (transit-json->cljs (js/LUMO_LOAD (str file-prefix JSON_EXT)))]
-    (cljs/load-analysis-cache! st ns-sym cache)))
+  (let [keys [:rename-macros :renames :use-macros :excludes :name :imports
+              :requires :uses :defs :require-macros ::ana/constants :doc]]
+    (letfn [(load-key [key]
+              (let [resource (js/LUMO_LOAD (str file-prefix (munge key) JSON_EXT))]
+                (transit-json->cljs resource)))
+            (lazy-load-key [key]
+              (let [cache (load-key key)]
+                (cljs/load-analysis-cache! st ns-sym
+                  (assoc (get-in @st [::ana/namespaces ns-sym])
+                    key cache))
+                cache))]
+      (cljs/load-analysis-cache! st ns-sym
+        (lazy-map
+          {:rename-macros           (lazy-load-key :rename-macros)
+           :renames                 (lazy-load-key :renames)
+           :use-macros              (lazy-load-key :use-macros)
+           :excludes                (lazy-load-key :excludes)
+           :name                    (lazy-load-key :name)
+           :imports                 (lazy-load-key :imports)
+           :requires                (lazy-load-key :requires)
+           :uses                    (lazy-load-key :uses)
+           :defs                    (lazy-load-key :defs)
+           :require-macros          (lazy-load-key :require-macros)
+           :cljs.analyzer/constants (lazy-load-key :cljs.analyzer/constants)
+           :doc                     (lazy-load-key :doc)})))))
 
 (defn- load-core-analysis-caches []
-  (load-core-analysis-cache 'cljs.core "cljs/core.cljs.cache.aot")
-  (load-core-analysis-cache 'cljs.core$macros "cljs/core$macros.cljc.cache"))
+  (load-core-analysis-cache 'cljs.core "cljs/core.cljs.cache.aot.")
+  (load-core-analysis-cache 'cljs.core$macros "cljs/core$macros.cljc.cache."))
 
 ;; =============================================================================
 ;; Dependency loading
@@ -119,6 +141,7 @@
         clojure.zip
         clojure.walk
         cognitect.transit
+        lazy-map.core
         lumo.repl
         lumo.repl-resources
         lumo.js-deps} name)))
@@ -132,7 +155,8 @@
         cljs.env.macros
         cljs.analyzer.macros
         cljs.compiler.macros
-        cljs.tools.reader.reader-types}
+        cljs.tools.reader.reader-types
+        lazy-map.core}
      '#{cljs.core
         com.cognitect.transit
         com.cognitect.transit.delimiters
