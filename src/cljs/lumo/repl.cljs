@@ -159,7 +159,8 @@
   (let [files (deps/files-to-load name)
         sources (map js/LUMO_READ_SOURCE files)]
     (cb {:lang :js
-         :source (string/join "\n" sources)})))
+         :source (string/join "\n" sources)})
+    :loaded))
 
 ;; TODO: can be optimized e.g. to just analyze CLJ source
 ;; if JS present but no analysis cache
@@ -170,11 +171,11 @@
         cache-prefix (str cache-dir "/" (munge path) (when macros? MACROS_SUFFIX))]
     (if-let [cached-source (and cache-dir
                                 (js/LUMO_READ_CACHE (str cache-prefix JS_EXT)))]
-      (let [cached-analysis (js/LUMO_READ_CACHE (str cache-prefix ".cache.json"))]
+      (let [cache-json (js/LUMO_READ_CACHE (str cache-prefix ".cache.json"))]
         (cb {:lang :js
              :source cached-source
              :filename (str cache-prefix JS_EXT)
-             :cache cached-analysis})
+             :cache (transit-json->cljs cache-json)})
         :loaded)
       (let [filename file-path]
         (when-let [source (js/LUMO_READ_SOURCE filename)]
@@ -400,7 +401,7 @@
         (cljs/eval-str
           st
           source
-          source
+          (if expression? source "source")
           (merge (make-eval-opts)
             (when expression?
               {:context :expr

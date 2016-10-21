@@ -1,6 +1,6 @@
 (set-env!
  :source-paths    #{"src/cljs"}
- :resource-paths #{"src/js"}
+ :asset-paths #{"src/js"}
  :dependencies '[[org.clojure/clojure        "1.9.0-alpha13"]
                  [org.clojure/clojurescript   "1.9.293"]
                  [org.clojure/tools.reader    "1.0.0-beta3"]
@@ -120,7 +120,7 @@
 
 (deftask package-executable []
   (with-pass-thru _
-    (dosh "node" "scripts/package")))
+    (dosh "node" "scripts/package.js")))
 
 (deftask backup-resources
   "Backup resources to be gzipped in the 2nd stage binary

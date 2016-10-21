@@ -79,6 +79,6 @@ export function loadUpstreamForeignLibs(): string[] {
   return ret;
 }
 
-export function setSourcePaths(srcPaths: string[]): void {
-  sourcePaths = srcPaths;
+export function addSourcePaths(srcPaths: string[]): void {
+  sourcePaths.push(...srcPaths);
 }

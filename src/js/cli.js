@@ -130,7 +130,7 @@ function processOpts(cliOpts: CLIOptsType): Object {
     const cp = util.ensureArray(classpath);
     const srcPaths = util.srcPathsFromClasspathStrings(cp);
 
-    lumo.setSourcePaths(srcPaths);
+    lumo.addSourcePaths(srcPaths);
   }
 
   // process scripts (--eval and --init)

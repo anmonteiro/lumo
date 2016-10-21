@@ -24,6 +24,7 @@ if (__DEV__) {
       LUMO_LOAD: lumo.load,
       LUMO_READ_CACHE: lumo.readCache,
       LUMO_READ_SOURCE: lumo.readSource,
+      LUMO_WRITE_CACHE: lumo.writeCache,
       LUMO_LOAD_UPS_DEPS_CLJS: lumo.loadUpstreamForeignLibs,
     };
 
