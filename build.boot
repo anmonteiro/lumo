@@ -8,7 +8,7 @@
                  [malabarba/lazy-map          "1.3"]
                  [com.cognitect/transit-clj   "0.8.290"        :scope "test"]
                  [com.cemerick/piggieback     "0.2.1"          :scope "test"]
-                 [adzerk/boot-cljs            "1.7.228-1"      :scope "test"]
+                 [adzerk/boot-cljs            "1.7.228-2"      :scope "test"]
                  [crisptrutski/boot-cljs-test "0.2.2-SNAPSHOT" :scope "test"]
                  [org.clojure/tools.nrepl     "0.2.12"         :scope "test"]
                  [weasel                      "0.7.0"          :scope "test"]])

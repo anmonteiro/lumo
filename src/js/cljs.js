@@ -1,4 +1,5 @@
 /* @flow */
+/* eslint-disable no-underscore-dangle  */
 
 import * as lumo from './lumo';
 import startREPL from './repl';
@@ -72,10 +73,8 @@ export function execute(code: string,
                         type: string = 'text',
                         expression: boolean = true,
                         setNS: ?string) {
-  if (/\S/.test(code)) {
-    // $FlowIssue: context can have globals
-    ClojureScriptContext.lumo.repl.execute(type, code, expression, setNS);
-  }
+  // $FlowIssue: context can have globals
+  ClojureScriptContext.lumo.repl.execute(type, code, expression, setNS);
 }
 
 export function executeScript(code: string, type: string): void {
@@ -85,6 +84,11 @@ export function executeScript(code: string, type: string): void {
 export function getCurrentNamespace(): string {
   // $FlowIssue: context can have globals
   return ClojureScriptContext.lumo.repl.get_current_ns();
+}
+
+export function isReadable(form: string): string | false {
+  // $FlowIssue: context can have globals
+  return ClojureScriptContext.lumo.repl.is_readable_QMARK_(form);
 }
 
 function executeScripts(scripts: [string, string][]): void {

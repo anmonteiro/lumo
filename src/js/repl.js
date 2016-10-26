@@ -28,7 +28,21 @@ export default function startREPL(opts: CLIOptsType) {
   prompt(rl, 'cljs.user=> ');
 
   rl.on('line', (line: string) => {
-    cljs.execute(line);
+    let input = line;
+    let extraForms;
+
+    while ((extraForms = cljs.isReadable(input)) !== false) {
+      const formToEval = input.substring(0, input.length - extraForms.length);
+
+      if (formToEval.trim() !== '') {
+        cljs.execute(formToEval);
+      } else {
+        break;
+      }
+
+      input = extraForms;
+    }
+
     prompt(rl);
   });
 

@@ -6,7 +6,7 @@ const zlib = require('zlib');
 const JSZip = require('jszip');
 
 let nexeres;
-let sourcePaths = [''];
+const sourcePaths = [''];
 
 if (!__DEV__) {
   // $FlowExpectedError: only exists in the Nexe bundle.

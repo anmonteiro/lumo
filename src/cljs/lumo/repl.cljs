@@ -10,7 +10,8 @@
             [cognitect.transit :as transit]
             [lazy-map.core :refer [lazy-map]]
             [lumo.js-deps :as deps]
-            [lumo.repl-resources :refer [repl-special-doc-map]]))
+            [lumo.repl-resources :refer [repl-special-doc-map]])
+  (:import [goog.string StringBuffer]))
 
 ;; =============================================================================
 ;; Globals
@@ -355,14 +356,17 @@
   (load {:file filename}
     (fn [{:keys [lang source cache]}]
       (if source
-        (execute-source source (assoc opts :type "text" :filename filename))
+        (execute-source source (merge opts
+                                 {:type "text"
+                                  :filename filename
+                                  :expression? false}))
         (handle-repl-error (ex-info (str "Could not load file " filename) {}))))))
 
 (def ^:private repl-special-fns
   (let [load-file-fn
         (fn self
           ([[_ file :as form] opts]
-           (execute-path file (assoc opts :expression? false))))
+           (execute-path file opts)))
         in-ns-fn
         (fn self
           ([[_ maybe-quoted :as form] opts]
@@ -405,10 +409,31 @@
 (defn- repl-special? [form]
   (and (seq? form) (contains? repl-special-fns (first form))))
 
+(defn- reader-eof? [msg]
+  (= msg "EOF while reading"))
+
+(defn- read-chars
+  [reader]
+  (let [sb (StringBuffer.)]
+    (loop [c (rt/read-char reader)]
+      (if-not (nil? c)
+        (do
+          (.append sb c)
+          (recur (rt/read-char reader)))
+        (str sb)))))
+
 (defn- repl-read-string
+  "Returns a vector of the first read form, and any balance text."
   [source]
-  (let [reader (rt/string-push-back-reader source)]
-    (r/read {:read-cond :allow :features #{:cljs}} reader)))
+  (let [cur-ns @current-ns]
+    (binding [ana/*cljs-ns* cur-ns
+              *ns* (create-ns cur-ns)
+              env/*compiler* st
+              ;r/*data-readers* tags/*cljs-data-readers*
+              r/resolve-symbol ana/resolve-symbol
+              r/*alias-map* (current-alias-map)]
+      (let [reader (rt/string-push-back-reader source)]
+        [(r/read {:read-cond :allow :features #{:cljs}} reader) (read-chars reader)]))))
 
 (defn- execute-text
   [source {:keys [expression? filename] :as opts}]
@@ -419,7 +444,7 @@
             env/*compiler*   st
             r/resolve-symbol ana/resolve-symbol
             r/*alias-map*    (current-alias-map)]
-    (let [form (repl-read-string source)]
+    (let [[form _] (repl-read-string source)]
       (if (repl-special? form)
         ((get repl-special-fns (first form)) form opts)
         (cljs/eval-str
@@ -456,6 +481,19 @@
     (vreset! current-ns (symbol setNS)))
   (execute-source source-or-path {:type type
                                   :expression? expression?}))
+
+(defn ^:export is-readable?
+  [form]
+  (try
+    (second (repl-read-string form))
+    (catch :default e
+      (let [msg (.-message e)]
+        (if (= "EOF" msg)
+          ""
+          (do
+            (when-not (reader-eof? msg)
+              (handle-repl-error e))
+            false))))))
 
 (defn ^:export get-current-ns []
   @current-ns)
