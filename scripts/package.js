@@ -60,7 +60,7 @@ Promise.all(promises).then(() => {
     jsFlags: '--use_strict', // v8 flags
     startupSnapshot: 'target/main.js',
     framework: 'node',
-    nodeVersion: '6.9.1',
+    nodeVersion: '7.0.0',
   }, err => {
     if (err) {
       throw err;
