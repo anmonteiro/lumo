@@ -333,10 +333,10 @@
   Compiler state is restored if self-ish fn fails."
   [f]
   (fn g
-    ([a]
+    ([a b]
      (let [backup (compiler-state-backup)]
        (try
-         (f a)
+         (f a b)
          (catch :default e
            (restore-compiler-state! backup)
            (throw e)))))))
@@ -440,9 +440,13 @@
             env/*compiler*   st
             r/resolve-symbol ana/resolve-symbol
             r/*alias-map*    (current-alias-map)]
-    (let [[form _] (repl-read-string source)]
+    (let [[form _] (repl-read-string source)
+          eval-opts (merge (make-eval-opts)
+                      (when expression?
+                        {:context :expr
+                         :def-emits-var true}))]
       (if (repl-special? form)
-        ((get repl-special-fns (first form)) form opts)
+        ((get repl-special-fns (first form)) form eval-opts)
         (cljs/eval-str
           st
           source
@@ -450,10 +454,7 @@
             expression? source
             filename filename
             :else "source")
-          (merge (make-eval-opts)
-            (when expression?
-              {:context :expr
-               :def-emits-var true}))
+          eval-opts
           (fn [{:keys [ns value error] :as ret}]
             (if-not error
               (do
