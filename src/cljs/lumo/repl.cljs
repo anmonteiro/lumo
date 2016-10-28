@@ -48,11 +48,7 @@
               (let [resource (js/LUMO_LOAD (str file-prefix (munge key) JSON_EXT))]
                 (transit-json->cljs resource)))
             (lazy-load-key [key]
-              (let [cache (load-key key)]
-                (cljs/load-analysis-cache! st ns-sym
-                  (assoc (get-in @st [::ana/namespaces ns-sym])
-                    key cache))
-                cache))]
+              (load-key key))]
       (cljs/load-analysis-cache! st ns-sym
         (lazy-map
           {:rename-macros           (lazy-load-key :rename-macros)
