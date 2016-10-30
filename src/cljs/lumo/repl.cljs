@@ -4,6 +4,7 @@
             [cljs.env :as env]
             [cljs.js :as cljs]
             [cljs.reader :as reader]
+            [cljs.tagged-literals :as tags]
             [cljs.tools.reader :as r]
             [cljs.tools.reader.reader-types :as rt]
             [clojure.string :as string]
@@ -425,7 +426,7 @@
     (binding [ana/*cljs-ns* cur-ns
               *ns* (create-ns cur-ns)
               env/*compiler* st
-              ;r/*data-readers* tags/*cljs-data-readers*
+              r/*data-readers* tags/*cljs-data-readers*
               r/resolve-symbol ana/resolve-symbol
               r/*alias-map* (current-alias-map)]
       (let [reader (rt/string-push-back-reader source)]
@@ -439,6 +440,7 @@
             *ns*             (create-ns @current-ns)
             env/*compiler*   st
             r/resolve-symbol ana/resolve-symbol
+            r/*data-readers* tags/*cljs-data-readers*
             r/*alias-map*    (current-alias-map)]
     (let [[form _] (repl-read-string source)
           eval-opts (merge (make-eval-opts)
