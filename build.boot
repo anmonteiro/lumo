@@ -18,6 +18,7 @@
  '[crisptrutski.boot-cljs-test :refer [test-cljs]]
  '[boot.util             :as util]
  '[clojure.edn           :as edn]
+ '[clojure.string        :as str]
  '[clojure.java.io       :as io]
  '[cognitect.transit     :as transit])
 
