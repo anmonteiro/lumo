@@ -296,9 +296,10 @@
 ;; REPL plumbing
 
 (defn make-eval-opts []
-  {:ns            @current-ns
-   :verbose       (:verbose @app-opts)
-   :static-fns    false})
+  (let [{:keys [verbose static-fns]} @app-opts]
+    {:ns            @current-ns
+     :verbose       verbose
+     :static-fns    static-fns}))
 
 (defn- ^:boolean could-not-eval? [msg]
   (boolean (re-find could-not-eval-regex msg)))
@@ -500,9 +501,9 @@
 (defn ^:export set-ns [ns-str]
   (vreset! current-ns (symbol ns-str)))
 
-
-(defn ^:export init [verbose cache-path]
+(defn ^:export init [verbose cache-path static-fns]
   (vreset! app-opts {:verbose verbose
-                     :cache-path cache-path})
+                     :cache-path cache-path
+                     :static-fns static-fns})
   (load-core-analysis-caches)
   (deps/index-upstream-foreign-libs))

@@ -52,9 +52,10 @@ if (__DEV__) {
 
 function setRuntimeOpts(opts: CLIOptsType) {
   const { cache, verbose } = opts;
+  const staticFns = opts['static-fns'];
 
   // $FlowIssue: context can have globals
-  ClojureScriptContext.lumo.repl.init(verbose, cache);
+  ClojureScriptContext.lumo.repl.init(verbose, cache, staticFns);
 }
 
 export function initClojureScriptEngine(opts: CLIOptsType): void {

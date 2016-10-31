@@ -13,7 +13,7 @@ echo "### Compiling Macro Namespaces"
 
 mkdir -p lumo-cljs/out/macros-tmp
 
-$(pwd)/main --quiet -c target -dk lumo-cljs/out/macros-tmp <<REPL_INPUT
+$(pwd)/main --quiet -c target -sdk lumo-cljs/out/macros-tmp <<REPL_INPUT
 (require-macros 'clojure.template 'cljs.spec 'cljs.spec.impl.gen 'cljs.test)
 REPL_INPUT
 

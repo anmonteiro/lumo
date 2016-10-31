@@ -23,6 +23,8 @@ export type CLIOptsType = {
   q: boolean,
   'dumb-terminal': boolean,
   d: boolean,
+  'static-fns': boolean,
+  s: boolean,
   init?: string | string[],
   i?: string | string[],
   eval?: string | string[],
@@ -66,6 +68,7 @@ Usage:  lumo [init-opt*] [main-opt] [arg*]
     -q, --quiet              Quiet mode; doesn't print the banner initially
     -v, --verbose            Emit verbose diagnostic output
     -d, --dumb-terminal      Disable line editing / VT100 terminal control
+    -s, --static-fns         Generate static dispatch function calls
 
   main options:
     -m, --main ns-name       Call the -main function from a namespace with args
@@ -84,7 +87,15 @@ Usage:  lumo [init-opt*] [main-opt] [arg*]
 
 function getCLIOpts(): CLIOptsType {
   return minimist(process.argv.slice(2), {
-    boolean: ['verbose', 'help', 'repl', 'auto-cache', 'quiet', 'dumb-terminal'],
+    boolean: [
+      'verbose',
+      'help',
+      'repl',
+      'auto-cache',
+      'quiet',
+      'dumb-terminal',
+      'static-fns',
+    ],
     string: ['eval', 'cache', 'classpath'],
     alias: {
       c: 'classpath',
@@ -98,6 +109,7 @@ function getCLIOpts(): CLIOptsType {
       k: 'cache',
       q: 'quiet',
       d: 'dumb-terminal',
+      s: 'static-fns',
     },
   });
 }
