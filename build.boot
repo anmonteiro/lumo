@@ -57,7 +57,9 @@
       (if-not (and (.exists nm) (.isDirectory nm))
         (do
           (util/info "Installing node dependencies with `yarn install`\n")
-          (dosh "yarn" "install"))
+          (if windows?
+            (dosh "cmd" "/c" "yarn" "install")
+            (dosh "yarn" "install")))
         (util/info "Node dependencies already installed, skipping `yarn install`\n")))))
 
 (deftask bundle-js
@@ -156,7 +158,7 @@
   []
   (with-pass-thru _
     (if windows?
-      (dosh "xcopy" "target" "resources_bak" "/s" "/e" "/y")
+      (dosh "cmd" "/c" "echo" "d" "|" "xcopy" "target" "resources_bak" "/s" "/e" "/y")
       (dosh "cp" "-R" "target" "resources_bak"))))
 
 (deftask aot-macros []

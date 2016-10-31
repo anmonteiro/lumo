@@ -56,7 +56,7 @@ Promise.all(promises).then(() => {
       '--without-perfctr',
     ],
     // nodeMakeArgs: ["-j", "4"], // when you want to control the make process.
-    // nodeVCBuildArgs: ['nosign', 'x64'], // when you want to control the make process for windows.
+    nodeVCBuildArgs: ['nosign', 'noperfctr', 'x64'], // when you want to control the make process for windows.
     // By default "nosign" option will be specified
     // You can check all available options and its default values here:
     // https://github.com/nodejs/node/blob/master/vcbuild.bat
