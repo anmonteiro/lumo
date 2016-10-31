@@ -48,6 +48,9 @@
     (speak)
     (test :exit? false)))
 
+(def windows?
+  (.startsWith (.toLowerCase (System/getProperty "os.name")) "windows"))
+
 (deftask check-node-modules []
   (with-pass-thru _
     (let [nm (io/file "node_modules")]
@@ -85,7 +88,7 @@
         (-> fileset (add-resource tmp) commit!)))))
 
 (deftask write-core-analysis-caches []
-  (let [core-caches-re #"^cljs\/core(\$macros)?\.(cljs\.cache\.aot|cljc\.cache)\.json$"
+  (let [core-caches-re #"^cljs[\\\/]core(\$macros)?\.(cljs\.cache\.aot|cljc\.cache)\.json$"
         tmp (tmp-dir!)]
     (comp
       (with-pre-wrap fileset
@@ -105,13 +108,13 @@
 (deftask sift-cljs-resources []
   (comp
     (sift :add-jar
-      {'org.clojure/clojure #"^clojure/template\.clj"
+      {'org.clojure/clojure #"^clojure[\\\/]template\.clj"
        'org.clojure/clojurescript
-       #"^cljs/(test\.cljc|core\.cljs\.cache\.aot\.edn|spec(\.cljc|/test\.clj[sc]|/impl/gen\.cljc))$"}
-      :move {#"^main.out/((cljs|clojure|cognitect|lumo|lazy_map).*)" "$1"})
+       #"^cljs/(test\.cljc|core\.cljs\.cache\.aot\.edn|spec(\.cljc|[\\\/]test\.clj[sc]|[\\\/]impl[\\\/]gen\.cljc))$"}
+      :move {#"^main.out[\\\/]((cljs|clojure|cognitect|lumo|lazy_map).*)" "$1"})
     (sift :include #{#"^main.js" #"^bundle.js" #"^cljs(?!\.js)"
-                     #"^clojure" #"^cognitect" #"^lumo/" #"^lazy_map/"})
-    (sift :include #{#"^cljs\/core\.cljs\.cache\.json$"} :invert true)))
+                     #"^clojure" #"^cognitect" #"^lumo[\\\/]" #"^lazy_map[\\\/]"})
+    (sift :include #{#"^cljs[\\\/]core\.cljs\.cache\.json$"} :invert true)))
 
 (deftask compile-cljs []
   (cljs :compiler-options {:hashbang false
@@ -152,7 +155,9 @@
    without having to recompile CLJS"
   []
   (with-pass-thru _
-    (dosh "cp" "-R" "target" "resources_bak")))
+    (if windows?
+      (dosh "xcopy" "target" "resources_bak" "/s" "/e" "/y")
+      (dosh "cp" "-R" "target" "resources_bak"))))
 
 (deftask aot-macros []
   (with-pass-thru _
