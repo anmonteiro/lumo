@@ -122,7 +122,7 @@
                            :source-map false
                            :dump-core false
                            :static-fns true
-                           :optimize-constants true
+                           :optimize-constants false
                            :verbose true
                            :compiler-stats true
                            :parallel-build true}))

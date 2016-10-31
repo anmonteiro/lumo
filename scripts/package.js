@@ -47,7 +47,14 @@ Promise.all(promises).then(() => {
     input: 'target/bundle.min.js',
     output: outputPath,
     nodeTempDir: 'tmp',
-    nodeConfigureArgs: ['opt', 'val'], // for all your configure arg needs.
+    nodeConfigureArgs: [
+      '--without-dtrace',
+      '--without-npm',
+      '--without-inspector',
+      '--without-ssl',
+      '--without-etw',
+      '--without-perfctr',
+    ],
     // nodeMakeArgs: ["-j", "4"], // when you want to control the make process.
     // nodeVCBuildArgs: ['nosign', 'x64'], // when you want to control the make process for windows.
     // By default "nosign" option will be specified
@@ -57,7 +64,12 @@ Promise.all(promises).then(() => {
     browserifyExcludes: resources,
     resourceRoot: 'target',
     flags: true, // use this for applications that need command line flags.
-    jsFlags: '--use_strict', // v8 flags
+    jsFlags: [
+      '--use_strict',
+      '--prepare_always_opt',
+      '--always_opt',
+      '--compiled_keyed_generic_loads',
+    ],
     startupSnapshot: 'target/main.js',
     framework: 'node',
     nodeVersion: '7.0.0',
