@@ -1,5 +1,7 @@
 /* @flow */
 
+import { isWindows } from './util';
+
 const fs = require('fs');
 const path = require('path');
 const zlib = require('zlib');
@@ -18,7 +20,8 @@ export function load(filename: string): ?string {
     if (__DEV__) {
       return fs.readFileSync(`./target/${filename}`, 'utf8');
     }
-    const gzipped = nexeres.get(filename);
+    const fname = isWindows ? filename.replace(/\//g, '\\') : filename;
+    const gzipped = nexeres.get(fname);
 
     return zlib.inflateSync(gzipped).toString();
   } catch (_) {

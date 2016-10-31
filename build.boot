@@ -112,7 +112,7 @@
     (sift :add-jar
       {'org.clojure/clojure #"^clojure[\\\/]template\.clj"
        'org.clojure/clojurescript
-       #"^cljs/(test\.cljc|core\.cljs\.cache\.aot\.edn|spec(\.cljc|[\\\/]test\.clj[sc]|[\\\/]impl[\\\/]gen\.cljc))$"}
+       #"^cljs[\\\/](test\.cljc|core\.cljs\.cache\.aot\.edn|spec(\.cljc|[\\\/]test\.clj[sc]|[\\\/]impl[\\\/]gen\.cljc))$"}
       :move {#"^main.out[\\\/]((cljs|clojure|cognitect|lumo|lazy_map).*)" "$1"})
     (sift :include #{#"^main.js" #"^bundle.js" #"^cljs(?!\.js)"
                      #"^clojure" #"^cognitect" #"^lumo[\\\/]" #"^lazy_map[\\\/]"})
@@ -163,7 +163,9 @@
 
 (deftask aot-macros []
   (with-pass-thru _
-    (dosh "./scripts/aot-bundle-macros.sh")))
+    (if windows?
+      (dosh "cmd" "/c" ".\\scripts\\aot-bundle-macros.bat")
+      (dosh "./scripts/aot-bundle-macros.sh"))))
 
 (deftask release []
   (comp

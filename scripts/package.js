@@ -1,6 +1,7 @@
 const nexe = require('nexe');
 const fs = require('fs');
 const path = require('path');
+const os = require('os');
 const zlib = require('zlib');
 
 function getDirContents(dir, accumPath = dir) {
@@ -29,7 +30,7 @@ function deflate(fname) {
   });
 }
 
-const outputPath = 'main';
+const outputPath = /^Windows/.test(os.type()) ? 'main.exe' : 'main';
 const resources = getDirContents('target')
       .filter(fname => fname.endsWith('.json') ||
               /clojurescript-version/.test(fname) ||
@@ -54,9 +55,9 @@ Promise.all(promises).then(() => {
       '--without-ssl',
       '--without-etw',
       '--without-perfctr',
-    ],
+    ].join(' '),
     // nodeMakeArgs: ["-j", "4"], // when you want to control the make process.
-    nodeVCBuildArgs: ['nosign', 'noperfctr', 'x64'], // when you want to control the make process for windows.
+    nodeVCBuildArgs: ['nosign', 'x64', 'noetw', 'noperfctr'], // when you want to control the make process for windows.
     // By default "nosign" option will be specified
     // You can check all available options and its default values here:
     // https://github.com/nodejs/node/blob/master/vcbuild.bat
