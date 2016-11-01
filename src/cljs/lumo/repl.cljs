@@ -408,7 +408,9 @@
   (and (seq? form) (contains? repl-special-fns (first form))))
 
 (defn- reader-eof? [msg]
-  (= msg "EOF while reading"))
+  (or
+    (= "EOF while reading" msg)
+    (= "EOF while reading string" msg)))
 
 (defn- read-chars
   [reader]
@@ -435,36 +437,39 @@
 
 (defn- execute-text
   [source {:keys [expression? filename] :as opts}]
-  (binding [cljs/*eval-fn*   caching-node-eval
-            cljs/*load-fn*   load
-            ana/*cljs-ns*    @current-ns
-            *ns*             (create-ns @current-ns)
-            env/*compiler*   st
-            r/resolve-symbol ana/resolve-symbol
-            r/*data-readers* tags/*cljs-data-readers*
-            r/*alias-map*    (current-alias-map)]
-    (let [[form _] (repl-read-string source)
-          eval-opts (merge (make-eval-opts)
-                      (when expression?
-                        {:context :expr
-                         :def-emits-var true}))]
-      (if (repl-special? form)
-        ((get repl-special-fns (first form)) form eval-opts)
-        (cljs/eval-str
-          st
-          source
-          (cond
-            expression? source
-            filename filename
-            :else "source")
-          eval-opts
-          (fn [{:keys [ns value error] :as ret}]
-            (if-not error
-              (do
-                (when expression?
-                  (println (pr-str value)))
-                (vreset! current-ns ns))
-              (handle-repl-error error)))))))
+  (try
+    (binding [cljs/*eval-fn*   caching-node-eval
+              cljs/*load-fn*   load
+              ana/*cljs-ns*    @current-ns
+              *ns*             (create-ns @current-ns)
+              env/*compiler*   st
+              r/resolve-symbol ana/resolve-symbol
+              r/*data-readers* tags/*cljs-data-readers*
+              r/*alias-map*    (current-alias-map)]
+      (let [[form _] (repl-read-string source)
+            eval-opts (merge (make-eval-opts)
+                        (when expression?
+                          {:context :expr
+                           :def-emits-var true}))]
+        (if (repl-special? form)
+          ((get repl-special-fns (first form)) form eval-opts)
+          (cljs/eval-str
+            st
+            source
+            (cond
+              expression? source
+              filename filename
+              :else "source")
+            eval-opts
+            (fn [{:keys [ns value error] :as ret}]
+              (if-not error
+                (do
+                  (when expression?
+                    (println (pr-str value)))
+                  (vreset! current-ns ns))
+                (handle-repl-error error)))))))
+    (catch :default e
+      (handle-repl-error e)))
   nil)
 
 (defn- execute-source
@@ -488,15 +493,15 @@
     (second (repl-read-string form))
     (catch :default e
       (let [msg (.-message e)]
-        (if (= "EOF" msg)
-          ""
-          (do
-            (when-not (reader-eof? msg)
-              (handle-repl-error e))
-            false))))))
+        (cond
+          (= "EOF" msg) ""
+          (reader-eof? msg) false
+          :else (do
+                  ;(handle-repl-error e)
+                  ""))))))
 
 (defn ^:export get-current-ns []
-  @current-ns)
+  (str @current-ns))
 
 (defn ^:export set-ns [ns-str]
   (vreset! current-ns (symbol ns-str)))
