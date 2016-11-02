@@ -42,32 +42,34 @@
     (transit/write wtr x)))
 
 (defn- load-core-analysis-cache
-  [ns-sym file-prefix]
+  [eager? ns-sym file-prefix]
   (let [keys [:rename-macros :renames :use-macros :excludes :name :imports
-              :requires :uses :defs :require-macros ::ana/constants :doc]]
+              :requires :uses :defs :require-macros :cljs.analyzer/constants :doc]]
     (letfn [(load-key [key]
               (let [resource (js/LUMO_LOAD (str file-prefix (munge key) JSON_EXT))]
                 (transit-json->cljs resource)))
             (lazy-load-key [key]
               (load-key key))]
       (cljs/load-analysis-cache! st ns-sym
-        (lazy-map
-          {:rename-macros           (lazy-load-key :rename-macros)
-           :renames                 (lazy-load-key :renames)
-           :use-macros              (lazy-load-key :use-macros)
-           :excludes                (lazy-load-key :excludes)
-           :name                    (lazy-load-key :name)
-           :imports                 (lazy-load-key :imports)
-           :requires                (lazy-load-key :requires)
-           :uses                    (lazy-load-key :uses)
-           :defs                    (lazy-load-key :defs)
-           :require-macros          (lazy-load-key :require-macros)
-           :cljs.analyzer/constants (lazy-load-key :cljs.analyzer/constants)
-           :doc                     (lazy-load-key :doc)})))))
+        (if eager?
+          (zipmap keys (map load-key keys))
+          (lazy-map
+            {:rename-macros           (lazy-load-key :rename-macros)
+             :renames                 (lazy-load-key :renames)
+             :use-macros              (lazy-load-key :use-macros)
+             :excludes                (lazy-load-key :excludes)
+             :name                    (lazy-load-key :name)
+             :imports                 (lazy-load-key :imports)
+             :requires                (lazy-load-key :requires)
+             :uses                    (lazy-load-key :uses)
+             :defs                    (lazy-load-key :defs)
+             :require-macros          (lazy-load-key :require-macros)
+             :cljs.analyzer/constants (lazy-load-key :cljs.analyzer/constants)
+             :doc                     (lazy-load-key :doc)}))))))
 
-(defn- load-core-analysis-caches []
-  (load-core-analysis-cache 'cljs.core "cljs/core.cljs.cache.aot.")
-  (load-core-analysis-cache 'cljs.core$macros "cljs/core$macros.cljc.cache."))
+(defn- load-core-analysis-caches [eager?]
+  (load-core-analysis-cache eager? 'cljs.core "cljs/core.cljs.cache.aot.")
+  (load-core-analysis-cache eager? 'cljs.core$macros "cljs/core$macros.cljc.cache."))
 
 ;; =============================================================================
 ;; Dependency loading
@@ -506,9 +508,9 @@
 (defn ^:export set-ns [ns-str]
   (vreset! current-ns (symbol ns-str)))
 
-(defn ^:export init [verbose cache-path static-fns]
+(defn ^:export init [repl? verbose cache-path static-fns]
   (vreset! app-opts {:verbose verbose
                      :cache-path cache-path
                      :static-fns static-fns})
-  (load-core-analysis-caches)
+  (load-core-analysis-caches repl?)
   (deps/index-upstream-foreign-libs))
