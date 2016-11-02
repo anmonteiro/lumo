@@ -19,7 +19,7 @@ function getDirContents(dir, accumPath = dir) {
     ret.push(path.join(accumPath, filename));
     return ret;
   }, []);
-};
+}
 
 function deflate(fname) {
   return new Promise((resolve, reject) => {
@@ -38,12 +38,9 @@ const resources = getDirContents('target')
 
 const promises = [];
 
-resources.forEach((resource) => {
-  promises.push(deflate(resource));
-});
+resources.forEach(resource => promises.push(deflate(resource)));
 
 Promise.all(promises).then(() => {
-
   nexe.compile({
     input: 'target/bundle.min.js',
     output: outputPath,
@@ -55,7 +52,7 @@ Promise.all(promises).then(() => {
       '--without-ssl',
       '--without-etw',
       '--without-perfctr',
-    ].join(' '),
+    ],
     // nodeMakeArgs: ["-j", "4"], // when you want to control the make process.
     nodeVCBuildArgs: ['nosign', 'x64', 'noetw', 'noperfctr'], // when you want to control the make process for windows.
     // By default "nosign" option will be specified
@@ -67,10 +64,10 @@ Promise.all(promises).then(() => {
     flags: true, // use this for applications that need command line flags.
     jsFlags: [
       '--use_strict',
-      '--prepare_always_opt',
-      '--always_opt',
-      '--compiled_keyed_generic_loads',
-    ],
+      // '--prepare_always_opt',
+      // '--always_opt',
+      // '--compiled_keyed_generic_loads',
+    ].join(' '),
     startupSnapshot: 'target/main.js',
     framework: 'node',
     nodeVersion: '7.0.0',
@@ -81,5 +78,4 @@ Promise.all(promises).then(() => {
 
     console.log(`Finished bundling. Nexe binary can be found in ${outputPath}`);
   });
-
 });
