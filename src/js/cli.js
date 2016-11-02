@@ -1,6 +1,7 @@
 /* @flow */
 
 import startClojureScriptEngine from './cljs';
+import { printLegalInformation } from './legal';
 import * as lumo from './lumo';
 import * as util from './util';
 import version from './version';
@@ -25,6 +26,8 @@ export type CLIOptsType = {
   d: boolean,
   'static-fns': boolean,
   s: boolean,
+  legal: boolean,
+  l: boolean,
   init?: string | string[],
   i?: string | string[],
   eval?: string | string[],
@@ -33,7 +36,7 @@ export type CLIOptsType = {
   k?: string,
   classpath?: string | string[],
   c?: string | string[],
-  [key:string]: boolean | string,
+  [key: string]: boolean | string,
 };
 
 function getClojureScriptVersionString(): string {
@@ -71,10 +74,9 @@ Usage:  lumo [init-opt*] [main-opt] [arg*]
     -s, --static-fns         Generate static dispatch function calls
 
   main options:
-    -m, --main ns-name       Call the -main function from a namespace with args
+
     -r, --repl               Run a repl
     path                     Run a script from a file or resource
-    -                        Run a script from standard input
     -h, -?, --help           Print this help message and exit
     -l, --legal              Show legal info (licenses and copyrights)
 
@@ -83,6 +85,8 @@ Usage:  lumo [init-opt*] [main-opt] [arg*]
 
   Paths may be absolute or relative in the filesystem.
 `);
+    // -m, --main ns-name       Call the -main function from a namespace with args
+    // -                        Run a script from standard input
 }
 
 function getCLIOpts(): CLIOptsType {
@@ -95,6 +99,7 @@ function getCLIOpts(): CLIOptsType {
       'quiet',
       'dumb-terminal',
       'static-fns',
+      'legal',
     ],
     string: ['eval', 'cache', 'classpath'],
     alias: {
@@ -110,6 +115,7 @@ function getCLIOpts(): CLIOptsType {
       q: 'quiet',
       d: 'dumb-terminal',
       s: 'static-fns',
+      l: 'legal',
     },
   });
 }
@@ -166,11 +172,15 @@ function processOpts(cliOpts: CLIOptsType): Object {
 
 export default function startCLI(): void {
   const opts = processOpts(getCLIOpts());
-  const { help, repl, quiet } = opts;
+  const { help, legal, repl, quiet } = opts;
 
   // if help, print help and bail
   if (help) {
     return printHelp();
+  }
+
+  if (legal) {
+    return printLegalInformation();
   }
 
   if (repl && !quiet) {
