@@ -51,7 +51,7 @@ function getVersionString(): string {
 function printBanner(): void {
   process.stdout.write(`${getVersionString()}
 ${getClojureScriptVersionString()}
- Exit: Control+D or :cljs/quit
+ Exit: Control+D or :cljs/quit or exit
 `);
 }
 
