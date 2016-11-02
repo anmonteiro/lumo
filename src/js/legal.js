@@ -1,6 +1,6 @@
 /* @flow */
 
-export function printLegalInformation(): void {
+export default function printLegalInformation(): void {
   process.stdout.write(`
 Lumo
 ----

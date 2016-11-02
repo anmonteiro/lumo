@@ -1,7 +1,7 @@
 /* @flow */
 
 import startClojureScriptEngine from './cljs';
-import { printLegalInformation } from './legal';
+import printLegal from './legal';
 import * as lumo from './lumo';
 import * as util from './util';
 import version from './version';
@@ -180,7 +180,7 @@ export default function startCLI(): void {
   }
 
   if (legal) {
-    return printLegalInformation();
+    return printLegal();
   }
 
   if (repl && !quiet) {
