@@ -1,7 +1,7 @@
 (set-env!
  :source-paths    #{"src/cljs"}
  :asset-paths #{"src/js"}
- :dependencies '[[org.clojure/clojure        "1.9.0-alpha13"]
+ :dependencies '[[org.clojure/clojure        "1.9.0-alpha14"]
                  [org.clojure/clojurescript   "1.9.293"]
                  [org.clojure/tools.reader    "1.0.0-beta3"]
                  [com.cognitect/transit-cljs  "0.8.239"]
