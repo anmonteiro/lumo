@@ -99,8 +99,14 @@ function executeScripts(scripts: [string, string][]): void {
 }
 
 export default function startClojureScriptEngine(opts: Object): void {
-  const { repl, scripts } = opts;
+  const { repl, scripts, _ } = opts;
+  const [mainScript] = _;
   let engineStarted = false;
+
+  if (mainScript) {
+    initClojureScriptEngine(opts);
+    return executeScript(mainScript, 'path');
+  }
 
   if (scripts.length > 0) {
     initClojureScriptEngine(opts);
@@ -117,6 +123,8 @@ export default function startClojureScriptEngine(opts: Object): void {
         engineStarted = true;
       });
     }
-    startREPL(opts);
+    return startREPL(opts);
   }
+
+  return undefined;
 }

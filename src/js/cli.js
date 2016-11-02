@@ -172,7 +172,8 @@ function processOpts(cliOpts: CLIOptsType): Object {
 
 export default function startCLI(): void {
   const opts = processOpts(getCLIOpts());
-  const { help, legal, repl, quiet } = opts;
+  const { help, legal, repl, quiet, _ } = opts;
+  const mainScript = _.length > 0;
 
   // if help, print help and bail
   if (help) {
@@ -183,7 +184,7 @@ export default function startCLI(): void {
     return printLegal();
   }
 
-  if (repl && !quiet) {
+  if (repl && !quiet && !mainScript) {
     printBanner();
   }
 
