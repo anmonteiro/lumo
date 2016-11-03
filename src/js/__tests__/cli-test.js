@@ -1,13 +1,31 @@
 /* @flow */
 
-import * as cli from '../cli';
+import startCLI, * as cli from '../cli';
+import cljs from '../cljs';
+
+jest.mock('../cljs');
+jest.mock('../version', () => 'X.X.X');
+jest.mock('../lumo', () => ({
+  load: jest.fn((path: string) => path), // eslint-disable-line arrow-parens
+}));
 
 const originalArgv = process.argv;
+const originalStdoutWrite = process.stdout.write;
+
+beforeEach(() => {
+  process.stdout.write = jest.fn();
+});
+
+afterEach(() => {
+  process.stdout.write = originalStdoutWrite;
+});
 
 afterEach(() => {
   Object.defineProperty(process, 'argv', {
     value: originalArgv,
   });
+  jest.resetModules();
+  cljs.mockClear();
 });
 
 describe('getCliOpts', () => {
@@ -15,7 +33,9 @@ describe('getCliOpts', () => {
     Object.defineProperty(process, 'argv', {
       value: ['', '', '-vK'],
     });
-    const parsedOpts = cli.getCLIOpts();
+    startCLI();
+    const [[parsedOpts]] = cljs.mock.calls;
+
     expect(parsedOpts.verbose).toBe(true);
     expect(parsedOpts.v).toBe(true);
     expect(parsedOpts.K).toBe(true);
@@ -28,7 +48,9 @@ describe('getCliOpts', () => {
       value: ['', ''].concat(args.split(' ')),
     });
 
-    const parsedOpts = cli.getCLIOpts();
+    startCLI();
+    const [[parsedOpts]] = cljs.mock.calls;
+
     expect(parsedOpts.verbose).toBe(false);
     expect(parsedOpts.eval).toBeInstanceOf(Array);
     expect(parsedOpts.eval).toEqual([':foo', ':bar']);
@@ -36,48 +58,28 @@ describe('getCliOpts', () => {
   });
 });
 
-jest.mock('../version', () => 'X.X.X');
-
-describe('getVersionString', () => {
-  it('should read the version string from the \'version\' module', () => {
-    expect(cli.getVersionString()).toBe('Lumo X.X.X');
-  });
-});
-
-jest.mock('../lumo', () => ({
-  load: jest.fn((path: string) => path), // eslint-disable-line arrow-parens
-}));
-
-describe('getClojureScriptVersionString', () => {
-  it('should read the version string from the bundle using lumo.load', () => {
-    expect(cli.getClojureScriptVersionString()).toBe('ClojureScript clojurescript-version');
-  });
-});
-
 describe('print Functions', () => {
-  const originalStdoutWrite = process.stdout.write;
-
-  beforeEach(() => {
-    process.stdout.write = jest.fn();
-  });
-  afterEach(() => {
-    process.stdout.write = originalStdoutWrite;
-  });
-
-
   describe('printBanner', () => {
     it('should print the banner to stdout', () => {
-      cli.printBanner();
+      Object.defineProperty(process, 'argv', {
+        value: ['', ''],
+      });
+
+      startCLI();
       expect(process.stdout.write).toBeCalledWith(`Lumo X.X.X
 ClojureScript clojurescript-version
- Exit: Control+D or :cljs/quit
+ Exit: Control+D or :cljs/quit or exit
 `);
     });
   });
 
-  describe('printBanner', () => {
-    it('should print the banner to stdout', () => {
-      cli.printHelp();
+  describe('printHelp', () => {
+    it('should print the help text to stdout', () => {
+      Object.defineProperty(process, 'argv', {
+        value: ['', '', '-h'],
+      });
+
+      startCLI();
       expect(process.stdout.write).toBeCalledWith(`Lumo X.X.X
 Usage:  lumo [init-opt*] [main-opt] [arg*]
 
@@ -93,12 +95,11 @@ Usage:  lumo [init-opt*] [main-opt] [arg*]
     -q, --quiet              Quiet mode; doesn't print the banner initially
     -v, --verbose            Emit verbose diagnostic output
     -d, --dumb-terminal      Disable line editing / VT100 terminal control
+    -s, --static-fns         Generate static dispatch function calls
 
   main options:
-    -m, --main ns-name       Call the -main function from a namespace with args
     -r, --repl               Run a repl
     path                     Run a script from a file or resource
-    -                        Run a script from standard input
     -h, -?, --help           Print this help message and exit
     -l, --legal              Show legal info (licenses and copyrights)
 

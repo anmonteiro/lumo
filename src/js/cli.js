@@ -74,7 +74,6 @@ Usage:  lumo [init-opt*] [main-opt] [arg*]
     -s, --static-fns         Generate static dispatch function calls
 
   main options:
-
     -r, --repl               Run a repl
     path                     Run a script from a file or resource
     -h, -?, --help           Print this help message and exit
