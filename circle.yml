@@ -27,3 +27,4 @@ test:
     - yarn type:check
     - yarn test
     - boot test
+    - boot release
