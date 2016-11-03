@@ -8,7 +8,7 @@ install:
   - ps: npm install -g yarn
   # install modules
   - cmd: yarn install
-  - ps: wget https://github.com/boot-clj/boot-bin/releases/download/latest/boot.sh
+  - ps: wget https://github.com/boot-clj/boot-bin/releases/download/latest/boot.exe
   - ps: move boot.exe %SystemRoot%
 
 # Post-install test scripts.
