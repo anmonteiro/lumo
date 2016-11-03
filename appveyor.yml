@@ -10,27 +10,23 @@ configuration:
 matrix:
   fast_finish: true
 
-# Install scripts. (runs after repo cloning)
 install:
-  # Get the latest stable version of Node.js or io.js
   - ps: Install-Product node $env:nodejs_version x64
   - ps: npm install -g yarn
-  # install modules
   - cmd: yarn install
   - ps: wget 'https://github.com/boot-clj/boot-bin/releases/download/latest/boot.exe' -OutFile "$pwd\boot.exe"
   - cmd: set PATH=$pwd\boot.exe;%PATH%
 
-# Post-install test scripts.
 test_script:
-  # Output useful info for debugging.
-  # - node --version
-  # - npm --version
-  # run tests
   - yarn lint
   - yarn type:check
   - yarn test
   - cmd: boot test
   - cmd: boot release-ci
 
-# Don't actually build.
+artifacts:
+  - path: main.exe
+    name: Lumo
+
+# Don't actually build (MSBuild).
 build: off

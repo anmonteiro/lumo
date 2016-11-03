@@ -1,3 +1,7 @@
+general:
+  artifacts:
+    - main
+
 machine:
   xcode:
     version: "8.0"
