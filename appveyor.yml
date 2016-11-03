@@ -1,6 +1,16 @@
 environment:
   nodejs_version: "7.0.0"
 
+platform:
+  - x64
+  - Any CPU
+
+configuration:
+  - Release
+
+matrix:
+  fast_finish: true
+
 # Install scripts. (runs after repo cloning)
 install:
   # Get the latest stable version of Node.js or io.js
