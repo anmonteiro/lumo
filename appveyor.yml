@@ -18,7 +18,7 @@ install:
   # install modules
   - cmd: yarn install
   - ps: wget 'https://github.com/boot-clj/boot-bin/releases/download/latest/boot.exe' -OutFile "$pwd\boot.exe"
-  - ps: move boot.exe %SystemRoot%
+  - ps: set PATH=$pwd\boot.exe;%PATH%
 
 # Post-install test scripts.
 test_script:
@@ -29,8 +29,8 @@ test_script:
   - yarn lint
   - yarn type:check
   - yarn test
-  - ps: boot test
-  - ps: boot release-ci
+  - boot test
+  - boot release-ci
 
 # Don't actually build.
 build: off
