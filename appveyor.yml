@@ -11,7 +11,7 @@ matrix:
   fast_finish: true
 
 cache:
-  - '%UserProfile%\.m2' -> build.boot
+  - '%UserProfile%\.m2'
 
 install:
   - ps: Install-Product node $env:nodejs_version x64
