@@ -29,8 +29,8 @@ test_script:
   - yarn lint
   - yarn type:check
   - yarn test
-  - boot test
-  - boot release-ci
+  - ps: boot test
+  - ps: boot release-ci
 
 # Don't actually build.
 build: off
