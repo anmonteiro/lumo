@@ -7,7 +7,7 @@ install:
   - ps: Install-Product node $env:nodejs_version
   - ps: npm install -g yarn
   # install modules
-  - ps: yarn install
+  - cmd: yarn install
   - ps: wget https://github.com/boot-clj/boot-bin/releases/download/latest/boot.sh
   - ps: move boot.exe %SystemRoot%
 
