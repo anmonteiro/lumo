@@ -3,7 +3,6 @@ environment:
 
 platform:
   - x64
-  - Any CPU
 
 configuration:
   - Release
@@ -14,7 +13,7 @@ matrix:
 # Install scripts. (runs after repo cloning)
 install:
   # Get the latest stable version of Node.js or io.js
-  - ps: Install-Product node $env:nodejs_version
+  - ps: Install-Product node $env:nodejs_version x64
   - ps: npm install -g yarn
   # install modules
   - cmd: yarn install
