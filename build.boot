@@ -167,10 +167,9 @@
       (dosh "cmd" "/c" ".\\scripts\\aot-bundle-macros.bat")
       (dosh "./scripts/aot-bundle-macros.sh"))))
 
-(deftask release []
+(deftask release-ci []
   (comp
     (check-node-modules)
-    (speak)
     (compile-cljs)
     (sift-cljs-resources)
     (cache-edn->transit)
@@ -184,3 +183,8 @@
     (aot-macros)
     ;; Package final executable
     (package-executable)))
+
+(deftask release []
+  (comp
+    (speak)
+    (release-ci)))
