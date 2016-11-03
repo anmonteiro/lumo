@@ -13,7 +13,7 @@ dependencies:
     - wget https://github.com/boot-clj/boot-bin/releases/download/latest/boot.sh
     - mv boot.sh boot && chmod a+x boot && sudo mv boot /usr/local/bin
   override:
-    - boot deps
+    - boot
     - yarn install
 
 test:
