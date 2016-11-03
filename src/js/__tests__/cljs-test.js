@@ -14,7 +14,9 @@ describe('startClojureScriptEngine', () => {
     process.nextTick = jest.fn();
   });
 
-  afterEach(() => process.nextTick = nextTick);
+  afterEach(() => {
+    process.nextTick = nextTick;
+  });
 
   it('should start a REPL if opts.repl is true', () => {
     startCLJS({
