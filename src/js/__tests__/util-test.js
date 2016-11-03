@@ -1,7 +1,8 @@
 /* @flow */
 /* eslint-disable arrow-parens */
 
-import { ensureDir, srcPathsFromClasspathStrings, isWindows } from '../util';
+import { ensureArray, ensureDir, srcPathsFromClasspathStrings,
+         isWhitespace, isWindows } from '../util';
 
 const fs = require('fs');
 const os = require('os');
@@ -86,5 +87,32 @@ describe('ensureDir', () => {
     expect(fs.existsSync.mock.calls.length).toBe(1);
     expect(fs.statSync.mock.calls.length).toBe(1);
     expect(fs.mkdirSync).not.toBeCalled();
+  });
+});
+
+describe('ensureArray', () => {
+  it('returns the same input if passed an array', () => {
+    const arr = [1, 2];
+    expect(ensureArray(arr)).toBe(arr);
+  });
+
+  it('returns an array if passed a single element', () => {
+    expect(ensureArray(1)).toEqual([1]);
+  });
+});
+
+describe('isWhitespace', () => {
+  it('returns true given any whitespace string', () => {
+    expect(isWhitespace('')).toBe(true);
+    expect(isWhitespace('  ')).toBe(true);
+    expect(isWhitespace('\t')).toBe(true);
+    expect(isWhitespace('\n')).toBe(true);
+    expect(isWhitespace('\r')).toBe(true);
+  });
+
+  it('returns false given any non-whitespace string', () => {
+    expect(isWhitespace('a')).toBe(false);
+    expect(isWhitespace('a b')).toBe(false);
+    expect(isWhitespace('a\n')).toBe(false);
   });
 });
