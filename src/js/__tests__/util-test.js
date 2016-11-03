@@ -1,7 +1,7 @@
 /* @flow */
 /* eslint-disable arrow-parens */
 
-import { ensureDir, srcPathsFromClasspathStrings } from '../util';
+import { ensureDir, srcPathsFromClasspathStrings, isWindows } from '../util';
 
 const fs = require('fs');
 const os = require('os');
@@ -24,12 +24,22 @@ describe('srcPathsFromClasspathStrings', () => {
 
   it('expands ', () => {
     const ret = srcPathsFromClasspathStrings(['a:~/b', '~/c:~/d']);
-    expect(ret).toEqual(['a', '/Users/foo/b', '/Users/foo/c', '/Users/foo/d']);
+
+    if (isWindows) {
+      expect(ret).toEqual(['a', '\\Users\\foo\\b', '\\Users\\foo\\c', '\\Users\\foo\\d']);
+    } else {
+      expect(ret).toEqual(['a', '/Users/foo/b', '/Users/foo/c', '/Users/foo/d']);
+    }
   });
 
   it('normalizes paths', () => {
     const ret = srcPathsFromClasspathStrings(['a//c/x/:~//b', '~/c//']);
-    expect(ret).toEqual(['a/c/x/', '/Users/foo/b', '/Users/foo/c/']);
+
+    if (isWindows) {
+      expect(ret).toEqual(['a\\c\\x\\', '\\Users\\foo\\b', '\\Users\\foo\\c\\']);
+    } else {
+      expect(ret).toEqual(['a/c/x/', '/Users/foo/b', '/Users/foo/c/']);
+    }
   });
 });
 
