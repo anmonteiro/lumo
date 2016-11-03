@@ -1,0 +1,27 @@
+environment:
+  nodejs_version: "7.0.0"
+
+# Install scripts. (runs after repo cloning)
+install:
+  # Get the latest stable version of Node.js or io.js
+  - ps: Install-Product node $env:nodejs_version
+  - ps: npm install -g yarn
+  # install modules
+  - ps: yarn install
+  - ps: wget https://github.com/boot-clj/boot-bin/releases/download/latest/boot.sh
+  - ps: move boot.exe %SystemRoot%
+
+# Post-install test scripts.
+test_script:
+  # Output useful info for debugging.
+  # - node --version
+  # - npm --version
+  # run tests
+  - yarn lint
+  - yarn type:check
+  - yarn test
+  - boot test
+  - boot release-ci
+
+# Don't actually build.
+build: off
