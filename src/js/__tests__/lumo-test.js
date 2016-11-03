@@ -77,6 +77,32 @@ describe('lumo', () => {
     });
   });
 
+  describe('writeCache', () => {
+    const writeFileSync = fs.writeFileSync;
+    beforeEach(() => {
+      fs.writeFileSync = jest.fn((fname: string,
+                                  contents: string,
+                                  encoding: string) => {
+        if (/foo/.test(fname)) {
+          return;
+        }
+        throw new Error('some error');
+      });
+    });
+
+    afterEach(() => {
+      fs.writeFileSync = writeFileSync;
+    });
+
+    it('writes correctly if directory exists', () => {
+      expect(lumo.writeCache('foo', 'bar')).toBeUndefined();
+    });
+
+    it('catches and returns an error if it can\'t write', () => {
+      expect(lumo.writeCache('nonExistent', 'contents')).toBeInstanceOf(Error);
+    });
+  });
+
   describe('readSource', () => {
     beforeEach(() => {
       jest.resetModules();
@@ -118,6 +144,28 @@ describe('lumo', () => {
 
         expect(source).toBe(null);
       });
+    });
+  });
+
+  describe('loadUpstreamForeignLibs', () => {
+    beforeEach(() => {
+      jest.resetModules();
+      lumo = require('../lumo'); // eslint-disable-line global-require
+    });
+
+    it('should return an array with the file contents when JAR has deps.cljs', () => {
+      const srcPaths = ['foo.jar'];
+      lumo.addSourcePaths(srcPaths);
+
+      const source = lumo.loadUpstreamForeignLibs('some/thing');
+
+      expect(source).toEqual(['zipContents']);
+    });
+
+    it('should return an empty array when the JAR doesn\'t have deps.cljs', () => {
+      const source = lumo.loadUpstreamForeignLibs('some/thing');
+
+      expect(source).toEqual([]);
     });
   });
 });
