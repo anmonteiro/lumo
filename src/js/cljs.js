@@ -57,7 +57,7 @@ function setRuntimeOpts(opts: CLIOptsType) {
   ClojureScriptContext.lumo.repl.init(repl, verbose, cache, staticFns);
 }
 
-export function initClojureScriptEngine(opts: CLIOptsType): void {
+function initClojureScriptEngine(opts: CLIOptsType): void {
   ClojureScriptContext = newContext();
   // $FlowIssue: context can have globals
   ClojureScriptContext.cljs.user = {};
@@ -77,7 +77,7 @@ export function execute(code: string,
   ClojureScriptContext.lumo.repl.execute(type, code, expression, setNS);
 }
 
-export function executeScript(code: string, type: string): void {
+function executeScript(code: string, type: string): void {
   return execute(code, type, type !== 'path');
 }
 
