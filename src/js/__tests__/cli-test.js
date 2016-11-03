@@ -98,10 +98,7 @@ describe('print Functions', () => {
       });
 
       startCLI();
-      expect(process.stdout.write).toBeCalledWith(`Lumo X.X.X
-ClojureScript clojurescript-version
- Exit: Control+D or :cljs/quit or exit
-`);
+      expect(process.stdout.write.mock.calls).toMatchSnapshot();
     });
   });
 
@@ -112,34 +109,7 @@ ClojureScript clojurescript-version
       });
 
       startCLI();
-      expect(process.stdout.write).toBeCalledWith(`Lumo X.X.X
-Usage:  lumo [init-opt*] [main-opt] [arg*]
-
-  With no options or args, runs an interactive Read-Eval-Print Loop
-
-  init options:
-    -i, --init path          Load a file or resource
-    -e, --eval string        Evaluate expressions in string; print non-nil values
-    -c cp, --classpath cp    Use colon-delimited cp for source directories and
-                             JARs
-    -K, --auto-cache         Create and use .planck_cache dir for cache
-    -k, --cache path         If dir exists at path, use it for cache
-    -q, --quiet              Quiet mode; doesn't print the banner initially
-    -v, --verbose            Emit verbose diagnostic output
-    -d, --dumb-terminal      Disable line editing / VT100 terminal control
-    -s, --static-fns         Generate static dispatch function calls
-
-  main options:
-    -r, --repl               Run a repl
-    path                     Run a script from a file or resource
-    -h, -?, --help           Print this help message and exit
-    -l, --legal              Show legal info (licenses and copyrights)
-
-  The init options may be repeated and mixed freely, but must appear before
-  any main option.
-
-  Paths may be absolute or relative in the filesystem.
-`);
+      expect(process.stdout.write.mock.calls).toMatchSnapshot();
     });
   });
 
@@ -150,39 +120,7 @@ Usage:  lumo [init-opt*] [main-opt] [arg*]
       });
 
       startCLI();
-      expect(process.stdout.write).toBeCalledWith(`
-Lumo
-----
-
-Copyright © 2016 António Nuno Monteiro
-Distributed under the Eclipse Public License either version 1.0 or (at your
-option) any later version.
-
-Lumo may use the following copyrighted software, which use is hereby
-acknowledged.
-
-
-JSZip
------
-
-Copyright © 2009-2016 Stuart Knightley, David Duponchel, Franz Buchinger,
-António Afonso
-MIT License
-
-
-minimist
---------
-
-Copyright © 2010 James Halliday (mail@substack.net)
-MIT License
-
-
-lazy-map
---------
-
-Copyright © 2015 Artur Malabarba
-Distributed under the Eclipse Public License either version 1.0 or (at your option) any later version.
-`);
+      expect(process.stdout.write.mock.calls).toMatchSnapshot();
     });
   });
 });
