@@ -10,6 +10,9 @@ configuration:
 matrix:
   fast_finish: true
 
+cache:
+  - '%UserProfile%\.m2' -> build.boot
+
 install:
   - ps: Install-Product node $env:nodejs_version x64
   - ps: npm install -g yarn
