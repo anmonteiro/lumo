@@ -2,11 +2,15 @@
 
 import startCLI from '../cli';
 import cljs from '../cljs';
+import * as lumo from '../lumo';
 
 jest.mock('../cljs');
 jest.mock('../version', () => 'X.X.X');
 jest.mock('../lumo', () => ({
-  load: jest.fn((path: string) => path), // eslint-disable-line arrow-parens
+  /* eslint-disable arrow-parens */
+  addSourcePaths: jest.fn((srcPaths: string[]) => undefined),
+  load: jest.fn((path: string) => path),
+  /* eslint-enable arrow-parens */
 }));
 
 const originalArgv = process.argv;
@@ -42,8 +46,8 @@ describe('getCliOpts', () => {
     expect(parsedOpts['auto-cache']).toBe(true);
   });
 
-  it('parses single dash properties when they appear together', () => {
-    const args = '-e :foo -e :bar';
+  it('adds scripts when -[ie] specified', () => {
+    const args = '-i foo.cljs -e :foo -e :bar';
     Object.defineProperty(process, 'argv', {
       value: ['', ''].concat(args.split(' ')),
     });
@@ -54,7 +58,35 @@ describe('getCliOpts', () => {
     expect(parsedOpts.verbose).toBe(false);
     expect(parsedOpts.eval).toBeInstanceOf(Array);
     expect(parsedOpts.eval).toEqual([':foo', ':bar']);
+    expect(parsedOpts.init).toEqual('foo.cljs');
+    expect(parsedOpts.scripts.length).toEqual(3);
     expect(parsedOpts.e).toEqual(parsedOpts.eval);
+  });
+
+  it('sets srcPaths if -c specified', () => {
+    const args = '-c foo:bar';
+    Object.defineProperty(process, 'argv', {
+      value: ['', ''].concat(args.split(' ')),
+    });
+
+    startCLI();
+    const [[parsedOpts]] = cljs.mock.calls;
+
+    expect(parsedOpts.classpath).toEqual(['foo', 'bar']);
+    expect(lumo.addSourcePaths).toHaveBeenCalledWith(['foo', 'bar']);
+  });
+
+  it('sets repl to false if a main path is specified', () => {
+    const args = '-r foo.cljs';
+    Object.defineProperty(process, 'argv', {
+      value: ['', ''].concat(args.split(' ')),
+    });
+
+    startCLI();
+    const [[parsedOpts]] = cljs.mock.calls;
+
+    expect(parsedOpts._).toEqual(['foo.cljs']);
+    expect(parsedOpts.repl).toBe(false);
   });
 });
 
@@ -107,6 +139,49 @@ Usage:  lumo [init-opt*] [main-opt] [arg*]
   any main option.
 
   Paths may be absolute or relative in the filesystem.
+`);
+    });
+  });
+
+  describe('printLegal', () => {
+    it('should print the legal information to stdout', () => {
+      Object.defineProperty(process, 'argv', {
+        value: ['', '', '-l'],
+      });
+
+      startCLI();
+      expect(process.stdout.write).toBeCalledWith(`
+Lumo
+----
+
+Copyright © 2016 António Nuno Monteiro
+Distributed under the Eclipse Public License either version 1.0 or (at your
+option) any later version.
+
+Lumo may use the following copyrighted software, which use is hereby
+acknowledged.
+
+
+JSZip
+-----
+
+Copyright © 2009-2016 Stuart Knightley, David Duponchel, Franz Buchinger,
+António Afonso
+MIT License
+
+
+minimist
+--------
+
+Copyright © 2010 James Halliday (mail@substack.net)
+MIT License
+
+
+lazy-map
+--------
+
+Copyright © 2015 Artur Malabarba
+Distributed under the Eclipse Public License either version 1.0 or (at your option) any later version.
 `);
     });
   });

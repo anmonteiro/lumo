@@ -147,6 +147,7 @@ function processOpts(cliOpts: CLIOptsType): Object {
     const cp = util.ensureArray(classpath);
     const srcPaths = util.srcPathsFromClasspathStrings(cp);
 
+    opts.classpath = srcPaths;
     lumo.addSourcePaths(srcPaths);
   }
 
