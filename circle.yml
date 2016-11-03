@@ -1,6 +1,6 @@
 machine:
   xcode:
-    version: "8.1"
+    version: "8.0"
   pre:
     - npm install -g yarn
   java:
