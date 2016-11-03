@@ -80,7 +80,7 @@ describe('lumo', () => {
   describe('readSource', () => {
     beforeEach(() => {
       jest.resetModules();
-      lumo = require('../lumo');
+      lumo = require('../lumo'); // eslint-disable-line global-require
     });
 
     it('cycles through the source paths', () => {
@@ -97,13 +97,13 @@ describe('lumo', () => {
 
       expect(source).toBe(null);
       expect(mockCalls.length).toBe(4);
-      // eslint-disable-next-line arrow-parens
+      /* eslint-disable arrow-parens */
       expect(mockCalls.map((x: string[]) => x[0])).toEqual(
         lumoPaths.map((p: string) => path.join(p, 'bar/baz')));
+      /* eslint-enable arrow-parens */
     });
 
     describe('reads JAR archives', () => {
-
       it('should return the source when JAR has the source', () => {
         const srcPaths = ['foo.jar'];
         lumo.addSourcePaths(srcPaths);

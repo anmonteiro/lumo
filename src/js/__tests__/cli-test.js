@@ -1,6 +1,6 @@
 /* @flow */
 
-import startCLI, * as cli from '../cli';
+import startCLI from '../cli';
 import cljs from '../cljs';
 
 jest.mock('../cljs');
