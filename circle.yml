@@ -1,0 +1,24 @@
+machine:
+  xcode:
+    version: "8.1"
+  pre:
+    - npm install -g yarn
+  java:
+    version: oraclejdk8
+  node:
+    version: 7.0.0
+
+dependencies:
+  pre:
+    - wget https://github.com/boot-clj/boot-bin/releases/download/latest/boot.sh
+    - mv boot.sh boot && chmod a+x boot && sudo mv boot /usr/local/bin
+  override:
+    - boot deps
+    - yarn install
+
+test:
+  override:
+    - yarn lint
+    - yarn type:check
+    - yarn test
+    - boot test
