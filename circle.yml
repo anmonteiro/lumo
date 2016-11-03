@@ -3,6 +3,7 @@ machine:
     version: "8.0"
   pre:
     - npm install -g yarn
+    - brew install wget
   # https://discuss.circleci.com/t/is-there-a-way-to-force-building-on-os-x/4079/13
   environment:
     XCODE_SCHEME: phony
