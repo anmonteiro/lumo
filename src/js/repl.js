@@ -62,6 +62,23 @@ function processLine(rl: readline$Interface, line: string) {
   }
 }
 
+function handleSIGINT(rl: readline$Interface) {
+  input = '';
+
+  // $FlowIssue: missing property in interface
+  rl.output.write('\n');
+
+  readline.clearLine(process.stdout, 0);
+  readline.cursorTo(process.stdout, 0);
+
+  rl.write(null, {
+    ctrl: true,
+    name: 'u',
+  });
+
+  prompt(rl);
+}
+
 export default function startREPL(opts: CLIOptsType) {
   const dumbTerminal = opts['dumb-terminal'];
 
@@ -77,21 +94,5 @@ export default function startREPL(opts: CLIOptsType) {
 
   // eslint-disable-next-line arrow-parens
   rl.on('line', (line: string) => processLine(rl, line));
-
-  rl.on('SIGINT', () => {
-    input = '';
-
-    // $FlowIssue: missing property in interface
-    rl.output.write('\n');
-
-    readline.clearLine(process.stdout, 0);
-    readline.cursorTo(process.stdout, 0);
-
-    rl.write(null, {
-      ctrl: true,
-      name: 'u',
-    });
-
-    prompt(rl);
-  });
+  rl.on('SIGINT', () => handleSIGINT(rl));
 }

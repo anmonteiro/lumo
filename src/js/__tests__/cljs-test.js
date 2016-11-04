@@ -13,6 +13,8 @@ jest.mock('../lumo', () => ({
 
 jest.mock('vm');
 
+jest.useFakeTimers();
+
 const ctx = {
   cljs: {
     nodejs: {
@@ -33,8 +35,6 @@ const ctx = {
 vm.createContext.mockImplementation(() => ctx);
 
 describe('startClojureScriptEngine', () => {
-  const nextTick = process.nextTick;
-
   beforeEach(() => {
     startREPL.mockClear();
   });
@@ -94,13 +94,8 @@ describe('startClojureScriptEngine', () => {
 
   describe('in development', () => {
     beforeEach(() => {
+      jest.runAllTicks();
       vm.createContext.mockClear();
-      // eslint-disable-next-line arrow-parens
-      process.nextTick = jest.fn((f: Function) => f());
-    });
-
-    afterEach(() => {
-      process.nextTick = nextTick;
     });
 
     it('creates and returns a vm context', () => {
@@ -110,6 +105,7 @@ describe('startClojureScriptEngine', () => {
         scripts: [],
       });
 
+      jest.runAllTicks();
       expect(vm.createContext).toHaveBeenCalled();
       expect(vm.createContext.mock.calls.length).toBe(1);
     });
@@ -120,9 +116,6 @@ describe('startClojureScriptEngine', () => {
 
     beforeEach(() => {
       jest.resetModules();
-      // eslint-disable-next-line arrow-parens
-      process.nextTick = jest.fn((f: Function) => f());
-
       Object.assign(global, {
         initialize: jest.fn(),
         __DEV__: false,
@@ -136,7 +129,6 @@ describe('startClojureScriptEngine', () => {
         Reflect.deleteProperty(global, key);
       }
       __DEV__ = true;
-      process.nextTick = nextTick;
     });
 
     it('calls the global initialize function', () => {
@@ -145,6 +137,8 @@ describe('startClojureScriptEngine', () => {
         _: [],
         scripts: [],
       });
+
+      jest.runAllTicks();
 
       // eslint-disable-next-line no-undef
       expect(initialize).toHaveBeenCalled();
