@@ -25,6 +25,7 @@ addons:
   artifacts:
     paths:
     - "./main"
+    target_paths: artifacts
 env:
   global:
   # ARTIFACTS_KEY
