@@ -20,6 +20,8 @@ machine:
 dependencies:
   cache_directories:
     - "tmp"
+    - "~/.boot/cache/lib"
+    - "~/.boot/cache/bin"
   pre:
     - wget https://github.com/boot-clj/boot-bin/releases/download/latest/boot.sh
     - mv boot.sh boot && chmod a+x boot && sudo mv boot /usr/local/bin
