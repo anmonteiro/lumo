@@ -12,6 +12,7 @@ matrix:
 
 cache:
   - '%UserProfile%\.m2'
+  - tmp -> scripts\package.js
 
 install:
   - ps: Install-Product node $env:nodejs_version x64

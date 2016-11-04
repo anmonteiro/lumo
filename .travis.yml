@@ -8,6 +8,8 @@ node_js:
 cache:
   directories:
   - node_modules
+  - $HOME/.m2
+  - tmp
 
 before_install:
 - npm install -g yarn
