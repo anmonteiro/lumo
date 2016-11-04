@@ -6,8 +6,8 @@ machine:
   xcode:
     version: "8.0"
   pre:
-    - npm install -g yarn
-    - brew install wget
+    - if [[ ! -e /usr/local/bin/yarn ]]; then npm install -g yarn; fi
+    - if [[ ! -e /usr/local/Cellar/wget ]]; then brew install wget; fi
   # https://discuss.circleci.com/t/is-there-a-way-to-force-building-on-os-x/4079/13
   environment:
     XCODE_SCHEME: phony
