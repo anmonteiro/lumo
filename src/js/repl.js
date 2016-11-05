@@ -2,7 +2,7 @@
 
 import * as cljs from './cljs';
 import replHistory from './replHistory';
-import { isWhitespace } from './util';
+import { isWhitespace, isWindows } from './util';
 
 import type { CLIOptsType } from './cli';
 
@@ -80,7 +80,7 @@ function handleSIGINT(rl: readline$Interface) {
 }
 
 export default function startREPL(opts: CLIOptsType) {
-  const dumbTerminal = opts['dumb-terminal'];
+  const dumbTerminal = isWindows ? true : opts['dumb-terminal'];
 
   const rl = replHistory({
     path: path.join(os.homedir(), '.lumo_history'),

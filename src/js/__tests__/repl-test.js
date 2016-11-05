@@ -1,5 +1,7 @@
 /* @flow */
 
+import * as util from '../util';
+
 // functions are hoisted, calling this before defining for readability
 // eslint-disable-next-line no-use-before-define
 mockReplHistory();
@@ -67,6 +69,53 @@ describe('startREPL', () => {
     expect(onCalls.length).toBe(2);
     expect(onCalls[0][0]).toBe('line');
     expect(onCalls[1][0]).toBe('SIGINT');
+  });
+
+  describe('sets dumb-terminal', () => {
+    const isWin = util.isWindows;
+
+    afterEach(() => {
+      util.isWindows = isWin;
+    });
+
+    describe('according to the option in non-windows platforms', () => {
+      util.isWindows = false;
+
+      it('when dumb-terminal is false', () => {
+        startREPL({
+          'dumb-terminal': false,
+        });
+
+        const replHistoryCalls = replHistory.mock.calls;
+
+        expect(replHistoryCalls.length).toBe(1);
+        expect(replHistoryCalls[0][0].terminal).toBe(true);
+      });
+
+      it('when dumb-terminal is true', () => {
+        startREPL({
+          'dumb-terminal': true,
+        });
+
+        const replHistoryCalls = replHistory.mock.calls;
+
+        expect(replHistoryCalls.length).toBe(1);
+        expect(replHistoryCalls[0][0].terminal).toBe(false);
+      });
+    });
+
+    it('to true on Windows regardless', () => {
+      util.isWindows = true;
+
+      startREPL({
+        'dumb-terminal': false,
+      });
+
+      const replHistoryCalls = replHistory.mock.calls;
+
+      expect(replHistoryCalls.length).toBe(1);
+      expect(replHistoryCalls[0][0].terminal).toBe(false);
+    });
   });
 
   describe('calls process.exit if an exit command is specified', () => {
