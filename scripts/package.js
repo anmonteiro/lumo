@@ -30,7 +30,7 @@ function deflate(fname) {
   });
 }
 
-const outputPath = /^Windows/.test(os.type()) ? 'main.exe' : 'main';
+const outputPath = `build/${/^Windows/.test(os.type()) ? 'lumo.exe' : 'lumo'}`;
 const resources = getDirContents('target')
       .filter(fname => fname.endsWith('.json') ||
               /clojurescript-version/.test(fname) ||

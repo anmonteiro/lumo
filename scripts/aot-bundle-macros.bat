@@ -11,7 +11,7 @@ echo "### Compiling Macro Namespaces"
 
 mkdir lumo-cljs\out\macros-tmp || goto :error
 
-echo (require-macros 'clojure.template 'cljs.spec 'cljs.spec.impl.gen 'cljs.test) | main.exe --quiet -c target -sdk lumo-cljs/out/macros-tmp || goto :error
+echo (require-macros 'clojure.template 'cljs.spec 'cljs.spec.impl.gen 'cljs.test) | build\lumo.exe --quiet -c target -sdk lumo-cljs/out/macros-tmp || goto :error
 
 mv lumo-cljs\out\macros-tmp\clojure_SLASH_template$macros.js target\clojure\template$macros.js || goto :error
 mv lumo-cljs\out\macros-tmp\clojure_SLASH_template$macros.cache.json target\clojure\template$macros.cache.json || goto :error

@@ -29,7 +29,7 @@ test_script:
   - cmd: boot release-ci
 
 artifacts:
-  - path: main.exe
+  - path: build
     name: Lumo
 
 # Don't actually build (MSBuild).

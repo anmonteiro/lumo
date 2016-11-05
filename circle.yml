@@ -1,6 +1,6 @@
 general:
   artifacts:
-    - main
+    - build
 
 machine:
   xcode:
