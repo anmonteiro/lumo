@@ -22,12 +22,15 @@ dependencies:
     - "tmp"
     - "~/.boot/cache/lib"
     - "~/.boot/cache/bin"
+    - "/usr/local/bin"
+    - "/usr/local/lib/node_modules"
+    - "/usr/local/Cellar"
   pre:
     - wget https://github.com/boot-clj/boot-bin/releases/download/latest/boot.sh
     - mv boot.sh boot && chmod a+x boot && sudo mv boot /usr/local/bin
     - if [[ ! -e tmp/node ]]; then boot release-ci; fi
   override:
-    - boot
+    - boot > /dev/null
     - yarn install
 
 test:
