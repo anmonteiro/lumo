@@ -6,8 +6,10 @@ node_js:
 cache:
   directories:
   - node_modules
-  - "$HOME/.m2"
+  - "~/.m2"
   - tmp
+  - "~/.boot/cache/lib"
+  - "~/.boot/cache/bin"
 before_install:
 - npm install -g yarn
 - wget https://github.com/boot-clj/boot-bin/releases/download/latest/boot.sh
