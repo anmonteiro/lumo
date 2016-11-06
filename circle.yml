@@ -30,7 +30,8 @@ dependencies:
     - "tmp"
     - "~/.boot/cache/lib"
     - "~/.boot/cache/bin"
-    - "/usr/local/bin"
+    - "/usr/local/bin/yarn"
+    - "/usr/local/bin/yarnpkg"
     - "/usr/local/lib/node_modules"
     - "/usr/local/Cellar"
   pre:
