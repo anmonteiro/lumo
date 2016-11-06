@@ -5,9 +5,6 @@ general:
 machine:
   xcode:
     version: "8.0"
-  pre:
-    - if [[ ! -e /usr/local/bin/yarn ]]; then npm install -g yarn; fi
-    - if [[ ! -e /usr/local/Cellar/wget ]]; then brew install wget; fi
   # https://discuss.circleci.com/t/is-there-a-way-to-force-building-on-os-x/4079/13
   environment:
     XCODE_SCHEME: phony
@@ -32,9 +29,12 @@ dependencies:
     - "~/.boot/cache/bin"
     - "/usr/local/bin/yarn"
     - "/usr/local/bin/yarnpkg"
+    - "/usr/local/bin/wget"
     - "/usr/local/lib/node_modules"
     - "/usr/local/Cellar"
   pre:
+    - if [[ ! -e /usr/local/bin/yarn ]]; then npm install -g yarn; fi
+    - if [[ ! -e /usr/local/bin/wget ]]; then brew install wget; fi
     - wget https://github.com/boot-clj/boot-bin/releases/download/latest/boot.sh
     - mv boot.sh boot && chmod a+x boot && sudo mv boot /usr/local/bin
     - if [[ ! -e tmp/node ]]; then boot release-ci; fi
