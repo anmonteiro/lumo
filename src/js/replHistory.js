@@ -95,9 +95,10 @@ function loadHistory(path: string, maxLength: number, cb: Function) {
 export default function createInterface(options: replHistory$Opts) {
   const { path, historySize, terminal } = options;
   const rl = readline.createInterface(options);
-  const stream = getHistoryStream(path);
 
   if (terminal) {
+    const stream = getHistoryStream(path);
+
     // $FlowIssue: private property
     const oldAddHistory = rl._addHistory;
 
@@ -113,7 +114,7 @@ export default function createInterface(options: replHistory$Opts) {
       return line;
     };
 
-    if (historySize) {
+    if (path != null && historySize != null) {
       loadHistory(path, historySize, (history: string[]) => {
         // $FlowIssue: it's there
         rl.history.push(...history);
