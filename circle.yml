@@ -12,6 +12,14 @@ machine:
   environment:
     XCODE_SCHEME: phony
     XCODE_WORKSPACE: phony
+    BOOT_JVM_OPTIONS: |
+      -client
+      -XX:+TieredCompilation
+      -XX:TieredStopAtLevel=1
+      -Xmx2g
+      -XX:+UseConcMarkSweepGC
+      -XX:+CMSClassUnloadingEnabled
+      -Xverify:none
   # java:
   #   version: oraclejdk8
   # node:
