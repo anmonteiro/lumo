@@ -18,10 +18,16 @@ fs.stat = jest.fn((path: string, cb: Function) => {
   cb(null, { size: 10 });
 });
 
+fs.close = jest.fn((_: number, cb: Function) => cb());
+fs.rename = jest.fn((old: string, newName: string, cb: Function) => cb());
+fs.open = jest.fn((path: string, flags: string, cb: Function) => cb());
+fs.unlink = jest.fn((_: string, cb: Function) => cb());
+
 const streamWrite = jest.fn();
 
 fs.createWriteStream = jest.fn(() => ({
   write: streamWrite,
+  fd: 42,
 }));
 
 fs.createReadStream = jest.fn((path: string, opts: Object) => ({
@@ -107,6 +113,46 @@ describe('replHistory', () => {
       rl._addHistory(); // eslint-disable-line no-underscore-dangle
       expect(streamWrite.mock.calls.length).toBe(1);
       expect(streamWrite).toHaveBeenCalledWith('qux\n', 'utf8');
+    });
+  });
+
+  describe('renames an existent repl history file when it\'s past the maximum size', () => {
+    const fsStat = fs.stat;
+
+    beforeEach(() => {
+      fs.stat = jest.fn()
+        .mockImplementationOnce((path: string, cb: Function) => cb(null, { size: 0x10000000 }))
+        .mockImplementationOnce((path: string, cb: Function) => cb(null, { size: 0x100 }));
+    });
+
+    afterAll(() => {
+      fs.stat = fsStat;
+    });
+
+    it('if an old one doesn\'t exist', () => {
+      fs.exists = jest.fn((_: string, cb: Function) => cb(false));
+
+      replHistory({
+        historySize: 10,
+        path: '~/.history',
+        terminal: true,
+      });
+
+      expect(fs.rename).toHaveBeenCalled();
+      expect(fs.unlink).not.toHaveBeenCalled();
+    });
+
+    it('unlinking the old one if necessary', () => {
+      fs.exists = jest.fn((_: string, cb: Function) => cb(true));
+
+      replHistory({
+        historySize: 10,
+        path: '~/.history',
+        terminal: true,
+      });
+
+      expect(fs.unlink).toHaveBeenCalled();
+      expect(fs.rename).toHaveBeenCalled();
     });
   });
 });
