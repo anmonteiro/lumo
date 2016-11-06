@@ -30,13 +30,18 @@ dependencies:
     - "/usr/local/bin/yarn"
     - "/usr/local/bin/yarnpkg"
     - "/usr/local/bin/wget"
+    - "/usr/local/bin/boot"
     - "/usr/local/lib/node_modules"
     - "/usr/local/Cellar"
   pre:
     - if [[ ! -e /usr/local/bin/yarn ]]; then npm install -g yarn; fi
     - if [[ ! -e /usr/local/bin/wget ]]; then brew install wget; fi
-    - wget https://github.com/boot-clj/boot-bin/releases/download/latest/boot.sh
-    - mv boot.sh boot && chmod a+x boot && sudo mv boot /usr/local/bin
+    - |
+      if [[ ! -e /usr/local/bin/boot ]];
+      then
+        wget https://github.com/boot-clj/boot-bin/releases/download/latest/boot.sh
+        mv boot.sh boot && chmod a+x boot && sudo mv boot /usr/local/bin;
+      fi
     - if [[ ! -e tmp/node ]]; then boot release-ci; fi
   override:
     - boot > /dev/null
