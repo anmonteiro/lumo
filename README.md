@@ -15,13 +15,30 @@ Read the [announcement blog post](https://anmonteiro.com/2016/10/the-fastest-clo
 ## Contents
 
 - [Installation](#installation)
+- [Using Lumo](#using-lumo)
 - [Building](#building)
 - [Copyright & License](#copyright--license)
 
 ## Installation
 
+1. Download the [latest release](https://github.com/anmonteiro/lumo/releases/latest).
+2. Extract it and `chmod a+x lumo` (Windows users may skip this step).
+3. Put it somewhere in your `$PATH`.
+
+## Using Lumo
+
+Enter `lumo` at the command line to launch it.
+
+Check out `lumo -h` for usage instructions and supported command line options.
 
 ## Building
+
+To build Lumo from source:
+
+1. Make sure you have installed [Boot](http://boot-clj.com/) and [Yarn](https://yarnpkg.com/).
+2. At the root of the repository, run: `boot dev`.
+3. The resulting binary can be found in `build/lumo` (or `build\lumo.exe` if you're
+on Windows).
 
 ## Copyright & License
 
