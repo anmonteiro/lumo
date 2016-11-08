@@ -2,7 +2,7 @@
 
 Standalone ClojureScript REPL on Node.js.
 
-Read the [announcement blog post](https://anmonteiro.com/2016/10/the-fastest-clojure-repl-in-the-world/).
+Read the [announcement blog post](https://anmonteiro.com/2016/11/the-fastest-clojure-repl-in-the-world/).
 
 ## Build status
 
@@ -22,8 +22,7 @@ Read the [announcement blog post](https://anmonteiro.com/2016/10/the-fastest-clo
 ## Installation
 
 1. Download the [latest release](https://github.com/anmonteiro/lumo/releases/latest).
-2. Extract it and `chmod a+x lumo` (Windows users may skip this step).
-3. Put it somewhere in your `$PATH`.
+2. Move it to somewhere in your `$PATH`.
 
 ## Using Lumo
 
