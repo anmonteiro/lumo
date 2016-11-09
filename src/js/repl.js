@@ -13,9 +13,11 @@ const readline = require('readline');
 const exitCommands = new Set([':cljs/quit', 'exit']);
 let input: string = '';
 
+/* eslint-disable indent */
 function prompt(rl: readline$Interface,
                 isSecondary: boolean = false,
                 p: string = cljs.getCurrentNamespace()): void {
+  /* eslint-enable indent */
   let promptText;
 
   if (isSecondary) {

@@ -45,7 +45,10 @@ fs.createReadStream = jest.fn((path: string, opts: Object) => ({
 
 describe('replHistory', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    readline.createInterface.mockClear();
+    fs.createWriteStream.mockClear();
+    fs.stat.mockClear();
+    streamWrite.mockClear();
   });
 
   it('creates a readline interface and saves history when terminal is true', () => {
@@ -54,6 +57,7 @@ describe('replHistory', () => {
     expect(readline.createInterface).toHaveBeenCalled();
     expect(fs.createWriteStream).toHaveBeenCalled();
   });
+
   it('doesn\'t save history when terminal is false', () => {
     replHistory({});
 

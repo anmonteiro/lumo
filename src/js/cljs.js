@@ -69,6 +69,7 @@ function initClojureScriptEngine(opts: CLIOptsType): void {
   setRuntimeOpts(opts);
 }
 
+/* eslint-disable indent */
 export function execute(code: string,
                         type: string = 'text',
                         expression: boolean = true,
@@ -76,6 +77,7 @@ export function execute(code: string,
   // $FlowIssue: context can have globals
   ClojureScriptContext.lumo.repl.execute(type, code, expression, setNS);
 }
+/* eslint-enable indent */
 
 function executeScript(code: string, type: string): void {
   return execute(code, type, type !== 'path');
@@ -92,9 +94,9 @@ export function isReadable(form: string): string | false {
 }
 
 function executeScripts(scripts: [string, string][]): void {
-  for (const [type, script] of scripts) {
+  scripts.forEach(([type, script]: [string, string]) => {
     executeScript(script, type);
-  }
+  });
 }
 
 export default function startClojureScriptEngine(opts: Object): void {

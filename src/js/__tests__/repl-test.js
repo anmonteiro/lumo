@@ -46,7 +46,9 @@ jest.mock('../cljs', () => ({
 
 describe('startREPL', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    replHistory.mockClear();
+    setPrompt.mockClear();
+    prompt.mockClear();
   });
 
   it('creates a readline interface', () => {
@@ -157,7 +159,7 @@ describe('startREPL', () => {
       mockReplHistory();
       // eslint-disable-next-line global-require
       startREPL = require('../repl').default;
-      jest.clearAllMocks();
+      setPrompt.mockClear();
     });
 
     it('should emit the primary prompt after input is completely readable', () => {

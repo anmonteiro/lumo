@@ -31,7 +31,8 @@ export function load(filename: string): ?string {
 
 // TODO: cache JARs that we know have a given file / path
 export function readSource(filename: string): ?string {
-  for (const srcPath of sourcePaths) {
+  for (let i = 0; i < sourcePaths.length; i += 1) {
+    const srcPath = sourcePaths[i];
     try {
       if (srcPath.endsWith('.jar')) {
         const data = fs.readFileSync(srcPath);
@@ -66,9 +67,7 @@ export function writeCache(filename: string, source: string): ?Error {
 }
 
 export function loadUpstreamForeignLibs(): string[] {
-  const ret = [];
-
-  for (const srcPath of sourcePaths) {
+  return sourcePaths.reduce((ret: string[], srcPath: string) => {
     if (srcPath.endsWith('.jar')) {
       const data = fs.readFileSync(srcPath);
       const zip = new JSZip().load(data);
@@ -78,8 +77,8 @@ export function loadUpstreamForeignLibs(): string[] {
         ret.push(source.asText());
       }
     }
-  }
-  return ret;
+    return ret;
+  }, []);
 }
 
 export function addSourcePaths(srcPaths: string[]): void {

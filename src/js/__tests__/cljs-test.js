@@ -125,9 +125,9 @@ describe('startClojureScriptEngine', () => {
     });
 
     afterEach(() => {
-      for (const key of Object.keys(ctx).concat(['initialize'])) {
-        Reflect.deleteProperty(global, key);
-      }
+      Object.keys(ctx).concat(['initialize']).forEach((key: string, idx: number) => {
+        global[key] = undefined;
+      });
       __DEV__ = true;
     });
 
