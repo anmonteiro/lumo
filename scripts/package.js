@@ -49,7 +49,6 @@ Promise.all(promises).then(() => {
       '--without-dtrace',
       '--without-npm',
       '--without-inspector',
-      '--without-ssl',
       '--without-etw',
       '--without-perfctr',
     ],
