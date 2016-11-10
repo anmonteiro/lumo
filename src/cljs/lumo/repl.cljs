@@ -17,6 +17,8 @@
 ;; =============================================================================
 ;; Globals
 
+(def ^:dynamic *loading-foreign* false)
+
 (defonce ^:private st (cljs/empty-state))
 
 (defonce ^:private current-ns (volatile! 'cljs.user))
@@ -182,9 +184,10 @@
   [name cb]
   (let [files (deps/files-to-load name)
         sources (map js/LUMO_READ_SOURCE files)]
-    (cb {:lang :js
-         :source (string/join "\n" sources)})
-    :loaded))
+    (binding [*loading-foreign* true]
+      (cb {:lang :js
+           :source (string/join "\n" sources)})
+      :loaded)))
 
 ;; TODO: can be optimized e.g. to just analyze CLJ source
 ;; if JS present but no analysis cache
@@ -292,7 +295,14 @@
   [{:keys [name source cache path] :as m}]
   (when-let [cache-path (and source cache path (:cache-path @app-opts))]
     (write-cache name path source cache cache-path))
-  (js/eval source))
+  (if *loading-foreign*
+    ;; this is a hack needed for foreign libraries to end up on global scope.
+    ;; Closure Library's goog.bootstrap.nodeJs does the same thing.
+    (with-redefs [js/module js/undefined
+                  js/exports js/undefined]
+      (set! *loading-foreign* false)
+      (js/eval source))
+    (js/eval source)))
 
 ;; =============================================================================
 ;; REPL plumbing
