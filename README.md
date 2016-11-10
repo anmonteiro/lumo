@@ -35,7 +35,7 @@ Check out `lumo -h` for usage instructions and supported command line options.
 To build Lumo from source:
 
 1. Make sure you have installed [Boot](http://boot-clj.com/) and [Yarn](https://yarnpkg.com/).
-2. At the root of the repository, run: `boot dev`.
+2. At the root of the repository, run: `boot release`.
 3. The resulting binary can be found in `build/lumo` (or `build\lumo.exe` if you're
 on Windows).
 
