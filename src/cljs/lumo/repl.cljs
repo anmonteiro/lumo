@@ -355,11 +355,6 @@
            (restore-compiler-state! backup)
            (throw e)))))))
 
-(defn- wrap-special-fns
-  [wfn fns]
-  "Wrap wfn around all (fn) values in fns hashmap."
-  (into {} (for [[k v] fns] [k (wfn v)])))
-
 (declare execute execute-source)
 
 (defn- execute-path [filename opts]
@@ -371,6 +366,34 @@
                                   :filename filename
                                   :expression? false}))
         (handle-repl-error (ex-info (str "Could not load file " filename) {}))))))
+
+(defn- root-resource
+  "Returns the root directory path for a lib"
+  [lib]
+  (str \/
+    (.. (name lib)
+      (replace \- \_)
+      (replace \. \/))))
+
+(defn- root-directory
+  "Returns the root resource path for a lib"
+  [lib]
+  (let [d (root-resource lib)]
+    (subs d 0 (.lastIndexOf d "/"))))
+
+(defn- load-path->cp-path
+  [path]
+  (let [src (if (= "/" (first path))
+              path
+              (str (root-directory @current-ns) \/ path))
+        src (.substring src 1)]
+    (or (and (js/LUMO_EXISTS (str src ".cljs")) (str src ".cljs"))
+        (str src ".cljc"))))
+
+(defn- wrap-special-fns
+  [wfn fns]
+  "Wrap wfn around all (fn) values in fns hashmap."
+  (into {} (for [[k v] fns] [k (wfn v)])))
 
 (def ^:private repl-special-fns
   (let [load-file-fn
@@ -401,13 +424,11 @@
        'clojure.core/in-ns in-ns-fn
        'load-file load-file-fn
        'clojure.core/load-file load-file-fn
-       ;; 'load-namespace
-       ;; (fn self
-       ;;   ([repl-env env form]
-       ;;    (self env repl-env form nil))
-       ;;   ([repl-env env [_ ns :as form] opts]
-       ;;    (load-namespace repl-env ns opts)))
-       })))
+       'load
+       (fn self
+         [[_ & paths :as form] opts]
+         (let [cp-paths (map load-path->cp-path paths)]
+           (run! #(execute-path % opts) cp-paths)))})))
 
 (defn- current-alias-map []
   (let [cur-ns @current-ns]

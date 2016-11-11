@@ -27,6 +27,7 @@ if (__DEV__) {
       LUMO_READ_SOURCE: lumo.readSource,
       LUMO_WRITE_CACHE: lumo.writeCache,
       LUMO_LOAD_UPS_DEPS_CLJS: lumo.loadUpstreamForeignLibs,
+      LUMO_EXISTS: lumo.fileExists,
     };
 
     context.global = context;
@@ -42,6 +43,7 @@ if (__DEV__) {
     global.LUMO_READ_SOURCE = lumo.readSource;
     global.LUMO_WRITE_CACHE = lumo.writeCache;
     global.LUMO_LOAD_UPS_DEPS_CLJS = lumo.loadUpstreamForeignLibs;
+    global.LUMO_EXISTS = lumo.fileExists;
 
     // $FlowExpectedError: only exists in the custom V8 startup snapshot
     initialize(); // eslint-disable-line no-undef

@@ -9,6 +9,8 @@ jest.mock('jszip');
 
 describe('lumo', () => {
   const readFileSync = fs.readFileSync;
+  const existsSync = fs.existsSync;
+
   beforeEach(() => {
     fs.readFileSync = jest.fn((p: string) => {
       if (/foo/.test(p)) {
@@ -20,6 +22,7 @@ describe('lumo', () => {
 
   afterEach(() => {
     fs.readFileSync = readFileSync;
+    fs.existsSync = existsSync;
   });
 
   describe('load', () => {
@@ -166,6 +169,54 @@ describe('lumo', () => {
       const source = lumo.loadUpstreamForeignLibs('some/thing');
 
       expect(source).toEqual([]);
+    });
+  });
+
+  describe('fileExists', () => {
+    beforeEach(() => {
+      jest.resetModules();
+      lumo = require('../lumo'); // eslint-disable-line global-require
+    });
+
+    it('cycles through the source paths', () => {
+      const srcPaths = ['a', 'b', 'c'];
+      lumo.addSourcePaths(srcPaths);
+      const lumoPaths = ['', ...srcPaths];
+
+      // eslint-disable-next-line arrow-parens
+      fs.existsSync = jest.fn((_: string) => false);
+
+      const exists = lumo.fileExists('bar/baz');
+      const mockCalls = fs.existsSync.mock.calls;
+
+      expect(exists).toBe(false);
+      expect(mockCalls.length).toBe(4);
+      /* eslint-disable arrow-parens */
+      expect(mockCalls.map((x: string[]) => x[0])).toEqual(
+        lumoPaths.map((p: string) => path.join(p, 'bar/baz')));
+      /* eslint-enable arrow-parens */
+    });
+
+    it('returns false when the file doesn\'t exist', () => {
+      // eslint-disable-next-line arrow-parens
+      fs.existsSync = jest.fn((_: string) => true);
+      expect(lumo.fileExists('some-file')).toBe(true);
+    });
+
+    describe('reads JAR archives', () => {
+      it('should return true when JAR has the file', () => {
+        const srcPaths = ['foo.jar'];
+        lumo.addSourcePaths(srcPaths);
+
+        // eslint-disable-next-line arrow-parens
+        fs.existsSync = jest.fn((fname: string) => /foo/.test(fname));
+
+        expect(lumo.fileExists('some/thing')).toBe(true);
+      });
+
+      it('should return false when the JAR doesn\'t have the file', () => {
+        expect(lumo.fileExists('some/thing')).toBe(false);
+      });
     });
   });
 });

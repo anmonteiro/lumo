@@ -33,6 +33,7 @@ export function load(filename: string): ?string {
 export function readSource(filename: string): ?string {
   for (let i = 0; i < sourcePaths.length; i += 1) {
     const srcPath = sourcePaths[i];
+
     try {
       if (srcPath.endsWith('.jar')) {
         const data = fs.readFileSync(srcPath);
@@ -79,6 +80,28 @@ export function loadUpstreamForeignLibs(): string[] {
     }
     return ret;
   }, []);
+}
+
+export function fileExists(filename: string): boolean {
+  for (let i = 0; i < sourcePaths.length; i += 1) {
+    const srcPath = sourcePaths[i];
+
+    if (srcPath.endsWith('.jar')) {
+      const data = fs.readFileSync(srcPath);
+      const zip = new JSZip().load(data);
+      const file = zip.file(filename);
+
+      if (file != null) {
+        return true;
+      }
+    }
+
+    if (fs.existsSync(path.join(srcPath, filename))) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 export function addSourcePaths(srcPaths: string[]): void {
