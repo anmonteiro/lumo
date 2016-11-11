@@ -1,5 +1,4 @@
 /* @flow */
-/* eslint-disable arrow-parens */
 
 import { ensureArray, ensureDir, srcPathsFromClasspathStrings,
          isWhitespace, isWindows } from '../util';

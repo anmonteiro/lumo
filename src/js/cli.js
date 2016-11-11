@@ -120,7 +120,6 @@ function getCLIOpts(): CLIOptsType {
 }
 
 function addScriptsType(scripts: string[] | string, type: string): [string, string][] {
-  // eslint-disable-next-line arrow-parens
   return util.ensureArray(scripts).map((script: string) => [type, script]);
 }
 

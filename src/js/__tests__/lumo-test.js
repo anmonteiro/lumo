@@ -41,7 +41,7 @@ describe('lumo', () => {
 
       beforeEach(() => {
         jest.resetModules();
-        zlib.inflateSync = jest.fn((x: any) => x); // eslint-disable-line arrow-parens
+        zlib.inflateSync = jest.fn((x: any) => x);
         jest.mock('nexeres', () => ({
           get: (resource: string) => {
             if (resource === 'foo') {
@@ -126,10 +126,8 @@ describe('lumo', () => {
 
       expect(source).toBe(null);
       expect(mockCalls.length).toBe(4);
-      /* eslint-disable arrow-parens */
       expect(mockCalls.map((x: string[]) => x[0])).toEqual(
         lumoPaths.map((p: string) => path.join(p, 'bar/baz')));
-      /* eslint-enable arrow-parens */
     });
 
     describe('reads JAR archives', () => {
@@ -183,7 +181,6 @@ describe('lumo', () => {
       lumo.addSourcePaths(srcPaths);
       const lumoPaths = ['', ...srcPaths];
 
-      // eslint-disable-next-line arrow-parens
       fs.existsSync = jest.fn((_: string) => false);
 
       const exists = lumo.fileExists('bar/baz');
@@ -191,14 +188,11 @@ describe('lumo', () => {
 
       expect(exists).toBe(false);
       expect(mockCalls.length).toBe(4);
-      /* eslint-disable arrow-parens */
       expect(mockCalls.map((x: string[]) => x[0])).toEqual(
         lumoPaths.map((p: string) => path.join(p, 'bar/baz')));
-      /* eslint-enable arrow-parens */
     });
 
     it('returns false when the file doesn\'t exist', () => {
-      // eslint-disable-next-line arrow-parens
       fs.existsSync = jest.fn((_: string) => true);
       expect(lumo.fileExists('some-file')).toBe(true);
     });
@@ -208,7 +202,6 @@ describe('lumo', () => {
         const srcPaths = ['foo.jar'];
         lumo.addSourcePaths(srcPaths);
 
-        // eslint-disable-next-line arrow-parens
         fs.existsSync = jest.fn((fname: string) => /foo/.test(fname));
 
         expect(lumo.fileExists('some/thing')).toBe(true);

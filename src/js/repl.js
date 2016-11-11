@@ -94,7 +94,6 @@ export default function startREPL(opts: CLIOptsType) {
 
   prompt(rl, false, 'cljs.user');
 
-  // eslint-disable-next-line arrow-parens
   rl.on('line', (line: string) => processLine(rl, line));
   rl.on('SIGINT', () => handleSIGINT(rl));
 }

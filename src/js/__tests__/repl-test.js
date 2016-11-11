@@ -38,7 +38,6 @@ function mockReplHistory(line?: string) {
 
 jest.mock('readline');
 jest.mock('../cljs', () => ({
-  // eslint-disable-next-line arrow-parens
   isReadable: jest.fn((input: string) => ''),
   execute: jest.fn(),
   getCurrentNamespace: jest.fn(() => 'cljs.user'),
@@ -171,7 +170,6 @@ describe('startREPL', () => {
     it('should emit the secondary prompt', () => {
       jest.resetModules();
       jest.mock('../cljs', () => ({
-        // eslint-disable-next-line arrow-parens
         isReadable: jest.fn((input: string) => false),
         execute: jest.fn(),
         getCurrentNamespace: jest.fn(() => 'cljs.user'),

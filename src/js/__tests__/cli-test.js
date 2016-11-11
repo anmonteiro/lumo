@@ -7,10 +7,8 @@ import * as lumo from '../lumo';
 jest.mock('../cljs');
 jest.mock('../version', () => 'X.X.X');
 jest.mock('../lumo', () => ({
-  /* eslint-disable arrow-parens */
   addSourcePaths: jest.fn((srcPaths: string[]) => undefined),
   load: jest.fn((path: string) => path),
-  /* eslint-enable arrow-parens */
 }));
 
 const originalArgv = process.argv;
