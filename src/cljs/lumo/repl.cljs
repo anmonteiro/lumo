@@ -458,7 +458,7 @@
               r/resolve-symbol ana/resolve-symbol
               r/*data-readers* tags/*cljs-data-readers*
               r/*alias-map*    (current-alias-map)]
-      (let [[form _] (repl-read-string source)
+      (let [form (and expression? (first (repl-read-string source)))
             eval-opts (merge (make-eval-opts)
                         (when expression?
                           {:context :expr
