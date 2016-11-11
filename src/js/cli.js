@@ -18,8 +18,6 @@ export type CLIOptsType = {
   '?': boolean,
   repl: boolean,
   r: boolean,
-  'auto-cache': boolean,
-  K: boolean,
   quiet: boolean,
   q: boolean,
   'dumb-terminal': boolean,
@@ -66,8 +64,8 @@ Usage:  lumo [init-opt*] [main-opt] [arg*]
     -e, --eval string        Evaluate expressions in string; print non-nil values
     -c cp, --classpath cp    Use colon-delimited cp for source directories and
                              JARs
-    -K, --auto-cache         Create and use .planck_cache dir for cache
-    -k, --cache path         If dir exists at path, use it for cache
+    -k, --cache path         If dir exists at path, use it for cache, defaults to
+                             .lumo_cache; leave empty to skip cache
     -q, --quiet              Quiet mode; doesn't print the banner initially
     -v, --verbose            Emit verbose diagnostic output
     -d, --dumb-terminal      Disable line editing / VT100 terminal control
@@ -94,7 +92,6 @@ function getCLIOpts(): CLIOptsType {
       'verbose',
       'help',
       'repl',
-      'auto-cache',
       'quiet',
       'dumb-terminal',
       'static-fns',
@@ -109,7 +106,6 @@ function getCLIOpts(): CLIOptsType {
       i: 'init',
       e: 'eval',
       r: 'repl',
-      K: 'auto-cache',
       k: 'cache',
       q: 'quiet',
       d: 'dumb-terminal',
@@ -130,17 +126,15 @@ function processOpts(cliOpts: CLIOptsType): Object {
   const evl = opts.eval;
   const scripts = [];
 
-  if ({}.hasOwnProperty.call(opts, 'cache') ||
-      {}.hasOwnProperty.call(opts, 'auto-cache')) {
-    if (cache != null && util.isWhitespace(cache)) {
-      process.stderr.write('lumo: option requires an argument: -k / --cache\n');
-      process.exit(-1);
+  if ({}.hasOwnProperty.call(opts, 'cache')) {
+    if (util.isWhitespace(opts.cache)) {
+      opts.cache = null;
     }
-
-    const cachePath = cache || '.lumo_cache';
-    util.ensureDir(cachePath);
-
-    opts.cache = cachePath;
+  } else {
+    opts.cache = '.lumo_cache';
+  }
+  if (opts.cache) {
+    util.ensureDir(opts.cache);
   }
 
   // TODO: print classpath to stdout if `:verbose`

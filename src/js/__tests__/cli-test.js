@@ -38,15 +38,15 @@ afterEach(() => {
 describe('getCliOpts', () => {
   it('parses single dash properties when they appear together', () => {
     Object.defineProperty(process, 'argv', {
-      value: ['', '', '-vK'],
+      value: ['', '', '-vq'],
     });
     startCLI();
     const [[parsedOpts]] = cljs.mock.calls;
 
     expect(parsedOpts.verbose).toBe(true);
     expect(parsedOpts.v).toBe(true);
-    expect(parsedOpts.K).toBe(true);
-    expect(parsedOpts['auto-cache']).toBe(true);
+    expect(parsedOpts.q).toBe(true);
+    expect(parsedOpts['quiet']).toBe(true);
   });
 
   it('adds scripts when -[ie] specified', () => {
@@ -90,24 +90,6 @@ describe('getCliOpts', () => {
 
     expect(parsedOpts._).toEqual(['foo.cljs']);
     expect(parsedOpts.repl).toBe(false);
-  });
-
-  it('produces an error when an option is not given to -k / --cache', () => {
-    const exit = process.exit;
-    process.exit = jest.fn();
-
-    const args = '-k';
-    Object.defineProperty(process, 'argv', {
-      value: ['', ''].concat(args.split(' ')),
-    });
-
-    startCLI();
-
-    expect(process.exit).toHaveBeenCalledWith(-1);
-    expect(process.stderr.write).toHaveBeenCalled();
-    expect(process.stderr.write.mock.calls).toMatchSnapshot();
-
-    process.exit = exit;
   });
 });
 

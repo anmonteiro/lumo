@@ -1,12 +1,3 @@
-exports[`getCliOpts produces an error when an option is not given to -k / --cache 1`] = `
-Array [
-  Array [
-    "lumo: option requires an argument: -k / --cache
-",
-  ],
-]
-`;
-
 exports[`print Functions printBanner should print the banner to stdout 1`] = `
 Array [
   Array [
@@ -31,9 +22,9 @@ Usage:  lumo [init-opt*] [main-opt] [arg*]
     -e, --eval string        Evaluate expressions in string; print non-nil values
     -c cp, --classpath cp    Use colon-delimited cp for source directories and
                              JARs
-    -K, --auto-cache         Create and use .planck_cache dir for cache
-    -k, --cache path         If dir exists at path, use it for cache
-    -q, --quiet              Quiet mode; doesn't print the banner initially
+    -k, --cache path         If dir exists at path, use it for cache, defaults to
+                             .lumo_cache; leave empty to skip cache
+    -q, --quiet              Quiet mode; doesn\'t print the banner initially
     -v, --verbose            Emit verbose diagnostic output
     -d, --dumb-terminal      Disable line editing / VT100 terminal control
     -s, --static-fns         Generate static dispatch function calls
