@@ -15,13 +15,16 @@ jest.mock('../lumo', () => ({
 
 const originalArgv = process.argv;
 const originalStdoutWrite = process.stdout.write;
+const originalStderrWrite = process.stderr.write;
 
 beforeEach(() => {
   process.stdout.write = jest.fn();
+  process.stderr.write = jest.fn();
 });
 
 afterEach(() => {
   process.stdout.write = originalStdoutWrite;
+  process.stderr.write = originalStderrWrite;
 });
 
 afterEach(() => {
@@ -87,6 +90,24 @@ describe('getCliOpts', () => {
 
     expect(parsedOpts._).toEqual(['foo.cljs']);
     expect(parsedOpts.repl).toBe(false);
+  });
+
+  it('produces an error when an option is not given to -k / --cache', () => {
+    const exit = process.exit;
+    process.exit = jest.fn();
+
+    const args = '-k';
+    Object.defineProperty(process, 'argv', {
+      value: ['', ''].concat(args.split(' ')),
+    });
+
+    startCLI();
+
+    expect(process.exit).toHaveBeenCalledWith(-1);
+    expect(process.stderr.write).toHaveBeenCalled();
+    expect(process.stderr.write.mock.calls).toMatchSnapshot();
+
+    process.exit = exit;
   });
 });
 

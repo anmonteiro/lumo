@@ -128,10 +128,15 @@ function processOpts(cliOpts: CLIOptsType): Object {
   const opts = { ...cliOpts };
   const { cache, classpath, init, repl } = opts;
   const evl = opts.eval;
-  const autoCache = opts['auto-cache'];
   const scripts = [];
 
-  if (cache || autoCache) {
+  if ({}.hasOwnProperty.call(opts, 'cache') ||
+      {}.hasOwnProperty.call(opts, 'auto-cache')) {
+    if (cache != null && util.isWhitespace(cache)) {
+      process.stderr.write('lumo: option requires an argument: -k / --cache\n');
+      process.exit(-1);
+    }
+
     const cachePath = cache || '.lumo_cache';
     util.ensureDir(cachePath);
 
