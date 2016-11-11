@@ -475,9 +475,8 @@
             eval-opts
             (fn [{:keys [ns value error] :as ret}]
               (if-not error
-                (do
-                  (when expression?
-                    (println (pr-str value)))
+                (when expression?
+                  (println (pr-str value))
                   (vreset! current-ns ns))
                 (handle-repl-error error)))))))
     (catch :default e
@@ -490,8 +489,6 @@
     (execute-path source-or-path opts)
     (execute-text source-or-path opts)))
 
-;; TODO: need to separate execution paths of coming from the REPL vs. not
-;; wrt. to special fns visibility (which must not be seen when executing a source file)
 (defn ^:export execute
   [type source-or-path expression? setNS]
   (when setNS
