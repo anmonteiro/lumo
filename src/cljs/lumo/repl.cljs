@@ -375,28 +375,27 @@
 (def ^:private repl-special-fns
   (let [load-file-fn
         (fn self
-          ([[_ file :as form] opts]
-           (execute-path file opts)))
+          [[_ file :as form] opts]
+          (execute-path file opts))
         in-ns-fn
         (fn self
-          ([[_ maybe-quoted :as form] opts]
-           (cljs/eval st maybe-quoted opts
-             (fn [{:keys [error value]}]
-               (if error
-                 (handle-repl-error error)
-                 (let [ns-name value]
-                   (if-not (symbol? ns-name)
-                     (binding [*print-fn* *print-err-fn*]
-                       (println "Argument to in-ns must be a symbol."))
-                     (if (ana/get-namespace ns-name)
-                       (vreset! current-ns ns-name)
-                       ;; TODO: REPL requires
-                       (let [ns-form `(~'ns ~ns-name)]
-                         (cljs/eval st ns-form opts
-                           (fn [{:keys [error value]}]
-                             (if error
-                               (handle-repl-error error)
-                               (vreset! current-ns ns-name)))))))))))))]
+          [[_ maybe-quoted :as form] opts]
+          (cljs/eval st maybe-quoted opts
+            (fn [{:keys [error value]}]
+              (if error
+                (handle-repl-error error)
+                (let [ns-name value]
+                  (if-not (symbol? ns-name)
+                    (binding [*print-fn* *print-err-fn*]
+                      (println "Argument to in-ns must be a symbol."))
+                    (if (ana/get-namespace ns-name)
+                      (vreset! current-ns ns-name)
+                      (let [ns-form `(~'ns ~ns-name)]
+                        (cljs/eval st ns-form opts
+                          (fn [{:keys [error]}]
+                            (if error
+                              (handle-repl-error error)
+                              (vreset! current-ns ns-name))))))))))))]
     (wrap-special-fns wrap-self
       {'in-ns in-ns-fn
        'clojure.core/in-ns in-ns-fn
