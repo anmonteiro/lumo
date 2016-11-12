@@ -19,7 +19,8 @@ describe('srcPathsFromClasspathStrings', () => {
 
 
   it('splits multiple paths on \':\' ', () => {
-    expect(srcPathsFromClasspathStrings(['a:b', 'c:d', 'e'])).toEqual(['a', 'b', 'c', 'd', 'e']);
+    expect(srcPathsFromClasspathStrings(['a:b', 'c:d', 'e', 'f;g']))
+      .toEqual(['a', 'b', 'c', 'd', 'e', 'f;g']);
   });
 
   if (isWindows) {
