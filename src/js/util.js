@@ -8,9 +8,12 @@ function expandPath(somePath: string): string {
   return somePath.startsWith('~') ? somePath.replace(/^~/, os.homedir) : somePath;
 }
 
+export const isWindows: boolean = /^Windows/.test(os.type());
+
 export function srcPathsFromClasspathStrings(cpStrs: string[]): string[] {
   return cpStrs.reduce((ret: string[], colonSepPaths: string) => {
-    const paths = colonSepPaths.split(':');
+    const sep = !isWindows ? ':' : ';';
+    const paths = colonSepPaths.split(sep);
 
     return ret.concat(paths.map(expandPath).map(path.normalize));
   }, []);
@@ -36,5 +39,3 @@ export function ensureArray<T>(maybeArray: T[] | T): T[] {
 export function isWhitespace(s: string): boolean {
   return s.trim() === '';
 }
-
-export const isWindows: boolean = /^Windows/.test(os.type());
