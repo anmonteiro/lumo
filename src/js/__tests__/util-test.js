@@ -17,15 +17,14 @@ describe('srcPathsFromClasspathStrings', () => {
     os.homedir = homedir;
   });
 
-
-  it('splits multiple paths on \':\' ', () => {
-    expect(srcPathsFromClasspathStrings(['a:b', 'c:d', 'e', 'f;g']))
-      .toEqual(['a', 'b', 'c', 'd', 'e', 'f;g']);
-  });
-
   if (isWindows) {
     it('splits multiple paths with both ; and : separators', () => {
       expect(srcPathsFromClasspathStrings(['a;b', 'c:d', 'e'])).toEqual(['a', 'b', 'c', 'd', 'e']);
+    });
+  } else {
+    it('splits multiple paths on \':\' ', () => {
+      expect(srcPathsFromClasspathStrings(['a:b', 'c:d', 'e', 'f;g']))
+        .toEqual(['a', 'b', 'c', 'd', 'e', 'f;g']);
     });
   }
 
