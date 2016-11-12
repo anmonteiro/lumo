@@ -22,6 +22,12 @@ describe('srcPathsFromClasspathStrings', () => {
     expect(srcPathsFromClasspathStrings(['a:b', 'c:d', 'e'])).toEqual(['a', 'b', 'c', 'd', 'e']);
   });
 
+  if (isWindows) {
+    it('splits multiple paths with both ; and : separators', () => {
+      expect(srcPathsFromClasspathStrings(['a;b', 'c:d', 'e'])).toEqual(['a', 'b', 'c', 'd', 'e']);
+    });
+  }
+
   it('expands ', () => {
     const ret = srcPathsFromClasspathStrings(['a:~/b', '~/c:~/d']);
 
