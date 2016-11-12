@@ -28,6 +28,7 @@ const ctx = {
       execute: () => {},
       is_readable_QMARK_: () => true,
       get_current_ns: () => 'cljs.user',
+      indent_space_count: (text: string) => 0,
     },
   },
 };
@@ -155,5 +156,11 @@ describe('isReadable', () => {
 describe('getCurrentNamespace', () => {
   it('calls into the CLJS context', () => {
     expect(cljs.getCurrentNamespace()).toBe('cljs.user');
+  });
+});
+
+describe('indentSpaceCount', () => {
+  it('calls into the CLJS context', () => {
+    expect(cljs.indentSpaceCount('')).toBe(0);
   });
 });

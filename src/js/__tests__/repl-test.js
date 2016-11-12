@@ -173,6 +173,7 @@ describe('startREPL', () => {
         isReadable: jest.fn((input: string) => false),
         execute: jest.fn(),
         getCurrentNamespace: jest.fn(() => 'cljs.user'),
+        indentSpaceCount: jest.fn((text: string) => 0),
       }));
       // eslint-disable-next-line global-require
       startREPL = require('../repl').default;

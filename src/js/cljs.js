@@ -6,6 +6,7 @@ import startREPL from './repl';
 
 import type { CLIOptsType } from './cli';
 
+const parinfer = require('parinfer');
 const vm = require('vm');
 
 let newContext;
@@ -22,6 +23,7 @@ if (__DEV__) {
       require,
       process,
       console,
+      parinfer,
       LUMO_LOAD: lumo.load,
       LUMO_READ_CACHE: lumo.readCache,
       LUMO_READ_SOURCE: lumo.readSource,
@@ -39,6 +41,7 @@ if (__DEV__) {
   };
 } else {
   newContext = function newCtx(): {[key: string]: mixed} {
+    global.parinfer = parinfer;
     global.LUMO_LOAD = lumo.load;
     global.LUMO_READ_CACHE = lumo.readCache;
     global.LUMO_READ_SOURCE = lumo.readSource;
@@ -94,6 +97,11 @@ export function getCurrentNamespace(): string {
 export function isReadable(form: string): string | false {
   // $FlowIssue: context can have globals
   return ClojureScriptContext.lumo.repl.is_readable_QMARK_(form);
+}
+
+export function indentSpaceCount(text: string): number {
+  // $FlowIssue: context can have globals
+  return ClojureScriptContext.lumo.repl.indent_space_count(text);
 }
 
 function executeScripts(scripts: [string, string][]): void {

@@ -58,7 +58,10 @@ function processLine(rl: readline$Interface, line: string): void {
 
       input = extraForms;
     } else {
+      // partially entered form, prepare for processing the next line.
       prompt(rl, true);
+
+      rl.write(' '.repeat(cljs.indentSpaceCount(input)));
       break;
     }
   }
@@ -91,6 +94,13 @@ export default function startREPL(opts: CLIOptsType): void {
     output: process.stdout,
     terminal: !dumbTerminal,
   });
+
+  // $FlowIssue
+  readline.emitKeypressEvents(process.stdin, rl);
+  if (process.stdin.isTTY) {
+    // $FlowIssue
+    process.stdin.setRawMode(true);
+  }
 
   prompt(rl, false, 'cljs.user');
 

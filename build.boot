@@ -1,11 +1,12 @@
 (set-env!
  :source-paths    #{"src/cljs"}
  :asset-paths #{"src/js"}
- :dependencies '[[org.clojure/clojure        "1.9.0-alpha14"]
+ :dependencies '[[org.clojure/clojure         "1.9.0-alpha14"]
                  [org.clojure/clojurescript   "1.9.293"]
                  [org.clojure/tools.reader    "1.0.0-beta3"]
                  [com.cognitect/transit-cljs  "0.8.239"]
                  [malabarba/lazy-map          "1.3"]
+                 [cljsjs/parinfer             "1.8.1-0"        :scope "test"]
                  [com.cognitect/transit-clj   "0.8.290"        :scope "test"]
                  [com.cemerick/piggieback     "0.2.1"          :scope "test"]
                  [adzerk/boot-cljs            "1.7.228-2"      :scope "test"]

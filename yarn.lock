@@ -3175,6 +3175,10 @@ parents@^1.0.0, parents@^1.0.1:
   dependencies:
     path-platform "~0.11.15"
 
+parinfer@1.8.2:
+  version "1.8.2"
+  resolved "https://registry.yarnpkg.com/parinfer/-/parinfer-1.8.2.tgz#3245d3ce342fa999f039b0b1e633ce3964033c3b"
+
 parse-asn1@^5.0.0:
   version "5.0.0"
   resolved "https://registry.yarnpkg.com/parse-asn1/-/parse-asn1-5.0.0.tgz#35060f6d5015d37628c770f4e091a0b5a278bc23"

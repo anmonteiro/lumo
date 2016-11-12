@@ -7,7 +7,8 @@
   "main": "./src/js/index.js",
   "dependencies": {
     "jszip": "2.6.1",
-    "minimist": "^1.2.0"
+    "minimist": "^1.2.0",
+    "parinfer": "1.8.2"
   },
   "devDependencies": {
     "babel-core": "^6.18.2",

@@ -307,6 +307,27 @@
 ;; =============================================================================
 ;; REPL plumbing
 
+(defn- calc-parinfer-opts [text pos]
+  (let [x (.lastIndexOf text "\n")]
+    #js {:cursorX    (- pos (inc x))
+         :cursorLine (dec (count (.split text "\n")))}))
+
+(defn ^:export indent-space-count
+  "Based on a partially entered form, returns the number of spaces with which
+   to indent the next line. Returns 0 on failure to calculate."
+  [text]
+  (let [pos (count text)
+        balanced (js/parinfer.indentMode text (calc-parinfer-opts text pos))]
+    (if (.-success balanced)
+      (let [new-text (str (subs (.-text balanced) 0 pos) "\n"
+                       (subs (.-text balanced) pos))
+            indented (js/parinfer.parenMode new-text
+                       (calc-parinfer-opts new-text (inc pos)))]
+        (if (.-success indented)
+          (.-cursorX indented)
+          0))
+      0)))
+
 (defn make-eval-opts []
   (let [{:keys [verbose static-fns]} @app-opts]
     {:ns            @current-ns

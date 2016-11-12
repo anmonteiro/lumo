@@ -6,6 +6,7 @@
 
 - Add `load` REPL special function. Same as [Clojure's `load`](http://clojure.github.io/clojure/clojure.core-api.html#clojure.core/load).
 - Add support for Windows-formatted class paths [#18](https://github.com/anmonteiro/lumo/pull/18).
+- Add support for indentation via Parinfer when multiline editing.
 
 ### Bug fixes
 
