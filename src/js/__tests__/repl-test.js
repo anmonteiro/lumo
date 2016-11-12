@@ -13,8 +13,8 @@ const setPrompt = jest.fn();
 const prompt = jest.fn();
 let on;
 
-function genOn(line: ?string = null) {
-  on = jest.fn((type: string, f: Function) => {
+function genOn(line: ?string = null): JestMockFn {
+  on = jest.fn((type: string, f: (x?: string) => void) => {
     switch (type) {
       case 'line': return f(line || '(+ 1 2)');
       case 'SIGINT': return f();
@@ -24,7 +24,7 @@ function genOn(line: ?string = null) {
   return on;
 }
 
-function mockReplHistory(line?: string) {
+function mockReplHistory(line?: string): void {
   jest.mock('../replHistory', () => jest.fn(() => ({
     setPrompt,
     prompt,

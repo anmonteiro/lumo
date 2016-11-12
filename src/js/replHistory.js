@@ -27,7 +27,12 @@ function getHistoryStream(path: string): stream$Writable {
   return histStream;
 }
 
-function onLoad(path: string, maxLength: number, offset: number, cb: Function) {
+/* eslint-disable indent */
+function onLoad(path: string,
+                maxLength: number,
+                offset: number,
+                cb: (ret: string[]) => void): void {
+  /* eslint-enable indent */
   // $FlowIssue: it's there
   const { fd } = getHistoryStream(path);
   const rs = fs.createReadStream(path, {
@@ -58,11 +63,11 @@ function onLoad(path: string, maxLength: number, offset: number, cb: Function) {
   });
 }
 
-function loadHistory(path: string, maxLength: number, cb: Function) {
+function loadHistory(path: string, maxLength: number, cb: (ret: string[]) => void): void {
   fs.stat(path, (err: ?Error, stat: fs.Stats) => {
     const totalSize = stat.size;
     if (totalSize > maxDiskSize) {
-      const rename = function rename() {
+      const rename = function rename(): void {
         fs.rename(path, `${path}.old`, () => {
           // $FlowIssue: mode is optional
           fs.open(path, 'a+', (e: ?ErrnoError, fd: number) => {
@@ -92,7 +97,7 @@ function loadHistory(path: string, maxLength: number, cb: Function) {
   });
 }
 
-export default function createInterface(options: replHistory$Opts) {
+export default function createInterface(options: replHistory$Opts): readline$Interface {
   const { path, historySize, terminal } = options;
   const rl = readline.createInterface(options);
 
@@ -103,7 +108,7 @@ export default function createInterface(options: replHistory$Opts) {
     const oldAddHistory = rl._addHistory;
 
     // $FlowIssue: private property
-    rl._addHistory = function _addHistory() {
+    rl._addHistory = function _addHistory(): string {
       // $FlowIssue: it's there
       const [last] = rl.history;
       const line = oldAddHistory.call(rl);

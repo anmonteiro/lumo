@@ -30,7 +30,7 @@ function prompt(rl: readline$Interface,
   rl.prompt();
 }
 
-function processLine(rl: readline$Interface, line: string) {
+function processLine(rl: readline$Interface, line: string): void {
   let extraForms = false;
 
   if (exitCommands.has(line)) {
@@ -64,7 +64,7 @@ function processLine(rl: readline$Interface, line: string) {
   }
 }
 
-function handleSIGINT(rl: readline$Interface) {
+function handleSIGINT(rl: readline$Interface): void {
   input = '';
 
   // $FlowIssue: missing property in interface
@@ -81,7 +81,7 @@ function handleSIGINT(rl: readline$Interface) {
   prompt(rl);
 }
 
-export default function startREPL(opts: CLIOptsType) {
+export default function startREPL(opts: CLIOptsType): void {
   const dumbTerminal = isWindows ? true : opts['dumb-terminal'];
 
   const rl = replHistory({

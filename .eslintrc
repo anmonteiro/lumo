@@ -17,7 +17,9 @@
     "array-bracket-spacing": 0,
     "babel/array-bracket-spacing": 2,
     "import/no-duplicates": 2,
+    "flowtype/boolean-style": 2,
     "flowtype/define-flow-type": 2,
+    "flowtype/delimiter-dangle": [2, "always-multiline"],
     "flowtype/require-valid-file-annotation": 2,
     "flowtype/space-after-type-colon": 2,
     "flowtype/space-before-type-colon": [2, "never"],
@@ -26,6 +28,14 @@
     "flowtype/generic-spacing": 2,
     "flowtype/require-parameter-type": 2,
     "flowtype/use-flow-type": 2,
-    "flowtype/valid-syntax": 2
+    "flowtype/valid-syntax": 2,
+    "flowtype/no-dupe-keys": 2,
+    "flowtype/no-weak-types": 2,
+    "flowtype/object-type-delimiter": 2,
+    "flowtype/require-return-type": [2, "always", {
+      "annotateUndefined" : "always",
+      "excludeArrowFunctions": true
+    }],
+    "flowtype/semi": 2
   }
 }

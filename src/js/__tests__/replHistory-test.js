@@ -14,14 +14,15 @@ readline.createInterface = jest.fn(() => ({
 
 jest.mock('fs');
 
-fs.stat = jest.fn((path: string, cb: Function) => {
+type statCbType = (err: ?Error, ret: {size: number}) => void;
+fs.stat = jest.fn((path: string, cb: statCbType) => {
   cb(null, { size: 10 });
 });
 
-fs.close = jest.fn((_: number, cb: Function) => cb());
-fs.rename = jest.fn((old: string, newName: string, cb: Function) => cb());
-fs.open = jest.fn((path: string, flags: string, cb: Function) => cb());
-fs.unlink = jest.fn((_: string, cb: Function) => cb());
+fs.close = jest.fn((_: number, cb: () => void) => cb());
+fs.rename = jest.fn((old: string, newName: string, cb: () => void) => cb());
+fs.open = jest.fn((path: string, flags: string, cb: () => void) => cb());
+fs.unlink = jest.fn((_: string, cb: () => void) => cb());
 
 const streamWrite = jest.fn();
 
@@ -30,8 +31,8 @@ fs.createWriteStream = jest.fn(() => ({
   fd: 42,
 }));
 
-fs.createReadStream = jest.fn((path: string, opts: Object) => ({
-  on: jest.fn((type: string, cb: Function) => {
+fs.createReadStream = jest.fn((path: string, opts: { [key: string]: string }) => ({
+  on: jest.fn((type: string, cb: (e?: string) => void) => {
     switch (type) {
       case 'data':
         return path === 'nonExistent' ? cb('') : cb('foo\nbar\n');
@@ -125,8 +126,8 @@ describe('replHistory', () => {
 
     beforeEach(() => {
       fs.stat = jest.fn()
-        .mockImplementationOnce((path: string, cb: Function) => cb(null, { size: 0x10000000 }))
-        .mockImplementationOnce((path: string, cb: Function) => cb(null, { size: 0x100 }));
+        .mockImplementationOnce((path: string, cb: statCbType) => cb(null, { size: 0x10000000 }))
+        .mockImplementationOnce((path: string, cb: statCbType) => cb(null, { size: 0x100 }));
     });
 
     afterAll(() => {
@@ -134,7 +135,7 @@ describe('replHistory', () => {
     });
 
     it('if an old one doesn\'t exist', () => {
-      fs.exists = jest.fn((_: string, cb: Function) => cb(false));
+      fs.exists = jest.fn((_: string, cb: (ret: boolean) => void) => cb(false));
 
       replHistory({
         historySize: 10,
@@ -147,7 +148,7 @@ describe('replHistory', () => {
     });
 
     it('unlinking the old one if necessary', () => {
-      fs.exists = jest.fn((_: string, cb: Function) => cb(true));
+      fs.exists = jest.fn((_: string, cb: (ret: boolean) => void) => cb(true));
 
       replHistory({
         historySize: 10,

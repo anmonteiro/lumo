@@ -8,7 +8,8 @@ import version from './version';
 
 const minimist = require('minimist');
 
-// eslint-disable-next-line import/prefer-default-export
+type ScriptsType = [string, string][];
+
 export type CLIOptsType = {
   _: string[],
   verbose: boolean,
@@ -36,6 +37,7 @@ export type CLIOptsType = {
   k?: string,
   classpath?: string | string[],
   c?: string | string[],
+  scripts: ScriptsType,
   [key: string]: boolean | string,
 };
 
@@ -119,11 +121,11 @@ function getCLIOpts(): CLIOptsType {
   });
 }
 
-function addScriptsType(scripts: string[] | string, type: string): [string, string][] {
+function addScriptsType(scripts: string[] | string, type: string): ScriptsType {
   return util.ensureArray(scripts).map((script: string) => [type, script]);
 }
 
-function processOpts(cliOpts: CLIOptsType): Object {
+function processOpts(cliOpts: CLIOptsType): CLIOptsType {
   const opts = { ...cliOpts };
   const { cache, classpath, init, repl } = opts;
   const evl = opts.eval;

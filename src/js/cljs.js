@@ -12,12 +12,12 @@ let newContext;
 let ClojureScriptContext;
 
 if (__DEV__) {
-  newContext = function newCtx() {
+  newContext = function newCtx(): vm$Context {
     const cljsSrc = lumo.load('main.js');
     // $FlowFixMe: we know for sure this file will exist.
     const cljsScript = new vm.Script(cljsSrc, {});
 
-    const context: Object = {
+    const context = {
       module,
       require,
       process,
@@ -28,6 +28,7 @@ if (__DEV__) {
       LUMO_WRITE_CACHE: lumo.writeCache,
       LUMO_LOAD_UPS_DEPS_CLJS: lumo.loadUpstreamForeignLibs,
       LUMO_EXISTS: lumo.fileExists,
+      global: undefined,
     };
 
     context.global = context;
@@ -37,7 +38,7 @@ if (__DEV__) {
     return ctx;
   };
 } else {
-  newContext = function newCtx() {
+  newContext = function newCtx(): {[key: string]: mixed} {
     global.LUMO_LOAD = lumo.load;
     global.LUMO_READ_CACHE = lumo.readCache;
     global.LUMO_READ_SOURCE = lumo.readSource;
@@ -52,7 +53,7 @@ if (__DEV__) {
   };
 }
 
-function setRuntimeOpts(opts: CLIOptsType) {
+function setRuntimeOpts(opts: CLIOptsType): void {
   const { cache, verbose, repl } = opts;
   const staticFns = opts['static-fns'];
   // $FlowIssue: context can have globals
@@ -75,7 +76,7 @@ function initClojureScriptEngine(opts: CLIOptsType): void {
 export function execute(code: string,
                         type: string = 'text',
                         expression: boolean = true,
-                        setNS: ?string) {
+                        setNS: ?string): void {
   // $FlowIssue: context can have globals
   ClojureScriptContext.lumo.repl.execute(type, code, expression, setNS);
 }
@@ -101,7 +102,7 @@ function executeScripts(scripts: [string, string][]): void {
   });
 }
 
-export default function startClojureScriptEngine(opts: Object): void {
+export default function startClojureScriptEngine(opts: CLIOptsType): void {
   const { repl, scripts, _ } = opts;
   const [mainScript] = _;
   let engineStarted = false;

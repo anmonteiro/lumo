@@ -41,7 +41,7 @@ describe('lumo', () => {
 
       beforeEach(() => {
         jest.resetModules();
-        zlib.inflateSync = jest.fn((x: any) => x);
+        zlib.inflateSync = jest.fn((x: string) => x);
         jest.mock('nexeres', () => ({
           get: (resource: string) => {
             if (resource === 'foo') {
