@@ -168,6 +168,15 @@ describe('lumo', () => {
 
       expect(source).toEqual([]);
     });
+
+    it('shouldn\'t crash when a JAR isn\'t found', () => {
+      const srcPaths = ['bar.jar'];
+      lumo.addSourcePaths(srcPaths);
+
+      const source = lumo.loadUpstreamForeignLibs('some/thing');
+
+      expect(source).toEqual([]);
+    });
   });
 
   describe('fileExists', () => {

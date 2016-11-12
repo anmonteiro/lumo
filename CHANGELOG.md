@@ -14,6 +14,7 @@
 - Improve error message when a path is not passed to `-k` ([#14](https://github.com/anmonteiro/lumo/issues/14)).
 - Don't throw when loading empty files [#10](https://github.com/anmonteiro/lumo/issues/10).
 - `load-file` and init scripts shouldn't change the current namespace.
+- Don't crash if JAR not found when looking for upstream foreign libs ([#19](https://github.com/anmonteiro/lumo/issues/19)).
 
 ## 1.0-alpha1 (2016-11-09)
 

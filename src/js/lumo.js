@@ -70,13 +70,15 @@ export function writeCache(filename: string, source: string): ?Error {
 export function loadUpstreamForeignLibs(): string[] {
   return sourcePaths.reduce((ret: string[], srcPath: string) => {
     if (srcPath.endsWith('.jar')) {
-      const data = fs.readFileSync(srcPath);
-      const zip = new JSZip().load(data);
-      const source = zip.file('deps.cljs');
+      try {
+        const data = fs.readFileSync(srcPath);
+        const zip = new JSZip().load(data);
+        const source = zip.file('deps.cljs');
 
-      if (source != null) {
-        ret.push(source.asText());
-      }
+        if (source != null) {
+          ret.push(source.asText());
+        }
+      } catch (_) {} // eslint-disable-line no-empty
     }
     return ret;
   }, []);
