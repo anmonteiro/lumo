@@ -1,7 +1,8 @@
 (ns lumo.repl-tests
   (:require [cljs.test :refer [deftest is]]
-            [lumo.repl :as lumo]
-            [cljsjs.parinfer]))
+            [lumo.repl :as lumo]))
+
+(set! js/parinfer (js/require "parinfer"))
 
 (deftest test-is-readable?
   (is (false? (lumo/is-readable? "(")))

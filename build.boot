@@ -6,7 +6,6 @@
                  [org.clojure/tools.reader    "1.0.0-beta3"]
                  [com.cognitect/transit-cljs  "0.8.239"]
                  [malabarba/lazy-map          "1.3"]
-                 [cljsjs/parinfer             "1.8.1-0"        :scope "test"]
                  [com.cognitect/transit-clj   "0.8.290"        :scope "test"]
                  [com.cemerick/piggieback     "0.2.1"          :scope "test"]
                  [adzerk/boot-cljs            "1.7.228-2"      :scope "test"]
@@ -25,6 +24,13 @@
 
 (import [java.io ByteArrayOutputStream FileInputStream])
 
+(deftask add-node-modules []
+  (with-pre-wrap fileset
+    (let [nm (io/file "node_modules")]
+      (-> fileset
+        (add-resource (io/file ".") :include #{#"^node_modules/parinfer"})
+        commit!))))
+
 (deftask testing []
   (set-env! :source-paths #(conj % "test"))
   identity)
@@ -37,6 +43,7 @@
                 (nil? exit?) not)]
     (comp
       (testing)
+      (add-node-modules)
       (test-cljs
         :js-env :node
         :namespaces #{'lumo.js-deps-tests 'lumo.repl-tests}
