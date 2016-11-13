@@ -107,7 +107,7 @@ export default function startREPL(opts: CLIOptsType): void {
 
   // $FlowIssue
   readline.emitKeypressEvents(process.stdin, rl);
-  if (process.stdin.isTTY) {
+  if (process.stdin.isTTY && !dumbTerminal) {
     // $FlowIssue
     process.stdin.setRawMode(true);
   }

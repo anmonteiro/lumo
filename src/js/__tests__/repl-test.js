@@ -10,10 +10,13 @@ const replHistory = require('../replHistory');
 let startREPL = require('../repl').default;
 
 const processStdinOn = process.stdin.on;
+const processStdinSetRaw = process.stdin.setRawMode;
 
 process.stdin.on = jest.fn((type: string, cb: (key: string) => void) => {
   cb('return');
 });
+
+process.stdin.setRawMode = jest.fn();
 
 const setPrompt = jest.fn();
 const prompt = jest.fn();
@@ -59,6 +62,7 @@ describe('startREPL', () => {
 
   afterAll(() => {
     process.stdin.on = processStdinOn;
+    process.stdin.setRawMode = processStdinSetRaw;
   });
 
   it('creates a readline interface', () => {
@@ -93,6 +97,10 @@ describe('startREPL', () => {
 
   describe('sets dumb-terminal', () => {
     const isWin = util.isWindows;
+
+    beforeEach(() => {
+      process.stdin.setRawMode.mockClear();
+    });
 
     afterEach(() => {
       util.isWindows = isWin;
@@ -135,6 +143,21 @@ describe('startREPL', () => {
 
       expect(replHistoryCalls.length).toBe(1);
       expect(replHistoryCalls[0][0].terminal).toBe(false);
+    });
+
+    it('doesn\'t set stdin to rawMode if dumbTerminal is true', () => {
+      startREPL({
+        'dumb-terminal': true,
+      });
+
+      expect(process.stdin.setRawMode).not.toHaveBeenCalled();
+    });
+
+    it('sets stdin to rawMode if dumbTerminal is false', () => {
+      startREPL({
+        'dumb-terminal': false,
+      });
+      expect(process.stdin.setRawMode).toHaveBeenCalledWith(true);
     });
   });
 
