@@ -3,6 +3,7 @@
 
 import * as lumo from './lumo';
 import startREPL from './repl';
+import * as socket from './socket';
 
 import type { CLIOptsType } from './cli';
 
@@ -114,6 +115,8 @@ export default function startClojureScriptEngine(opts: CLIOptsType): void {
   const { repl, scripts, _ } = opts;
   const [mainScript] = _;
   let engineStarted = false;
+
+  socket.start();
 
   if (mainScript) {
     initClojureScriptEngine(opts);
