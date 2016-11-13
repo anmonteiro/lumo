@@ -5,18 +5,18 @@ import { createBanner } from './cli';
 const HOST = '127.0.0.1';
 const PORT = 5555;
 
-let socketServer = null;
+let socketServer: net$Server = null;
 
-function getPrompt () {
+function getPrompt(): string {
   return `${cljs.getCurrentNamespace()}=> `;
 }
 
-export function start (quiet = false) {
+export function start(quiet: boolean = false): void {
   socketServer = net.createServer(c => {
     c.write(createBanner());
     c.write(getPrompt());
 
-    c.on('data', data => {
+    c.on('data', (data: Buffer) => {
       const text = data.toString();
 
       // end connection when special `:cljs/quit` is sent
@@ -25,7 +25,7 @@ export function start (quiet = false) {
         return;
       }
 
-      cljs.execute(text, undefined, undefined, undefined, value => {
+      cljs.execute(text, undefined, undefined, undefined, (value) => {
         c.write(`${value}\n\n`);
         c.write(getPrompt());
       });

@@ -80,7 +80,7 @@ export function execute(code: string,
                         type: string = 'text',
                         expression: boolean = true,
                         setNS: ?string,
-                        cb: ?fn): void {
+                        cb: ?Function): void {
   // $FlowIssue: context can have globals
   return ClojureScriptContext.lumo.repl.execute(type, code, expression, setNS, cb);
 }
