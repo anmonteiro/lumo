@@ -12,7 +12,7 @@ function getPrompt(): string {
 }
 
 export function start(quiet: boolean = false): void {
-  socketServer = net.createServer(c => {
+  socketServer = net.createServer((c: net$Socket) => {
     c.write(createBanner());
     c.write(getPrompt());
 
@@ -25,7 +25,7 @@ export function start(quiet: boolean = false): void {
         return;
       }
 
-      cljs.execute(text, undefined, undefined, undefined, (value) => {
+      cljs.execute(text, undefined, undefined, undefined, (value: string) => {
         c.write(`${value}\n\n`);
         c.write(getPrompt());
       });
@@ -39,11 +39,15 @@ export function start(quiet: boolean = false): void {
   // logging here so that REPL output isn't disturbed, though probably
   // should just be output in `cli.js` instead with the rest, based on
   // flag value
-   !quiet && console.log(`TCP socket REPL listening at ${HOST}:${PORT}`);
+  if (!quiet) {
+    // eslint-disable-next-line no-console
+    console.log(`TCP socket REPL listening at ${HOST}:${PORT}`);
+  }
+
   socketServer.listen(PORT, HOST);
 }
 
-export function end () {
+export function end(): void {
   socketServer.close();
   socketServer = null;
 }

@@ -75,12 +75,14 @@ function initClojureScriptEngine(opts: CLIOptsType): void {
   setRuntimeOpts(opts);
 }
 
+type EvalResultCallback = { (value: string): void };
+
 /* eslint-disable indent */
 export function execute(code: string,
                         type: string = 'text',
                         expression: boolean = true,
                         setNS: ?string,
-                        cb: ?Function): void {
+                        cb: ?EvalResultCallback): void {
   // $FlowIssue: context can have globals
   return ClojureScriptContext.lumo.repl.execute(type, code, expression, setNS, cb);
 }
