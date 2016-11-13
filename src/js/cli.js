@@ -128,11 +128,11 @@ function addScriptsType(scripts: string[] | string, type: string): ScriptsType {
 function processOpts(cliOpts: CLIOptsType): CLIOptsType {
   const opts = { ...cliOpts };
   const { cache, classpath, init, repl } = opts;
+  const autoCache = opts['auto-cache'];
   const evl = opts.eval;
   const scripts = [];
 
-  if ({}.hasOwnProperty.call(opts, 'cache') ||
-      {}.hasOwnProperty.call(opts, 'auto-cache')) {
+  if ({}.hasOwnProperty.call(opts, 'cache') || autoCache) {
     if (cache != null && util.isWhitespace(cache)) {
       process.stderr.write('lumo: option requires an argument: -k / --cache\n');
       process.exit(-1);
