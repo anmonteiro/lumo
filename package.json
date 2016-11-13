@@ -2,7 +2,9 @@
   "scripts": {
     "type:check": "flow check",
     "lint": "eslint src/js",
-    "test": "jest"
+    "test": "jest",
+    "bundle": "node scripts/build.js --dev",
+    "dev": "node target/bundle.js"
   },
   "main": "./src/js/index.js",
   "dependencies": {
