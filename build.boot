@@ -28,7 +28,7 @@
   (with-pre-wrap fileset
     (let [nm (io/file "node_modules")]
       (-> fileset
-        (add-resource (io/file ".") :include #{#"^node_modules/parinfer"})
+        (add-resource (io/file ".") :include #{#"^node_modules[\\\/]parinfer"})
         commit!))))
 
 (deftask testing []
