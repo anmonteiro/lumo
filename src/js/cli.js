@@ -4,6 +4,7 @@ import startClojureScriptEngine from './cljs';
 import printLegal from './legal';
 import * as lumo from './lumo';
 import * as util from './util';
+import * as socket from './socket';
 import version from './version';
 
 const minimist = require('minimist');
@@ -50,11 +51,15 @@ function getVersionString(): string {
   return `Lumo ${version}`;
 }
 
-function printBanner(): void {
-  process.stdout.write(`${getVersionString()}
+export function createBanner(): string {
+  return `${getVersionString()}
 ${getClojureScriptVersionString()}
  Exit: Control+D or :cljs/quit or exit
-`);
+`;
+}
+
+function printBanner(): void {
+  process.stdout.write(createBanner());
 }
 
 function printHelp(): void {
@@ -199,6 +204,8 @@ export default function startCLI(): void {
   if (repl && !quiet) {
     printBanner();
   }
+
+  socket.start(quiet);
 
   return startClojureScriptEngine(opts);
 }

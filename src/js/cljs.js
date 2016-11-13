@@ -3,7 +3,6 @@
 
 import * as lumo from './lumo';
 import startREPL from './repl';
-import * as socket from './socket';
 
 import type { CLIOptsType } from './cli';
 
@@ -80,10 +79,12 @@ function initClojureScriptEngine(opts: CLIOptsType): void {
 export function execute(code: string,
                         type: string = 'text',
                         expression: boolean = true,
-                        setNS: ?string): void {
+                        setNS: ?string,
+                        cb: ?fn): void {
   // $FlowIssue: context can have globals
-  ClojureScriptContext.lumo.repl.execute(type, code, expression, setNS);
+  return ClojureScriptContext.lumo.repl.execute(type, code, expression, setNS, cb);
 }
+
 /* eslint-enable indent */
 
 function executeScript(code: string, type: string): void {
@@ -115,8 +116,6 @@ export default function startClojureScriptEngine(opts: CLIOptsType): void {
   const { repl, scripts, _ } = opts;
   const [mainScript] = _;
   let engineStarted = false;
-
-  socket.start();
 
   if (mainScript) {
     initClojureScriptEngine(opts);
