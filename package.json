@@ -8,7 +8,7 @@
   "dependencies": {
     "jszip": "2.6.1",
     "minimist": "^1.2.0",
-    "parinfer": "1.8.2"
+    "parinfer": "2.0.0"
   },
   "devDependencies": {
     "babel-core": "^6.18.2",
