@@ -41,7 +41,7 @@ export function start(quiet: boolean = false): void {
   // flag value
   if (!quiet) {
     // eslint-disable-next-line no-console
-    //console.log(`TCP socket REPL listening at ${HOST}:${PORT}`);
+    // console.log(`TCP socket REPL listening at ${HOST}:${PORT}`);
   }
 
   socketServer.listen(PORT, HOST);
