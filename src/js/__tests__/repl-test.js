@@ -9,6 +9,12 @@ const replHistory = require('../replHistory');
 
 let startREPL = require('../repl').default;
 
+const processStdinOn = process.stdin.on;
+
+process.stdin.on = jest.fn((type: string, cb: (key: string) => void) => {
+  cb('return');
+});
+
 const setPrompt = jest.fn();
 const prompt = jest.fn();
 let on;
@@ -16,7 +22,7 @@ let on;
 function genOn(line: ?string = null): JestMockFn {
   on = jest.fn((type: string, f: (x?: string) => void) => {
     switch (type) {
-      case 'line': return f(line || '(+ 1 2)');
+      case 'line': f(line || '(+ 1 2'); return f(line || ')');
       case 'SIGINT': return f();
       default: return undefined;
     }
@@ -45,9 +51,14 @@ jest.mock('../cljs', () => ({
 
 describe('startREPL', () => {
   beforeEach(() => {
+    process.stdin.on.mockClear();
     replHistory.mockClear();
     setPrompt.mockClear();
     prompt.mockClear();
+  });
+
+  afterAll(() => {
+    process.stdin.on = processStdinOn;
   });
 
   it('creates a readline interface', () => {
@@ -70,6 +81,14 @@ describe('startREPL', () => {
     expect(onCalls.length).toBe(2);
     expect(onCalls[0][0]).toBe('line');
     expect(onCalls[1][0]).toBe('SIGINT');
+  });
+
+  it('sets event handlers for keypressing', () => {
+    startREPL({});
+
+    const onCalls = process.stdin.on.mock.calls;
+    expect(onCalls.length).toBe(1);
+    expect(onCalls[0][0]).toBe('keypress');
   });
 
   describe('sets dumb-terminal', () => {

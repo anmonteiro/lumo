@@ -39,3 +39,8 @@ export function ensureArray<T>(maybeArray: T[] | T): T[] {
 export function isWhitespace(s: string): boolean {
   return s.trim() === '';
 }
+
+export function currentTimeMicros(): number {
+  const [secs, nanos] = process.hrtime();
+  return ((secs * 1e9) + nanos) / 1e3;
+}

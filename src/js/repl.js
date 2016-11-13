@@ -2,7 +2,7 @@
 
 import * as cljs from './cljs';
 import replHistory from './replHistory';
-import { isWhitespace, isWindows } from './util';
+import { currentTimeMicros, isWhitespace, isWindows } from './util';
 
 import type { CLIOptsType } from './cli';
 
@@ -12,6 +12,8 @@ const readline = require('readline');
 
 const exitCommands = new Set([':cljs/quit', 'exit']);
 let input: string = '';
+let lastKeypressTime: number;
+let isPasting: boolean;
 
 /* eslint-disable indent */
 function prompt(rl: readline$Interface,
@@ -61,7 +63,9 @@ function processLine(rl: readline$Interface, line: string): void {
       // partially entered form, prepare for processing the next line.
       prompt(rl, true);
 
-      rl.write(' '.repeat(cljs.indentSpaceCount(input)));
+      if (!isPasting) {
+        rl.write(' '.repeat(cljs.indentSpaceCount(input)));
+      }
       break;
     }
   }
@@ -82,6 +86,12 @@ function handleSIGINT(rl: readline$Interface): void {
   });
 
   prompt(rl);
+}
+
+function handleKeyPress(rl: readline$Interface, key: string, e: Event): void {
+  const now = currentTimeMicros();
+  isPasting = (now - lastKeypressTime) < 10000;
+  lastKeypressTime = now;
 }
 
 export default function startREPL(opts: CLIOptsType): void {
@@ -106,4 +116,7 @@ export default function startREPL(opts: CLIOptsType): void {
 
   rl.on('line', (line: string) => processLine(rl, line));
   rl.on('SIGINT', () => handleSIGINT(rl));
+
+  lastKeypressTime = currentTimeMicros();
+  process.stdin.on('keypress', (key: string, e: Event) => handleKeyPress(rl, key, e));
 }
