@@ -489,7 +489,7 @@
         [(r/read {:read-cond :allow :features #{:cljs}} reader) (read-chars reader)]))))
 
 (defn- execute-text
-  [source {:keys [expression? filename] :as opts}]
+  [source {:keys [expression? filename] :as opts} cb]
   (try
     (binding [cljs/*eval-fn*   caching-node-eval
               cljs/*load-fn*   load
@@ -517,25 +517,27 @@
             (fn [{:keys [ns value error] :as ret}]
               (if-not error
                 (when expression?
-                  (println (pr-str value))
-                  (vreset! current-ns ns))
+                  (vreset! current-ns ns)
+                  (if (nil? cb)
+                    (println (pr-str value))
+                    (cb (pr-str value))))
                 (handle-repl-error error)))))))
     (catch :default e
       (handle-repl-error e)))
   nil)
 
 (defn- execute-source
-  [source-or-path {:keys [type] :as opts}]
+  [source-or-path {:keys [type] :as opts} cb]
   (if-not (= type "text")
     (execute-path source-or-path opts)
-    (execute-text source-or-path opts)))
+    (execute-text source-or-path opts cb)))
 
 (defn ^:export execute
-  [type source-or-path expression? setNS]
+  [type source-or-path expression? setNS cb]
   (when setNS
     (vreset! current-ns (symbol setNS)))
   (execute-source source-or-path {:type type
-                                  :expression? expression?}))
+                                  :expression? expression?} cb))
 
 (defn ^:export is-readable?
   [form]
