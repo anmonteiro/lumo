@@ -154,9 +154,12 @@ describe('startREPL', () => {
     });
 
     it('sets stdin to rawMode if dumbTerminal is false', () => {
+      util.isWindows = false;
+
       startREPL({
         'dumb-terminal': false,
       });
+
       expect(process.stdin.setRawMode).toHaveBeenCalledWith(true);
     });
   });
