@@ -9,6 +9,8 @@
 ### Bug fixes
 
 - Fix a regression in non-TTY mode introduced by emitting keypress events.
+- Fix a crash that would happen if Parinfer wouldn't succeed at calculating the
+indentation.
 
 ## [1.0-alpha2](https://github.com/anmonteiro/lumo/compare/1.0.0-alpha1...1.0-alpha2) (2016-11-13)
 

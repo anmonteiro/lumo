@@ -64,7 +64,10 @@ function processLine(rl: readline$Interface, line: string): void {
       prompt(rl, true);
 
       if (!isPasting) {
-        rl.write(' '.repeat(cljs.indentSpaceCount(input)));
+        const spaceCount = cljs.indentSpaceCount(input);
+        if (spaceCount !== -1) {
+          rl.write(' '.repeat(spaceCount));
+        }
       }
       break;
     }
