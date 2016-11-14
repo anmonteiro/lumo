@@ -15,15 +15,13 @@ cache:
   - tmp -> scripts\package.js
   - '%APPDATA%\npm-cache -> yarn.lock'
   - node_modules -> yarn.lock
-  - '%APPDATA%\npm-cache -> yarn.lock'
-  - '%UserProfile%\AppData\Local\Yarn\cache -> yarn.lock'
   - '%SystemRoot%\boot.exe -> boot.properties'
   - '%UserProfile%\.boot\cache\lib -> boot.properties'
   - '%UserProfile%\.boot\cache\bin -> boot.properties'
 
 install:
   - ps: Install-Product node $env:nodejs_version x64
-  - ps: npm install -g yarn
+  - ps: npm install -g yarn@0.16.1
   - cmd: yarn install
   - ps: wget 'https://github.com/boot-clj/boot-bin/releases/download/latest/boot.exe' -OutFile "$pwd\boot.exe"
   - cmd: 'move boot.exe %SystemRoot%' #set PATH=$pwd\boot.exe;%PATH%
