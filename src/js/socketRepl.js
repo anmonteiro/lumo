@@ -9,7 +9,7 @@ function getPrompt(): string {
   return `${cljs.getCurrentNamespace()}=> `;
 }
 
-export function open(host: string = '127.0.0.1', port: number = 5555): void {
+export function open(port: number = 5555, host: string = '127.0.0.1'): void {
   socketServer = net.createServer((c: net$Socket) => {
     c.write(createBanner());
     c.write(getPrompt());
