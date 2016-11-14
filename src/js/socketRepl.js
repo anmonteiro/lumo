@@ -3,7 +3,7 @@ import * as cljs from './cljs';
 import { createBanner } from './cli';
 
 
-let socketServer: net$Server = null;
+let socketServer: ?net$Server = null;
 
 function getPrompt(): string {
   return `${cljs.getCurrentNamespace()}=> `;
@@ -34,6 +34,10 @@ export function open(host: string = '127.0.0.1', port: number = 5555): void {
 }
 
 export function close(): void {
+  if (!socketServer) {
+    return;
+  }
+
   socketServer.close();
   socketServer = null;
 }
