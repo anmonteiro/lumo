@@ -4,7 +4,7 @@ import startClojureScriptEngine from './cljs';
 import printLegal from './legal';
 import * as lumo from './lumo';
 import * as util from './util';
-import * as socket from './socket';
+import * as socketRepl from './socketRepl';
 import version from './version';
 
 const minimist = require('minimist');
@@ -205,7 +205,7 @@ export default function startCLI(): void {
     printBanner();
   }
 
-  socket.start(quiet);
+  socketRepl.open(quiet);
 
   return startClojureScriptEngine(opts);
 }
