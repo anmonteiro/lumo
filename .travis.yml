@@ -10,6 +10,7 @@ cache:
   - tmp
   - "~/.boot/cache/lib"
   - "~/.boot/cache/bin"
+  - "~/.cache/yarn"
 before_install:
 - npm install -g yarn
 - wget https://github.com/boot-clj/boot-bin/releases/download/latest/boot.sh
