@@ -31,7 +31,8 @@ export function load(filename: string): ?string {
 
 // TODO: cache JARs that we know have a given file / path
 export function readSource(filename: string): ?string {
-  for (let i = 0; i < sourcePaths.length; i += 1) {
+  const len = sourcePaths.length;
+  for (let i = 0; i < len; i += 1) {
     const srcPath = sourcePaths[i];
 
     try {
@@ -85,7 +86,8 @@ export function loadUpstreamForeignLibs(): string[] {
 }
 
 export function fileExists(filename: string): boolean {
-  for (let i = 0; i < sourcePaths.length; i += 1) {
+  const len = sourcePaths.length;
+  for (let i = 0; i < len; i += 1) {
     const srcPath = sourcePaths[i];
 
     if (srcPath.endsWith('.jar')) {
