@@ -186,7 +186,6 @@ export default function startCLI(): void {
 
   const { help, legal, quiet, repl } = opts;
 
-
   // if help, print help and bail
   if (help) {
     return printHelp();
