@@ -20,6 +20,6 @@
     "jszip": "2.6.1"
   },
   "bin": {
-    "lumo": "bin/lumo"
+    "lumo": "./bin/lumo"
   }
 }
