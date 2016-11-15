@@ -25,6 +25,8 @@ Read the [announcement blog post](https://anmonteiro.com/2016/11/the-fastest-clo
 
 `npm install -g lumo-cljs`
 
+_Note: the installed binary will be named `lumo` rather than `lumo-cljs`_
+
 ### Manual
 
 1. Download the [latest release](https://github.com/anmonteiro/lumo/releases/latest).
