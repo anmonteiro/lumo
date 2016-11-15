@@ -1,4 +1,17 @@
 {
+  "name": "lumo",
+  "version": "1.0.0-alpha3",
+  "description": "Fast, cross-platform, standalone ClojureScript REPL",
+  "author": "anmonteiro",
+  "license": "EPL-1.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/anmonteiro/lumo.git"
+  },
+  "bugs": {
+    "url": "https://github.com/anmonteiro/lumo/issues"
+  },
+  "homepage": "https://github.com/anmonteiro/lumo",
   "scripts": {
     "type:check": "flow check",
     "lint": "eslint src/js",
