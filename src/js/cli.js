@@ -186,14 +186,12 @@ function processOpts(cliOpts: CLIOptsType): CLIOptsType {
   opts.repl = scripts.length === 0 || repl;
   opts.scripts = scripts;
 
-  if (opts['socket-repl']) {
+  if (opts.repl && opts['socket-repl']) {
     const hostPortTokens = opts['socket-repl'].split(':');
-
     if (hostPortTokens.length === 1 && !isNaN(hostPortTokens[0])) {
-      opts.port = parseInt(hostPortTokens[0], 10);
+      socketRepl.open(parseInt(hostPortTokens[0], 10));
     } else if (hostPortTokens.length === 2 && !isNaN(hostPortTokens[1])) {
-      opts.host = hostPortTokens[0];
-      opts.port = parseInt(hostPortTokens[1], 10);
+      socketRepl.open(parseInt(hostPortTokens[1], 10), hostPortTokens[0]);
     }
   }
 
@@ -221,10 +219,6 @@ export default function startCLI(): void {
 
   if (repl && !quiet) {
     printBanner();
-  }
-
-  if (opts.port) {
-    socketRepl.open(opts.port, opts.host);
   }
 
   return startClojureScriptEngine(opts);

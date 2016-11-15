@@ -3,7 +3,6 @@
 
 import * as lumo from './lumo';
 import startREPL from './repl';
-import * as socketRepl from './socketRepl';
 
 import type { CLIOptsType } from './cli';
 
@@ -76,7 +75,7 @@ function initClojureScriptEngine(opts: CLIOptsType): void {
   setRuntimeOpts(opts);
 }
 
-export type EvalResultCallback = { (value: string): void };
+export type EvalResultCallback = { (value: string): ?boolean };
 
 /* eslint-disable indent */
 export function execute(code: string,
@@ -122,8 +121,7 @@ export default function startClojureScriptEngine(opts: CLIOptsType): void {
 
   if (mainScript) {
     initClojureScriptEngine(opts);
-    executeScript(mainScript, 'path');
-    return socketRepl.close();
+    return executeScript(mainScript, 'path');
   }
 
   if (scripts.length > 0) {
@@ -145,5 +143,5 @@ export default function startClojureScriptEngine(opts: CLIOptsType): void {
     return startREPL(opts);
   }
 
-  return socketRepl.close();
+  return undefined;
 }

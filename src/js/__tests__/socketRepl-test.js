@@ -26,7 +26,7 @@ describe('open', () => {
 
   it('creates a server listening on a specified host and port', () => {
     const socketServer = socketRepl.getSocketServer();
-    expect(socketServer.listen.mock.calls.length).toBe(1);
+    expect(socketServer.listen).toHaveBeenCalledTimes(1);
     expect(socketServer.listen.mock.calls[0][0]).toBe(serverPort);
     expect(socketServer.listen.mock.calls[0][1]).toBe(serverHost);
   });
@@ -51,7 +51,7 @@ describe('close', () => {
   it('closes the server', () => {
     socketRepl.close();
     const socketServer = socketRepl.getSocketServer();
-    expect(socketServer.close.mock.calls.length).toBe(1);
+    expect(socketServer.close).toHaveBeenCalledTimes(1);
   });
 });
 
@@ -72,6 +72,6 @@ describe('handleConnection', () => {
 
   it('prints welcome message and prompt', () => {
     socketRepl.handleConnection(socket);
-    expect(socket.write).toHaveBeenCalledTimes(2);
+    expect(socket.write).toHaveBeenCalled();
   });
 });

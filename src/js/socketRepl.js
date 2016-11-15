@@ -1,3 +1,5 @@
+/* @flow */
+
 import net from 'net';
 import readline from 'readline';
 import { createBanner } from './cli';
@@ -13,16 +15,15 @@ export function getSocketServer(): ?net$Server {
 export function handleConnection(socket: net$Socket): readline$Interface {
   socket.write(createBanner());
 
-  const rl = readline.createInterface(socket, socket);
+  const rl = readline.createInterface({ input: socket, output: socket, terminal: true });
   prompt(rl, false, 'cljs.user');
   rl.on('line', (line: string) => processLine(rl, line, (value: string) => socket.write(`${value}\n`)));
-  rl.on('SIGINT', () => socket.close());
+  rl.on('SIGINT', () => socket.end('Goodbye!'));
   return rl;
 }
 
-export function open(port: number = 5555, host: string = '127.0.0.1'): void {
+export function open(port: number, host?: string): void {
   socketServer = net.createServer((socket: net$Socket) => handleConnection(socket));
-
   socketServer.listen(port, host);
 }
 
