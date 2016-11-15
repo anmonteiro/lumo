@@ -21,6 +21,12 @@ Read the [announcement blog post](https://anmonteiro.com/2016/11/the-fastest-clo
 
 ## Installation
 
+### Using [NPM](https://www.npmjs.com/package/lumo-cljs)
+
+`npm install -g lumo-cljs`
+
+### Manual
+
 1. Download the [latest release](https://github.com/anmonteiro/lumo/releases/latest).
 2. Move it to somewhere in your `$PATH`.
 
