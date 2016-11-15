@@ -9,9 +9,11 @@ var platform2release = {
   win32: 'win64',
 };
 
+var isWindows = process.platform === 'win32';
 var platformZip = 'lumo_' + platform2release[process.platform] + '.zip';
 var version = process.env.npm_package_version;
 var file = fs.createWriteStream(platformZip);
+var executable = isWindows ? 'lumo.exe' : 'lumo';
 
 var url = [
   'https://github.com/anmonteiro/lumo/releases/download',
@@ -35,7 +37,7 @@ var request = https.get(url, function(response) {
       response.pipe(file);
       response.on('end', function() {
         var fileContents = fs.readFileSync(platformZip);
-        var zipped = new JSZip().load(fileContents).file('lumo');
+        var zipped = new JSZip().load(fileContents).file(executable);
 
         try {
           fs.mkdirSync('bin');
@@ -44,7 +46,8 @@ var request = https.get(url, function(response) {
             throw e;
           }
         }
-        fs.writeFileSync('./bin/lumo', zipped.asBinary(), {
+
+        fs.writeFileSync('./bin/' + executable, zipped.asBinary(), {
           encoding: 'binary',
           mode: zipped.options.unixPermissions,
         });
