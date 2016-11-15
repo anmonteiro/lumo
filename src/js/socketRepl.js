@@ -1,6 +1,7 @@
 import net from 'net';
-import * as cljs from './cljs';
+import readline from 'readline';
 import { createBanner } from './cli';
+import { prompt, processLine } from './repl';
 
 
 let socketServer: ?net$Server = null;
@@ -9,32 +10,18 @@ export function getSocketServer(): ?net$Server {
   return socketServer;
 }
 
-function getPrompt(): string {
-  return `${cljs.getCurrentNamespace()}=> `;
-}
+export function handleConnection(socket: net$Socket): readline$Interface {
+  socket.write(createBanner());
 
-export function handleConnection(c: net$Socket): void {
-  c.write(createBanner());
-  c.write(getPrompt());
-
-  c.on('data', (data: Buffer) => {
-    const text = data.toString();
-
-    // end connection when special `:cljs/quit` is sent
-    if (text.trim() === ':cljs/quit') {
-      c.end('Goodbye!');
-      return;
-    }
-
-    cljs.execute(text, undefined, undefined, undefined, (value: string) => {
-      c.write(`${value}\n\n`);
-      c.write(getPrompt());
-    });
-  });
+  const rl = readline.createInterface(socket, socket);
+  prompt(rl, false, 'cljs.user');
+  rl.on('line', (line: string) => processLine(rl, line, (value: string) => socket.write(`${value}\n`)));
+  rl.on('SIGINT', () => socket.close());
+  return rl;
 }
 
 export function open(port: number = 5555, host: string = '127.0.0.1'): void {
-  socketServer = net.createServer((c: net$Socket) => handleConnection);
+  socketServer = net.createServer((socket: net$Socket) => handleConnection(socket));
 
   socketServer.listen(port, host);
 }

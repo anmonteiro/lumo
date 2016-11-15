@@ -5,6 +5,7 @@ import replHistory from './replHistory';
 import { currentTimeMicros, isWhitespace, isWindows } from './util';
 
 import type { CLIOptsType } from './cli';
+import type { EvalResultCallback } from './cljs';
 
 const os = require('os');
 const path = require('path');
@@ -16,9 +17,9 @@ let lastKeypressTime: number;
 let isPasting: boolean;
 
 /* eslint-disable indent */
-function prompt(rl: readline$Interface,
-                isSecondary: boolean = false,
-                p: string = cljs.getCurrentNamespace()): void {
+export function prompt(rl: readline$Interface,
+                       isSecondary: boolean = false,
+                       p: string = cljs.getCurrentNamespace()): void {
   /* eslint-enable indent */
   let promptText;
 
@@ -32,7 +33,7 @@ function prompt(rl: readline$Interface,
   rl.prompt();
 }
 
-function processLine(rl: readline$Interface, line: string): void {
+export function processLine(rl: readline$Interface, line: string, cb?: ?EvalResultCallback): void {
   let extraForms = false;
 
   if (exitCommands.has(line)) {
@@ -52,7 +53,7 @@ function processLine(rl: readline$Interface, line: string): void {
       input = input.substring(0, input.length - extraForms.length);
 
       if (!isWhitespace(input)) {
-        cljs.execute(input);
+        cljs.execute(input, undefined, undefined, undefined, cb);
       } else {
         prompt(rl);
         break;

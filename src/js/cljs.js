@@ -76,7 +76,7 @@ function initClojureScriptEngine(opts: CLIOptsType): void {
   setRuntimeOpts(opts);
 }
 
-type EvalResultCallback = { (value: string): void };
+export type EvalResultCallback = { (value: string): void };
 
 /* eslint-disable indent */
 export function execute(code: string,

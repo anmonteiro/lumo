@@ -1,102 +1,77 @@
-const net = require('net');
+import net from 'net';
+import * as socketRepl from '../socketRepl';
 
-jest.mock('net');
+type SocketCallback = { (socket: net$Socket): void };
 
-class MockServer {
-  host: ?string;
-  port: ?number;
-  listening: boolean;
-  closed: boolean;
-
-  constructor(): void {
-    this.host = null;
-    this.port = null;
-    this.listening = false;
-    this.closed = false;
-  }
-
-  listen(port: number, host?: ?string): void {
-    this.port = port;
-    this.host = host;
-    this.listening = true;
-  }
-
-  close(): void {
-    this.closed = true;
-  }
-}
-
-net.Server = MockServer;
-
-function createMockServer(): net$Server {
-  return new net.Server();
-}
-
-net.createServer = createMockServer;
-
-type BufferCallback = { (data: Buffer): void };
-
-class MockSocket {
-  written: number;
-  valuesWritten: string[];
-  ended: boolean;
-  onDataHandled: boolean;
-
-  constructor(): void {
-    this.written = 0;
-    this.ended = false;
-    this.valuesWritten = [];
-    this.onDataHandled = false;
-  }
-
-  write(value: string): void {
-    this.written += 1;
-    this.valuesWritten.push(value);
-  }
-
-  on(type: string, callback: BufferCallback): void {
-    if (type === 'data') {
-      this.onDataHandled = true;
-    }
-  }
-}
-
-net.Socket = MockSocket;
-
-jest.mock('../version', () => 'X.X.X');
-jest.mock('../cljs', () => ({
-  getCurrentNamespace: jest.fn(() => 'cljs.user'),
-}));
-
-const socketRepl = require('../socketRepl');
+const serverHost = '0.0.0.0';
+const serverPort = 12345;
+const netCreateServer = net.createServer;
+const netServerListen = net.Server.prototype.listen;
+const netServerClose = net.Server.prototype.close;
+const netSocketWrite = net.Socket.prototype.write;
+const netSocketOn = net.Socket.prototype.on;
 
 describe('open', () => {
-  it('creates a new server and listens on a specified host and port', () => {
-    const host = '0.0.0.0';
-    const port = 1234;
-    socketRepl.open(port, host);
+  beforeEach(() => {
+    net.createServer = jest.fn((callback: SocketCallback) => new net.Server());
+    net.Server.prototype.listen = jest.fn((port: number, host: ?string) => undefined);
+    socketRepl.open(serverPort, serverHost);
+  });
+
+  afterEach(() => {
+    socketRepl.close();
+    net.createServer = netCreateServer;
+    net.Server.prototype.listen = netServerListen;
+  });
+
+  it('creates a server listening on a specified host and port', () => {
     const socketServer = socketRepl.getSocketServer();
-    expect(socketServer.host).toBe(host);
-    expect(socketServer.port).toBe(port);
-    expect(socketServer.listening).toBe(true);
+    expect(socketServer.listen.mock.calls.length).toBe(1);
+    expect(socketServer.listen.mock.calls[0][0]).toBe(serverPort);
+    expect(socketServer.listen.mock.calls[0][1]).toBe(serverHost);
   });
 });
 
+
 describe('close', () => {
-  it('prevents further connections', () => {
+  beforeEach(() => {
+    net.createServer = jest.fn((callback: SocketCallback) => new net.Server());
+    net.Server.prototype.listen = jest.fn((port: number, host: ?string) => undefined);
+    net.Server.prototype.close = jest.fn(() => netServerClose.bind(this));
+    socketRepl.open(serverPort, serverHost);
+  });
+
+  afterEach(() => {
+    socketRepl.close();
+    net.createServer = netCreateServer;
+    net.Server.prototype.listen = netServerListen;
+    net.Server.prototype.close = netServerClose;
+  });
+
+  it('closes the server', () => {
     socketRepl.close();
     const socketServer = socketRepl.getSocketServer();
-    expect(socketServer.closed).toBe(true);
+    expect(socketServer.close.mock.calls.length).toBe(1);
   });
 });
 
 describe('handleConnection', () => {
-  it('gives each connection a welcome message and data handler', () => {
-    const mockSocket = new net.Socket();
-    expect(mockSocket.written).toBe(0);
-    expect(mockSocket.onDataHandled).toBe(false);
-    socketRepl.handleConnection(mockSocket);
-    expect(mockSocket.written).toBe(2);
-    expect(mockSocket.onDataHandled).toBe(true);
+  let socket: ?net$Socket = null;
+
+  beforeEach(() => {
+    net.Socket.prototype.write = jest.fn((text: string) => undefined);
+    net.Socket.prototype.on = jest.fn();
+    socket = new net.Socket();
+  });
+
+  afterEach(() => {
+    socket.end();
+    net.Socket.prototype.write = netSocketWrite;
+    net.Socket.prototype.on = netSocketOn;
+  });
+
+  it('prints welcome message and prompt', () => {
+    socketRepl.handleConnection(socket);
+    expect(socket.write).toHaveBeenCalledTimes(2);
   });
 });
