@@ -23,7 +23,9 @@ Read the [announcement blog post](https://anmonteiro.com/2016/11/the-fastest-clo
 
 ### Using [NPM](https://www.npmjs.com/package/lumo-cljs)
 
-`npm install -g lumo-cljs`
+```shell
+$ npm install -g lumo-cljs
+```
 
 _Note: the installed binary will be named `lumo` rather than `lumo-cljs`_
 
