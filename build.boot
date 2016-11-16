@@ -24,6 +24,16 @@
 
 (import [java.io ByteArrayOutputStream FileInputStream])
 
+(def windows?
+  (.startsWith (.toLowerCase (System/getProperty "os.name")) "windows"))
+
+(deftask add-node-modules []
+  (with-pre-wrap fileset
+    (let [nm (io/file "node_modules")]
+      (-> fileset
+        (add-resource (io/file ".") :include #{#"^node_modules[\\\/]parinfer"})
+        commit!))))
+
 (deftask testing []
   (set-env! :source-paths #(conj % "test"))
   identity)
@@ -36,6 +46,7 @@
                 (nil? exit?) not)]
     (comp
       (testing)
+      (if windows? (add-node-modules) identity)
       (test-cljs
         :js-env :node
         :namespaces #{'lumo.js-deps-tests 'lumo.repl-tests}
@@ -47,9 +58,6 @@
     (watch)
     (speak)
     (test :exit? false)))
-
-(def windows?
-  (.startsWith (.toLowerCase (System/getProperty "os.name")) "windows"))
 
 (deftask check-node-modules []
   (with-pass-thru _
