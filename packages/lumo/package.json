@@ -1,6 +1,6 @@
 {
   "name": "lumo-cljs",
-  "version": "1.0.0-alpha3",
+  "version": "1.0.0",
   "description": "Fast, cross-platform, standalone ClojureScript REPL",
   "author": "anmonteiro",
   "license": "EPL-1.0",
