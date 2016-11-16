@@ -9,11 +9,20 @@ import type { CLIOptsType } from './cli';
 const os = require('os');
 const path = require('path');
 const readline = require('readline');
+const tty = require('tty');
+
+type KeyType = {
+  name: string,
+  ctrl?: boolean,
+  shift?: boolean,
+  meta?: boolean,
+};
 
 const exitCommands = new Set([':cljs/quit', 'exit']);
 let input: string = '';
 let lastKeypressTime: number;
 let isPasting: boolean;
+const pendingHighlights = [];
 
 /* eslint-disable indent */
 function prompt(rl: readline$Interface,
@@ -91,10 +100,80 @@ function handleSIGINT(rl: readline$Interface): void {
   prompt(rl);
 }
 
-function handleKeyPress(rl: readline$Interface, key: string, e: Event): void {
+/* eslint-disable indent */
+function highlight(rlInt: readline$Interface,
+                   char: string,
+                   line: string,
+                   cursor: number): void {
+  /* eslint-enable indent */
+  const rl = rlInt;
+  const pos = cursor - 1;
+
+  if (char === ')' || char === ']' || char === '}') {
+    const lines = input === '' ? [] : input.split('\n');
+    lines.push(line);
+    const [cursorX, linesUp] = cljs.getHighlightCoordinates(lines, pos);
+
+    if (linesUp !== -1) {
+      // $FlowIssue: rl.output is there
+      readline.moveCursor(rl.output, -(cursor - cursorX), -linesUp);
+      rl.pause();
+
+      // set the readline input stream to a new one so that we can listen for
+      // keypress events while stdin is paused.
+      // $FlowIssue
+      const oldInput = rl.input;
+      const readStream = new tty.ReadStream(null, {});
+      readStream.setRawMode(true);
+      // $FlowIssue
+      readline.emitKeypressEvents(readStream, rl);
+
+      readStream.once('keypress', (c: string, key: KeyType) => {
+        const [tid] = pendingHighlights.shift();
+        clearTimeout(tid);
+        // $FlowIssue
+        readline.moveCursor(rl.output, (cursor - cursorX), linesUp);
+        // $FlowIssue
+        rl.input = oldInput;
+        rl.resume();
+        readStream.destroy();
+        rl.write(c, key);
+        // $FlowIssue
+        highlight(rl, c, rl.line, rl.cursor);
+      });
+
+      // $FlowIssue
+      rl.input = readStream;
+
+      const now = currentTimeMicros();
+      const timeout = setTimeout(() => {
+        const to = pendingHighlights[0];
+
+        if (to != null && to[1] === now) {
+          pendingHighlights.shift();
+          // $FlowIssue: rl.output is there
+          readline.moveCursor(rl.output, (cursor - cursorX), linesUp);
+          // $FlowIssue: rl.input is there
+          rl.input = oldInput;
+          rl.resume();
+          readStream.destroy();
+        }
+      }, 500);
+
+      pendingHighlights.push([timeout, now]);
+    }
+  }
+}
+
+function handleKeyPress(rl: readline$Interface, c: string, key: KeyType): void {
   const now = currentTimeMicros();
   isPasting = (now - lastKeypressTime) < 10000;
   lastKeypressTime = now;
+
+  if (!isPasting) {
+    // $FlowIssue: these properties exist
+    highlight(rl, c, rl.line, rl.cursor);
+  }
 }
 
 export default function startREPL(opts: CLIOptsType): void {
@@ -121,5 +200,5 @@ export default function startREPL(opts: CLIOptsType): void {
   rl.on('SIGINT', () => handleSIGINT(rl));
 
   lastKeypressTime = currentTimeMicros();
-  process.stdin.on('keypress', (key: string, e: Event) => handleKeyPress(rl, key, e));
+  process.stdin.on('keypress', (c: string, key: KeyType) => handleKeyPress(rl, c, key));
 }

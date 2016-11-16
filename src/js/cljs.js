@@ -104,6 +104,11 @@ export function indentSpaceCount(text: string): number {
   return ClojureScriptContext.lumo.repl.indent_space_count(text);
 }
 
+export function getHighlightCoordinates(text: string[], pos: number): [number, number] {
+  // $FlowIssue: context can have globals
+  return ClojureScriptContext.lumo.repl.get_highlight_coordinates(text, pos);
+}
+
 function executeScripts(scripts: [string, string][]): void {
   scripts.forEach(([type, script]: [string, string]) => {
     executeScript(script, type);

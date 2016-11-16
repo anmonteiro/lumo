@@ -2,6 +2,10 @@
 
 ## [master](https://github.com/anmonteiro/lumo/compare/1.0.0-alpha2...HEAD) (unreleased)
 
+### New features
+
+- Highlight the matching brace when inserting a closing brace.
+
 ## [1.0.0-alpha3](https://github.com/anmonteiro/lumo/compare/1.0.0-alpha2...1.0.0-alpha3) (2016-11-15)
 
 ### Changes
