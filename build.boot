@@ -9,7 +9,7 @@
                  [com.cognitect/transit-clj   "0.8.293"        :scope "test"]
                  [com.cemerick/piggieback     "0.2.1"          :scope "test"]
                  [adzerk/boot-cljs            "1.7.228-2"      :scope "test"]
-                 [crisptrutski/boot-cljs-test "0.3.0-SNAPSHOT" :scope "test"]
+                 [crisptrutski/boot-cljs-test "0.2.2"          :scope "test"]
                  [org.clojure/tools.nrepl     "0.2.12"         :scope "test"]
                  [weasel                      "0.7.0"          :scope "test"]])
 
@@ -46,7 +46,7 @@
                 (nil? exit?) not)]
     (comp
       (testing)
-      (if windows? (add-node-modules) identity)
+      (add-node-modules)
       (test-cljs
         :js-env :node
         :namespaces #{'lumo.js-deps-tests 'lumo.repl-tests}
