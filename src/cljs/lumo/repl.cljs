@@ -301,8 +301,8 @@
     (with-redefs [js/module js/undefined
                   js/exports js/undefined]
       (set! *loading-foreign* false)
-      (js/eval source))
-    (js/eval source)))
+      (js/LUMO_EVAL source))
+    (js/LUMO_EVAL source)))
 
 ;; =============================================================================
 ;; REPL plumbing

@@ -62,7 +62,7 @@ Promise.all(promises).then(() => {
     resourceRoot: 'target',
     flags: true, // use this for applications that need command line flags.
     jsFlags: [
-      '--use_strict',
+      // '--use_strict',
       // '--prepare_always_opt',
       // '--always_opt',
       // '--compiled_keyed_generic_loads',
