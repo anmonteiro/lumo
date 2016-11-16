@@ -13,9 +13,8 @@ export function getSocketServer(): ?net$Server {
 }
 
 export function handleConnection(socket: net$Socket): readline$Interface {
-  socket.write(createBanner());
-
   const rl = readline.createInterface({ input: socket, output: socket, terminal: true });
+  rl.write(createBanner());
   prompt(rl, false, 'cljs.user');
   rl.on('line', (line: string) => processLine(rl, line, (value: string) => socket.write(`${value}\n`)));
   rl.on('SIGINT', () => socket.end('Goodbye!'));

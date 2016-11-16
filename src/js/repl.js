@@ -53,7 +53,15 @@ export function processLine(rl: readline$Interface, line: string, cb?: ?EvalResu
       input = input.substring(0, input.length - extraForms.length);
 
       if (!isWhitespace(input)) {
-        cljs.execute(input, undefined, undefined, undefined, cb);
+        // takeover console.log and instead write eval result to readline output stream
+        /* eslint-disable no-console */
+        const oldConsoleLog = console.log;
+        /* eslint-disable flowtype/no-weak-types */
+        console.log = (...msgs: any[]) => (msgs || []).forEach((m: any) => rl.output.write(`${m.toString()}\n`));
+        /* eslint-enable flowtype/no-weak-types */
+        cljs.execute(input);
+        console.log = oldConsoleLog;
+        /* eslint-enable no-console */
       } else {
         prompt(rl);
         break;
