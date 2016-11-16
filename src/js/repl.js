@@ -52,17 +52,15 @@ export function processLine(rl: readline$Interface, line: string): void {
       input = input.substring(0, input.length - extraForms.length);
 
       if (!isWhitespace(input)) {
-        // takeover console.log and instead write eval result to readline output stream
-        /* eslint-disable no-console */
-        const oldConsoleLog = console.log;
-        /* eslint-disable flowtype/no-weak-types */
-        // $FlowIssue - console.log contravariance and readline$Interface not having output
-        console.log = (...msgs: any[]) => msgs.forEach((msg: any) => rl.output.write(`${msg.toString()}\n`));
-        /* eslint-enable flowtype/no-weak-types */
+        const oldWrite = process.stdout.write;
+        const resultLines: string[] = [];
+        // $FlowIssue - assignment of process.stdout.write
+        process.stdout.write = (m: string) => resultLines.push(m);
         cljs.execute(input);
-        // $FlowIssue - console.log contravariance
-        console.log = oldConsoleLog;
-        /* eslint-enable no-console */
+        // $FlowIssue - assignment of process.stdout.write
+        process.stdout.write = oldWrite;
+        // $FlowIssue - use of rl.output.write of write
+        resultLines.forEach((l: string) => rl.output.write(l));
       } else {
         prompt(rl);
         break;
