@@ -5,7 +5,6 @@ import replHistory from './replHistory';
 import { currentTimeMicros, isWhitespace, isWindows } from './util';
 
 import type { CLIOptsType } from './cli';
-import type { EvalResultCallback } from './cljs';
 
 const os = require('os');
 const path = require('path');
@@ -33,7 +32,7 @@ export function prompt(rl: readline$Interface,
   rl.prompt();
 }
 
-export function processLine(rl: readline$Interface, line: string, cb?: ?EvalResultCallback): void {
+export function processLine(rl: readline$Interface, line: string): void {
   let extraForms = false;
 
   if (exitCommands.has(line)) {
@@ -57,9 +56,11 @@ export function processLine(rl: readline$Interface, line: string, cb?: ?EvalResu
         /* eslint-disable no-console */
         const oldConsoleLog = console.log;
         /* eslint-disable flowtype/no-weak-types */
-        console.log = (...msgs: any[]) => (msgs || []).forEach((m: any) => rl.output.write(`${m.toString()}\n`));
+        // $FlowIssue - console.log contravariance and readline$Interface not having output
+        console.log = (...msgs: any[]) => msgs.forEach((msg: any) => rl.output.write(`${msg.toString()}\n`));
         /* eslint-enable flowtype/no-weak-types */
         cljs.execute(input);
+        // $FlowIssue - console.log contravariance
         console.log = oldConsoleLog;
         /* eslint-enable no-console */
       } else {
@@ -120,6 +121,8 @@ export default function startREPL(opts: CLIOptsType): void {
     // $FlowIssue
     process.stdin.setRawMode(true);
   }
+
+  process.on('uncaughtException', (err: Error) => undefined);
 
   prompt(rl, false, 'cljs.user');
 
