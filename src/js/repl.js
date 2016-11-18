@@ -42,10 +42,17 @@ export function prompt(rl: readline$Interface,
 }
 
 export function processLine(rl: readline$Interface, line: string): void {
+  // $FlowIssue - use of rl.output
+  const isMainRepl = rl.output === process.stdout;
   let extraForms = false;
 
   if (exitCommands.has(line)) {
-    process.exit();
+    if (isMainRepl) {
+      process.exit();
+    } else {
+      // $FlowIssue - use of rl.output
+      rl.output.destroy();
+    }
   }
 
   if (isWhitespace(input)) {
@@ -61,15 +68,28 @@ export function processLine(rl: readline$Interface, line: string): void {
       input = input.substring(0, input.length - extraForms.length);
 
       if (!isWhitespace(input)) {
-        const oldWrite = process.stdout.write;
-        const resultLines: string[] = [];
+        const stdoutWrite = process.stdout.write;
+        const stderrWrite = process.stderr.write;
+        const resultBuffer: string[] = [];
+        const errorBuffer: string[] = [];
+
         // $FlowIssue - assignment of process.stdout.write
-        process.stdout.write = (m: string) => resultLines.push(m);
+        process.stdout.write = (m: string) => resultBuffer.push(m);
+        // $FlowIssue - assignment of process.stderr.write
+        process.stderr.write = isMainRepl
+          ? (m: string) => errorBuffer.push(m)
+          : (m: string) => resultBuffer.push(m);
+
         cljs.execute(input);
+
         // $FlowIssue - assignment of process.stdout.write
-        process.stdout.write = oldWrite;
+        process.stdout.write = stdoutWrite;
+        // $FlowIssue - assignment of process.stderr.write
+        process.stderr.write = stderrWrite;
+
         // $FlowIssue - use of rl.output.write of write
-        resultLines.forEach((l: string) => rl.output.write(l));
+        resultBuffer.forEach((l: string) => rl.output.write(l));
+        errorBuffer.forEach((l: string) => process.stderr.write(l));
       } else {
         prompt(rl);
         break;
