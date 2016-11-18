@@ -247,3 +247,7 @@ export function getJSCompletions(
     return cb(completions);
   });
 }
+
+export function removeSourcePath(srcPath: string): void {
+  sourcePaths.splice(sourcePaths.indexOf(srcPath), 1);
+}
