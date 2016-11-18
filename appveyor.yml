@@ -21,7 +21,7 @@ cache:
 
 install:
   - ps: Install-Product node $env:nodejs_version x64
-  - ps: npm install -g yarn@0.16.1
+  - cmd: npm install -g yarn
   - cmd: yarn install
   - ps: wget 'https://github.com/boot-clj/boot-bin/releases/download/latest/boot.exe' -OutFile "$pwd\boot.exe"
   - cmd: 'move boot.exe %SystemRoot%' #set PATH=$pwd\boot.exe;%PATH%

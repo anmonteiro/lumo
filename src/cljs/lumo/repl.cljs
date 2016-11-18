@@ -370,19 +370,6 @@
     (catch :default _
       false)))
 
-(defn- form-start-fikes
-  [total-source total-pos]
-  (some identity
-    (for [n (range (dec total-pos) -1 -1)]
-      (let [candidate-form (subs total-source n (inc total-pos))
-            first-char     (subs candidate-form 0 1)]
-        (if (#{"(" "[" "{" "#"} first-char)
-          (if (is-completely-readable? candidate-form)
-            (if (= "#" first-char)
-              (inc n)
-              n)
-            nil))))))
-
 (def ^:private matches
   {")" "("
    "}" "{"
@@ -421,12 +408,10 @@
     [-1 -1]))
 
 (defn ^:export get-highlight-coordinates
-  "Gets the highlight coordinates [dx dy] for the previous matching
-  brace. This is done by progressivly expanding source considered
-  until a readable form is encountered with a matching brace on the
-  other end. The coordinate system is such that line 0 is the current
-  buffer line, line 1 is the previous line, and so on, and pos is the
-  position in that line."
+  "Returns the highlight coordinates [cursorX dy] for the matching brace of the
+   one at pos. cursorX is the horizontal position of the cursor starting from
+   the beginning of the line. dy is the number of lines above the current
+   cursor where the matching brace is located."
   [lines pos]
   (let [source (string/join "\n" lines)
         pos (+ pos (inc (.lastIndexOf source "\n")))
