@@ -3,11 +3,11 @@
 import net from 'net';
 import readline from 'readline';
 import { createBanner } from './cli';
-import { prompt, processLine } from './repl';
+import { prompt, processLine, unhookOutputStreams } from './repl';
 
 
 let socketServer: ?net$Server = null;
-export const sockets: { [id: string]: net$Socket } = {};
+const sockets: { [id: string]: net$Socket } = {};
 
 export function getSocketServer(): ?net$Server {
   return socketServer;
@@ -19,7 +19,7 @@ export function handleConnection(socket: net$Socket): readline$Interface {
   sockets[socketId] = socket;
 
   const rl = readline.createInterface({ input: socket, output: socket });
-  rl.on('line', (line: string) => processLine(rl, line));
+  rl.on('line', (line: string) => processLine(rl, line, false));
   rl.on('SIGINT', () => socket.destroy());
 
   // $FlowIssue - output missing from readline$Interface
@@ -29,6 +29,8 @@ export function handleConnection(socket: net$Socket): readline$Interface {
 }
 
 export function close(): void {
+  unhookOutputStreams();
+
   if (!socketServer) {
     return;
   }
@@ -40,7 +42,7 @@ export function close(): void {
       } catch (e) {} // eslint-disable-line no-empty
     });
 
-  socketServer.close(() => process.exit());
+  socketServer.close();
 }
 
 export function open(port: number, host?: string): void {
@@ -48,7 +50,5 @@ export function open(port: number, host?: string): void {
   socketServer.listen(port, host);
 
   process.on('SIGTERM', close);
-  process.on('SIGINT', close);
   process.on('SIGHUP', close);
-  process.on('exit', close);
 }

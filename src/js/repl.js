@@ -18,11 +18,20 @@ type KeyType = {
   meta?: boolean,
 };
 
+type StreamWriteHandler = (line: string) => void;
+
 const exitCommands = new Set([':cljs/quit', 'exit']);
 let input: string = '';
 let lastKeypressTime: number;
 let isPasting: boolean;
 const pendingHighlights = [];
+const stdoutWrite = process.stdout.write;
+const stderrWrite = process.stderr.write;
+
+const resultBuffer: string[] = [];
+const errorBuffer: string[] = [];
+const writeToResultBuffer = (line: string) => { resultBuffer.push(line); };
+const writeToErrorBuffer = (line: string) => { errorBuffer.push(line); };
 
 /* eslint-disable indent */
 export function prompt(rl: readline$Interface,
@@ -41,9 +50,21 @@ export function prompt(rl: readline$Interface,
   rl.prompt();
 }
 
-export function processLine(rl: readline$Interface, line: string): void {
-  // $FlowIssue - use of rl.output
-  const isMainRepl = rl.output === process.stdout;
+function hookOutputStreams(writeOutput: StreamWriteHandler, writeError: StreamWriteHandler): void {
+  // $FlowIssue - assignment of process.stdout.write
+  process.stdout.write = writeOutput;
+  // $FlowIssue - assignment of process.stderr.write
+  process.stderr.write = writeError;
+}
+
+export function unhookOutputStreams(): void {
+  // $FlowIssue - assignment of process.stdout.write
+  process.stdout.write = stdoutWrite;
+  // $FlowIssue - assignment of process.stderr.write
+  process.stderr.write = stderrWrite;
+}
+
+export function processLine(rl: readline$Interface, line: string, isMainRepl: boolean): void {
   let extraForms = false;
 
   if (exitCommands.has(line)) {
@@ -68,24 +89,12 @@ export function processLine(rl: readline$Interface, line: string): void {
       input = input.substring(0, input.length - extraForms.length);
 
       if (!isWhitespace(input)) {
-        const stdoutWrite = process.stdout.write;
-        const stderrWrite = process.stderr.write;
-        const resultBuffer: string[] = [];
-        const errorBuffer: string[] = [];
+        resultBuffer.length = errorBuffer.length = 0;
 
-        // $FlowIssue - assignment of process.stdout.write
-        process.stdout.write = (m: string) => resultBuffer.push(m);
-        // $FlowIssue - assignment of process.stderr.write
-        process.stderr.write = isMainRepl
-          ? (m: string) => errorBuffer.push(m)
-          : (m: string) => resultBuffer.push(m);
-
+        hookOutputStreams(writeToResultBuffer,
+                          isMainRepl ? writeToErrorBuffer : writeToResultBuffer);
         cljs.execute(input);
-
-        // $FlowIssue - assignment of process.stdout.write
-        process.stdout.write = stdoutWrite;
-        // $FlowIssue - assignment of process.stderr.write
-        process.stderr.write = stderrWrite;
+        unhookOutputStreams();
 
         // $FlowIssue - use of rl.output.write of write
         resultBuffer.forEach((l: string) => rl.output.write(l));
@@ -226,7 +235,7 @@ export default function startREPL(opts: CLIOptsType): void {
 
   prompt(rl, false, 'cljs.user');
 
-  rl.on('line', (line: string) => processLine(rl, line));
+  rl.on('line', (line: string) => processLine(rl, line, true));
   rl.on('SIGINT', () => handleSIGINT(rl));
 
   lastKeypressTime = currentTimeMicros();
