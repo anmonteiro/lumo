@@ -11,7 +11,7 @@ cache:
   - "~/.boot/cache/lib"
   - "~/.boot/cache/bin"
 before_install:
-- npm install -g yarn@0.16.1
+- npm install -g yarn
 - wget https://github.com/boot-clj/boot-bin/releases/download/latest/boot.sh
 - mv boot.sh boot && chmod a+x boot && sudo mv boot /usr/local/bin
 install:
