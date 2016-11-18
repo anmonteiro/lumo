@@ -8,7 +8,7 @@ const zlib = require('zlib');
 const JSZip = require('jszip');
 
 let nexeres;
-const sourcePaths = [''];
+const sourcePaths = [];
 
 if (!__DEV__) {
   // $FlowExpectedError: only exists in the Nexe bundle.
@@ -108,6 +108,15 @@ export function fileExists(filename: string): boolean {
   return false;
 }
 
+
+export function readSourcePaths(): string[]{
+  return sourcePaths.slice(0);
+}
+
 export function addSourcePaths(srcPaths: string[]): void {
   sourcePaths.push(...srcPaths);
+}
+
+export function removeSourcePath(srcPath: string): void {
+  sourcePaths.splice(sourcePaths.indexOf(srcPath), 1);
 }
