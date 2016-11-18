@@ -34,6 +34,7 @@ if (__DEV__) {
       console,
       parinfer,
       LUMO_LOAD: lumo.load,
+      LUMO_ADD_SOURCE: lumo.addSourcePaths,
       LUMO_READ_CACHE: lumo.readCache,
       LUMO_READ_SOURCE: lumo.readSource,
       LUMO_WRITE_CACHE: lumo.writeCache,
