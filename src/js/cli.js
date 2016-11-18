@@ -7,6 +7,8 @@ import * as util from './util';
 import * as socketRepl from './socketRepl';
 import version from './version';
 
+// $FlowIssue: this module exists.
+const v8 = require('v8'); // eslint-disable-line import/no-unresolved
 const minimist = require('minimist');
 
 type ScriptsType = [string, string][];
@@ -201,6 +203,8 @@ function processOpts(cliOpts: CLIOptsType): CLIOptsType {
 export default function startCLI(): void {
   const opts = processOpts(getCLIOpts());
   const mainScript = opts._.length > 0;
+
+  v8.setFlagsFromString('--use_strict');
 
   if (mainScript) {
     opts.repl = false;

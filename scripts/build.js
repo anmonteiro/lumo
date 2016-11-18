@@ -58,6 +58,7 @@ browserify({
     NODE_ENV: isDevBuild ? 'development' : 'production',
   }))
   .exclude('nexeres')
+  .exclude('v8')
   .bundle((err, buf) => {
     if (err) {
       throw err;

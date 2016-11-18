@@ -301,8 +301,8 @@
     (with-redefs [js/module js/undefined
                   js/exports js/undefined]
       (set! *loading-foreign* false)
-      (js/eval source))
-    (js/eval source)))
+      (js/LUMO_EVAL source))
+    (js/LUMO_EVAL source)))
 
 ;; =============================================================================
 ;; REPL plumbing
@@ -327,6 +327,111 @@
           (.-cursorX indented)
           0))
       0)))
+
+(defn- current-alias-map []
+  (let [cur-ns @current-ns]
+    (into {} (remove (fn [[k v]] (= k v)))
+      (merge (get-in @st [::ana/namespaces cur-ns :requires])
+        (get-in @st [::ana/namespaces cur-ns :require-macros])))))
+
+(defn- reader-eof? [msg]
+  (or
+    (= "EOF while reading" msg)
+    (= "EOF while reading string" msg)))
+
+(defn- read-chars
+  [reader]
+  (let [sb (StringBuffer.)]
+    (loop [c (rt/read-char reader)]
+      (if-not (nil? c)
+        (do
+          (.append sb c)
+          (recur (rt/read-char reader)))
+        (str sb)))))
+
+(defn- repl-read-string
+  "Returns a vector of the first read form, and any balance text."
+  [source]
+  (let [reader (rt/string-push-back-reader source)
+        cur-ns @current-ns]
+    (binding [ana/*cljs-ns* cur-ns
+              *ns* (create-ns cur-ns)
+              env/*compiler* st
+              r/*data-readers* tags/*cljs-data-readers*
+              r/resolve-symbol ana/resolve-symbol
+              r/*alias-map* (current-alias-map)]
+      [(r/read {:read-cond :allow :features #{:cljs}} reader) (read-chars reader)])))
+
+(defn- is-completely-readable?
+  [source]
+  (try
+    (let [[_ chars] (repl-read-string source)]
+      (string/blank? chars))
+    (catch :default _
+      false)))
+
+(defn- form-start-fikes
+  [total-source total-pos]
+  (some identity
+    (for [n (range (dec total-pos) -1 -1)]
+      (let [candidate-form (subs total-source n (inc total-pos))
+            first-char     (subs candidate-form 0 1)]
+        (if (#{"(" "[" "{" "#"} first-char)
+          (if (is-completely-readable? candidate-form)
+            (if (= "#" first-char)
+              (inc n)
+              n)
+            nil))))))
+
+(def ^:private matches
+  {")" "("
+   "}" "{"
+   "]" "["})
+
+(defn- form-start
+  [source pos]
+  (let [source (subs source 0 (inc pos))
+        match (get matches (aget source pos))]
+    (loop [searchable-source source]
+      (let [match-idx (.lastIndexOf searchable-source match)
+            idx (cond-> match-idx
+                  (= (aget source (dec match-idx)) "#")
+                  dec)
+            candidate-form (subs source idx (inc pos))]
+        (when-not (neg? idx)
+          (if (is-completely-readable? candidate-form)
+            match-idx
+            (recur (subs source 0 match-idx))))))))
+
+(defn- calc-highlight-coords
+  [lines start-idx pos]
+  (if start-idx
+    (let [line-count (.-length lines)]
+      (if (== line-count 1)
+        #js [start-idx 0]
+        (loop [start-idx start-idx
+               line-ndx line-count
+               lines lines]
+          (let [line-char-count (count (first lines))]
+            (if (< start-idx line-char-count)
+              #js [start-idx (dec line-ndx)]
+              (do
+                (.shift lines)
+                (recur (- start-idx (inc line-char-count)) (dec line-ndx) lines)))))))
+    [-1 -1]))
+
+(defn ^:export get-highlight-coordinates
+  "Gets the highlight coordinates [dx dy] for the previous matching
+  brace. This is done by progressivly expanding source considered
+  until a readable form is encountered with a matching brace on the
+  other end. The coordinate system is such that line 0 is the current
+  buffer line, line 1 is the previous line, and so on, and pos is the
+  position in that line."
+  [lines pos]
+  (let [source (string/join "\n" lines)
+        pos (+ pos (inc (.lastIndexOf source "\n")))
+        start-idx (form-start source pos)]
+    (calc-highlight-coords lines start-idx pos)))
 
 (defn make-eval-opts []
   (let [{:keys [verbose static-fns]} @app-opts]
@@ -451,42 +556,8 @@
          (let [cp-paths (map load-path->cp-path paths)]
            (run! #(execute-path % opts) cp-paths)))})))
 
-(defn- current-alias-map []
-  (let [cur-ns @current-ns]
-    (into {} (remove (fn [[k v]] (= k v)))
-      (merge (get-in @st [::ana/namespaces cur-ns :requires])
-        (get-in @st [::ana/namespaces cur-ns :require-macros])))))
-
 (defn- repl-special? [form]
   (and (seq? form) (contains? repl-special-fns (first form))))
-
-(defn- reader-eof? [msg]
-  (or
-    (= "EOF while reading" msg)
-    (= "EOF while reading string" msg)))
-
-(defn- read-chars
-  [reader]
-  (let [sb (StringBuffer.)]
-    (loop [c (rt/read-char reader)]
-      (if-not (nil? c)
-        (do
-          (.append sb c)
-          (recur (rt/read-char reader)))
-        (str sb)))))
-
-(defn- repl-read-string
-  "Returns a vector of the first read form, and any balance text."
-  [source]
-  (let [cur-ns @current-ns]
-    (binding [ana/*cljs-ns* cur-ns
-              *ns* (create-ns cur-ns)
-              env/*compiler* st
-              r/*data-readers* tags/*cljs-data-readers*
-              r/resolve-symbol ana/resolve-symbol
-              r/*alias-map* (current-alias-map)]
-      (let [reader (rt/string-push-back-reader source)]
-        [(r/read {:read-cond :allow :features #{:cljs}} reader) (read-chars reader)]))))
 
 (defn- execute-text
   [source {:keys [expression? filename] :as opts}]

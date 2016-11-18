@@ -12,6 +12,14 @@ const vm = require('vm');
 let newContext;
 let ClojureScriptContext;
 
+function lumoEval(source: string): mixed {
+  if (__DEV__) {
+    // $FlowFixMe: this type differs according to the env
+    return vm.runInContext(source, ClojureScriptContext);
+  }
+  return vm.runInThisContext(source);
+}
+
 if (__DEV__) {
   newContext = function newCtx(): vm$Context {
     const cljsSrc = lumo.load('main.js');
@@ -20,6 +28,7 @@ if (__DEV__) {
 
     const context = {
       module,
+      exports,
       require,
       process,
       console,
@@ -30,6 +39,7 @@ if (__DEV__) {
       LUMO_WRITE_CACHE: lumo.writeCache,
       LUMO_LOAD_UPS_DEPS_CLJS: lumo.loadUpstreamForeignLibs,
       LUMO_EXISTS: lumo.fileExists,
+      LUMO_EVAL: lumoEval,
       global: undefined,
     };
 
@@ -48,6 +58,7 @@ if (__DEV__) {
     global.LUMO_WRITE_CACHE = lumo.writeCache;
     global.LUMO_LOAD_UPS_DEPS_CLJS = lumo.loadUpstreamForeignLibs;
     global.LUMO_EXISTS = lumo.fileExists;
+    global.LUMO_EVAL = lumoEval;
 
     // $FlowExpectedError: only exists in the custom V8 startup snapshot
     initialize(); // eslint-disable-line no-undef
@@ -103,6 +114,11 @@ export function isReadable(form: string): string | false {
 export function indentSpaceCount(text: string): number {
   // $FlowIssue: context can have globals
   return ClojureScriptContext.lumo.repl.indent_space_count(text);
+}
+
+export function getHighlightCoordinates(text: string[], pos: number): [number, number] {
+  // $FlowIssue: context can have globals
+  return ClojureScriptContext.lumo.repl.get_highlight_coordinates(text, pos);
 }
 
 function executeScripts(scripts: [string, string][]): void {
