@@ -80,9 +80,10 @@ describe('startREPL', () => {
     startREPL({});
 
     const onCalls = on.mock.calls;
-    expect(onCalls.length).toBe(2);
+    expect(onCalls.length).toBe(3);
     expect(onCalls[0][0]).toBe('line');
     expect(onCalls[1][0]).toBe('SIGINT');
+    expect(onCalls[2][0]).toBe('close');
   });
 
   it('sets event handlers for keypressing', () => {

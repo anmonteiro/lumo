@@ -3,6 +3,7 @@
 import * as cljs from './cljs';
 import replHistory from './replHistory';
 import { currentTimeMicros, isWhitespace, isWindows } from './util';
+import { close as socketServerClose } from './socketRepl';
 
 import type { CLIOptsType } from './cli';
 
@@ -64,16 +65,22 @@ export function unhookOutputStreams(): void {
   process.stderr.write = stderrWrite;
 }
 
+function consumeBuffer(buffer: string[], stream: stream$Writable | tty$WriteStream): void {
+  let len = buffer.length;
+
+  while (len > 0) {
+    const line = buffer.shift();
+    stream.write(line);
+    len -= 1;
+  }
+}
+
 export function processLine(rl: readline$Interface, line: string, isMainRepl: boolean): void {
   let extraForms = false;
 
   if (exitCommands.has(line)) {
-    if (isMainRepl) {
-      process.exit();
-    } else {
-      // $FlowIssue - use of rl.output
-      rl.output.destroy();
-    }
+    // $FlowIssue - use of rl.output
+    return isMainRepl ? process.exit() : rl.output.destroy();
   }
 
   if (isWhitespace(input)) {
@@ -89,16 +96,14 @@ export function processLine(rl: readline$Interface, line: string, isMainRepl: bo
       input = input.substring(0, input.length - extraForms.length);
 
       if (!isWhitespace(input)) {
-        resultBuffer.length = errorBuffer.length = 0;
-
         hookOutputStreams(writeToResultBuffer,
                           isMainRepl ? writeToErrorBuffer : writeToResultBuffer);
         cljs.execute(input);
         unhookOutputStreams();
 
-        // $FlowIssue - use of rl.output.write of write
-        resultBuffer.forEach((l: string) => rl.output.write(l));
-        errorBuffer.forEach((l: string) => process.stderr.write(l));
+        // $FlowIssue - use of rl.output
+        consumeBuffer(resultBuffer, rl.output);
+        consumeBuffer(errorBuffer, process.stderr);
       } else {
         prompt(rl);
         break;
@@ -118,6 +123,8 @@ export function processLine(rl: readline$Interface, line: string, isMainRepl: bo
       break;
     }
   }
+
+  return undefined;
 }
 
 function handleSIGINT(rl: readline$Interface): void {
@@ -231,12 +238,11 @@ export default function startREPL(opts: CLIOptsType): void {
     process.stdin.setRawMode(true);
   }
 
-  process.on('uncaughtException', (err: Error) => undefined);
-
   prompt(rl, false, 'cljs.user');
 
   rl.on('line', (line: string) => processLine(rl, line, true));
   rl.on('SIGINT', () => handleSIGINT(rl));
+  rl.on('close', () => socketServerClose());
 
   lastKeypressTime = currentTimeMicros();
   process.stdin.on('keypress', (c: string, key: KeyType) => handleKeyPress(rl, c, key));

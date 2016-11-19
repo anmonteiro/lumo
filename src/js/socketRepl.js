@@ -18,9 +18,18 @@ export function handleConnection(socket: net$Socket): readline$Interface {
   socket.on('close', () => delete sockets[socketId]);
   sockets[socketId] = socket;
 
-  const rl = readline.createInterface({ input: socket, output: socket });
-  rl.on('line', (line: string) => processLine(rl, line, false));
-  rl.on('SIGINT', () => socket.destroy());
+  const rl = readline.createInterface({
+    input: socket,
+    output: socket,
+  });
+
+  rl.on('line', (line: string) => {
+    if (!socket.destroyed) {
+      processLine(rl, line, false);
+    }
+  });
+
+  rl.on('close', () => socket.destroy());
 
   // $FlowIssue - output missing from readline$Interface
   rl.output.write(createBanner());
