@@ -7,16 +7,18 @@ import { prompt, processLine, unhookOutputStreams } from './repl';
 
 
 let socketServer: ?net$Server = null;
-const sockets: { [id: string]: net$Socket } = {};
+const sockets: net$Socket[] = [];
+let socketCounter = 0;
 
 export function getSocketServer(): ?net$Server {
   return socketServer;
 }
 
 export function handleConnection(socket: net$Socket): readline$Interface {
-  const socketId = `${socket.remoteAddress || ''}:${socket.remotePort}`;
-  socket.on('close', () => delete sockets[socketId]);
-  sockets[socketId] = socket;
+  const sessionId = socketCounter += 1;
+
+  socket.on('close', () => delete sockets[sessionId]);
+  sockets[sessionId] = socket;
 
   const rl = readline.createInterface({
     input: socket,
@@ -25,7 +27,7 @@ export function handleConnection(socket: net$Socket): readline$Interface {
 
   rl.on('line', (line: string) => {
     if (!socket.destroyed) {
-      processLine(rl, line, false);
+      processLine(sessionId, rl, line, false);
     }
   });
 
@@ -44,12 +46,11 @@ export function close(): void {
     return;
   }
 
-  Object.keys(sockets)
-    .forEach((socketId: string) => {
-      try {
-        sockets[socketId].destroy();
-      } catch (e) {} // eslint-disable-line no-empty
-    });
+  sockets.forEach((socket: net$Socket) => {
+    try {
+      socket.destroy();
+    } catch (e) {} // eslint-disable-line no-empty
+  });
 
   socketServer.close();
 }
