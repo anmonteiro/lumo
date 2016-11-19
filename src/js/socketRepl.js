@@ -3,19 +3,18 @@
 import net from 'net';
 import readline from 'readline';
 import { createBanner } from './cli';
-import { prompt, processLine, unhookOutputStreams } from './repl';
+import { createSession, prompt, processLine, unhookOutputStreams } from './repl';
 
 
 let socketServer: ?net$Server = null;
 const sockets: net$Socket[] = [];
-let socketCounter = 0;
 
 export function getSocketServer(): ?net$Server {
   return socketServer;
 }
 
 export function handleConnection(socket: net$Socket): readline$Interface {
-  const sessionId = socketCounter += 1;
+  const sessionId = createSession();
 
   socket.on('close', () => delete sockets[sessionId]);
   sockets[sessionId] = socket;

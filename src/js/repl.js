@@ -22,6 +22,7 @@ type KeyType = {
 type StreamWriteHandler = (line: string) => void;
 
 const exitCommands = new Set([':cljs/quit', 'exit']);
+let sessionCount = 0;
 const input: string[] = [''];
 let lastKeypressTime: number;
 let isPasting: boolean;
@@ -226,9 +227,20 @@ function handleKeyPress(sessionId: number, rl: readline$Interface, c: string, ke
   }
 }
 
+export function createSession(): number {
+  sessionCount += 1;
+  const sessionId = sessionCount - 1; // start at 0
+
+  if (!input[sessionId]) {
+    input[sessionId] = '';
+  }
+
+  return sessionId;
+}
+
 export default function startREPL(opts: CLIOptsType): void {
   const dumbTerminal = isWindows ? true : opts['dumb-terminal'];
-  const sessionId = 0;
+  const sessionId = createSession();
 
   const rl = replHistory({
     path: path.join(os.homedir(), '.lumo_history'),
