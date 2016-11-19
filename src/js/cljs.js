@@ -94,7 +94,6 @@ export function execute(code: string,
   // $FlowIssue: context can have globals
   return ClojureScriptContext.lumo.repl.execute(type, code, expression, setNS);
 }
-
 /* eslint-enable indent */
 
 function executeScript(code: string, type: string): void {
