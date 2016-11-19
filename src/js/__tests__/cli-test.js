@@ -3,8 +3,10 @@
 import startCLI from '../cli';
 import cljs from '../cljs';
 import * as lumo from '../lumo';
+import * as socketRepl from '../socketRepl';
 
 jest.mock('../cljs');
+jest.mock('../socketRepl');
 jest.mock('../version', () => 'X.X.X');
 jest.mock('../lumo', () => ({
   addSourcePaths: jest.fn((srcPaths: string[]) => undefined),
@@ -88,6 +90,42 @@ describe('getCliOpts', () => {
 
     expect(parsedOpts._).toEqual(['foo.cljs']);
     expect(parsedOpts.repl).toBe(false);
+  });
+
+  describe('starts a socket server if -n or --socket-repl specified', () => {
+    beforeEach(() => {
+      socketRepl.open.mockClear();
+    });
+
+    it('on localhost if only port given', () => {
+      const args = '-n 5555';
+      Object.defineProperty(process, 'argv', {
+        value: ['', ''].concat(args.split(' ')),
+      });
+
+      startCLI();
+      const [[parsedOpts]] = cljs.mock.calls;
+
+      expect(parsedOpts['socket-repl']).toBe('5555');
+      expect(parsedOpts.repl).toBe(true);
+      expect(socketRepl.open).toHaveBeenCalledTimes(1);
+      expect(socketRepl.open).toHaveBeenCalledWith(5555);
+    });
+
+    it('on host and port if only both given', () => {
+      const args = '-n 192.168.1.254:5555';
+      Object.defineProperty(process, 'argv', {
+        value: ['', ''].concat(args.split(' ')),
+      });
+
+      startCLI();
+      const [[parsedOpts]] = cljs.mock.calls;
+
+      expect(parsedOpts['socket-repl']).toBe('192.168.1.254:5555');
+      expect(parsedOpts.repl).toBe(true);
+      expect(socketRepl.open).toHaveBeenCalledTimes(1);
+      expect(socketRepl.open).toHaveBeenCalledWith(5555, '192.168.1.254');
+    });
   });
 
   it('produces an error when an option is not given to -k / --cache', () => {
