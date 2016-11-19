@@ -29,6 +29,8 @@ const ctx = {
       is_readable_QMARK_: () => true,
       get_current_ns: () => 'cljs.user',
       indent_space_count: (text: string) => 0,
+      get_highlight_coordinates: (text: string) => 0,
+      get_completions: (text: string) => [],
     },
   },
 };
@@ -164,3 +166,16 @@ describe('indentSpaceCount', () => {
     expect(cljs.indentSpaceCount('')).toBe(0);
   });
 });
+
+describe('getHighlightCoordinates', () => {
+  it('calls into the CLJS context', () => {
+    expect(cljs.getHighlightCoordinates('(let [a 1)')).toBe(0);
+  });
+});
+
+describe('indentSpaceCount', () => {
+  it('calls into the CLJS context', () => {
+    expect(cljs.getCompletions('(de)')).toEqual([]);
+  });
+});
+
