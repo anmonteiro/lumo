@@ -220,6 +220,12 @@ function handleKeyPress(rl: readline$Interface, c: string, key: KeyType): void {
   }
 }
 
+function completer(line: string): [string[], string] {
+  const completions = cljs.getCompletions(line);
+
+  return [completions, line];
+}
+
 export default function startREPL(opts: CLIOptsType): void {
   const dumbTerminal = isWindows ? true : opts['dumb-terminal'];
 
@@ -229,6 +235,7 @@ export default function startREPL(opts: CLIOptsType): void {
     input: process.stdin,
     output: process.stdout,
     terminal: !dumbTerminal,
+    completer,
   });
 
   // $FlowIssue

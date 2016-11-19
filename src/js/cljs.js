@@ -121,6 +121,11 @@ export function getHighlightCoordinates(text: string[], pos: number): [number, n
   return ClojureScriptContext.lumo.repl.get_highlight_coordinates(text, pos);
 }
 
+export function getCompletions(line: string): string[] {
+  // $FlowIssue: context can have globals
+  return ClojureScriptContext.lumo.repl.get_completions(line);
+}
+
 function executeScripts(scripts: [string, string][]): void {
   scripts.forEach(([type, script]: [string, string]) => {
     executeScript(script, type);

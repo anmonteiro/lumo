@@ -6,6 +6,7 @@
 
 - Highlight the matching brace when inserting a closing brace.
 - TCP socket REPL ([#24](https://github.com/anmonteiro/lumo/pull/24)).
+- REPL editing autocompletion.
 
 ### Changes
 
