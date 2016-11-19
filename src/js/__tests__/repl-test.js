@@ -33,14 +33,12 @@ function genOn(line: ?string = null): JestMockFn {
   return on;
 }
 
-function mockReplHistory(line?: string): void {
+function mockReplHistory(line?: string, output?: stream$Writable): void {
   jest.mock('../replHistory', () => jest.fn(() => ({
     setPrompt,
     prompt,
     on: genOn(line),
-    output: {
-      write: jest.fn(),
-    },
+    output: output || { write: jest.fn() },
     write: jest.fn(),
   })));
 }
@@ -177,7 +175,7 @@ describe('startREPL', () => {
     });
 
     it(':cljs/quit', () => {
-      mockReplHistory(':cljs/quit');
+      mockReplHistory(':cljs/quit', process.stdout);
       // eslint-disable-next-line global-require
       startREPL = require('../repl').default;
 
@@ -187,7 +185,7 @@ describe('startREPL', () => {
     });
 
     it('exit', () => {
-      mockReplHistory('exit');
+      mockReplHistory('exit', process.stdout);
       // eslint-disable-next-line global-require
       startREPL = require('../repl').default;
 

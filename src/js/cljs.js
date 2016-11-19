@@ -92,8 +92,9 @@ export function execute(code: string,
                         expression: boolean = true,
                         setNS: ?string): void {
   // $FlowIssue: context can have globals
-  ClojureScriptContext.lumo.repl.execute(type, code, expression, setNS);
+  return ClojureScriptContext.lumo.repl.execute(type, code, expression, setNS);
 }
+
 /* eslint-enable indent */
 
 function executeScript(code: string, type: string): void {
@@ -151,6 +152,7 @@ export default function startClojureScriptEngine(opts: CLIOptsType): void {
         engineStarted = true;
       });
     }
+
     return startREPL(opts);
   }
 
