@@ -108,7 +108,7 @@ describe('startClojureScriptEngine', () => {
 
       jest.runAllTicks();
       expect(vm.createContext).toHaveBeenCalled();
-      expect(vm.createContext.mock.calls.length).toBe(1);
+      expect(vm.createContext).toHaveBeenCalledTimes(1);
     });
   });
 

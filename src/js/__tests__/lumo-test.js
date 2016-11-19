@@ -125,7 +125,7 @@ describe('lumo', () => {
       const mockCalls = fs.readFileSync.mock.calls;
 
       expect(source).toBe(null);
-      expect(mockCalls.length).toBe(4);
+      expect(fs.readFileSync).toHaveBeenCalledTimes(4);
       expect(mockCalls.map((x: string[]) => x[0])).toEqual(
         lumoPaths.map((p: string) => path.join(p, 'bar/baz')));
     });
@@ -196,7 +196,7 @@ describe('lumo', () => {
       const mockCalls = fs.existsSync.mock.calls;
 
       expect(exists).toBe(false);
-      expect(mockCalls.length).toBe(4);
+      expect(fs.existsSync).toHaveBeenCalledTimes(4);
       expect(mockCalls.map((x: string[]) => x[0])).toEqual(
         lumoPaths.map((p: string) => path.join(p, 'bar/baz')));
     });
