@@ -44,26 +44,38 @@ describe('getCliOpts', () => {
     const [[parsedOpts]] = cljs.mock.calls;
 
     expect(parsedOpts.verbose).toBe(true);
-    expect(parsedOpts.v).toBe(true);
-    expect(parsedOpts.K).toBe(true);
+    expect(parsedOpts.verbose).toBe(true);
     expect(parsedOpts['auto-cache']).toBe(true);
   });
 
-  it('adds scripts when -[ie] specified', () => {
-    const args = '-i foo.cljs -e :foo -e :bar';
-    Object.defineProperty(process, 'argv', {
-      value: ['', ''].concat(args.split(' ')),
+  describe('adds scripts when -[ie] specified', () => {
+    it('simple case', () => {
+      const args = '-i foo.cljs -e :foo -e :bar';
+      Object.defineProperty(process, 'argv', {
+        value: ['', ''].concat(args.split(' ')),
+      });
+
+      startCLI();
+      const [[parsedOpts]] = cljs.mock.calls;
+      expect(parsedOpts.verbose).toBe(false);
+      expect(parsedOpts.scripts.length).toEqual(3);
     });
 
-    startCLI();
-    const [[parsedOpts]] = cljs.mock.calls;
+    it('scripts are added according to the CLI agrs order', () => {
+      const args = '-i foo.cljs -e :foo -i bar.cljs';
+      Object.defineProperty(process, 'argv', {
+        value: ['', ''].concat(args.split(' ')),
+      });
 
-    expect(parsedOpts.verbose).toBe(false);
-    expect(parsedOpts.eval).toBeInstanceOf(Array);
-    expect(parsedOpts.eval).toEqual([':foo', ':bar']);
-    expect(parsedOpts.init).toEqual('foo.cljs');
-    expect(parsedOpts.scripts.length).toEqual(3);
-    expect(parsedOpts.e).toEqual(parsedOpts.eval);
+      startCLI();
+      const [[parsedOpts]] = cljs.mock.calls;
+
+      expect(parsedOpts.scripts.length).toEqual(3);
+      expect(parsedOpts.scripts).toEqual([
+        ['path', 'foo.cljs'],
+        ['text', ':foo'],
+        ['path', 'bar.cljs']]);
+    });
   });
 
   it('sets srcPaths if -c specified', () => {
@@ -79,7 +91,7 @@ describe('getCliOpts', () => {
     expect(lumo.addSourcePaths).toHaveBeenCalledWith(['foo', 'bar']);
   });
 
-  it('sets repl to false if a main path is specified', () => {
+  it('sets repl to true and ignores main path -r specified before main', () => {
     const args = '-r foo.cljs';
     Object.defineProperty(process, 'argv', {
       value: ['', ''].concat(args.split(' ')),
@@ -88,12 +100,25 @@ describe('getCliOpts', () => {
     startCLI();
     const [[parsedOpts]] = cljs.mock.calls;
 
-    expect(parsedOpts._).toEqual(['foo.cljs']);
+    expect(parsedOpts.earmuffedArgs).toEqual(['foo.cljs']);
+    expect(parsedOpts.repl).toBe(true);
+  });
+
+  it('sets repl to false if a main path is specified', () => {
+    const args = 'foo.cljs -r';
+    Object.defineProperty(process, 'argv', {
+      value: ['', ''].concat(args.split(' ')),
+    });
+
+    startCLI();
+    const [[parsedOpts]] = cljs.mock.calls;
+
+    expect(parsedOpts.earmuffedArgs).toEqual(['-r']);
     expect(parsedOpts.repl).toBe(false);
   });
 
   describe('starts a socket server if -n or --socket-repl specified', () => {
-    beforeEach(() => {
+    afterEach(() => {
       socketRepl.open.mockClear();
     });
 
@@ -128,10 +153,22 @@ describe('getCliOpts', () => {
     });
   });
 
-  it('produces an error when an option is not given to -k / --cache', () => {
-    const exit = process.exit;
-    process.exit = jest.fn();
+  it('doesn\'t start a socket server if the options are earmuffed', () => {
+    const args = '-r -n 192.168.1.254:5555';
+    Object.defineProperty(process, 'argv', {
+      value: ['', ''].concat(args.split(' ')),
+    });
 
+    startCLI();
+    const [[parsedOpts]] = cljs.mock.calls;
+
+    expect(parsedOpts.repl).toBe(true);
+    expect(parsedOpts['socket-repl']).toBeUndefined();
+    expect(parsedOpts.repl).toBe(true);
+    expect(socketRepl.open).not.toHaveBeenCalled();
+  });
+
+  it('produces an error when an option is not given to -k / --cache', () => {
     const args = '-k';
     Object.defineProperty(process, 'argv', {
       value: ['', ''].concat(args.split(' ')),
@@ -139,11 +176,8 @@ describe('getCliOpts', () => {
 
     startCLI();
 
-    expect(process.exit).toHaveBeenCalledWith(-1);
     expect(process.stderr.write).toHaveBeenCalled();
     expect(process.stderr.write.mock.calls).toMatchSnapshot();
-
-    process.exit = exit;
   });
 });
 

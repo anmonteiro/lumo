@@ -13,6 +13,7 @@
   "rules" : {
     "no-duplicate-imports": 0,
     "no-unused-vars": ["error", { "args": "none" }],
+    "no-cond-assign": [2, "except-parens"],
     "keyword-spacing": [2, {"before": true, "after": true}],
     "array-bracket-spacing": 0,
     "babel/array-bracket-spacing": 2,

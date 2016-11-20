@@ -3,7 +3,7 @@
 import startCLJS, * as cljs from '../cljs';
 import startREPL from '../repl';
 
-const vm = require('vm');
+let vm = require('vm');
 
 jest.mock('../repl');
 
@@ -35,14 +35,18 @@ const ctx = {
   },
 };
 
-vm.createContext.mockImplementation((x: vm$Context) => x);
-
 let cljsContext;
 
-vm.Script.prototype.runInContext.mockImplementation((context: vm$Context) => {
-  cljsContext = Object.assign(context, ctx);
-  return cljsContext;
-});
+function setupVmMocks(): void {
+  vm.createContext.mockImplementation((x: vm$Context) => x);
+
+  vm.Script.prototype.runInContext.mockImplementation((context: vm$Context) => {
+    cljsContext = Object.assign(context, ctx);
+    return cljsContext;
+  });
+}
+
+setupVmMocks();
 
 describe('startClojureScriptEngine', () => {
   beforeEach(() => {
@@ -52,7 +56,6 @@ describe('startClojureScriptEngine', () => {
   it('should start a REPL if opts.repl is true', () => {
     startCLJS({
       repl: true,
-      _: [],
       scripts: [],
     });
 
@@ -62,8 +65,8 @@ describe('startClojureScriptEngine', () => {
   it('returns undefined if opts.repl is false', () => {
     const ret = startCLJS({
       repl: false,
-      _: [],
       scripts: [],
+      earmuffedArgs: [],
     });
 
     expect(startREPL).not.toHaveBeenCalled();
@@ -73,8 +76,8 @@ describe('startClojureScriptEngine', () => {
 
     const ret2 = startCLJS({
       repl: false,
-      _: [],
       scripts: [['text', ':foo'], ['path', 'foo.cljs']],
+      earmuffedArgs: [],
     });
 
     expect(startREPL).not.toHaveBeenCalled();
@@ -84,7 +87,7 @@ describe('startClojureScriptEngine', () => {
   it('calls `executeScript` and bails if there\'s a main opt', () => {
     startCLJS({
       repl: false,
-      _: ['foo.cljs'],
+      mainScript: 'foo.cljs',
       scripts: [],
     });
 
@@ -94,25 +97,31 @@ describe('startClojureScriptEngine', () => {
   it('doesn\'t init the CLJS engine if it already started', () => {
     startCLJS({
       repl: true,
-      _: [],
       // scripts will init the ClojureScript engine
       scripts: [['text', ':foo'], ['path', 'foo.cljs']],
+      earmuffedArgs: [],
     });
 
     expect(startREPL).toHaveBeenCalled();
   });
 
   describe('in development', () => {
-    beforeEach(() => {
-      jest.runAllTicks();
-      vm.createContext.mockClear();
+    let startClojureScriptEngine;
+
+    beforeAll(() => {
+      jest.resetModules();
+      /* eslint-disable global-require */
+      startClojureScriptEngine = require('../cljs').default;
+      vm = require('vm');
+      /* eslint-enable global-require */
+      setupVmMocks();
     });
 
     it('creates and returns a vm context', () => {
-      startCLJS({
+      startClojureScriptEngine({
         repl: true,
-        _: [],
         scripts: [],
+        earmuffedArgs: [],
       });
 
       jest.runAllTicks();
@@ -144,8 +153,8 @@ describe('startClojureScriptEngine', () => {
     it('calls the global initialize function', () => {
       startClojureScriptEngine({
         repl: true,
-        _: [],
         scripts: [],
+        earmuffedArgs: [],
       });
 
       jest.runAllTicks();
@@ -230,6 +239,7 @@ describe('lumoEval', () => {
         repl: true,
         _: [],
         scripts: [],
+        earmuffedArgs: [],
       });
       jest.runAllTicks();
 

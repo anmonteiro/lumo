@@ -1,5 +1,6 @@
 import net from 'net';
-import * as socketRepl from '../socketRepl';
+
+let socketRepl = require('../socketRepl');
 
 type SocketCallback = { (socket: net$Socket): void };
 
@@ -32,13 +33,13 @@ describe('open', () => {
   });
 });
 
-
 describe('close', () => {
   beforeEach(() => {
+    jest.resetModules();
+    socketRepl = require('../socketRepl'); // eslint-disable-line global-require
     net.createServer = jest.fn((callback: SocketCallback) => new net.Server());
     net.Server.prototype.listen = jest.fn((port: number, host: ?string) => undefined);
     net.Server.prototype.close = jest.fn(() => netServerClose.bind(this));
-    socketRepl.open(serverPort, serverHost);
   });
 
   afterEach(() => {
@@ -48,7 +49,15 @@ describe('close', () => {
     net.Server.prototype.close = netServerClose;
   });
 
+  it('doesn\'t close the server if already closed', () => {
+    socketRepl.close();
+    const socketServer = socketRepl.getSocketServer();
+    expect(socketServer).toBeNull();
+  });
+
+
   it('closes the server', () => {
+    socketRepl.open(serverPort, serverHost);
     socketRepl.close();
     const socketServer = socketRepl.getSocketServer();
     expect(socketServer.close).toHaveBeenCalledTimes(1);

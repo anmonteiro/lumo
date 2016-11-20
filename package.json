@@ -22,8 +22,8 @@
   "main": "./src/js/index.js",
   "dependencies": {
     "jszip": "2.6.1",
-    "minimist": "^1.2.0",
-    "parinfer": "2.0.0"
+    "parinfer": "2.0.0",
+    "posix-getopt": "github:anmonteiro/node-getopt#master"
   },
   "devDependencies": {
     "babel-core": "^6.18.2",

@@ -144,6 +144,7 @@
         clojure.walk
         cognitect.transit
         lazy-map.core
+        lumo.core
         lumo.repl
         lumo.repl-resources
         lumo.js-deps} name)))
