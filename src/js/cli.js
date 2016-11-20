@@ -28,7 +28,7 @@ export type CLIOptsType = {
   mainNsName?: string,
   mainScript?: string,
   scripts: ScriptsType,
-  earmuffedArgs: string[],
+  args: string[],
 };
 
 function getClojureScriptVersionString(): string {
@@ -119,7 +119,7 @@ function getCLIOpts(): CLIOptsType {
     'dumb-terminal': false,
     'static-fns': false,
     quiet: false,
-    earmuffedArgs: [],
+    args: [],
   };
   let foundMainOpt = false;
   let option = parser.getopt();
@@ -184,9 +184,9 @@ function getCLIOpts(): CLIOptsType {
   const optind = parser.optind();
   if (!foundMainOpt && optind < argc) {
     ret.mainScript = argv[optind];
-    ret.earmuffedArgs = argv.slice(optind + 1);
+    ret.args = argv.slice(optind + 1);
   } else {
-    ret.earmuffedArgs = argv.slice(optind);
+    ret.args = argv.slice(optind);
   }
 
   return ret;
@@ -194,13 +194,13 @@ function getCLIOpts(): CLIOptsType {
 
 function processOpts(cliOpts: CLIOptsType): CLIOptsType {
   const opts = { ...cliOpts };
-  const { cache, classpath, earmuffedArgs, mainNSName, repl, scripts } = opts;
+  const { cache, classpath, args, mainNSName, repl, scripts } = opts;
   const autoCache = opts['auto-cache'];
   const startSocketRepl = opts['socket-repl'];
 
   opts.repl = (scripts.length === 0 &&
                !mainNSName &&
-               earmuffedArgs.length === 0) || repl;
+               args.length === 0) || repl;
 
   if (cache || autoCache) {
     const cachePath = cache || '.lumo_cache';

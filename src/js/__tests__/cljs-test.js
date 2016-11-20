@@ -17,6 +17,12 @@ jest.useFakeTimers();
 
 const ctx = {
   cljs: {
+    core: {
+      // eslint-disable-next-line prefer-arrow-callback
+      seq: jest.fn(function seq<T>(x: T[]): T[] {
+        return x;
+      }),
+    },
     nodejs: {
       enable_util_print_BANG_: () => {},
     },
@@ -31,7 +37,9 @@ const ctx = {
       indent_space_count: (text: string) => 0,
       get_highlight_coordinates: (text: string) => 0,
       get_completions: (text: string) => [],
+      run_main: (mainNS: string, args: string[]) => undefined,
     },
+    core: {},
   },
 };
 
@@ -66,7 +74,7 @@ describe('startClojureScriptEngine', () => {
     const ret = startCLJS({
       repl: false,
       scripts: [],
-      earmuffedArgs: [],
+      args: [],
     });
 
     expect(startREPL).not.toHaveBeenCalled();
@@ -77,7 +85,7 @@ describe('startClojureScriptEngine', () => {
     const ret2 = startCLJS({
       repl: false,
       scripts: [['text', ':foo'], ['path', 'foo.cljs']],
-      earmuffedArgs: [],
+      args: [],
     });
 
     expect(startREPL).not.toHaveBeenCalled();
@@ -99,10 +107,27 @@ describe('startClojureScriptEngine', () => {
       repl: true,
       // scripts will init the ClojureScript engine
       scripts: [['text', ':foo'], ['path', 'foo.cljs']],
-      earmuffedArgs: [],
+      args: [],
     });
 
     expect(startREPL).toHaveBeenCalled();
+  });
+
+  it('sets args and calls runMainNS if mainNsName specified', () => {
+    jest.resetModules();
+    /* eslint-disable global-require */
+    const startClojureScriptEngine = require('../cljs').default;
+    vm = require('vm');
+    /* eslint-enable global-require */
+    setupVmMocks();
+
+    startClojureScriptEngine({
+      mainNsName: 'foo.core',
+      args: ['a', 'b', 'c'],
+      scripts: [],
+    });
+
+    expect(ctx.cljs.core.seq).toHaveBeenCalled();
   });
 
   describe('in development', () => {
@@ -121,7 +146,7 @@ describe('startClojureScriptEngine', () => {
       startClojureScriptEngine({
         repl: true,
         scripts: [],
-        earmuffedArgs: [],
+        args: [],
       });
 
       jest.runAllTicks();
@@ -154,7 +179,7 @@ describe('startClojureScriptEngine', () => {
       startClojureScriptEngine({
         repl: true,
         scripts: [],
-        earmuffedArgs: [],
+        args: [],
       });
 
       jest.runAllTicks();
@@ -239,7 +264,7 @@ describe('lumoEval', () => {
         repl: true,
         _: [],
         scripts: [],
-        earmuffedArgs: [],
+        args: [],
       });
       jest.runAllTicks();
 

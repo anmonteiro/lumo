@@ -38,13 +38,14 @@ afterEach(() => {
 describe('getCliOpts', () => {
   it('parses single dash properties when they appear together', () => {
     Object.defineProperty(process, 'argv', {
-      value: ['', '', '-vK'],
+      value: ['', '', '-vsqdK'],
     });
     startCLI();
     const [[parsedOpts]] = cljs.mock.calls;
 
     expect(parsedOpts.verbose).toBe(true);
-    expect(parsedOpts.verbose).toBe(true);
+    expect(parsedOpts['static-fns']).toBe(true);
+    expect(parsedOpts['dumb-terminal']).toBe(true);
     expect(parsedOpts['auto-cache']).toBe(true);
   });
 
@@ -100,7 +101,7 @@ describe('getCliOpts', () => {
     startCLI();
     const [[parsedOpts]] = cljs.mock.calls;
 
-    expect(parsedOpts.earmuffedArgs).toEqual(['foo.cljs']);
+    expect(parsedOpts.args).toEqual(['foo.cljs']);
     expect(parsedOpts.repl).toBe(true);
   });
 
@@ -113,7 +114,7 @@ describe('getCliOpts', () => {
     startCLI();
     const [[parsedOpts]] = cljs.mock.calls;
 
-    expect(parsedOpts.earmuffedArgs).toEqual(['-r']);
+    expect(parsedOpts.args).toEqual(['-r']);
     expect(parsedOpts.repl).toBe(false);
   });
 
@@ -168,6 +169,19 @@ describe('getCliOpts', () => {
     expect(socketRepl.open).not.toHaveBeenCalled();
   });
 
+  it('adds cache paths to opts if -k specified', () => {
+    const args = '-k src';
+    Object.defineProperty(process, 'argv', {
+      value: ['', ''].concat(args.split(' ')),
+    });
+
+    startCLI();
+
+    const [[parsedOpts]] = cljs.mock.calls;
+
+    expect(parsedOpts.cache).toEqual('src');
+  });
+
   it('produces an error when an option is not given to -k / --cache', () => {
     const args = '-k';
     Object.defineProperty(process, 'argv', {
@@ -178,6 +192,20 @@ describe('getCliOpts', () => {
 
     expect(process.stderr.write).toHaveBeenCalled();
     expect(process.stderr.write.mock.calls).toMatchSnapshot();
+  });
+
+  it('adds main-ns to opts and every arg after it to args', () => {
+    const args = '-m foo.core foo bar baz qux';
+    Object.defineProperty(process, 'argv', {
+      value: ['', ''].concat(args.split(' ')),
+    });
+
+    startCLI();
+
+    const [[parsedOpts]] = cljs.mock.calls;
+
+    expect(parsedOpts.mainNsName).toEqual('foo.core');
+    expect(parsedOpts.args).toEqual(['foo', 'bar', 'baz', 'qux']);
   });
 });
 

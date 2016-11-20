@@ -78,7 +78,7 @@ function initClojureScriptEngine(opts: CLIOptsType): void {
   if (ClojureScriptContext != null) {
     return;
   }
-  const { earmuffedArgs } = opts;
+  const { args } = opts;
 
   ClojureScriptContext = newContext();
   // $FlowIssue: context can have globals
@@ -87,11 +87,11 @@ function initClojureScriptEngine(opts: CLIOptsType): void {
   // $FlowIssue: context can have globals
   ClojureScriptContext.cljs.nodejs.enable_util_print_BANG_();
 
-  if (earmuffedArgs.length > 0) {
+  if (args.length > 0) {
     // $FlowIssue: context can have globals
     ClojureScriptContext.lumo.core._STAR_command_line_args_STAR_ =
       // $FlowIssue: context can have globals
-      ClojureScriptContext.cljs.core.seq(earmuffedArgs);
+      ClojureScriptContext.cljs.core.seq(args);
   }
   /* eslint-enable no-underscore-dangle */
 
@@ -149,7 +149,7 @@ function runMain(mainNS: string, args: string[]): void {
 }
 
 export default function startClojureScriptEngine(opts: CLIOptsType): void {
-  const { earmuffedArgs, mainNsName, mainScript, repl, scripts } = opts;
+  const { args, mainNsName, mainScript, repl, scripts } = opts;
 
   if (scripts.length > 0) {
     initClojureScriptEngine(opts);
@@ -165,7 +165,7 @@ export default function startClojureScriptEngine(opts: CLIOptsType): void {
 
   if (mainNsName) {
     initClojureScriptEngine(opts);
-    return runMain(mainNsName, earmuffedArgs);
+    return runMain(mainNsName, args);
   }
 
   if (repl) {
