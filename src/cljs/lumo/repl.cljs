@@ -11,7 +11,7 @@
             [cognitect.transit :as transit]
             [lazy-map.core :refer [lazy-map]]
             [lumo.js-deps :as deps]
-            [lumo.repl-resources :refer [repl-special-doc-map]])
+            [lumo.repl-resources :refer [special-doc-map repl-special-doc-map]])
   (:import [goog.string StringBuffer]))
 
 ;; =============================================================================
@@ -618,3 +618,176 @@
                      :static-fns static-fns})
   (load-core-analysis-caches repl?)
   (deps/index-upstream-foreign-libs))
+
+
+;; =============================================================================
+;; Autocompletion
+
+(defn- drop-macros-suffix
+  [ns-name]
+  (if (string/ends-with? ns-name "$macros")
+    (apply str (drop-last 7 ns-name))
+    ns-name))
+
+(defn- add-macros-suffix
+  [sym]
+  (symbol (str (name sym) "$macros")))
+
+(defn- all-ns
+  "Returns a sequence of all namespaces."
+  []
+  (keys (::ana/namespaces @st)))
+
+(defn- get-namespace
+  "Gets the AST for a given namespace."
+  [ns]
+  {:pre [(symbol? ns)]}
+  (get-in @st [::ana/namespaces ns]))
+
+(defn- completion-candidates-for-ns
+  [ns-sym allow-private?]
+  (map (comp str key)
+    (into []
+      (comp
+        (filter (if allow-private?
+                  identity
+                  #(not (:private (val %)))))
+        (remove #(:anonymous (val %))))
+      (apply merge
+        ((juxt :defs :macros)
+          (get-namespace ns-sym))))))
+
+(defn- completion-candidates-for-current-ns []
+  (let [cur-ns @current-ns]
+    (into (completion-candidates-for-ns cur-ns true)
+      (comp (mapcat keys) (map str))
+      ((juxt :renames :rename-macros :uses :use-macros) (get-namespace cur-ns)))))
+
+(defn- is-completion?
+  [match-suffix candidate]
+  (re-find (js/RegExp. (str "^" match-suffix)) candidate))
+
+(def ^:private keyword-completions
+  (into #{} (map str)
+    [:require :require-macros :import
+     :refer :refer-macros :include-macros
+     :refer-clojure :exclude
+     :keys :strs :syms
+     :as :or
+     :pre :post
+     :let :when :while
+     :clj :cljs
+     :default
+     :else
+     :gen-class
+     :keywordize-keys
+     :req :req-un :opt :opt-un
+     :args :ret :fn]))
+
+(def ^:private namespace-completion-exclusions
+  (into #{} (map str)
+    '[lumo.core
+      lumo.bundle
+      lumo.js-deps
+      lumo.repl
+      lumo.repl-resources
+      cognitect.transit
+      lazy-map.core
+      cljs.source-map
+      cljs.source-map.base64
+      cljs.source-map.base64-vlq
+      cljs.tools.reader.impl.commons
+      cljs.tools.reader.impl.utils
+      cljs.stacktrace
+      com.cognitect.transit.delimiters
+      com.cognitect.transit.handlers
+      com.cognitect.transit.util
+      com.cognitect.transit.caching
+      com.cognitect.transit.types
+      com.cognitect.transit.eq
+      com.cognitect.transit.impl.decoder
+      com.cognitect.transit.impl.reader
+      com.cognitect.transit.impl.writer]))
+
+(def ^:private namespace-completion-additons
+  (into #{} (map str)
+    '[clojure.test
+      clojure.spec
+      clojure.pprint
+      cljs.analyzer
+      cljs.analyzer.api
+      cljs.compiler
+      cljs.env
+      cljs.js
+      cljs.nodejs
+      cljs.pprint
+      cljs.reader
+      cljs.spec
+      cljs.spec.impl.gen
+      cljs.tagged-literals
+      cljs.test
+      cljs.tools.reader
+      cljs.tools.reader.reader-types
+      clojure.core.reducers
+      clojure.data
+      clojure.string
+      clojure.set
+      clojure.zip
+      clojure.walk
+      cognitect.transit
+      lazy-map.core
+      com.cognitect.transit
+      com.cognitect.transit]))
+
+(defn- namespace-completions []
+  (transduce (comp
+               (map str)
+               (map drop-macros-suffix)
+               (remove namespace-completion-exclusions))
+    conj
+    namespace-completion-additons
+    (all-ns)))
+
+(defn- expand-ns-alias
+  "Expand a namespace alias symbol to a known namespace, consulting
+   current namespace aliases if necessary."
+  [alias]
+  (or (get-in st [:cljs.analyzer/namespaces alias :name])
+      (alias (current-alias-map))
+      alias))
+
+(defn- completion-candidates
+  [top-level? ns-alias]
+  (if ns-alias
+    (let [full-ns (expand-ns-alias (symbol ns-alias))]
+      (into #{} (mapcat identity)
+        [(completion-candidates-for-ns full-ns false)
+         (completion-candidates-for-ns (add-macros-suffix full-ns) false)]))
+    (into #{} (mapcat identity)
+      [keyword-completions
+       (namespace-completions)
+       (map #(str % "/") (keys (current-alias-map)))
+       (completion-candidates-for-ns 'cljs.core false)
+       (completion-candidates-for-ns 'cljs.core$macros false)
+       (completion-candidates-for-current-ns)
+       (when top-level?
+         (concat
+           (map str (keys special-doc-map))
+           (map str (keys repl-special-doc-map))))])))
+
+(defn ^:export get-completions
+  [line]
+  (let [top-level? (boolean (re-find #"^\s*\(\s*[^()\s]*$" line))
+        ns-alias (second (re-find #"\(*(\b[a-zA-Z-.]+)/[a-zA-Z-]+$" line))]
+    (let [line-match-suffix (re-find #":?[a-zA-Z-.]*$" line)
+          line-prefix (subs line 0 (- (count line) (count line-match-suffix)))]
+      (if (= "" line-match-suffix)
+        #js []
+        (let [completions (reduce (fn [ret item]
+                                    (doto ret
+                                      (.push (str line-prefix item))))
+                            #js []
+                            (filter #(is-completion? line-match-suffix %)
+                              (completion-candidates top-level? ns-alias)))]
+          (doto completions
+            .sort))))))

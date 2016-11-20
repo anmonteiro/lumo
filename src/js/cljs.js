@@ -95,7 +95,7 @@ export function execute(code: string,
                         expression: boolean = true,
                         setNS: ?string): void {
   // $FlowIssue: context can have globals
-  ClojureScriptContext.lumo.repl.execute(type, code, expression, setNS);
+  return ClojureScriptContext.lumo.repl.execute(type, code, expression, setNS);
 }
 /* eslint-enable indent */
 
@@ -121,6 +121,11 @@ export function indentSpaceCount(text: string): number {
 export function getHighlightCoordinates(text: string[], pos: number): [number, number] {
   // $FlowIssue: context can have globals
   return ClojureScriptContext.lumo.repl.get_highlight_coordinates(text, pos);
+}
+
+export function getCompletions(line: string): string[] {
+  // $FlowIssue: context can have globals
+  return ClojureScriptContext.lumo.repl.get_completions(line);
 }
 
 function executeScripts(scripts: [string, string][]): void {
@@ -154,6 +159,7 @@ export default function startClojureScriptEngine(opts: CLIOptsType): void {
         engineStarted = true;
       });
     }
+
     return startREPL(opts);
   }
 

@@ -116,7 +116,7 @@ describe('replHistory', () => {
       });
 
       rl._addHistory(); // eslint-disable-line no-underscore-dangle
-      expect(streamWrite.mock.calls.length).toBe(1);
+      expect(streamWrite).toHaveBeenCalledTimes(1);
       expect(streamWrite).toHaveBeenCalledWith('qux\n', 'utf8');
     });
   });

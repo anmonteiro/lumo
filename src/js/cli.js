@@ -4,6 +4,7 @@ import startClojureScriptEngine from './cljs';
 import printLegal from './legal';
 import * as lumo from './lumo';
 import * as util from './util';
+import * as socketRepl from './socketRepl';
 import version from './version';
 
 // $FlowIssue: this module exists.
@@ -39,6 +40,10 @@ export type CLIOptsType = {
   k?: string,
   classpath?: string | string[],
   c?: string | string[],
+  n?: string,
+  'socket-repl'?: string,
+  host?: string,
+  port?: number,
   scripts: ScriptsType,
   [key: string]: boolean | string,
 };
@@ -52,11 +57,15 @@ function getVersionString(): string {
   return `Lumo ${version}`;
 }
 
-function printBanner(): void {
-  process.stdout.write(`${getVersionString()}
+export function createBanner(): string {
+  return `${getVersionString()}
 ${getClojureScriptVersionString()}
  Exit: Control+D or :cljs/quit or exit
-`);
+`;
+}
+
+function printBanner(): void {
+  process.stdout.write(createBanner());
 }
 
 function printHelp(): void {
@@ -66,22 +75,25 @@ Usage:  lumo [init-opt*] [main-opt] [arg*]
   With no options or args, runs an interactive Read-Eval-Print Loop
 
   init options:
-    -i, --init path          Load a file or resource
-    -e, --eval string        Evaluate expressions in string; print non-nil values
-    -c cp, --classpath cp    Use colon-delimited cp for source directories and
-                             JARs
-    -K, --auto-cache         Create and use .planck_cache dir for cache
-    -k, --cache path         If dir exists at path, use it for cache
-    -q, --quiet              Quiet mode; doesn't print the banner initially
-    -v, --verbose            Emit verbose diagnostic output
-    -d, --dumb-terminal      Disable line editing / VT100 terminal control
-    -s, --static-fns         Generate static dispatch function calls
+    -i, --init path                  Load a file or resource
+    -e, --eval string                Evaluate expressions in string; print
+                                     non-nil values
+    -c cp, --classpath cp            Use colon-delimited cp for source
+                                     directories and JARs
+    -K, --auto-cache                 Create and use .planck_cache dir for cache
+    -k, --cache path                 If dir exists at path, use it for cache
+    -q, --quiet                      Quiet mode; doesn't print the banner
+    -v, --verbose                    Emit verbose diagnostic output
+    -d, --dumb-terminal              Disable line editing / VT100 terminal
+                                     control
+    -s, --static-fns                 Generate static dispatch function calls
+    -n, --socket-repl [host:]port    Start a TCP socket REPL at host:port
 
   main options:
-    -r, --repl               Run a repl
-    path                     Run a script from a file or resource
-    -h, -?, --help           Print this help message and exit
-    -l, --legal              Show legal info (licenses and copyrights)
+    -r, --repl                       Run a repl
+    path                             Run a script from a file or resource
+    -h, -?, --help                   Print this help message and exit
+    -l, --legal                      Show legal info (licenses and copyrights)
 
   The init options may be repeated and mixed freely, but must appear before
   any main option.
@@ -104,7 +116,7 @@ function getCLIOpts(): CLIOptsType {
       'static-fns',
       'legal',
     ],
-    string: ['eval', 'cache', 'classpath'],
+    string: ['eval', 'cache', 'classpath', 'socket-repl'],
     alias: {
       c: 'classpath',
       v: 'verbose',
@@ -119,6 +131,7 @@ function getCLIOpts(): CLIOptsType {
       d: 'dumb-terminal',
       s: 'static-fns',
       l: 'legal',
+      n: 'socket-repl',
     },
   });
 }
@@ -174,6 +187,15 @@ function processOpts(cliOpts: CLIOptsType): CLIOptsType {
 
   opts.repl = scripts.length === 0 || repl;
   opts.scripts = scripts;
+
+  if (opts.repl && opts['socket-repl']) {
+    const hostPortTokens = opts['socket-repl'].split(':');
+    if (hostPortTokens.length === 1 && !isNaN(hostPortTokens[0])) {
+      socketRepl.open(parseInt(hostPortTokens[0], 10));
+    } else if (hostPortTokens.length === 2 && !isNaN(hostPortTokens[1])) {
+      socketRepl.open(parseInt(hostPortTokens[1], 10), hostPortTokens[0]);
+    }
+  }
 
   return opts;
 }

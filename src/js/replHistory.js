@@ -7,7 +7,7 @@ const fs = require('fs');
 type replHistory$Opts = {
   input: stream$Readable,
   output?: stream$Stream,
-  completer?: (completions: Array<string>, matchedString: string) => void,
+  completer?: (line: string) => [string[], string],
   terminal?: boolean,
   historySize?: number,
   path: string,
@@ -99,6 +99,8 @@ function loadHistory(path: string, maxLength: number, cb: (ret: string[]) => voi
 
 export default function createInterface(options: replHistory$Opts): readline$Interface {
   const { path, historySize, terminal } = options;
+
+  // $FlowIssue: completer type definition is wrong
   const rl = readline.createInterface(options);
 
   if (terminal) {

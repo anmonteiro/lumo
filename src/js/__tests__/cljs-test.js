@@ -29,11 +29,20 @@ const ctx = {
       is_readable_QMARK_: () => true,
       get_current_ns: () => 'cljs.user',
       indent_space_count: (text: string) => 0,
+      get_highlight_coordinates: (text: string) => 0,
+      get_completions: (text: string) => [],
     },
   },
 };
 
-vm.createContext.mockImplementation(() => ctx);
+vm.createContext.mockImplementation((x: vm$Context) => x);
+
+let cljsContext;
+
+vm.Script.prototype.runInContext.mockImplementation((context: vm$Context) => {
+  cljsContext = Object.assign(context, ctx);
+  return cljsContext;
+});
 
 describe('startClojureScriptEngine', () => {
   beforeEach(() => {
@@ -108,7 +117,7 @@ describe('startClojureScriptEngine', () => {
 
       jest.runAllTicks();
       expect(vm.createContext).toHaveBeenCalled();
-      expect(vm.createContext.mock.calls.length).toBe(1);
+      expect(vm.createContext).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -162,5 +171,70 @@ describe('getCurrentNamespace', () => {
 describe('indentSpaceCount', () => {
   it('calls into the CLJS context', () => {
     expect(cljs.indentSpaceCount('')).toBe(0);
+  });
+});
+
+describe('getHighlightCoordinates', () => {
+  it('calls into the CLJS context', () => {
+    expect(cljs.getHighlightCoordinates('(let [a 1)')).toBe(0);
+  });
+});
+
+describe('indentSpaceCount', () => {
+  it('calls into the CLJS context', () => {
+    expect(cljs.getCompletions('(de)')).toEqual([]);
+  });
+});
+
+describe('lumoEval', () => {
+  describe('in development', () => {
+    beforeEach(() => {
+      vm.runInContext.mockClear();
+    });
+
+    it('evals expressions in the ClojureScript context', () => {
+      startCLJS({
+        repl: true,
+        _: [],
+        scripts: [],
+      });
+      jest.runAllTicks();
+
+      cljsContext.LUMO_EVAL('source');
+      expect(vm.runInContext).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('in production', () => {
+    let startClojureScriptEngine;
+
+    beforeEach(() => {
+      jest.resetModules();
+      Object.assign(global, {
+        initialize: jest.fn(),
+        __DEV__: false,
+      }, ctx);
+      // eslint-disable-next-line global-require
+      startClojureScriptEngine = require('../cljs').default;
+    });
+
+    afterEach(() => {
+      Object.keys(ctx).concat(['initialize']).forEach((key: string, idx: number) => {
+        global[key] = undefined;
+      });
+      __DEV__ = true;
+    });
+
+    it('evals expressions in the ClojureScript context', () => {
+      startClojureScriptEngine({
+        repl: true,
+        _: [],
+        scripts: [],
+      });
+      jest.runAllTicks();
+
+      cljsContext.LUMO_EVAL('source');
+      expect(vm.runInThisContext).toHaveBeenCalledTimes(1);
+    });
   });
 });

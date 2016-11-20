@@ -89,8 +89,8 @@ describe('ensureDir', () => {
     expect(() => {
       ensureDir('somefolder');
     }).not.toThrow();
-    expect(fs.existsSync.mock.calls.length).toBe(1);
-    expect(fs.statSync.mock.calls.length).toBe(1);
+    expect(fs.existsSync).toHaveBeenCalledTimes(1);
+    expect(fs.statSync).toHaveBeenCalledTimes(1);
     expect(fs.mkdirSync).not.toBeCalled();
   });
 });

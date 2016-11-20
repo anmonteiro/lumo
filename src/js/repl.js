@@ -3,6 +3,7 @@
 import * as cljs from './cljs';
 import replHistory from './replHistory';
 import { currentTimeMicros, isWhitespace, isWindows } from './util';
+import { close as socketServerClose } from './socketRepl';
 
 import type { CLIOptsType } from './cli';
 
@@ -18,16 +19,25 @@ type KeyType = {
   meta?: boolean,
 };
 
+type StreamWriteHandler = (line: string) => void;
+
 const exitCommands = new Set([':cljs/quit', 'exit']);
 let input: string = '';
 let lastKeypressTime: number;
 let isPasting: boolean;
 const pendingHighlights = [];
+const stdoutWrite = process.stdout.write;
+const stderrWrite = process.stderr.write;
+
+const resultBuffer: string[] = [];
+const errorBuffer: string[] = [];
+const writeToResultBuffer = (line: string) => { resultBuffer.push(line); };
+const writeToErrorBuffer = (line: string) => { errorBuffer.push(line); };
 
 /* eslint-disable indent */
-function prompt(rl: readline$Interface,
-                isSecondary: boolean = false,
-                p: string = cljs.getCurrentNamespace()): void {
+export function prompt(rl: readline$Interface,
+                       isSecondary: boolean = false,
+                       p: string = cljs.getCurrentNamespace()): void {
   /* eslint-enable indent */
   let promptText;
 
@@ -41,11 +51,36 @@ function prompt(rl: readline$Interface,
   rl.prompt();
 }
 
-function processLine(rl: readline$Interface, line: string): void {
+function hookOutputStreams(writeOutput: StreamWriteHandler, writeError: StreamWriteHandler): void {
+  // $FlowIssue - assignment of process.stdout.write
+  process.stdout.write = writeOutput;
+  // $FlowIssue - assignment of process.stderr.write
+  process.stderr.write = writeError;
+}
+
+export function unhookOutputStreams(): void {
+  // $FlowIssue - assignment of process.stdout.write
+  process.stdout.write = stdoutWrite;
+  // $FlowIssue - assignment of process.stderr.write
+  process.stderr.write = stderrWrite;
+}
+
+function consumeBuffer(buffer: string[], stream: stream$Writable | tty$WriteStream): void {
+  let len = buffer.length;
+
+  while (len > 0) {
+    const line = buffer.shift();
+    stream.write(line);
+    len -= 1;
+  }
+}
+
+export function processLine(rl: readline$Interface, line: string, isMainRepl: boolean): void {
   let extraForms = false;
 
   if (exitCommands.has(line)) {
-    process.exit();
+    // $FlowIssue - use of rl.output
+    return isMainRepl ? process.exit() : rl.output.destroy();
   }
 
   if (isWhitespace(input)) {
@@ -61,7 +96,14 @@ function processLine(rl: readline$Interface, line: string): void {
       input = input.substring(0, input.length - extraForms.length);
 
       if (!isWhitespace(input)) {
+        hookOutputStreams(writeToResultBuffer,
+                          isMainRepl ? writeToErrorBuffer : writeToResultBuffer);
         cljs.execute(input);
+        unhookOutputStreams();
+
+        // $FlowIssue - use of rl.output
+        consumeBuffer(resultBuffer, rl.output);
+        consumeBuffer(errorBuffer, process.stderr);
       } else {
         prompt(rl);
         break;
@@ -81,6 +123,8 @@ function processLine(rl: readline$Interface, line: string): void {
       break;
     }
   }
+
+  return undefined;
 }
 
 function handleSIGINT(rl: readline$Interface): void {
@@ -176,6 +220,12 @@ function handleKeyPress(rl: readline$Interface, c: string, key: KeyType): void {
   }
 }
 
+function completer(line: string): [string[], string] {
+  const completions = cljs.getCompletions(line);
+
+  return [completions, line];
+}
+
 export default function startREPL(opts: CLIOptsType): void {
   const dumbTerminal = isWindows ? true : opts['dumb-terminal'];
 
@@ -185,6 +235,7 @@ export default function startREPL(opts: CLIOptsType): void {
     input: process.stdin,
     output: process.stdout,
     terminal: !dumbTerminal,
+    completer,
   });
 
   // $FlowIssue
@@ -196,8 +247,9 @@ export default function startREPL(opts: CLIOptsType): void {
 
   prompt(rl, false, 'cljs.user');
 
-  rl.on('line', (line: string) => processLine(rl, line));
+  rl.on('line', (line: string) => processLine(rl, line, true));
   rl.on('SIGINT', () => handleSIGINT(rl));
+  rl.on('close', () => socketServerClose());
 
   lastKeypressTime = currentTimeMicros();
   process.stdin.on('keypress', (c: string, key: KeyType) => handleKeyPress(rl, c, key));
