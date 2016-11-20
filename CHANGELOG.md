@@ -7,6 +7,8 @@
 - Highlight the matching brace when inserting a closing brace.
 - TCP socket REPL ([#24](https://github.com/anmonteiro/lumo/pull/24)).
 - REPL editing autocompletion.
+- Add a `-m / --main` command line option that specifies a namespace in the
+classpath in which to call a `-main` function with all args after it ([#27](https://github.com/anmonteiro/lumo/issues/27)).
 
 ### Changes
 

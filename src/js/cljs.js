@@ -143,8 +143,13 @@ function executeScripts(scripts: [string, string][]): void {
   });
 }
 
+function runMain(mainNS: string, args: string[]): void {
+  // $FlowIssue: context can have globals
+  ClojureScriptContext.lumo.repl.run_main.apply(null, [mainNS, ...args]);
+}
+
 export default function startClojureScriptEngine(opts: CLIOptsType): void {
-  const { repl, scripts, mainScript } = opts;
+  const { earmuffedArgs, mainNsName, mainScript, repl, scripts } = opts;
 
   if (scripts.length > 0) {
     initClojureScriptEngine(opts);
@@ -156,6 +161,11 @@ export default function startClojureScriptEngine(opts: CLIOptsType): void {
   if (mainScript) {
     initClojureScriptEngine(opts);
     return executeScript(mainScript, 'path');
+  }
+
+  if (mainNsName) {
+    initClojureScriptEngine(opts);
+    return runMain(mainNsName, earmuffedArgs);
   }
 
   if (repl) {

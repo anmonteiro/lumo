@@ -607,6 +607,29 @@
                   ;(handle-repl-error e)
                   ""))))))
 
+(defn- ^:export run-main
+  [main-ns & args]
+  (let [main-args (js->clj args)
+        opts (make-eval-opts)]
+    (binding [cljs/*load-fn* load
+              cljs/*eval-fn* caching-node-eval]
+      (cljs/eval st
+        `(~'require (quote ~(symbol main-ns)))
+        opts
+        (fn [{:keys [ns value error] :as ret}]
+          (if error
+            (handle-repl-error error)
+            (cljs/eval-str st
+              (str "(var -main)")
+              nil
+              (merge opts {:ns (symbol main-ns)})
+              (fn [{:keys [ns value error] :as ret}]
+                (try
+                  (apply value main-args)
+                  (catch :default e
+                    (handle-repl-error e)))))))))
+    nil))
+
 (defn ^:export get-current-ns []
   (str @current-ns))
 
@@ -619,7 +642,6 @@
                      :static-fns static-fns})
   (load-core-analysis-caches repl?)
   (deps/index-upstream-foreign-libs))
-
 
 ;; =============================================================================
 ;; Autocompletion
