@@ -215,8 +215,7 @@ function processOpts(cliOpts: CLIOptsType): CLIOptsType {
     //   console.log(`Classpath resolves to: `);
     // }
 
-    const cp = util.ensureArray(classpath);
-    const srcPaths = util.srcPathsFromClasspathStrings(cp);
+    const srcPaths = util.srcPathsFromClasspathStrings(classpath);
 
     opts.classpath = srcPaths;
     lumo.addSourcePaths(srcPaths);

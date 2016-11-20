@@ -9,11 +9,7 @@ import { prompt, processLine, unhookOutputStreams } from './repl';
 let socketServer: ?net$Server = null;
 const sockets: { [id: string]: net$Socket } = {};
 
-export function getSocketServer(): ?net$Server {
-  return socketServer;
-}
-
-export function handleConnection(socket: net$Socket): readline$Interface {
+function handleConnection(socket: net$Socket): readline$Interface {
   const socketId = `${socket.remoteAddress || ''}:${socket.remotePort}`;
   socket.on('close', () => delete sockets[socketId]);
   sockets[socketId] = socket;

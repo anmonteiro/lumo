@@ -1,6 +1,6 @@
 /* @flow */
 
-import { ensureArray, ensureDir, srcPathsFromClasspathStrings,
+import { ensureDir, srcPathsFromClasspathStrings,
          isWhitespace, isWindows } from '../util';
 
 const fs = require('fs');
@@ -92,17 +92,6 @@ describe('ensureDir', () => {
     expect(fs.existsSync).toHaveBeenCalledTimes(1);
     expect(fs.statSync).toHaveBeenCalledTimes(1);
     expect(fs.mkdirSync).not.toBeCalled();
-  });
-});
-
-describe('ensureArray', () => {
-  it('returns the same input if passed an array', () => {
-    const arr = [1, 2];
-    expect(ensureArray(arr)).toBe(arr);
-  });
-
-  it('returns an array if passed a single element', () => {
-    expect(ensureArray(1)).toEqual([1]);
   });
 });
 
