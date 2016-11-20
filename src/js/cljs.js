@@ -1,13 +1,12 @@
 /* @flow */
 /* eslint-disable no-underscore-dangle  */
 
+import parinfer from 'parinfer';
+import vm from 'vm';
 import * as lumo from './lumo';
 import startREPL from './repl';
 
 import type { CLIOptsType } from './cli';
-
-const parinfer = require('parinfer');
-const vm = require('vm');
 
 let newContext;
 let ClojureScriptContext;

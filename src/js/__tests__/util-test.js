@@ -1,10 +1,9 @@
 /* @flow */
 
+import fs from 'fs';
+import os from 'os';
 import { ensureDir, srcPathsFromClasspathStrings,
          isWhitespace, isWindows } from '../util';
-
-const fs = require('fs');
-const os = require('os');
 
 describe('srcPathsFromClasspathStrings', () => {
   const homedir = os.homedir;

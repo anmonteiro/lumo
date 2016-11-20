@@ -1,9 +1,8 @@
 /* @flow */
 
+import readline from 'readline';
+import fs from 'fs';
 import replHistory from '../replHistory';
-
-const readline = require('readline');
-const fs = require('fs');
 
 jest.mock('readline');
 

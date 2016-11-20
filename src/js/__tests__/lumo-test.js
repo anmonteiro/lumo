@@ -1,9 +1,10 @@
 /* @flow */
 
+import fs from 'fs';
+import path from 'path';
+import zlib from 'zlib';
+
 let lumo = require('../lumo');
-const fs = require('fs');
-const path = require('path');
-const zlib = require('zlib');
 
 jest.mock('jszip');
 

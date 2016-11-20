@@ -1,8 +1,8 @@
 /* @flow */
 /* eslint-disable no-underscore-dangle */
 
-const readline = require('readline');
-const fs = require('fs');
+import readline from 'readline';
+import fs from 'fs';
 
 type replHistory$Opts = {
   input: stream$Readable,

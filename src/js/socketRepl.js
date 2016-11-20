@@ -5,7 +5,6 @@ import readline from 'readline';
 import { createBanner } from './cli';
 import { prompt, processLine, unhookOutputStreams } from './repl';
 
-
 let socketServer: ?net$Server = null;
 const sockets: { [id: string]: net$Socket } = {};
 

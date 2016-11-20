@@ -1,15 +1,14 @@
 /* @flow */
 
+// $FlowIssue: this module exists.
+import v8 from 'v8'; // eslint-disable-line import/no-unresolved
+import { BasicParser as GOParser } from 'posix-getopt';
 import startClojureScriptEngine from './cljs';
 import printLegal from './legal';
 import * as lumo from './lumo';
 import * as util from './util';
 import * as socketRepl from './socketRepl';
 import version from './version';
-
-// $FlowIssue: this module exists.
-const v8 = require('v8'); // eslint-disable-line import/no-unresolved
-const GOParser = require('posix-getopt').BasicParser;
 
 type ScriptsType = [string, string][];
 
