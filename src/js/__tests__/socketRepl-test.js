@@ -5,8 +5,7 @@ let socketRepl = require('../socketRepl');
 const on = jest.fn((type: string, f: (x?: string) => void) => {
   switch (type) {
     case 'line': f('(+ 1 2'); return f(')');
-    case 'SIGINT': return f();
-    default: return undefined;
+    default: return f();
   }
 });
 
@@ -30,9 +29,11 @@ const netSocketWrite = net.Socket.prototype.write;
 const netSocketOn = net.Socket.prototype.on;
 
 describe('open', () => {
+  const processOn = process.on;
   let socketServer;
 
   beforeEach(() => {
+    process.on = jest.fn();
     net.createServer = jest.fn((callback: SocketCallback) => {
       socketServer = new net.Server();
       return socketServer;
@@ -45,6 +46,7 @@ describe('open', () => {
     socketRepl.close();
     net.createServer = netCreateServer;
     net.Server.prototype.listen = netServerListen;
+    process.on = processOn;
   });
 
   it('creates a server listening on a specified host and port', () => {
@@ -52,6 +54,14 @@ describe('open', () => {
 
     expect(socketServer.listen).toHaveBeenCalledTimes(1);
     expect(socketServer.listen).toHaveBeenCalledWith(serverPort, serverHost);
+  });
+
+  it('registers process handlers for SIGHUP & SIGTERM', () => {
+    socketRepl.open(serverPort, serverHost);
+
+    expect(process.on).toHaveBeenCalledTimes(2);
+    expect(process.on.mock.calls.map((x: [string, () => void]) => x[0]))
+      .toEqual(['SIGTERM', 'SIGHUP']);
   });
 });
 
@@ -107,9 +117,9 @@ describe('handleConnection', () => {
       };
     });
     net.Socket.prototype.write = jest.fn((text: string) => undefined);
-    net.Socket.prototype.on = jest.fn();
     socketRepl.open(serverPort, serverHost);
     socket = new net.Socket();
+    socket.on = jest.fn((type: string, f: () => void) => f());
   });
 
   afterEach(() => {
