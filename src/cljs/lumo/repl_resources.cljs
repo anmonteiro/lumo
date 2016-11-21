@@ -108,11 +108,6 @@
          :doc "The symbol must resolve to a var, and the Var object
 itself (not its value) is returned. The reader macro #'x expands to (var x)."}})
 
-#_(defn- special-doc [name-symbol]
-  (assoc (or (special-doc-map name-symbol) (meta (resolve name-symbol)))
-    :name name-symbol
-    :special-form true))
-
 (def repl-special-doc-map
   '{in-ns {:arglists ([name])
            :doc "Sets *cljs-ns* to the namespace named by the symbol, creating it if needed."}
@@ -122,8 +117,3 @@ itself (not its value) is returned. The reader macro #'x expands to (var x)."}})
           :doc "Loads Clojure code from resources in classpath. A path is interpreted as
   classpath-relative if it begins with a slash or relative to the root
   directory for the current namespace otherwise."}})
-
-#_(defn- repl-special-doc [name-symbol]
-  (assoc (repl-special-doc-map name-symbol)
-    :name name-symbol
-    :repl-special-function true))

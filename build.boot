@@ -116,7 +116,8 @@
        #"^cljs[\\\/](test\.cljc|core\.cljs\.cache\.aot\.edn|spec(\.cljc|[\\\/]test\.clj[sc]|[\\\/]impl[\\\/]gen\.cljc))$"}
       :move {#"^main.out[\\\/]((cljs|clojure|cognitect|lumo|lazy_map).*)" "$1"})
     (sift :include #{#"^main.js" #"^bundle.js" #"^cljs(?!\.js)"
-                     #"^clojure" #"^cognitect" #"^lumo[\\\/]" #"^lazy_map[\\\/]"})
+                     #"^clojure" #"^cognitect" #"^lumo[\\\/]" #"^lazy_map[\\\/]"}
+      :to-resource #{#"^lumo[\\\/]repl\.clj$"})
     (sift :include #{#"^cljs[\\\/]core\.cljs\.cache\.json$"} :invert true)))
 
 (deftask compile-cljs []

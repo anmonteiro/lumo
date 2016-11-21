@@ -1,9 +1,12 @@
 (ns lumo.repl
   (:refer-clojure :exclude [load-file*])
+  (:require-macros [cljs.env.macros :as env]
+                   [lumo.repl])
   (:require [cljs.analyzer :as ana]
             [cljs.env :as env]
             [cljs.js :as cljs]
             [cljs.reader :as reader]
+            [cljs.repl]
             [cljs.tagged-literals :as tags]
             [cljs.tools.reader :as r]
             [cljs.tools.reader.reader-types :as rt]
@@ -125,6 +128,7 @@
         cljs.nodejs
         cljs.pprint
         cljs.reader
+        cljs.repl
         cljs.source-map
         cljs.source-map.base64
         cljs.source-map.base64-vlq
@@ -155,6 +159,7 @@
      '#{cljs.core
         cljs.js
         cljs.pprint
+        cljs.repl
         cljs.env.macros
         cljs.analyzer.macros
         cljs.compiler.macros
@@ -420,6 +425,67 @@
 ;; --------------------
 ;; REPL specials
 
+(defn- drop-macros-suffix
+  [ns-name]
+  (if (string/ends-with? ns-name "$macros")
+    (apply str (drop-last 7 ns-name))
+    ns-name))
+
+(defn- add-macros-suffix
+  [sym]
+  (symbol (str (name sym) "$macros")))
+
+(defn- all-ns
+  "Returns a sequence of all namespaces."
+  []
+  (keys (::ana/namespaces @st)))
+
+(defn- all-macros-ns []
+  (->> (all-ns)
+    (filter #(string/ends-with? (str %) "$macros"))))
+
+(defn- get-namespace
+  "Gets the AST for a given namespace."
+  [ns]
+  {:pre [(symbol? ns)]}
+  (get-in @st [::ana/namespaces ns]))
+
+(defn- resolve-var
+  "Given an analysis environment resolve a var. Analogous to
+   clojure.core/resolve"
+  [env sym]
+  {:pre [(map? env) (symbol? sym)]}
+  (try
+    (ana/resolve-var env sym
+      (ana/confirm-var-exists-throw))
+    (catch :default _
+      (ana/resolve-macro-var env sym))))
+
+(defn- get-macro-var
+  [env sym macros-ns]
+  {:pre [(symbol? macros-ns)]}
+  (when-let [macro-var (env/with-compiler-env st
+                         (resolve-var env (symbol macros-ns (name sym))))]
+    (assoc macro-var :ns macros-ns)))
+
+(defn- get-var
+  [env sym]
+  (binding [ana/*cljs-warning-handlers* nil]
+    (let [var (or (env/with-compiler-env st (resolve-var env sym))
+                  (some #(get-macro-var env sym %) (all-macros-ns)))]
+      (when var
+        (-> (cond-> var
+              (not (:ns var))
+              (assoc :ns (symbol (namespace (:name var))))
+              (= (namespace (:name var)) (str (:ns var)))
+              (update :name #(symbol (name %))))
+          (update :ns (comp symbol drop-macros-suffix str)))))))
+
+(defn- get-aenv []
+  (assoc (ana/empty-env)
+    :ns (get-namespace @current-ns)
+    :context :expr))
+
 (defn- compiler-state-backup []
   {:st     @st
    :loaded @cljs/*loaded*})
@@ -509,6 +575,69 @@
 (defn- repl-special? [form]
   (and (seq? form) (contains? repl-special-fns (first form))))
 
+(defn- special-doc [name-symbol]
+  (assoc (special-doc-map name-symbol)
+    :name name-symbol
+    :special-form true))
+
+(defn- repl-special-doc [name-symbol]
+  (assoc (repl-special-doc-map name-symbol)
+    :name name-symbol
+    :repl-special-function true))
+
+(defn- undo-reader-conditional-spacing
+  "Undoes the effect that wrapping a reader conditional around
+   a defn has on a docstring."
+  [s]
+  ;; We look for five spaces (or six, in case that the docstring
+  ;; is not aligned under the first quote) after the first newline
+  ;; (or two, in case the doctring has an unpadded blank line
+  ;; after the first), and then replace all five (or six) spaces
+  ;; after newlines with two.
+  (when-not (nil? s)
+    (if (re-find #"[^\n]*\n\n?\s{5,6}\S.*" s)
+      (string/replace-all s #"\n      ?" "\n  ")
+      s)))
+
+;; TODO: proper spec support (due to $macros), need to write own print-doc fn
+(defn- doc* [name]
+  (if-let [special-name ('{& fn catch try finally try} name)]
+    (doc* special-name)
+    (cond
+      (special-doc-map name)
+      (cljs.repl/print-doc (special-doc-map name))
+
+      (repl-special-doc-map name)
+      (cljs.repl/print-doc (repl-special-doc name))
+
+      (get-namespace name)
+      (cljs.repl/print-doc (select-keys (get-namespace name) [:name :doc]))
+
+      (get-var (get-aenv) name)
+      (cljs.repl/print-doc
+        (let [aenv (get-aenv)
+              var (get-var aenv name)
+              m (-> (select-keys var
+                      [:ns :name :doc :forms :arglists :macro :url])
+                  (update-in [:doc] undo-reader-conditional-spacing)
+                  (merge
+                    {:forms (-> var :meta :forms second)
+                     :arglists (-> var :meta :arglists second)}))]
+          (cond-> (update-in m [:name] clojure.core/name)
+            (:protocol-symbol var)
+            (assoc :protocol true
+              :methods
+              (->> (get-in var [:protocol-info :methods])
+                (map (fn [[fname sigs]]
+                       [fname {:doc (:doc
+                                     (get-var aenv
+                                       (symbol (str (:ns var)) (str fname))))
+                               :arglists (seq sigs)}]))
+                (into {})))))))))
+
+;; --------------------
+;; Code evaluation
+
 (defn make-eval-opts []
   (let [{:keys [verbose static-fns]} @app-opts]
     {:ns            @current-ns
@@ -562,7 +691,7 @@
         (handle-repl-error (ex-info (str "Could not load file " filename) {}))))))
 
 (defn- execute-text
-  [source {:keys [expression? filename] :as opts}]
+  [source {:keys [expression? print-nil-result? filename] :as opts}]
   (try
     (binding [cljs/*eval-fn*   caching-node-eval
               cljs/*load-fn*   load
@@ -590,7 +719,9 @@
             (fn [{:keys [ns value error] :as ret}]
               (if-not error
                 (when expression?
-                  (println (pr-str value))
+                  (when (or print-nil-result?
+                            (not (nil? value)))
+                    (println (pr-str value)))
                   (vreset! current-ns ns))
                 (handle-repl-error error)))))))
     (catch :default e
@@ -604,11 +735,12 @@
     (execute-text source-or-path opts)))
 
 (defn ^:export execute
-  [type source-or-path expression? setNS]
+  [type source-or-path expression? print-nil-result? setNS]
   (when setNS
     (vreset! current-ns (symbol setNS)))
   (execute-source source-or-path {:type type
-                                  :expression? expression?}))
+                                  :expression? expression?
+                                  :print-nil-result? print-nil-result?}))
 
 (defn ^:export is-readable?
   [form]
@@ -666,27 +798,6 @@
 
 ;; --------------------
 ;; Autocompletion
-
-(defn- drop-macros-suffix
-  [ns-name]
-  (if (string/ends-with? ns-name "$macros")
-    (apply str (drop-last 7 ns-name))
-    ns-name))
-
-(defn- add-macros-suffix
-  [sym]
-  (symbol (str (name sym) "$macros")))
-
-(defn- all-ns
-  "Returns a sequence of all namespaces."
-  []
-  (keys (::ana/namespaces @st)))
-
-(defn- get-namespace
-  "Gets the AST for a given namespace."
-  [ns]
-  {:pre [(symbol? ns)]}
-  (get-in @st [::ana/namespaces ns]))
 
 (defn- completion-candidates-for-ns
   [ns-sym allow-private?]

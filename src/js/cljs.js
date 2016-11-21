@@ -102,9 +102,11 @@ function initClojureScriptEngine(opts: CLIOptsType): void {
 export function execute(code: string,
                         type: string = 'text',
                         expression: boolean = true,
+                        printNilResult: boolean = true,
                         setNS: ?string): void {
   // $FlowIssue: context can have globals
-  return ClojureScriptContext.lumo.repl.execute(type, code, expression, setNS);
+  return ClojureScriptContext.lumo.repl.execute(
+    type, code, expression, printNilResult, setNS);
 }
 /* eslint-enable indent */
 
@@ -127,7 +129,10 @@ export function indentSpaceCount(text: string): number {
   return ClojureScriptContext.lumo.repl.indent_space_count(text);
 }
 
-export function getHighlightCoordinates(text: string[], pos: number): [number, number] {
+/* eslint-disable indent */
+export function getHighlightCoordinates(text: string[],
+                                        pos: number): [number, number] {
+  /* eslint-enable indent */
   // $FlowIssue: context can have globals
   return ClojureScriptContext.lumo.repl.get_highlight_coordinates(text, pos);
 }
@@ -154,8 +159,6 @@ export default function startClojureScriptEngine(opts: CLIOptsType): void {
   if (scripts.length > 0) {
     initClojureScriptEngine(opts);
     executeScripts(scripts);
-    // $FlowIssue: context can have globals
-    ClojureScriptContext.lumo.repl.set_ns('cljs.user');
   }
 
   if (mainScript) {
@@ -171,6 +174,8 @@ export default function startClojureScriptEngine(opts: CLIOptsType): void {
   if (repl) {
     process.nextTick(() => {
       initClojureScriptEngine(opts);
+      execute('(require \'[lumo.repl :refer-macros [doc]])',
+        'text', true, false, 'cljs.user');
     });
 
     return startREPL(opts);
