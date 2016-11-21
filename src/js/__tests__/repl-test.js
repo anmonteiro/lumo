@@ -33,14 +33,12 @@ function genOn(line: ?string = null): JestMockFn {
   return on;
 }
 
-function mockReplHistory(line?: string): void {
+function mockReplHistory(line?: string, output?: stream$Writable): void {
   jest.mock('../replHistory', () => jest.fn(() => ({
     setPrompt,
     prompt,
     on: genOn(line),
-    output: {
-      write: jest.fn(),
-    },
+    output: output || { write: jest.fn() },
     write: jest.fn(),
   })));
 }
@@ -82,16 +80,17 @@ describe('startREPL', () => {
     startREPL({});
 
     const onCalls = on.mock.calls;
-    expect(onCalls.length).toBe(2);
+    expect(on).toHaveBeenCalledTimes(3);
     expect(onCalls[0][0]).toBe('line');
     expect(onCalls[1][0]).toBe('SIGINT');
+    expect(onCalls[2][0]).toBe('close');
   });
 
   it('sets event handlers for keypressing', () => {
     startREPL({});
 
     const onCalls = process.stdin.on.mock.calls;
-    expect(onCalls.length).toBe(1);
+    expect(process.stdin.on).toHaveBeenCalledTimes(1);
     expect(onCalls[0][0]).toBe('keypress');
   });
 
@@ -116,7 +115,7 @@ describe('startREPL', () => {
 
         const replHistoryCalls = replHistory.mock.calls;
 
-        expect(replHistoryCalls.length).toBe(1);
+        expect(replHistory).toHaveBeenCalledTimes(1);
         expect(replHistoryCalls[0][0].terminal).toBe(true);
       });
 
@@ -127,7 +126,7 @@ describe('startREPL', () => {
 
         const replHistoryCalls = replHistory.mock.calls;
 
-        expect(replHistoryCalls.length).toBe(1);
+        expect(replHistory).toHaveBeenCalledTimes(1);
         expect(replHistoryCalls[0][0].terminal).toBe(false);
       });
     });
@@ -141,7 +140,7 @@ describe('startREPL', () => {
 
       const replHistoryCalls = replHistory.mock.calls;
 
-      expect(replHistoryCalls.length).toBe(1);
+      expect(replHistory).toHaveBeenCalledTimes(1);
       expect(replHistoryCalls[0][0].terminal).toBe(false);
     });
 
@@ -177,7 +176,7 @@ describe('startREPL', () => {
     });
 
     it(':cljs/quit', () => {
-      mockReplHistory(':cljs/quit');
+      mockReplHistory(':cljs/quit', process.stdout);
       // eslint-disable-next-line global-require
       startREPL = require('../repl').default;
 
@@ -187,7 +186,7 @@ describe('startREPL', () => {
     });
 
     it('exit', () => {
-      mockReplHistory('exit');
+      mockReplHistory('exit', process.stdout);
       // eslint-disable-next-line global-require
       startREPL = require('../repl').default;
 

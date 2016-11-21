@@ -1,8 +1,8 @@
 /* @flow */
 
-const fs = require('fs');
-const os = require('os');
-const path = require('path');
+import fs from 'fs';
+import os from 'os';
+import path from 'path';
 
 function expandPath(somePath: string): string {
   return somePath.startsWith('~') ? somePath.replace(/^~/, os.homedir) : somePath;
@@ -30,10 +30,6 @@ export function ensureDir(dir: string): void {
   if (!stats.isDirectory()) {
     throw new Error(`${dir} exists but is not a directory.`);
   }
-}
-
-export function ensureArray<T>(maybeArray: T[] | T): T[] {
-  return Array.isArray(maybeArray) ? maybeArray : [maybeArray];
 }
 
 export function isWhitespace(s: string): boolean {

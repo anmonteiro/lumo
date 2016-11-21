@@ -1,11 +1,10 @@
 /* @flow */
 
+import fs from 'fs';
+import path from 'path';
+import zlib from 'zlib';
+import JSZip from 'jszip';
 import { isWindows } from './util';
-
-const fs = require('fs');
-const path = require('path');
-const zlib = require('zlib');
-const JSZip = require('jszip');
 
 let nexeres;
 const sourcePaths = [];

@@ -5,11 +5,21 @@
 ### New features
 
 - Highlight the matching brace when inserting a closing brace.
+- TCP socket REPL ([#24](https://github.com/anmonteiro/lumo/pull/24)).
+- REPL editing autocompletion.
+- Add a `-m / --main` command line option that specifies a namespace in the
+classpath in which to call a `-main` function with all args after it ([#27](https://github.com/anmonteiro/lumo/issues/27)).
+- Add a `-a / --elide-asserts` command option that defines whether asserts in
+evaluated code should be ignored ([#37](https://github.com/anmonteiro/lumo/issues/37)).
 
 ### Changes
 
 - Stop compiling Lumo with a static `--use-strict` V8 flag, allows to override it
 at runtime ([#28](https://github.com/anmonteiro/lumo/issues/28)).
+- Command line arg parsing has been rewritten so that CLI arguments are parsed in
+the order they appear. Additionally, similarly to the Clojure REPL, arguments that
+appear after a main option will be bound to the `lumo.core/*command-line-args*`
+var, a seq of strings.
 
 ## [1.0.0-alpha3](https://github.com/anmonteiro/lumo/compare/1.0.0-alpha2...1.0.0-alpha3) (2016-11-15)
 

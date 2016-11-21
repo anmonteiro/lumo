@@ -15,13 +15,15 @@
   "scripts": {
     "type:check": "flow check",
     "lint": "eslint src/js",
-    "test": "jest"
+    "test": "jest",
+    "bundle": "node scripts/build.js --dev",
+    "dev": "node target/bundle.js"
   },
   "main": "./src/js/index.js",
   "dependencies": {
     "jszip": "2.6.1",
-    "minimist": "^1.2.0",
-    "parinfer": "2.0.0"
+    "parinfer": "2.0.0",
+    "posix-getopt": "github:anmonteiro/node-getopt#master"
   },
   "devDependencies": {
     "babel-core": "^6.18.2",

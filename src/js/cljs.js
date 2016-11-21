@@ -1,13 +1,12 @@
 /* @flow */
 /* eslint-disable no-underscore-dangle  */
 
+import parinfer from 'parinfer';
+import vm from 'vm';
 import * as lumo from './lumo';
 import startREPL from './repl';
 
 import type { CLIOptsType } from './cli';
-
-const parinfer = require('parinfer');
-const vm = require('vm');
 
 let newContext;
 let ClojureScriptContext;
@@ -73,17 +72,30 @@ if (__DEV__) {
 function setRuntimeOpts(opts: CLIOptsType): void {
   const { cache, verbose, repl } = opts;
   const staticFns = opts['static-fns'];
+  const elideAsserts = opts['elide-asserts'];
   // $FlowIssue: context can have globals
-  ClojureScriptContext.lumo.repl.init(repl, verbose, cache, staticFns);
+  ClojureScriptContext.lumo.repl.init(repl, verbose, cache, staticFns, elideAsserts);
 }
 
 function initClojureScriptEngine(opts: CLIOptsType): void {
+  if (ClojureScriptContext != null) {
+    return;
+  }
+  const { args } = opts;
+
   ClojureScriptContext = newContext();
   // $FlowIssue: context can have globals
   ClojureScriptContext.cljs.user = {};
   /* eslint-disable no-underscore-dangle */
   // $FlowIssue: context can have globals
   ClojureScriptContext.cljs.nodejs.enable_util_print_BANG_();
+
+  if (args.length > 0) {
+    // $FlowIssue: context can have globals
+    ClojureScriptContext.lumo.core._STAR_command_line_args_STAR_ =
+      // $FlowIssue: context can have globals
+      ClojureScriptContext.cljs.core.seq(args);
+  }
   /* eslint-enable no-underscore-dangle */
 
   setRuntimeOpts(opts);
@@ -95,7 +107,7 @@ export function execute(code: string,
                         expression: boolean = true,
                         setNS: ?string): void {
   // $FlowIssue: context can have globals
-  ClojureScriptContext.lumo.repl.execute(type, code, expression, setNS);
+  return ClojureScriptContext.lumo.repl.execute(type, code, expression, setNS);
 }
 /* eslint-enable indent */
 
@@ -123,37 +135,47 @@ export function getHighlightCoordinates(text: string[], pos: number): [number, n
   return ClojureScriptContext.lumo.repl.get_highlight_coordinates(text, pos);
 }
 
+export function getCompletions(line: string): string[] {
+  // $FlowIssue: context can have globals
+  return ClojureScriptContext.lumo.repl.get_completions(line);
+}
+
 function executeScripts(scripts: [string, string][]): void {
   scripts.forEach(([type, script]: [string, string]) => {
     executeScript(script, type);
   });
 }
 
+function runMain(mainNS: string, args: string[]): void {
+  // $FlowIssue: context can have globals
+  ClojureScriptContext.lumo.repl.run_main.apply(null, [mainNS, ...args]);
+}
+
 export default function startClojureScriptEngine(opts: CLIOptsType): void {
-  const { repl, scripts, _ } = opts;
-  const [mainScript] = _;
-  let engineStarted = false;
+  const { args, mainNsName, mainScript, repl, scripts } = opts;
+
+  if (scripts.length > 0) {
+    initClojureScriptEngine(opts);
+    executeScripts(scripts);
+    // $FlowIssue: context can have globals
+    ClojureScriptContext.lumo.repl.set_ns('cljs.user');
+  }
 
   if (mainScript) {
     initClojureScriptEngine(opts);
     return executeScript(mainScript, 'path');
   }
 
-  if (scripts.length > 0) {
+  if (mainNsName) {
     initClojureScriptEngine(opts);
-    engineStarted = true;
-    executeScripts(scripts);
-    // $FlowIssue: context can have globals
-    ClojureScriptContext.lumo.repl.set_ns('cljs.user');
+    return runMain(mainNsName, args);
   }
 
   if (repl) {
-    if (!engineStarted) {
-      process.nextTick(() => {
-        initClojureScriptEngine(opts);
-        engineStarted = true;
-      });
-    }
+    process.nextTick(() => {
+      initClojureScriptEngine(opts);
+    });
+
     return startREPL(opts);
   }
 

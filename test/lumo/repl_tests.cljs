@@ -1,6 +1,6 @@
 (ns lumo.repl-tests
   (:require [cljs.nodejs :as node]
-            [cljs.test :refer [deftest is]]
+            [cljs.test :refer [deftest is testing]]
             [lumo.repl :as lumo]))
 
 (set! js/parinfer (node/require "parinfer"))
@@ -38,3 +38,28 @@
                     #js ["(let [a 1" "" "      b 2" "      c 3]"] 9))
          [5 3]))
   (is (= (js->clj (lumo/get-highlight-coordinates #js ["(())"] 3)) [0 0])))
+
+(deftest test-get-completions
+  (testing "keyword completions"
+    (is (= (js->clj (lumo/get-completions ":")) (sort (into [] (map str) lumo/keyword-completions))))
+    (is (= (js->clj (lumo/get-completions ":a")) [":args" ":as"]))
+    (is (= (js->clj (lumo/get-completions ":ref")) [":refer" ":refer-clojure" ":refer-macros"])))
+  (testing "aliased namespaces completions"
+    (with-redefs [lumo/current-alias-map (fn []
+                                           '{string clojure.string})]
+      (is (contains? (set (lumo/get-completions "str")) "string/"))
+      (is (contains? (set (lumo/get-completions "(str")) "(string/"))
+      (is (not (contains? (set (lumo/get-completions "(set")) "(set/"))))
+    (with-redefs [lumo/all-ns (fn [] '(clojure.set clojure.string))]
+      (is (contains? (set (lumo/get-completions "(clojure.s")) "(clojure.set"))))
+  (testing "cljs.core function completions"
+    (is (contains? (set (lumo/get-completions "sub")) "subs"))
+    (is (contains? (set (lumo/get-completions "mer")) "merge")))
+  (testing "referred vars completions"
+    (with-redefs [lumo/get-namespace (fn [_]
+                                       '{:uses {foo foo.core}
+                                         :requires {foo.core foo.core}
+                                         :use-macros {longer-var bar.core}})]
+      (is (contains? (set (lumo/get-completions "fo")) "foo"))
+      (is (contains? (set (lumo/get-completions "lon")) "longer-var"))
+      (is (contains? (set (lumo/get-completions "(lon")) "(longer-var")))))
