@@ -13,8 +13,8 @@ mkdir lumo-cljs\out\macros-tmp || goto :error
 
 echo (require-macros 'lumo.repl 'clojure.template 'cljs.spec 'cljs.spec.impl.gen 'cljs.test) | build\lumo.exe --quiet -c target -sdk lumo-cljs/out/macros-tmp || goto :error
 
-mv lumo-cljs/out/macros-tmp/lumo_SLASH_repl\$macros.js target/lumo/repl\$macros.js || goto :error
-mv lumo-cljs/out/macros-tmp/lumo_SLASH_repl\$macros.cache.json target/lumo/repl\$macros.cache.json || goto :error
+mv lumo-cljs\out\macros-tmp\lumo_SLASH_repl\$macros.js target\lumo\repl\$macros.js || goto :error
+mv lumo-cljs\out\macros-tmp\lumo_SLASH_repl\$macros.cache.json target\lumo\repl\$macros.cache.json || goto :error
 mv lumo-cljs\out\macros-tmp\clojure_SLASH_template$macros.js target\clojure\template$macros.js || goto :error
 mv lumo-cljs\out\macros-tmp\clojure_SLASH_template$macros.cache.json target\clojure\template$macros.cache.json || goto :error
 mv lumo-cljs\out\macros-tmp\cljs_SLASH_test$macros.js target\cljs\test$macros.js || goto :error
