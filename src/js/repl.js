@@ -22,7 +22,7 @@ type StreamWriteHandler = (line: string) => void;
 
 const exitCommands = new Set([':cljs/quit', 'exit']);
 let sessionCount = 0;
-const input: string[] = [''];
+const input: { [key: number]: string } = {};
 const resultBuffer: string[] = [];
 const errorBuffer: string[] = [];
 let lastKeypressTime: number;
@@ -91,7 +91,7 @@ function stopREPL(): void {
   socketServerClose();
 
   const keys = Object.keys(sessions);
-  keys.forEach((sessionId: string) => deleteSession(sessions[parseInt(sessionId)]));
+  keys.forEach((sessionId: string) => deleteSession(sessions[parseInt(sessionId, 10)]));
 
   unhookOutputStreams();
 
