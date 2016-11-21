@@ -208,6 +208,34 @@ describe('getCliOpts', () => {
     expect(parsedOpts.mainNsName).toEqual('foo.core');
     expect(parsedOpts.args).toEqual(['foo', 'bar', 'baz', 'qux']);
   });
+
+  describe('sets elide-asserts to true in opts', () => {
+    it('if -a specified', () => {
+      const args = '-a';
+      Object.defineProperty(process, 'argv', {
+        value: ['', ''].concat(args.split(' ')),
+      });
+
+      startCLI();
+
+      const [[parsedOpts]] = cljs.mock.calls;
+
+      expect(parsedOpts['elide-asserts']).toBe(true);
+    });
+
+    it('if --elide-asserts specified', () => {
+      const args = '--elide-asserts';
+      Object.defineProperty(process, 'argv', {
+        value: ['', ''].concat(args.split(' ')),
+      });
+
+      startCLI();
+
+      const [[parsedOpts]] = cljs.mock.calls;
+
+      expect(parsedOpts['elide-asserts']).toBe(true);
+    });
+  });
 });
 
 describe('print Functions', () => {

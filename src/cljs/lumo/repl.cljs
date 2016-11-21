@@ -636,10 +636,15 @@
 (defn ^:export set-ns [ns-str]
   (vreset! current-ns (symbol ns-str)))
 
-(defn ^:export init [repl? verbose cache-path static-fns]
+(defn- setup-assert! [elide-asserts]
+  (set! *assert* (not elide-asserts)))
+
+(defn ^:export init [repl? verbose cache-path static-fns elide-asserts]
   (vreset! app-opts {:verbose verbose
                      :cache-path cache-path
-                     :static-fns static-fns})
+                     :static-fns static-fns
+                     :elide-asserts elide-asserts})
+  (setup-assert! elide-asserts)
   (load-core-analysis-caches repl?)
   (deps/index-upstream-foreign-libs))
 

@@ -22,6 +22,7 @@ export type CLIOptsType = {
   'dumb-terminal': boolean,
   'static-fns': boolean,
   legal: boolean,
+  'elide-asserts': boolean,
   cache?: string,
   classpath: string[],
   'socket-repl'?: string,
@@ -102,6 +103,7 @@ function getCLIOpts(): CLIOptsType {
     'd(dumb-terminal)',
     'n:(socket-repl)',
     's(static-fns)',
+    'a(elide-asserts)',
     'm:(main)',
     'r(repl)',
     'k:(cache)',
@@ -118,6 +120,7 @@ function getCLIOpts(): CLIOptsType {
     verbose: false,
     'dumb-terminal': false,
     'static-fns': false,
+    'elide-asserts': false,
     quiet: false,
     args: [],
   };
@@ -160,6 +163,9 @@ function getCLIOpts(): CLIOptsType {
         break;
       case 's':
         ret['static-fns'] = true;
+        break;
+      case 'a':
+        ret['elide-asserts'] = true;
         break;
       case 'm':
         foundMainOpt = true;
