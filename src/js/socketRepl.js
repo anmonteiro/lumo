@@ -5,15 +5,10 @@ import readline from 'readline';
 import { createBanner } from './cli';
 import { createSession, prompt, processLine, unhookOutputStreams } from './repl';
 
-
 let socketServer: ?net$Server = null;
 const sockets: net$Socket[] = [];
 
-export function getSocketServer(): ?net$Server {
-  return socketServer;
-}
-
-export function handleConnection(socket: net$Socket): readline$Interface {
+function handleConnection(socket: net$Socket): readline$Interface {
   const rl = readline.createInterface({
     input: socket,
     output: socket,
@@ -54,7 +49,7 @@ export function close(): void {
   socketServer.close();
 }
 
-export function open(port: number, host?: string): void {
+export function open(port: number, host?: string = 'localhost'): void {
   socketServer = net.createServer((socket: net$Socket) => handleConnection(socket));
   socketServer.listen(port, host);
 

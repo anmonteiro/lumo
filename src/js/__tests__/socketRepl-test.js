@@ -1,5 +1,31 @@
 import net from 'net';
-import * as socketRepl from '../socketRepl';
+
+let socketRepl = require('../socketRepl');
+
+const on = jest.fn((type: string, f: (x?: string) => void) => {
+  switch (type) {
+    case 'line': f('(+ 1 2'); return f(')');
+    default: return f();
+  }
+});
+
+jest.mock('../repl');
+jest.mock('readline', () => ({
+  createInterface: jest.fn((opts: {[key: string]: mixed}) => ({
+    on,
+    output: opts.output,
+    write: jest.fn(),
+  })),
+}));
+
+function mockCreateSession(): void {
+  const repl = require('../repl'); // eslint-disable-line global-require
+  repl.createSession = jest.fn((rl: readline$Interface, isMain: boolean) => ({
+    sessionId: 1,
+    rl,
+    isMain,
+  }));
+}
 
 type SocketCallback = { (socket: net$Socket): void };
 
@@ -12,56 +38,104 @@ const netSocketWrite = net.Socket.prototype.write;
 const netSocketOn = net.Socket.prototype.on;
 
 describe('open', () => {
+  const processOn = process.on;
+  let socketServer;
+
   beforeEach(() => {
-    net.createServer = jest.fn((callback: SocketCallback) => new net.Server());
+    process.on = jest.fn();
+    net.createServer = jest.fn((callback: SocketCallback) => {
+      socketServer = new net.Server();
+      return socketServer;
+    });
     net.Server.prototype.listen = jest.fn((port: number, host: ?string) => undefined);
-    socketRepl.open(serverPort, serverHost);
+    net.Server.prototype.close = jest.fn();
   });
 
   afterEach(() => {
     socketRepl.close();
     net.createServer = netCreateServer;
     net.Server.prototype.listen = netServerListen;
+    process.on = processOn;
   });
 
   it('creates a server listening on a specified host and port', () => {
-    const socketServer = socketRepl.getSocketServer();
+    socketRepl.open(serverPort, serverHost);
+
     expect(socketServer.listen).toHaveBeenCalledTimes(1);
-    expect(socketServer.listen.mock.calls[0][0]).toBe(serverPort);
-    expect(socketServer.listen.mock.calls[0][1]).toBe(serverHost);
+    expect(socketServer.listen).toHaveBeenCalledWith(serverPort, serverHost);
+  });
+
+  it('registers process handlers for SIGHUP & SIGTERM', () => {
+    socketRepl.open(serverPort, serverHost);
+
+    expect(process.on).toHaveBeenCalledTimes(2);
+    expect(process.on.mock.calls.map((x: [string, () => void]) => x[0]))
+      .toEqual(['SIGTERM', 'SIGHUP']);
+  });
+
+  it('defaults to localhost if no host specified', () => {
+    socketRepl.open(serverPort);
+
+    expect(socketServer.listen).toHaveBeenCalledTimes(1);
+    expect(socketServer.listen).toHaveBeenCalledWith(serverPort, 'localhost');
   });
 });
 
-
 describe('close', () => {
+  let socketServer;
+
   beforeEach(() => {
-    net.createServer = jest.fn((callback: SocketCallback) => new net.Server());
+    jest.resetModules();
+    socketRepl = require('../socketRepl'); // eslint-disable-line global-require
+    net.createServer = jest.fn((callback: SocketCallback) => {
+      socketServer = new net.Server();
+      return socketServer;
+    });
     net.Server.prototype.listen = jest.fn((port: number, host: ?string) => undefined);
-    net.Server.prototype.close = jest.fn(() => netServerClose.bind(this));
-    socketRepl.open(serverPort, serverHost);
+    net.Server.prototype.close = jest.fn(() => {
+      socketServer = null;
+    });
   });
 
   afterEach(() => {
     socketRepl.close();
+    socketServer = null;
     net.createServer = netCreateServer;
     net.Server.prototype.listen = netServerListen;
     net.Server.prototype.close = netServerClose;
   });
 
-  it('closes the server', () => {
+  it('doesn\'t close the server if already closed', () => {
     socketRepl.close();
-    const socketServer = socketRepl.getSocketServer();
-    expect(socketServer.close).toHaveBeenCalledTimes(1);
+
+    expect(socketServer).toBeUndefined();
+    expect(net.Server.prototype.close).not.toHaveBeenCalled();
+  });
+
+  it('closes the server', () => {
+    socketRepl.open(serverPort, serverHost);
+    socketRepl.close();
+
+    expect(net.Server.prototype.close).toHaveBeenCalledTimes(1);
   });
 });
 
 describe('handleConnection', () => {
+  let handleConnection;
   let socket: ?net$Socket = null;
 
   beforeEach(() => {
+    net.createServer = jest.fn((callback: SocketCallback) => {
+      handleConnection = callback;
+      return {
+        listen: jest.fn(),
+        close: jest.fn(),
+      };
+    });
     net.Socket.prototype.write = jest.fn((text: string) => undefined);
-    net.Socket.prototype.on = jest.fn();
+    socketRepl.open(serverPort, serverHost);
     socket = new net.Socket();
+    socket.on = jest.fn((type: string, f: () => void) => f());
   });
 
   afterEach(() => {
@@ -71,7 +145,16 @@ describe('handleConnection', () => {
   });
 
   it('prints welcome message and prompt', () => {
-    socketRepl.handleConnection(socket);
+    mockCreateSession();
+    handleConnection(socket);
     expect(socket.write).toHaveBeenCalled();
+  });
+
+  it('tears down every active socket connection on close', () => {
+    mockCreateSession();
+    handleConnection(socket);
+    socket.destroy = jest.fn();
+    socketRepl.close();
+    expect(socket.destroy).toHaveBeenCalled();
   });
 });

@@ -80,7 +80,7 @@ describe('startREPL', () => {
     startREPL({});
 
     const onCalls = on.mock.calls;
-    expect(onCalls.length).toBe(3);
+    expect(on).toHaveBeenCalledTimes(3);
     expect(onCalls[0][0]).toBe('line');
     expect(onCalls[1][0]).toBe('SIGINT');
     expect(onCalls[2][0]).toBe('close');
@@ -90,7 +90,7 @@ describe('startREPL', () => {
     startREPL({});
 
     const onCalls = process.stdin.on.mock.calls;
-    expect(onCalls.length).toBe(1);
+    expect(process.stdin.on).toHaveBeenCalledTimes(1);
     expect(onCalls[0][0]).toBe('keypress');
   });
 
@@ -115,7 +115,7 @@ describe('startREPL', () => {
 
         const replHistoryCalls = replHistory.mock.calls;
 
-        expect(replHistoryCalls.length).toBe(1);
+        expect(replHistory).toHaveBeenCalledTimes(1);
         expect(replHistoryCalls[0][0].terminal).toBe(true);
       });
 
@@ -126,7 +126,7 @@ describe('startREPL', () => {
 
         const replHistoryCalls = replHistory.mock.calls;
 
-        expect(replHistoryCalls.length).toBe(1);
+        expect(replHistory).toHaveBeenCalledTimes(1);
         expect(replHistoryCalls[0][0].terminal).toBe(false);
       });
     });
@@ -140,7 +140,7 @@ describe('startREPL', () => {
 
       const replHistoryCalls = replHistory.mock.calls;
 
-      expect(replHistoryCalls.length).toBe(1);
+      expect(replHistory).toHaveBeenCalledTimes(1);
       expect(replHistoryCalls[0][0].terminal).toBe(false);
     });
 

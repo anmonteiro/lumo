@@ -1,9 +1,8 @@
 /* @flow */
 
+import readline from 'readline';
+import fs from 'fs';
 import replHistory from '../replHistory';
-
-const readline = require('readline');
-const fs = require('fs');
 
 jest.mock('readline');
 
@@ -116,7 +115,7 @@ describe('replHistory', () => {
       });
 
       rl._addHistory(); // eslint-disable-line no-underscore-dangle
-      expect(streamWrite.mock.calls.length).toBe(1);
+      expect(streamWrite).toHaveBeenCalledTimes(1);
       expect(streamWrite).toHaveBeenCalledWith('qux\n', 'utf8');
     });
   });

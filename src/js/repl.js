@@ -1,16 +1,15 @@
 /* @flow */
 
+import os from 'os';
+import path from 'path';
+import readline from 'readline';
+import tty from 'tty';
 import * as cljs from './cljs';
 import replHistory from './replHistory';
 import { currentTimeMicros, isWhitespace, isWindows } from './util';
 import { close as socketServerClose } from './socketRepl';
 
 import type { CLIOptsType } from './cli';
-
-const os = require('os');
-const path = require('path');
-const readline = require('readline');
-const tty = require('tty');
 
 type KeyType = {
   name: string,
@@ -257,6 +256,12 @@ export function createSession(rl: readline$Interface, isMain: boolean): REPLSess
   return session;
 }
 
+function completer(line: string): [string[], string] {
+  const completions = cljs.getCompletions(line);
+
+  return [completions, line];
+}
+
 export default function startREPL(opts: CLIOptsType): void {
   const dumbTerminal = isWindows ? true : opts['dumb-terminal'];
 
@@ -266,6 +271,7 @@ export default function startREPL(opts: CLIOptsType): void {
     input: process.stdin,
     output: process.stdout,
     terminal: !dumbTerminal,
+    completer,
   });
 
   const session = createSession(rl, true);

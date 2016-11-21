@@ -1,10 +1,9 @@
 /* @flow */
 
-import { ensureArray, ensureDir, srcPathsFromClasspathStrings,
+import fs from 'fs';
+import os from 'os';
+import { ensureDir, srcPathsFromClasspathStrings,
          isWhitespace, isWindows } from '../util';
-
-const fs = require('fs');
-const os = require('os');
 
 describe('srcPathsFromClasspathStrings', () => {
   const homedir = os.homedir;
@@ -89,20 +88,9 @@ describe('ensureDir', () => {
     expect(() => {
       ensureDir('somefolder');
     }).not.toThrow();
-    expect(fs.existsSync.mock.calls.length).toBe(1);
-    expect(fs.statSync.mock.calls.length).toBe(1);
+    expect(fs.existsSync).toHaveBeenCalledTimes(1);
+    expect(fs.statSync).toHaveBeenCalledTimes(1);
     expect(fs.mkdirSync).not.toBeCalled();
-  });
-});
-
-describe('ensureArray', () => {
-  it('returns the same input if passed an array', () => {
-    const arr = [1, 2];
-    expect(ensureArray(arr)).toBe(arr);
-  });
-
-  it('returns an array if passed a single element', () => {
-    expect(ensureArray(1)).toEqual([1]);
   });
 });
 
