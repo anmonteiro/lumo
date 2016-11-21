@@ -112,7 +112,7 @@ export function stat(path: string): fs.Stats {
 }
 
 export function readdir(path: string): string[] {
-  return fs.readdirSync(path)
+  return fs.readdirSync(path);
 }
 
 export function readSourcePaths(): string[]{
