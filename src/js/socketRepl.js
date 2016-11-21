@@ -3,12 +3,13 @@
 import net from 'net';
 import readline from 'readline';
 import { createBanner } from './cli';
-import { createSession, prompt, processLine, unhookOutputStreams } from './repl';
+import { createSession, deleteSession, prompt, processLine, unhookOutputStreams } from './repl';
+import type { REPLSession } from './repl';
 
 let socketServer: ?net$Server = null;
 const sockets: net$Socket[] = [];
 
-function handleConnection(socket: net$Socket): readline$Interface {
+function handleConnection(socket: net$Socket): REPLSession {
   const rl = readline.createInterface({
     input: socket,
     output: socket,
@@ -16,7 +17,11 @@ function handleConnection(socket: net$Socket): readline$Interface {
 
   const session = createSession(rl, false);
 
-  socket.on('close', () => delete sockets[session.sessionId]);
+  socket.on('close', () => {
+    delete sockets[session.sessionId];
+    deleteSession(session);
+  });
+
   sockets[session.sessionId] = socket;
 
   rl.on('line', (line: string) => {
@@ -30,7 +35,8 @@ function handleConnection(socket: net$Socket): readline$Interface {
   // $FlowIssue - output missing from readline$Interface
   rl.output.write(createBanner());
   prompt(rl, false, 'cljs.user');
-  return rl;
+
+  return session;
 }
 
 export function close(): void {

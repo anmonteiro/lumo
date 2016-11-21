@@ -33,7 +33,7 @@ const stderrWrite = process.stderr.write;
 const writeToResultBuffer = (line: string) => { resultBuffer.push(line); };
 const writeToErrorBuffer = (line: string) => { errorBuffer.push(line); };
 
-type REPLSession = {
+export type REPLSession = {
   sessionId: number,
   rl: readline$Interface,
   isMain: boolean,
@@ -83,6 +83,21 @@ function consumeBuffer(buffer: string[], stream: stream$Writable | tty$WriteStre
   }
 }
 
+export function deleteSession(session: REPLSession): void {
+  delete sessions[session.sessionId];
+}
+
+function stopREPL(): void {
+  socketServerClose();
+
+  const keys = Object.keys(sessions);
+  keys.forEach((sessionId: string) => deleteSession(sessions[parseInt(sessionId)]));
+
+  unhookOutputStreams();
+
+  process.exit();
+}
+
 export function processLine(session: REPLSession, line: string): void {
   const sessionId = session.sessionId;
   const rl = session.rl;
@@ -95,7 +110,7 @@ export function processLine(session: REPLSession, line: string): void {
 
   if (exitCommands.has(line)) {
     // $FlowIssue - use of rl.output
-    return session.isMain ? process.exit() : rl.output.destroy();
+    return session.isMain ? stopREPL() : rl.output.destroy();
   }
 
   if (isWhitespace(input[sessionId])) {
@@ -287,7 +302,7 @@ export default function startREPL(opts: CLIOptsType): void {
 
   rl.on('line', (line: string) => processLine(session, line));
   rl.on('SIGINT', () => handleSIGINT(session, rl));
-  rl.on('close', () => socketServerClose());
+  rl.on('close', () => stopREPL());
 
   lastKeypressTime = currentTimeMicros();
   process.stdin.on('keypress', (c: string, key: KeyType) => handleKeyPress(session, c, key));
