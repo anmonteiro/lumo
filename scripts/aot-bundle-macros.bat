@@ -1,4 +1,3 @@
-
 REM remove the target dir
 echo y | rd target /s || goto :error
 
