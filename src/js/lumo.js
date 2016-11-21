@@ -107,6 +107,13 @@ export function fileExists(filename: string): boolean {
   return false;
 }
 
+export function stat(path: string): fs.Stats {
+  return fs.statSync(path);
+}
+
+export function readdir(path: string): string[] {
+  return fs.readdirSync(path)
+}
 
 export function readSourcePaths(): string[]{
   return sourcePaths.slice(0);

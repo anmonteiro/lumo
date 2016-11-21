@@ -41,6 +41,8 @@ if (__DEV__) {
       LUMO_WRITE_CACHE: lumo.writeCache,
       LUMO_LOAD_UPS_DEPS_CLJS: lumo.loadUpstreamForeignLibs,
       LUMO_EXISTS: lumo.fileExists,
+      LUMO_STAT: lumo.stat,
+      LUMO_READDIR: lumo.readdir,
       LUMO_EVAL: lumoEval,
       global: undefined,
     };

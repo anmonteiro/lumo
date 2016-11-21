@@ -1,17 +1,14 @@
 (ns lumo.classpath
-  (:require [cljs.nodejs :as nodejs]
-            [clojure.string :as string]))
-
-(def fs (nodejs/require "fs"))
+  (:require [clojure.string :as string]))
 
 (defn directory?
   [path]
-  (. (. fs statSync path) isDirectory))
+  (. (js/LUMO_STAT path) isDirectory))
 
 (defn file?
   [path]
-  (and (. (. fs statSync path) isFile) (or (string/ends-with? path ".cljs")
-                                           (string/ends-with? path ".cljc"))))
+  (and (. (js/LUMO_STAT path) isFile) (or (string/ends-with? path ".cljs")
+                                          (string/ends-with? path ".cljc"))))
 
 (defn jarfile?
   [path]
@@ -19,12 +16,13 @@
 
 (defn filenames
   [path]
-  (let [root (js->clj (. fs readdirSync path))
-        root-files (filter #(file? (str path "/" %)) root)
-        sub-dirs (map #(str path "/" %) (filter #(directory? (str path "/" %)) root))
-        sub-files (map filenames sub-dirs)
-        ]
-    (flatten [root-files sub-files])))
+  (if (jarfile? path)
+    path
+    (let [root (js->clj (js/LUMO_READDIR path))
+          root-files (filter #(file? (str path "/" %)) root)
+          sub-dirs (map #(str path "/" %) (filter #(directory? (str path "/" %)) root))
+          sub-files (map filenames sub-dirs)]
+      (flatten [root-files sub-files]))))
 
 (defn ^:export classpath
   []
