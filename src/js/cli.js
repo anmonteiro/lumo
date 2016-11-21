@@ -4,6 +4,7 @@ import startClojureScriptEngine from './cljs';
 import printLegal from './legal';
 import * as lumo from './lumo';
 import * as util from './util';
+import * as socketRepl from './socketRepl';
 import version from './version';
 
 // $FlowIssue: this module exists.
@@ -186,6 +187,15 @@ function processOpts(cliOpts: CLIOptsType): CLIOptsType {
 
   opts.repl = scripts.length === 0 || repl;
   opts.scripts = scripts;
+
+  if (opts.repl && opts['socket-repl']) {
+    const hostPortTokens = opts['socket-repl'].split(':');
+    if (hostPortTokens.length === 1 && !isNaN(hostPortTokens[0])) {
+      socketRepl.open(parseInt(hostPortTokens[0], 10));
+    } else if (hostPortTokens.length === 2 && !isNaN(hostPortTokens[1])) {
+      socketRepl.open(parseInt(hostPortTokens[1], 10), hostPortTokens[0]);
+    }
+  }
 
   return opts;
 }

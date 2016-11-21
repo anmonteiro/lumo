@@ -3,15 +3,14 @@
 import * as cljs from './cljs';
 import replHistory from './replHistory';
 import { currentTimeMicros, isWhitespace, isWindows } from './util';
+import { close as socketServerClose } from './socketRepl';
 
-import { createBanner } from './cli';
 import type { CLIOptsType } from './cli';
 
 const os = require('os');
 const path = require('path');
 const readline = require('readline');
 const tty = require('tty');
-const net = require('net');
 
 type KeyType = {
   name: string,
@@ -24,26 +23,17 @@ type StreamWriteHandler = (line: string) => void;
 
 const exitCommands = new Set([':cljs/quit', 'exit']);
 let sessionCount = 0;
+const input: string[] = [''];
 let lastKeypressTime: number;
 let isPasting: boolean;
 const pendingHighlights = [];
 const stdoutWrite = process.stdout.write;
 const stderrWrite = process.stderr.write;
+
 const resultBuffer: string[] = [];
 const errorBuffer: string[] = [];
 const writeToResultBuffer = (line: string) => { resultBuffer.push(line); };
 const writeToErrorBuffer = (line: string) => { errorBuffer.push(line); };
-let socketServer: ?net$Server = null;
-const sockets: net$Socket[] = [];
-const input: string[] = [];
-
-type REPLSession = {
-  sessionId: number,
-  rl: readline$Interface,
-  isMain: boolean,
-};
-
-const sessions: { [key: number]: REPLSession } = {};
 
 /* eslint-disable indent */
 export function prompt(rl: readline$Interface,
@@ -76,26 +66,6 @@ export function unhookOutputStreams(): void {
   process.stderr.write = stderrWrite;
 }
 
-function stopSocketServer(): void {
-  if (!socketServer) {
-    return;
-  }
-
-  sockets.forEach((socket: net$Socket) => {
-    try {
-      socket.destroy();
-    } catch (e) {} // eslint-disable-line no-empty
-  });
-
-  socketServer.close();
-}
-
-function stopREPL(): void {
-  stopSocketServer();
-  unhookOutputStreams();
-  process.exit();
-}
-
 function consumeBuffer(buffer: string[], stream: stream$Writable | tty$WriteStream): void {
   let len = buffer.length;
 
@@ -106,51 +76,54 @@ function consumeBuffer(buffer: string[], stream: stream$Writable | tty$WriteStre
   }
 }
 
-export function processLine(session: REPLSession, line: string): void {
+export function processLine(sessionId: number, rl: readline$Interface, line: string): void {
+  const isMainRepl = sessionId === 0;
   let extraForms = false;
 
-  // TODO: move this elsewhere
-  if (exitCommands.has(line)) {
-    // $FlowIssue - use of rl.output
-    return session.isMain ? stopREPL() : session.rl.output.destroy();
+  if (!input[sessionId]) {
+    input[sessionId] = '';
   }
 
-  if (isWhitespace(input[session.sessionId])) {
-    input[session.sessionId] = line;
+  if (exitCommands.has(line)) {
+    // $FlowIssue - use of rl.output
+    return isMainRepl ? process.exit() : rl.output.destroy();
+  }
+
+  if (isWhitespace(input[sessionId])) {
+    input[sessionId] = line;
   } else {
-    input[session.sessionId] = `${input[session.sessionId]}\n${line}`;
+    input[sessionId] = `${input[sessionId]}\n${line}`;
   }
 
   for (;;) {
-    extraForms = cljs.isReadable(input[session.sessionId]);
+    extraForms = cljs.isReadable(input[sessionId]);
 
     if (extraForms !== false) {
-      input[session.sessionId] = input[session.sessionId]
-        .substring(0, input[session.sessionId].length - extraForms.length);
+      input[sessionId] = input[sessionId].substring(0, input[sessionId].length - extraForms.length);
 
-      if (!isWhitespace(input[session.sessionId])) {
+      if (!isWhitespace(input[sessionId])) {
         hookOutputStreams(writeToResultBuffer,
-                          session.isMain ? writeToErrorBuffer : writeToResultBuffer);
-        cljs.execute(input[session.sessionId]);
+                          isMainRepl ? writeToErrorBuffer : writeToResultBuffer);
+        cljs.execute(input[sessionId]);
         unhookOutputStreams();
 
         // $FlowIssue - use of rl.output
-        consumeBuffer(resultBuffer, session.rl.output);
+        consumeBuffer(resultBuffer, rl.output);
         consumeBuffer(errorBuffer, process.stderr);
       } else {
-        prompt(session.rl);
+        prompt(rl);
         break;
       }
 
-      input[session.sessionId] = extraForms;
+      input[sessionId] = extraForms;
     } else {
       // partially entered form, prepare for processing the next line.
-      prompt(session.rl, true);
+      prompt(rl, true);
 
       if (!isPasting) {
-        const spaceCount = cljs.indentSpaceCount(input[session.sessionId]);
+        const spaceCount = cljs.indentSpaceCount(input[sessionId]);
         if (spaceCount !== -1) {
-          session.rl.write(' '.repeat(spaceCount));
+          rl.write(' '.repeat(spaceCount));
         }
       }
       break;
@@ -160,34 +133,35 @@ export function processLine(session: REPLSession, line: string): void {
   return undefined;
 }
 
-function handleSIGINT(session: REPLSession): void {
-  input[session.sessionId] = '';
+function handleSIGINT(sessionId: number, rl: readline$Interface): void {
+  input[sessionId] = '';
 
   // $FlowIssue: missing property in interface
-  session.rl.output.write('\n');
+  rl.output.write('\n');
 
   readline.clearLine(process.stdout, 0);
   readline.cursorTo(process.stdout, 0);
 
-  session.rl.write(null, {
+  rl.write(null, {
     ctrl: true,
     name: 'u',
   });
 
-  prompt(session.rl);
+  prompt(rl);
 }
 
 /* eslint-disable indent */
-function highlight(session: REPLSession,
+function highlight(sessionId: number,
+                   rlInt: readline$Interface,
                    char: string,
                    line: string,
                    cursor: number): void {
   /* eslint-enable indent */
-  const rl = session.rl;
+  const rl = rlInt;
   const pos = cursor - 1;
 
   if (char === ')' || char === ']' || char === '}') {
-    const lines = input[session.sessionId] === '' ? [] : input[session.sessionId].split('\n');
+    const lines = input[sessionId] === '' ? [] : input[sessionId].split('\n');
     lines.push(line);
     const [cursorX, linesUp] = cljs.getHighlightCoordinates(lines, pos);
 
@@ -216,7 +190,7 @@ function highlight(session: REPLSession,
         readStream.destroy();
         rl.write(c, key);
         // $FlowIssue
-        highlight(session, c, rl.line, rl.cursor);
+        highlight(sessionId, rl, c, rl.line, rl.cursor);
       });
 
       // $FlowIssue
@@ -242,63 +216,31 @@ function highlight(session: REPLSession,
   }
 }
 
-function handleKeyPress(session: REPLSession, c: string, key: KeyType): void {
+function handleKeyPress(sessionId: number, rl: readline$Interface, c: string, key: KeyType): void {
   const now = currentTimeMicros();
   isPasting = (now - lastKeypressTime) < 10000;
   lastKeypressTime = now;
 
   if (!isPasting) {
     // $FlowIssue: these properties exist
-    highlight(session, c, session.rl.line, session.rl.cursor);
+    highlight(sessionId, rl, c, rl.line, rl.cursor);
   }
 }
 
-export function createSession(rl: readline$Interface, isMain: boolean): REPLSession {
+export function createSession(): number {
   sessionCount += 1;
+  const sessionId = sessionCount - 1; // start at 0
 
-  const session: REPLSession = {
-    sessionId: sessionCount - 1,
-    rl,
-    isMain,
-  };
+  if (!input[sessionId]) {
+    input[sessionId] = '';
+  }
 
-  sessions[session.sessionId] = session;
-  input[session.sessionId] = '';
-
-  return session;
-}
-
-function handleConnection(socket: net$Socket): readline$Interface {
-  const rl = readline.createInterface({
-    input: socket,
-    output: socket,
-  });
-
-  const session = createSession(rl, false);
-
-  socket.on('close', () => delete sockets[session.sessionId]);
-  sockets[session.sessionId] = socket;
-
-  rl.on('line', (line: string) => {
-    if (!socket.destroyed) {
-      processLine(session, line, false);
-    }
-  });
-
-  rl.on('close', () => socket.destroy());
-
-  socket.write(createBanner());
-  prompt(rl, false, 'cljs.user');
-  return rl;
-}
-
-function startSocketServer(port: number, host?: string): void {
-  socketServer = net.createServer((socket: net$Socket) => handleConnection(socket));
-  socketServer.listen(port, host);
+  return sessionId;
 }
 
 export default function startREPL(opts: CLIOptsType): void {
   const dumbTerminal = isWindows ? true : opts['dumb-terminal'];
+  const sessionId = createSession();
 
   const rl = replHistory({
     path: path.join(os.homedir(), '.lumo_history'),
@@ -307,8 +249,6 @@ export default function startREPL(opts: CLIOptsType): void {
     output: process.stdout,
     terminal: !dumbTerminal,
   });
-
-  const session = createSession(rl, true);
 
   // $FlowIssue
   readline.emitKeypressEvents(process.stdin, rl);
@@ -319,22 +259,10 @@ export default function startREPL(opts: CLIOptsType): void {
 
   prompt(rl, false, 'cljs.user');
 
-  rl.on('line', (line: string) => processLine(session, line));
-  rl.on('SIGINT', () => handleSIGINT(session));
-  rl.on('close', () => stopREPL());
+  rl.on('line', (line: string) => processLine(sessionId, rl, line));
+  rl.on('SIGINT', () => handleSIGINT(sessionId, rl));
+  rl.on('close', () => socketServerClose());
 
   lastKeypressTime = currentTimeMicros();
-  process.stdin.on('keypress', (c: string, key: KeyType) => handleKeyPress(session, c, key));
-
-  process.on('SIGTERM', () => stopREPL());
-  process.on('SIGHUP', () => stopREPL());
-
-  if (opts.repl && opts['socket-repl']) {
-    const hostPortTokens = opts['socket-repl'].split(':');
-    if (hostPortTokens.length === 1 && !isNaN(hostPortTokens[0])) {
-      startSocketServer(parseInt(hostPortTokens[0], 10));
-    } else if (hostPortTokens.length === 2 && !isNaN(hostPortTokens[1])) {
-      startSocketServer(parseInt(hostPortTokens[1], 10), hostPortTokens[0]);
-    }
-  }
+  process.stdin.on('keypress', (c: string, key: KeyType) => handleKeyPress(sessionId, rl, c, key));
 }

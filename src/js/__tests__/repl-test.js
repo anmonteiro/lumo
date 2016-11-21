@@ -1,6 +1,5 @@
 /* @flow */
 
-import net from 'net';
 import * as util from '../util';
 
 // functions are hoisted, calling this before defining for readability
@@ -12,9 +11,6 @@ let startREPL = require('../repl').default;
 
 const processStdinOn = process.stdin.on;
 const processStdinSetRaw = process.stdin.setRawMode;
-const serverHost = '0.0.0.0';
-const serverPort = 12345;
-const netCreateServer = net.createServer;
 
 process.stdin.on = jest.fn((type: string, cb: (key: string) => void) => {
   cb('return');
@@ -25,8 +21,6 @@ process.stdin.setRawMode = jest.fn();
 const setPrompt = jest.fn();
 const prompt = jest.fn();
 let on;
-
-type SocketCallback = { (socket: net$Socket): void };
 
 function genOn(line: ?string = null): JestMockFn {
   on = jest.fn((type: string, f: (x?: string) => void) => {
@@ -98,33 +92,6 @@ describe('startREPL', () => {
     const onCalls = process.stdin.on.mock.calls;
     expect(onCalls.length).toBe(1);
     expect(onCalls[0][0]).toBe('keypress');
-  });
-
-  describe('starts a socket REPL', () => {
-    afterEach(() => {
-      net.createServer = netCreateServer;
-    });
-
-    it('if option is present', () => {
-      const server = new net.Server();
-      net.createServer = jest.fn((callback: SocketCallback) => server);
-      startREPL({ 'socket-repl': `${serverHost}:${serverPort}`, repl: true });
-      expect(net.createServer).toHaveBeenCalledTimes(1);
-      server.unref();
-      server.close();
-    });
-
-    it('listens on specified host and port', () => {
-      const server = new net.Server();
-      server.listen = jest.fn((port: number, host: ?string) => undefined);
-      net.createServer = jest.fn((callback: SocketCallback) => server);
-      startREPL({ 'socket-repl': `${serverHost}:${serverPort}`, repl: true });
-      expect(server.listen).toHaveBeenCalledTimes(1);
-      expect(server.listen.mock.calls[0][0]).toBe(serverPort);
-      expect(server.listen.mock.calls[0][1]).toBe(serverHost);
-      server.unref();
-      server.close();
-    });
   });
 
   describe('sets dumb-terminal', () => {
