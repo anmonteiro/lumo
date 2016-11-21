@@ -17,7 +17,7 @@
     "lint": "eslint src/js",
     "test": "jest",
     "bundle": "node scripts/build.js --dev",
-    "dev": "node target/bundle.js"
+    "dev": "node target/bundle.js -c target -k lumo-cache"
   },
   "main": "./src/js/index.js",
   "dependencies": {
