@@ -14,19 +14,19 @@ export function getSocketServer(): ?net$Server {
 }
 
 export function handleConnection(socket: net$Socket): readline$Interface {
-  const sessionId = createSession();
-
-  socket.on('close', () => delete sockets[sessionId]);
-  sockets[sessionId] = socket;
-
   const rl = readline.createInterface({
     input: socket,
     output: socket,
   });
 
+  const session = createSession(rl, false);
+
+  socket.on('close', () => delete sockets[session.sessionId]);
+  sockets[session.sessionId] = socket;
+
   rl.on('line', (line: string) => {
     if (!socket.destroyed) {
-      processLine(sessionId, rl, line, false);
+      processLine(session, line, false);
     }
   });
 
