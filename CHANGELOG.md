@@ -11,6 +11,7 @@
 classpath in which to call a `-main` function with all args after it ([#27](https://github.com/anmonteiro/lumo/issues/27)).
 - Add a `-a / --elide-asserts` command option that defines whether asserts in
 evaluated code should be ignored ([#37](https://github.com/anmonteiro/lumo/issues/37)).
+- `doc` REPL special function ([#26](https://github.com/anmonteiro/lumo/issues/26)).
 
 ### Changes
 
