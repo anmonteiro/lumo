@@ -188,6 +188,14 @@ export function addSourcePaths(srcPaths: string[]): void {
   sourcePaths.push(...expanded);
 }
 
+export function stat(path: string): fs.Stats {
+  return fs.statSync(path);
+}
+
+export function readdir(path: string): string[] {
+  return fs.readdirSync(path);
+}
+
 export function readSourcePaths(): string[] {
   return [...sourcePaths];
 }
