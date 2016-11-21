@@ -147,6 +147,7 @@
         lumo.core
         lumo.repl
         lumo.repl-resources
+        lumo.classpath
         lumo.js-deps} name)))
 
 (defn- skip-load?
