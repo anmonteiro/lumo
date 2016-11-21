@@ -308,6 +308,9 @@
 ;; =============================================================================
 ;; REPL plumbing
 
+;; --------------------
+;; Parinfer indentation
+
 (defn- calc-parinfer-opts [text pos]
   (let [x (.lastIndexOf text "\n")]
     #js {:cursorX    (- pos (inc x))
@@ -329,39 +332,10 @@
           0))
       0)))
 
-(defn- current-alias-map []
-  (let [cur-ns @current-ns]
-    (into {} (remove (fn [[k v]] (= k v)))
-      (merge (get-in @st [::ana/namespaces cur-ns :requires])
-        (get-in @st [::ana/namespaces cur-ns :require-macros])))))
+;; --------------------
+;; Brace highlighting
 
-(defn- reader-eof? [msg]
-  (or
-    (= "EOF while reading" msg)
-    (= "EOF while reading string" msg)))
-
-(defn- read-chars
-  [reader]
-  (let [sb (StringBuffer.)]
-    (loop [c (rt/read-char reader)]
-      (if-not (nil? c)
-        (do
-          (.append sb c)
-          (recur (rt/read-char reader)))
-        (str sb)))))
-
-(defn- repl-read-string
-  "Returns a vector of the first read form, and any balance text."
-  [source]
-  (let [reader (rt/string-push-back-reader source)
-        cur-ns @current-ns]
-    (binding [ana/*cljs-ns* cur-ns
-              *ns* (create-ns cur-ns)
-              env/*compiler* st
-              r/*data-readers* tags/*cljs-data-readers*
-              r/resolve-symbol ana/resolve-symbol
-              r/*alias-map* (current-alias-map)]
-      [(r/read {:read-cond :allow :features #{:cljs}} reader) (read-chars reader)])))
+(declare repl-read-string)
 
 (defn- is-completely-readable?
   [source]
@@ -419,11 +393,8 @@
         start-idx (form-start source pos)]
     (calc-highlight-coords lines start-idx pos)))
 
-(defn make-eval-opts []
-  (let [{:keys [verbose static-fns]} @app-opts]
-    {:ns            @current-ns
-     :verbose       verbose
-     :static-fns    static-fns}))
+;; --------------------
+;; Error handling
 
 (defn- ^:boolean could-not-eval? [msg]
   (boolean (re-find could-not-eval-regex msg)))
@@ -446,6 +417,9 @@
       :else
       (println error))))
 
+;; --------------------
+;; REPL specials
+
 (defn- compiler-state-backup []
   {:st     @st
    :loaded @cljs/*loaded*})
@@ -466,18 +440,6 @@
          (catch :default e
            (restore-compiler-state! backup)
            (throw e)))))))
-
-(declare execute execute-source)
-
-(defn- execute-path [filename opts]
-  (load {:file filename}
-    (fn [{:keys [lang source cache]}]
-      (if source
-        (execute-source source (merge opts
-                                 {:type "text"
-                                  :filename filename
-                                  :expression? false}))
-        (handle-repl-error (ex-info (str "Could not load file " filename) {}))))))
 
 (defn- root-resource
   "Returns the root directory path for a lib"
@@ -506,6 +468,8 @@
   [wfn fns]
   "Wrap wfn around all (fn) values in fns hashmap."
   (into {} (for [[k v] fns] [k (wfn v)])))
+
+(declare execute-path)
 
 (def ^:private repl-special-fns
   (let [load-file-fn
@@ -544,6 +508,58 @@
 
 (defn- repl-special? [form]
   (and (seq? form) (contains? repl-special-fns (first form))))
+
+(defn make-eval-opts []
+  (let [{:keys [verbose static-fns]} @app-opts]
+    {:ns            @current-ns
+     :verbose       verbose
+     :static-fns    static-fns}))
+
+(defn- current-alias-map []
+  (let [cur-ns @current-ns]
+    (into {} (remove (fn [[k v]] (= k v)))
+      (merge (get-in @st [::ana/namespaces cur-ns :requires])
+        (get-in @st [::ana/namespaces cur-ns :require-macros])))))
+
+(defn- reader-eof? [msg]
+  (or
+    (= "EOF while reading" msg)
+    (= "EOF while reading string" msg)))
+
+(defn- read-chars
+  [reader]
+  (let [sb (StringBuffer.)]
+    (loop [c (rt/read-char reader)]
+      (if-not (nil? c)
+        (do
+          (.append sb c)
+          (recur (rt/read-char reader)))
+        (str sb)))))
+
+(defn- repl-read-string
+  "Returns a vector of the first read form, and any balance text."
+  [source]
+  (let [reader (rt/string-push-back-reader source)
+        cur-ns @current-ns]
+    (binding [ana/*cljs-ns* cur-ns
+              *ns* (create-ns cur-ns)
+              env/*compiler* st
+              r/*data-readers* tags/*cljs-data-readers*
+              r/resolve-symbol ana/resolve-symbol
+              r/*alias-map* (current-alias-map)]
+      [(r/read {:read-cond :allow :features #{:cljs}} reader) (read-chars reader)])))
+
+(declare execute-source)
+
+(defn- execute-path [filename opts]
+  (load {:file filename}
+    (fn [{:keys [lang source cache]}]
+      (if source
+        (execute-source source (merge opts
+                                 {:type "text"
+                                  :filename filename
+                                  :expression? false}))
+        (handle-repl-error (ex-info (str "Could not load file " filename) {}))))))
 
 (defn- execute-text
   [source {:keys [expression? filename] :as opts}]
@@ -648,7 +664,7 @@
   (load-core-analysis-caches repl?)
   (deps/index-upstream-foreign-libs))
 
-;; =============================================================================
+;; --------------------
 ;; Autocompletion
 
 (defn- drop-macros-suffix
