@@ -63,6 +63,13 @@ describe('open', () => {
     expect(process.on.mock.calls.map((x: [string, () => void]) => x[0]))
       .toEqual(['SIGTERM', 'SIGHUP']);
   });
+
+  it('defaults to localhost if no host specified', () => {
+    socketRepl.open(serverPort);
+
+    expect(socketServer.listen).toHaveBeenCalledTimes(1);
+    expect(socketServer.listen).toHaveBeenCalledWith(serverPort, 'localhost');
+  });
 });
 
 describe('close', () => {

@@ -49,7 +49,7 @@ export function close(): void {
   socketServer.close();
 }
 
-export function open(port: number, host?: string): void {
+export function open(port: number, host?: string = 'localhost'): void {
   socketServer = net.createServer((socket: net$Socket) => handleConnection(socket));
   socketServer.listen(port, host);
 

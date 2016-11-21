@@ -5,6 +5,7 @@ import cljs from '../cljs';
 import * as lumo from '../lumo';
 import * as socketRepl from '../socketRepl';
 
+jest.mock('net');
 jest.mock('../cljs');
 jest.mock('../socketRepl');
 jest.mock('../version', () => 'X.X.X');
