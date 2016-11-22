@@ -215,6 +215,17 @@ describe('startREPL', () => {
       expect(process.exit).toHaveBeenCalled();
     });
 
+    it('even if whitespace present', () => {
+      mockReplHistory('  :cljs/quit  ', process.stdout);
+      // eslint-disable-next-line global-require
+      startREPL = require('../repl').default;
+
+      startREPL({});
+
+      expect(process.exit).toHaveBeenCalled();
+    });
+
+
     it('should close the socket server', () => {
       mockReplHistory('exit', process.stdout);
       /* eslint-disable global-require */

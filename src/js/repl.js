@@ -106,7 +106,7 @@ export function processLine(session: REPLSession, line: string): void {
     input[sessionId] = '';
   }
 
-  if (exitCommands.has(line)) {
+  if (exitCommands.has(line.trim())) {
     // $FlowIssue - use of rl.output
     return session.isMain ? stopREPL() : rl.output.destroy();
   }
