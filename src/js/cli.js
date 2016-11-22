@@ -200,14 +200,26 @@ function getCLIOpts(): CLIOptsType {
   return ret;
 }
 
-function processOpts(cliOpts: CLIOptsType): CLIOptsType {
-  const opts = { ...cliOpts };
-  const { cache, classpath, args, mainNSName, repl, scripts } = opts;
+export default function startCLI(): void {
+  const opts = getCLIOpts();
+  const { args, cache, classpath, help, legal, mainNsName,
+          quiet, repl, scripts } = opts;
   const autoCache = opts['auto-cache'];
-  const startSocketRepl = opts['socket-repl'];
+  const socketReplArgs = opts['socket-repl'];
+
+  // if help, print help and bail
+  if (help) {
+    return printHelp();
+  }
+
+  if (legal) {
+    return printLegal();
+  }
+
+  v8.setFlagsFromString('--use_strict');
 
   opts.repl = (scripts.length === 0 &&
-               !mainNSName &&
+               !mainNsName &&
                args.length === 0) || repl;
 
   if (cache || autoCache) {
@@ -229,35 +241,22 @@ function processOpts(cliOpts: CLIOptsType): CLIOptsType {
     lumo.addSourcePaths(srcPaths);
   }
 
-  if (startSocketRepl) {
-    const hostPortTokens = opts['socket-repl'].split(':');
-    if (hostPortTokens.length === 1 && !isNaN(hostPortTokens[0])) {
-      socketRepl.open(parseInt(hostPortTokens[0], 10));
-    } else if (hostPortTokens.length === 2 && !isNaN(hostPortTokens[1])) {
-      socketRepl.open(parseInt(hostPortTokens[1], 10), hostPortTokens[0]);
-    }
-  }
-
-  return opts;
-}
-
-export default function startCLI(): void {
-  const opts = processOpts(getCLIOpts());
-  v8.setFlagsFromString('--use_strict');
-
-  const { help, legal, quiet, repl } = opts;
-
-  // if help, print help and bail
-  if (help) {
-    return printHelp();
-  }
-
-  if (legal) {
-    return printLegal();
-  }
-
-  if (repl && !quiet) {
+  if (opts.repl && !quiet) {
     printBanner();
+  }
+
+  if (socketReplArgs != null) {
+    let [host, port] = socketReplArgs.split(':');
+
+    if (host != null && !isNaN(host)) {
+      [host, port] = [port, host];
+    }
+
+    socketRepl.open(parseInt(port, 10), host);
+    if (!quiet) {
+      process.stdout.write(
+        `Lumo socket REPL listening at ${host != null ? host : 'localhost'}:${port}.\n`);
+    }
   }
 
   return startClojureScriptEngine(opts);

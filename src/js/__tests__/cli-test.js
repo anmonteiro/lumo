@@ -136,7 +136,7 @@ describe('getCliOpts', () => {
       expect(parsedOpts['socket-repl']).toBe('5555');
       expect(parsedOpts.repl).toBe(true);
       expect(socketRepl.open).toHaveBeenCalledTimes(1);
-      expect(socketRepl.open).toHaveBeenCalledWith(5555);
+      expect(socketRepl.open).toHaveBeenCalledWith(5555, undefined);
     });
 
     it('on host and port if only both given', () => {
@@ -247,6 +247,24 @@ describe('print Functions', () => {
 
       startCLI();
       expect(process.stdout.write.mock.calls).toMatchSnapshot();
+    });
+
+    it('prints socket REPL info in addition to the banner if -n specified', () => {
+      Object.defineProperty(process, 'argv', {
+        value: ['', '', '-n', '5555'],
+      });
+
+      startCLI();
+      expect(process.stdout.write.mock.calls).toMatchSnapshot();
+    });
+
+    it('doesn\'t print if -q / --quiet', () => {
+      Object.defineProperty(process, 'argv', {
+        value: ['', '', '-q'],
+      });
+
+      startCLI();
+      expect(process.stdout.write).not.toHaveBeenCalled();
     });
   });
 
