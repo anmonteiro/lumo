@@ -43,11 +43,31 @@ function mockReplHistory(line?: string, output?: stream$Writable): void {
   })));
 }
 
-jest.mock('readline');
+jest.mock('readline', () => ({
+  on: jest.fn(),
+  emitKeypressEvents: jest.fn(),
+  clearLine: jest.fn(),
+  cursorTo: jest.fn(),
+  createInterface: jest.fn(() => ({
+    on: jest.fn(),
+    output: {
+      write: jest.fn(),
+    },
+    setPrompt: jest.fn(),
+    prompt: jest.fn(),
+  })),
+}));
+
 jest.mock('../cljs', () => ({
   isReadable: jest.fn((input: string) => ''),
   execute: jest.fn(),
   getCurrentNamespace: jest.fn(() => 'cljs.user'),
+}));
+
+jest.mock('../socketRepl', () => ({
+  open: jest.fn(),
+  close: jest.fn(),
+  handleConnection: jest.fn(),
 }));
 
 describe('startREPL', () => {
@@ -163,7 +183,7 @@ describe('startREPL', () => {
     });
   });
 
-  describe('calls process.exit if an exit command is specified', () => {
+  describe('exits when an exit command is specified', () => {
     const exit = process.exit;
 
     beforeEach(() => {
@@ -175,7 +195,7 @@ describe('startREPL', () => {
       process.exit = exit;
     });
 
-    it(':cljs/quit', () => {
+    it('with ":cljs/quit"', () => {
       mockReplHistory(':cljs/quit', process.stdout);
       // eslint-disable-next-line global-require
       startREPL = require('../repl').default;
@@ -185,7 +205,7 @@ describe('startREPL', () => {
       expect(process.exit).toHaveBeenCalled();
     });
 
-    it('exit', () => {
+    it('with "exit"', () => {
       mockReplHistory('exit', process.stdout);
       // eslint-disable-next-line global-require
       startREPL = require('../repl').default;
@@ -193,6 +213,81 @@ describe('startREPL', () => {
       startREPL({});
 
       expect(process.exit).toHaveBeenCalled();
+    });
+
+    it('should close the socket server', () => {
+      mockReplHistory('exit', process.stdout);
+      /* eslint-disable global-require */
+      startREPL = require('../repl').default;
+      const { close } = require('../socketRepl');
+      /* eslint-enable global-require */
+
+      startREPL({});
+
+      expect(close).toHaveBeenCalled();
+    });
+
+    it('should destroy all REPL sessions', () => {
+      mockReplHistory('exit', process.stdout);
+      /* eslint-disable global-require */
+      startREPL = require('../repl').default;
+      const { sessions } = require('../repl');
+      /* eslint-enable global-require */
+
+      startREPL({});
+
+      expect(Object.keys(sessions).length).toBe(0);
+    });
+  });
+
+  describe('creates REPL sessions', () => {
+    beforeAll(() => {
+      jest.resetModules();
+      mockReplHistory();
+      // eslint-disable-next-line global-require
+      startREPL = require('../repl').default;
+    });
+
+    it('when starting the REPL', () => {
+      /* eslint-disable global-require */
+      startREPL = require('../repl').default;
+      const { sessions } = require('../repl');
+      /* eslint-enable global-require */
+
+      startREPL({});
+
+      expect(Object.keys(sessions).length).toBe(1);
+    });
+
+    it('when establishing a socket connection', () => {
+      jest.resetModules();
+      /* eslint-disable global-require */
+      startREPL = require('../repl').default;
+      const { sessions } = require('../repl');
+      const { handleConnection } = require.requireActual('../socketRepl');
+      const net = require('net');
+      /* eslint-enable global-require */
+
+      startREPL({});
+
+      expect(handleConnection(new net.Socket())).toBeDefined();
+      expect(Object.keys(sessions).length).toBe(2);
+      expect(handleConnection(new net.Socket())).toBeDefined();
+      expect(Object.keys(sessions).length).toBe(3);
+    });
+
+    it('that are isolated by unique and incrementing ids', () => {
+      jest.resetModules();
+      /* eslint-disable global-require */
+      startREPL = require('../repl').default;
+      const { handleConnection } = require.requireActual('../socketRepl');
+      const net = require('net');
+      /* eslint-enable global-require */
+
+      startREPL({});
+
+      expect(handleConnection(new net.Socket()).sessionId).toBe(1);
+      expect(handleConnection(new net.Socket()).sessionId).toBe(2);
     });
   });
 

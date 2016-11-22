@@ -9,7 +9,7 @@ import type { REPLSession } from './repl';
 let socketServer: ?net$Server = null;
 const sockets: net$Socket[] = [];
 
-function handleConnection(socket: net$Socket): REPLSession {
+export function handleConnection(socket: net$Socket): REPLSession {
   const rl = readline.createInterface({
     input: socket,
     output: socket,

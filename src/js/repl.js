@@ -39,7 +39,7 @@ export type REPLSession = {
   isMain: boolean,
 };
 
-const sessions: { [key: number]: REPLSession } = {};
+export const sessions: { [key: number]: REPLSession } = {};
 
 
 /* eslint-disable indent */
