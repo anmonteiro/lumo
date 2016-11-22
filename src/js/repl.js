@@ -131,6 +131,10 @@ export function processLine(replSession: REPLSession, line: string): void {
         consumeBuffer(resultBuffer, rl.output);
         consumeBuffer(errorBuffer, process.stderr);
       } else {
+        if (isWhitespace(line)) {
+          // $FlowIssue: rl.output is there
+          rl.output.write('\n');
+        }
         prompt(rl);
         break;
       }
@@ -158,7 +162,7 @@ function handleSIGINT(replSession: REPLSession): void {
   session.input = '';
 
   // $FlowIssue: missing property in interface
-  session.rl.output.write('\n');
+  session.rl.output.write('\n\n');
 
   readline.clearLine(process.stdout, 0);
   readline.cursorTo(process.stdout, 0);

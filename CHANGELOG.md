@@ -21,6 +21,7 @@ at runtime ([#28](https://github.com/anmonteiro/lumo/issues/28)).
 the order they appear. Additionally, similarly to the Clojure REPL, arguments that
 appear after a main option will be bound to the `lumo.core/*command-line-args*`
 var, a seq of strings.
+- Print a newline when pressing ctrl+C or evaluating empty form ([#29](https://github.com/anmonteiro/lumo/issues/29)).
 
 ## [1.0.0-alpha3](https://github.com/anmonteiro/lumo/compare/1.0.0-alpha2...1.0.0-alpha3) (2016-11-15)
 
