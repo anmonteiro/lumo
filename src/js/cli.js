@@ -44,6 +44,7 @@ function getVersionString(): string {
 export function createBanner(): string {
   return `${getVersionString()}
 ${getClojureScriptVersionString()}
+ Docs: (doc function-name-here)
  Exit: Control+D or :cljs/quit or exit
 `;
 }
