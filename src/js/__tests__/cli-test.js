@@ -93,7 +93,7 @@ describe('getCliOpts', () => {
     expect(lumo.addSourcePaths).toHaveBeenCalledWith(['foo', 'bar']);
   });
 
-  it('sets repl to true and ignores main path -r specified before main', () => {
+  it('sets repl to true and ignores main path if -r specified before main', () => {
     const args = '-r foo.cljs';
     Object.defineProperty(process, 'argv', {
       value: ['', ''].concat(args.split(' ')),
@@ -103,6 +103,19 @@ describe('getCliOpts', () => {
     const [[parsedOpts]] = cljs.mock.calls;
 
     expect(parsedOpts.args).toEqual(['foo.cljs']);
+    expect(parsedOpts.repl).toBe(true);
+  });
+
+  it('sets repl to true and includes every other argument in args after a mainOpt', () => {
+    const args = '-r --verbose --socket-repl localhost:5555';
+    Object.defineProperty(process, 'argv', {
+      value: ['', ''].concat(args.split(' ')),
+    });
+
+    startCLI();
+    const [[parsedOpts]] = cljs.mock.calls;
+
+    expect(parsedOpts.args).toEqual(['--verbose', '--socket-repl', 'localhost:5555']);
     expect(parsedOpts.repl).toBe(true);
   });
 

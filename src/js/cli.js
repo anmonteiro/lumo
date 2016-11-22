@@ -127,9 +127,13 @@ function getCLIOpts(): CLIOptsType {
     args: [],
   };
   let foundMainOpt = false;
-  let option = parser.getopt();
 
-  while (!foundMainOpt && option != null) {
+  while (!foundMainOpt) {
+    const option = parser.getopt();
+    if (option == null) {
+      break;
+    }
+
     switch (option.option) {
       case '?':
         ret.help = true;
@@ -186,7 +190,6 @@ function getCLIOpts(): CLIOptsType {
       default:
         break;
     }
-    option = parser.getopt();
   }
 
   const optind = parser.optind();
