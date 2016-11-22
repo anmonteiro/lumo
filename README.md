@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="https://cdn.rawgit.com/leppert/lumo/add-new-lumo-logo/lumo-logo.svg" alt="Lumo’s logo" width="300"/>
+</p>
+
 # Lumo
 
 Standalone ClojureScript REPL on Node.js.
