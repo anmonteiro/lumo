@@ -98,17 +98,16 @@ function initClojureScriptEngine(opts: CLIOptsType): void {
   setRuntimeOpts(opts);
 }
 
-/* eslint-disable indent */
-export function execute(code: string,
-                        type: string = 'text',
-                        expression: boolean = true,
-                        printNilResult: boolean = true,
-                        setNS: ?string): void {
+export function execute(
+  code: string,
+  type: string = 'text',
+  expression: boolean = true,
+  printNilResult: boolean = true,
+  setNS: ?string): void {
   // $FlowIssue: context can have globals
   return ClojureScriptContext.lumo.repl.execute(
     type, code, expression, printNilResult, setNS);
 }
-/* eslint-enable indent */
 
 function executeScript(code: string, type: string): void {
   return execute(code, type, type !== 'path');
@@ -129,10 +128,9 @@ export function indentSpaceCount(text: string): number {
   return ClojureScriptContext.lumo.repl.indent_space_count(text);
 }
 
-/* eslint-disable indent */
-export function getHighlightCoordinates(text: string[],
-                                        pos: number): [number, number] {
-  /* eslint-enable indent */
+export function getHighlightCoordinates(
+  text: string[],
+  pos: number): [number, number] {
   // $FlowIssue: context can have globals
   return ClojureScriptContext.lumo.repl.get_highlight_coordinates(text, pos);
 }

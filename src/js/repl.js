@@ -41,12 +41,10 @@ export type REPLSession = {
 
 export const sessions: { [key: number]: REPLSession } = {};
 
-
-/* eslint-disable indent */
-export function prompt(rl: readline$Interface,
-                       isSecondary: boolean = false,
-                       p: string = cljs.getCurrentNamespace()): void {
-  /* eslint-enable indent */
+export function prompt(
+  rl: readline$Interface,
+  isSecondary: boolean = false,
+  p: string = cljs.getCurrentNamespace()): void {
   let promptText;
 
   if (isSecondary) {
@@ -174,12 +172,11 @@ function handleSIGINT(session: REPLSession): void {
   prompt(session.rl);
 }
 
-/* eslint-disable indent */
-function highlight(session: REPLSession,
-                   char: string,
-                   line: string,
-                   cursor: number): void {
-  /* eslint-enable indent */
+function highlight(
+  session: REPLSession,
+  char: string,
+  line: string,
+  cursor: number): void {
   const sessionId = session.sessionId;
   const rl = session.rl;
   const pos = cursor - 1;
