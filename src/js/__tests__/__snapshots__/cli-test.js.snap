@@ -14,6 +14,7 @@ Array [
 ClojureScript clojurescript-version
  Docs: (doc function-name-here)
  Exit: Control+D or :cljs/quit or exit
+
 ",
   ],
 ]

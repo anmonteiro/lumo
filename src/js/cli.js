@@ -46,6 +46,7 @@ export function createBanner(): string {
 ${getClojureScriptVersionString()}
  Docs: (doc function-name-here)
  Exit: Control+D or :cljs/quit or exit
+
 `;
 }
 
