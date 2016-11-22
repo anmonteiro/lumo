@@ -1,5 +1,6 @@
 /* @flow */
 
+import net from 'net';
 import * as util from '../util';
 
 // functions are hoisted, calling this before defining for readability
@@ -67,7 +68,6 @@ jest.mock('../cljs', () => ({
 jest.mock('../socketRepl', () => ({
   open: jest.fn(),
   close: jest.fn(),
-  handleConnection: jest.fn(),
 }));
 
 describe('startREPL', () => {
@@ -241,13 +241,20 @@ describe('startREPL', () => {
     it('should destroy all REPL sessions', () => {
       mockReplHistory('exit', process.stdout);
       /* eslint-disable global-require */
-      startREPL = require('../repl').default;
-      const { sessions } = require('../repl');
+      const repl = require('../repl');
+      startREPL = repl.default;
       /* eslint-enable global-require */
+      const originalObjectKeys = Object.keys;
+      let sessions;
+      Object.keys = jest.fn((x: {[key: mixed]: mixed}) => {
+        sessions = x;
+        return originalObjectKeys(x);
+      });
 
       startREPL({});
 
-      expect(Object.keys(sessions).length).toBe(0);
+      expect(originalObjectKeys(sessions).length).toBe(0);
+      Object.keys = originalObjectKeys;
     });
   });
 
@@ -259,46 +266,55 @@ describe('startREPL', () => {
       startREPL = require('../repl').default;
     });
 
-    it('when starting the REPL', () => {
-      /* eslint-disable global-require */
-      startREPL = require('../repl').default;
-      const { sessions } = require('../repl');
-      /* eslint-enable global-require */
+    describe('socket REPL', () => {
+      const netCreateServer = net.createServer;
+      let handleConnection;
+      let socket;
 
-      startREPL({});
+      beforeEach(() => {
+        jest.resetModules();
+        /* eslint-disable global-require */
+        startREPL = require('../repl').default;
+        const socketRepl = require.requireActual('../socketRepl');
+        net.createServer = jest.fn((callback: SocketCallback) => {
+          handleConnection = callback;
+          return {
+            listen: jest.fn(),
+            close: jest.fn(),
+          };
+        });
+        socketRepl.open(12345);
+        socket = new net.Socket();
+        socket.on = jest.fn((type: string, f: () => void) => f());
+        /* eslint-enable global-require */
+      });
 
-      expect(Object.keys(sessions).length).toBe(1);
-    });
+      afterEach(() => {
+        net.createServer = netCreateServer;
+      });
 
-    it('when establishing a socket connection', () => {
-      jest.resetModules();
-      /* eslint-disable global-require */
-      startREPL = require('../repl').default;
-      const { sessions } = require('../repl');
-      const { handleConnection } = require.requireActual('../socketRepl');
-      const net = require('net');
-      /* eslint-enable global-require */
+      it('when establishing a socket connection', () => {
+        const repl = require('../repl'); // eslint-disable-line global-require
+        const replCreateSession = repl.createSession;
+        repl.createSession = jest.fn(() => ({
+          sessionId: 0,
+        }));
+        startREPL({});
 
-      startREPL({});
+        handleConnection(socket);
+        handleConnection(socket);
 
-      expect(handleConnection(new net.Socket())).toBeDefined();
-      expect(Object.keys(sessions).length).toBe(2);
-      expect(handleConnection(new net.Socket())).toBeDefined();
-      expect(Object.keys(sessions).length).toBe(3);
-    });
+        expect(repl.createSession).toHaveBeenCalledTimes(2);
 
-    it('that are isolated by unique and incrementing ids', () => {
-      jest.resetModules();
-      /* eslint-disable global-require */
-      startREPL = require('../repl').default;
-      const { handleConnection } = require.requireActual('../socketRepl');
-      const net = require('net');
-      /* eslint-enable global-require */
+        repl.createSession = replCreateSession;
+      });
 
-      startREPL({});
+      it('that are isolated by unique and incrementing ids', () => {
+        startREPL({});
 
-      expect(handleConnection(new net.Socket()).sessionId).toBe(1);
-      expect(handleConnection(new net.Socket()).sessionId).toBe(2);
+        expect(handleConnection(socket).sessionId).toBe(1);
+        expect(handleConnection(socket).sessionId).toBe(2);
+      });
     });
   });
 

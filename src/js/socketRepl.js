@@ -4,12 +4,13 @@ import net from 'net';
 import readline from 'readline';
 import { createBanner } from './cli';
 import { createSession, deleteSession, prompt, processLine, unhookOutputStreams } from './repl';
+
 import type { REPLSession } from './repl';
 
 let socketServer: ?net$Server = null;
 const sockets: net$Socket[] = [];
 
-export function handleConnection(socket: net$Socket): REPLSession {
+function handleConnection(socket: net$Socket): REPLSession {
   const rl = readline.createInterface({
     input: socket,
     output: socket,
