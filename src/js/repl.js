@@ -21,17 +21,26 @@ type KeyType = {
 type StreamWriteHandler = (line: string) => void;
 
 const exitCommands = new Set([':cljs/quit', 'exit']);
-let input: string = '';
+let sessionCount = 0;
+const input: { [key: number]: string } = {};
+const resultBuffer: string[] = [];
+const errorBuffer: string[] = [];
 let lastKeypressTime: number;
 let isPasting: boolean;
 const pendingHighlights = [];
 const stdoutWrite = process.stdout.write;
 const stderrWrite = process.stderr.write;
-
-const resultBuffer: string[] = [];
-const errorBuffer: string[] = [];
 const writeToResultBuffer = (line: string) => { resultBuffer.push(line); };
 const writeToErrorBuffer = (line: string) => { errorBuffer.push(line); };
+
+export type REPLSession = {
+  sessionId: number,
+  rl: readline$Interface,
+  isMain: boolean,
+};
+
+export const sessions: { [key: number]: REPLSession } = {};
+
 
 /* eslint-disable indent */
 export function prompt(rl: readline$Interface,
@@ -74,30 +83,52 @@ function consumeBuffer(buffer: string[], stream: stream$Writable | tty$WriteStre
   }
 }
 
-export function processLine(rl: readline$Interface, line: string, isMainRepl: boolean): void {
+export function deleteSession(session: REPLSession): void {
+  delete sessions[session.sessionId];
+}
+
+function stopREPL(): void {
+  socketServerClose();
+
+  const keys = Object.keys(sessions);
+  keys.forEach((sessionId: string) => deleteSession(sessions[parseInt(sessionId, 10)]));
+
+  unhookOutputStreams();
+
+  process.exit();
+}
+
+export function processLine(session: REPLSession, line: string): void {
+  const sessionId = session.sessionId;
+  const rl = session.rl;
+
   let extraForms = false;
+
+  if (!input[sessionId]) {
+    input[sessionId] = '';
+  }
 
   if (exitCommands.has(line)) {
     // $FlowIssue - use of rl.output
-    return isMainRepl ? process.exit() : rl.output.destroy();
+    return session.isMain ? stopREPL() : rl.output.destroy();
   }
 
-  if (isWhitespace(input)) {
-    input = line;
+  if (isWhitespace(input[sessionId])) {
+    input[sessionId] = line;
   } else {
-    input = `${input}\n${line}`;
+    input[sessionId] = `${input[sessionId]}\n${line}`;
   }
 
   for (;;) {
-    extraForms = cljs.isReadable(input);
+    extraForms = cljs.isReadable(input[sessionId]);
 
     if (extraForms !== false) {
-      input = input.substring(0, input.length - extraForms.length);
+      input[sessionId] = input[sessionId].substring(0, input[sessionId].length - extraForms.length);
 
-      if (!isWhitespace(input)) {
+      if (!isWhitespace(input[sessionId])) {
         hookOutputStreams(writeToResultBuffer,
-                          isMainRepl ? writeToErrorBuffer : writeToResultBuffer);
-        cljs.execute(input);
+                          session.isMain ? writeToErrorBuffer : writeToResultBuffer);
+        cljs.execute(input[sessionId]);
         unhookOutputStreams();
 
         // $FlowIssue - use of rl.output
@@ -108,13 +139,13 @@ export function processLine(rl: readline$Interface, line: string, isMainRepl: bo
         break;
       }
 
-      input = extraForms;
+      input[sessionId] = extraForms;
     } else {
       // partially entered form, prepare for processing the next line.
       prompt(rl, true);
 
       if (!isPasting) {
-        const spaceCount = cljs.indentSpaceCount(input);
+        const spaceCount = cljs.indentSpaceCount(input[sessionId]);
         if (spaceCount !== -1) {
           rl.write(' '.repeat(spaceCount));
         }
@@ -126,34 +157,35 @@ export function processLine(rl: readline$Interface, line: string, isMainRepl: bo
   return undefined;
 }
 
-function handleSIGINT(rl: readline$Interface): void {
-  input = '';
+function handleSIGINT(session: REPLSession): void {
+  input[session.sessionId] = '';
 
   // $FlowIssue: missing property in interface
-  rl.output.write('\n');
+  session.rl.output.write('\n');
 
   readline.clearLine(process.stdout, 0);
   readline.cursorTo(process.stdout, 0);
 
-  rl.write(null, {
+  session.rl.write(null, {
     ctrl: true,
     name: 'u',
   });
 
-  prompt(rl);
+  prompt(session.rl);
 }
 
 /* eslint-disable indent */
-function highlight(rlInt: readline$Interface,
+function highlight(session: REPLSession,
                    char: string,
                    line: string,
                    cursor: number): void {
   /* eslint-enable indent */
-  const rl = rlInt;
+  const sessionId = session.sessionId;
+  const rl = session.rl;
   const pos = cursor - 1;
 
   if (char === ')' || char === ']' || char === '}') {
-    const lines = input === '' ? [] : input.split('\n');
+    const lines = input[sessionId] === '' ? [] : input[sessionId].split('\n');
     lines.push(line);
     const [cursorX, linesUp] = cljs.getHighlightCoordinates(lines, pos);
 
@@ -182,7 +214,7 @@ function highlight(rlInt: readline$Interface,
         readStream.destroy();
         rl.write(c, key);
         // $FlowIssue
-        highlight(rl, c, rl.line, rl.cursor);
+        highlight(session, c, rl.line, rl.cursor);
       });
 
       // $FlowIssue
@@ -208,15 +240,35 @@ function highlight(rlInt: readline$Interface,
   }
 }
 
-function handleKeyPress(rl: readline$Interface, c: string, key: KeyType): void {
+function handleKeyPress(session: REPLSession, c: string, key: KeyType): void {
+  const rl = session.rl;
+
   const now = currentTimeMicros();
   isPasting = (now - lastKeypressTime) < 10000;
   lastKeypressTime = now;
 
   if (!isPasting) {
     // $FlowIssue: these properties exist
-    highlight(rl, c, rl.line, rl.cursor);
+    highlight(session, c, rl.line, rl.cursor);
   }
+}
+
+export function createSession(rl: readline$Interface, isMain: boolean): REPLSession {
+  sessionCount += 1;
+
+  const session: REPLSession = {
+    sessionId: sessionCount - 1,
+    rl,
+    isMain,
+  };
+
+  if (!input[session.sessionId]) {
+    input[session.sessionId] = '';
+  }
+
+  sessions[session.sessionId] = session;
+
+  return session;
 }
 
 function completer(line: string): [string[], string] {
@@ -237,6 +289,8 @@ export default function startREPL(opts: CLIOptsType): void {
     completer,
   });
 
+  const session = createSession(rl, true);
+
   // $FlowIssue
   readline.emitKeypressEvents(process.stdin, rl);
   if (process.stdin.isTTY && !dumbTerminal) {
@@ -246,10 +300,10 @@ export default function startREPL(opts: CLIOptsType): void {
 
   prompt(rl, false, 'cljs.user');
 
-  rl.on('line', (line: string) => processLine(rl, line, true));
-  rl.on('SIGINT', () => handleSIGINT(rl));
-  rl.on('close', () => socketServerClose());
+  rl.on('line', (line: string) => processLine(session, line));
+  rl.on('SIGINT', () => handleSIGINT(session, rl));
+  rl.on('close', () => stopREPL());
 
   lastKeypressTime = currentTimeMicros();
-  process.stdin.on('keypress', (c: string, key: KeyType) => handleKeyPress(rl, c, key));
+  process.stdin.on('keypress', (c: string, key: KeyType) => handleKeyPress(session, c, key));
 }
