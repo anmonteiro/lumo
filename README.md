@@ -21,13 +21,19 @@ Read the [announcement blog post](https://anmonteiro.com/2016/11/the-fastest-clo
 
 ## Installation
 
-### Using [NPM](https://www.npmjs.com/package/lumo-cljs)
+### Via [NPM](https://www.npmjs.com/package/lumo-cljs)
 
 ```shell
 $ npm install -g lumo-cljs
 ```
 
 _Note: the installed binary will be named `lumo` rather than `lumo-cljs`_
+
+### Via [Homebrew](http://brew.sh/) (macOS)
+
+```shell
+$ brew install lumo
+```
 
 ### Manual
 
