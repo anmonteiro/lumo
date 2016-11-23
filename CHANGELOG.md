@@ -2,6 +2,11 @@
 
 ## [master](https://github.com/anmonteiro/lumo/compare/1.0.0...HEAD) (unreleased)
 
+### Bug fixes
+
+- Regression where specifying a main script to be executed would print the banner
+as if entering the REPL.
+
 ## [1.0.0](https://github.com/anmonteiro/lumo/compare/1.0.0-alpha3...1.0.0) (2016-11-22)
 
 ### New features

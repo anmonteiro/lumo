@@ -279,6 +279,15 @@ describe('print Functions', () => {
       startCLI();
       expect(process.stdout.write).not.toHaveBeenCalled();
     });
+
+    it('doesn\'t print if not entering the REPL (main script)', () => {
+      Object.defineProperty(process, 'argv', {
+        value: ['', '', 'foo.cljs'],
+      });
+
+      startCLI();
+      expect(process.stdout.write).not.toHaveBeenCalled();
+    });
   });
 
   describe('printHelp', () => {

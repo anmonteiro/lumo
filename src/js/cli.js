@@ -205,7 +205,7 @@ function getCLIOpts(): CLIOptsType {
 
 export default function startCLI(): void {
   const opts = getCLIOpts();
-  const { args, cache, classpath, help, legal, mainNsName,
+  const { args, cache, classpath, help, legal, mainNsName, mainScript,
           quiet, repl, scripts } = opts;
   const autoCache = opts['auto-cache'];
   const socketReplArgs = opts['socket-repl'];
@@ -221,9 +221,9 @@ export default function startCLI(): void {
 
   v8.setFlagsFromString('--use_strict');
 
-  opts.repl = (scripts.length === 0 &&
-               !mainNsName &&
-               args.length === 0) || repl;
+  if (scripts.length === 0 && !mainNsName && !mainScript && args.length === 0) {
+    opts.repl = true;
+  }
 
   if (cache || autoCache) {
     const cachePath = cache || '.lumo_cache';
