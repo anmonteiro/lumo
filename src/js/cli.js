@@ -205,8 +205,8 @@ function getCLIOpts(): CLIOptsType {
 
 export default function startCLI(): void {
   const opts = getCLIOpts();
-  const { args, cache, classpath, help, legal, mainNsName, mainScript,
-          quiet, repl, scripts } = opts;
+  const { args, cache, classpath, help, legal, mainNsName,
+          mainScript, quiet, scripts } = opts;
   const autoCache = opts['auto-cache'];
   const socketReplArgs = opts['socket-repl'];
 
