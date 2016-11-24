@@ -7,6 +7,7 @@ import fs from 'fs';
 type replHistory$Opts = {
   input: stream$Readable,
   output?: stream$Stream,
+  // $FlowIssue: completer type definition is wrong
   completer?: (line: string) => [string[], string],
   terminal?: boolean,
   historySize?: number,
