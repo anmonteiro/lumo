@@ -16,7 +16,7 @@
 
 (defn filenames
   [path]
-  (if (jarfile? path)
+  (if (or (= "" path) (jarfile? path))
     path
     (let [root (js->clj (js/LUMO_READDIR path))
           root-files (filter #(file? (str path "/" %)) root)

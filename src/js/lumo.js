@@ -192,8 +192,8 @@ export function stat(path: string): fs.Stats {
   return fs.statSync(path);
 }
 
-export function readdir(path: string): string[] {
-  return fs.readdirSync(path);
+export function readdir(filePath: string): string[] {
+  return fs.readdirSync(filePath);
 }
 
 export function readSourcePaths(): string[] {
