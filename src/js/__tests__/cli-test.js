@@ -93,7 +93,7 @@ describe('getCliOpts', () => {
     expect(lumo.addSourcePaths).toHaveBeenCalledWith(['foo', 'bar']);
   });
 
-  it('sets repl to true and ignores main path -r specified before main', () => {
+  it('sets repl to true and ignores main path if -r specified before main', () => {
     const args = '-r foo.cljs';
     Object.defineProperty(process, 'argv', {
       value: ['', ''].concat(args.split(' ')),
@@ -103,6 +103,19 @@ describe('getCliOpts', () => {
     const [[parsedOpts]] = cljs.mock.calls;
 
     expect(parsedOpts.args).toEqual(['foo.cljs']);
+    expect(parsedOpts.repl).toBe(true);
+  });
+
+  it('sets repl to true and includes every other argument in args after a mainOpt', () => {
+    const args = '-r --verbose --socket-repl localhost:5555';
+    Object.defineProperty(process, 'argv', {
+      value: ['', ''].concat(args.split(' ')),
+    });
+
+    startCLI();
+    const [[parsedOpts]] = cljs.mock.calls;
+
+    expect(parsedOpts.args).toEqual(['--verbose', '--socket-repl', 'localhost:5555']);
     expect(parsedOpts.repl).toBe(true);
   });
 
@@ -136,7 +149,7 @@ describe('getCliOpts', () => {
       expect(parsedOpts['socket-repl']).toBe('5555');
       expect(parsedOpts.repl).toBe(true);
       expect(socketRepl.open).toHaveBeenCalledTimes(1);
-      expect(socketRepl.open).toHaveBeenCalledWith(5555);
+      expect(socketRepl.open).toHaveBeenCalledWith(5555, undefined);
     });
 
     it('on host and port if only both given', () => {
@@ -247,6 +260,33 @@ describe('print Functions', () => {
 
       startCLI();
       expect(process.stdout.write.mock.calls).toMatchSnapshot();
+    });
+
+    it('prints socket REPL info in addition to the banner if -n specified', () => {
+      Object.defineProperty(process, 'argv', {
+        value: ['', '', '-n', '5555'],
+      });
+
+      startCLI();
+      expect(process.stdout.write.mock.calls).toMatchSnapshot();
+    });
+
+    it('doesn\'t print if -q / --quiet', () => {
+      Object.defineProperty(process, 'argv', {
+        value: ['', '', '-q'],
+      });
+
+      startCLI();
+      expect(process.stdout.write).not.toHaveBeenCalled();
+    });
+
+    it('doesn\'t print if not entering the REPL (main script)', () => {
+      Object.defineProperty(process, 'argv', {
+        value: ['', '', 'foo.cljs'],
+      });
+
+      startCLI();
+      expect(process.stdout.write).not.toHaveBeenCalled();
     });
   });
 

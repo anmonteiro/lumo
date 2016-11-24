@@ -7,6 +7,7 @@ import fs from 'fs';
 type replHistory$Opts = {
   input: stream$Readable,
   output?: stream$Stream,
+  // $FlowIssue: completer type definition is wrong
   completer?: (line: string) => [string[], string],
   terminal?: boolean,
   historySize?: number,
@@ -27,12 +28,11 @@ function getHistoryStream(path: string): stream$Writable {
   return histStream;
 }
 
-/* eslint-disable indent */
-function onLoad(path: string,
-                maxLength: number,
-                offset: number,
-                cb: (ret: string[]) => void): void {
-  /* eslint-enable indent */
+function onLoad(
+  path: string,
+  maxLength: number,
+  offset: number,
+  cb: (ret: string[]) => void): void {
   // $FlowIssue: it's there
   const { fd } = getHistoryStream(path);
   const rs = fs.createReadStream(path, {

@@ -7,12 +7,31 @@ Array [
 ]
 `;
 
+exports[`print Functions printBanner prints socket REPL info in addition to the banner if -n specified 1`] = `
+Array [
+  Array [
+    "Lumo X.X.X
+ClojureScript clojurescript-version
+ Docs: (doc function-name-here)
+ Exit: Control+D or :cljs/quit or exit
+
+",
+  ],
+  Array [
+    "Lumo socket REPL listening at localhost:5555.
+",
+  ],
+]
+`;
+
 exports[`print Functions printBanner should print the banner to stdout 1`] = `
 Array [
   Array [
     "Lumo X.X.X
 ClojureScript clojurescript-version
+ Docs: (doc function-name-here)
  Exit: Control+D or :cljs/quit or exit
+
 ",
   ],
 ]

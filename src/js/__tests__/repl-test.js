@@ -1,5 +1,6 @@
 /* @flow */
 
+import net from 'net';
 import * as util from '../util';
 
 // functions are hoisted, calling this before defining for readability
@@ -43,11 +44,30 @@ function mockReplHistory(line?: string, output?: stream$Writable): void {
   })));
 }
 
-jest.mock('readline');
+jest.mock('readline', () => ({
+  on: jest.fn(),
+  emitKeypressEvents: jest.fn(),
+  clearLine: jest.fn(),
+  cursorTo: jest.fn(),
+  createInterface: jest.fn(() => ({
+    on: jest.fn(),
+    output: {
+      write: jest.fn(),
+    },
+    setPrompt: jest.fn(),
+    prompt: jest.fn(),
+  })),
+}));
+
 jest.mock('../cljs', () => ({
   isReadable: jest.fn((input: string) => ''),
   execute: jest.fn(),
   getCurrentNamespace: jest.fn(() => 'cljs.user'),
+}));
+
+jest.mock('../socketRepl', () => ({
+  open: jest.fn(),
+  close: jest.fn(),
 }));
 
 describe('startREPL', () => {
@@ -163,7 +183,7 @@ describe('startREPL', () => {
     });
   });
 
-  describe('calls process.exit if an exit command is specified', () => {
+  describe('exits when an exit command is specified', () => {
     const exit = process.exit;
 
     beforeEach(() => {
@@ -175,7 +195,7 @@ describe('startREPL', () => {
       process.exit = exit;
     });
 
-    it(':cljs/quit', () => {
+    it('with ":cljs/quit"', () => {
       mockReplHistory(':cljs/quit', process.stdout);
       // eslint-disable-next-line global-require
       startREPL = require('../repl').default;
@@ -185,7 +205,7 @@ describe('startREPL', () => {
       expect(process.exit).toHaveBeenCalled();
     });
 
-    it('exit', () => {
+    it('with "exit"', () => {
       mockReplHistory('exit', process.stdout);
       // eslint-disable-next-line global-require
       startREPL = require('../repl').default;
@@ -193,6 +213,108 @@ describe('startREPL', () => {
       startREPL({});
 
       expect(process.exit).toHaveBeenCalled();
+    });
+
+    it('even if whitespace present', () => {
+      mockReplHistory('  :cljs/quit  ', process.stdout);
+      // eslint-disable-next-line global-require
+      startREPL = require('../repl').default;
+
+      startREPL({});
+
+      expect(process.exit).toHaveBeenCalled();
+    });
+
+
+    it('should close the socket server', () => {
+      mockReplHistory('exit', process.stdout);
+      /* eslint-disable global-require */
+      startREPL = require('../repl').default;
+      const { close } = require('../socketRepl');
+      /* eslint-enable global-require */
+
+      startREPL({});
+
+      expect(close).toHaveBeenCalled();
+    });
+
+    it('should destroy all REPL sessions', () => {
+      mockReplHistory('exit', process.stdout);
+      /* eslint-disable global-require */
+      const repl = require('../repl');
+      startREPL = repl.default;
+      /* eslint-enable global-require */
+      const originalObjectKeys = Object.keys;
+      let sessions;
+      Object.keys = jest.fn((x: {[key: mixed]: mixed}) => {
+        sessions = x;
+        return originalObjectKeys(x);
+      });
+
+      startREPL({});
+
+      expect(originalObjectKeys(sessions).length).toBe(0);
+      Object.keys = originalObjectKeys;
+    });
+  });
+
+  describe('creates REPL sessions', () => {
+    beforeAll(() => {
+      jest.resetModules();
+      mockReplHistory();
+      // eslint-disable-next-line global-require
+      startREPL = require('../repl').default;
+    });
+
+    describe('socket REPL', () => {
+      const netCreateServer = net.createServer;
+      let handleConnection;
+      let socket;
+
+      beforeEach(() => {
+        jest.resetModules();
+        /* eslint-disable global-require */
+        startREPL = require('../repl').default;
+        const socketRepl = require.requireActual('../socketRepl');
+        net.createServer = jest.fn((callback: SocketCallback) => {
+          handleConnection = callback;
+          return {
+            listen: jest.fn(),
+            close: jest.fn(),
+          };
+        });
+        socketRepl.open(12345);
+        socket = new net.Socket();
+        socket.on = jest.fn((type: string, f: () => void) => f());
+        /* eslint-enable global-require */
+      });
+
+      afterEach(() => {
+        net.createServer = netCreateServer;
+      });
+
+      it('when establishing a socket connection', () => {
+        const repl = require('../repl'); // eslint-disable-line global-require
+        const replCreateSession = repl.createSession;
+        repl.createSession = jest.fn(() => ({
+          sessionId: 0,
+        }));
+        startREPL({});
+
+        handleConnection(socket);
+        handleConnection(socket);
+
+        expect(repl.createSession).toHaveBeenCalledTimes(2);
+
+        repl.createSession = replCreateSession;
+      });
+
+      it('that are isolated by unique and incrementing ids', () => {
+        startREPL({});
+
+        expect(handleConnection(socket).sessionId).toBe(1);
+        expect(handleConnection(socket).sessionId).toBe(2);
+      });
     });
   });
 

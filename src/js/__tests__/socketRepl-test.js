@@ -18,6 +18,15 @@ jest.mock('readline', () => ({
   })),
 }));
 
+function mockCreateSession(): void {
+  const repl = require('../repl'); // eslint-disable-line global-require
+  repl.createSession = jest.fn((rl: readline$Interface, isMain: boolean) => ({
+    sessionId: 1,
+    rl,
+    isMain,
+  }));
+}
+
 type SocketCallback = { (socket: net$Socket): void };
 
 const serverHost = '0.0.0.0';
@@ -136,11 +145,13 @@ describe('handleConnection', () => {
   });
 
   it('prints welcome message and prompt', () => {
+    mockCreateSession();
     handleConnection(socket);
     expect(socket.write).toHaveBeenCalled();
   });
 
   it('tears down every active socket connection on close', () => {
+    mockCreateSession();
     handleConnection(socket);
     socket.destroy = jest.fn();
     socketRepl.close();

@@ -3,24 +3,31 @@
 import net from 'net';
 import readline from 'readline';
 import { createBanner } from './cli';
-import { prompt, processLine, unhookOutputStreams } from './repl';
+import { createSession, deleteSession, prompt, processLine, unhookOutputStreams } from './repl';
+
+import type { REPLSession } from './repl';
 
 let socketServer: ?net$Server = null;
-const sockets: { [id: string]: net$Socket } = {};
+const sockets: net$Socket[] = [];
 
-function handleConnection(socket: net$Socket): readline$Interface {
-  const socketId = `${socket.remoteAddress || ''}:${socket.remotePort}`;
-  socket.on('close', () => delete sockets[socketId]);
-  sockets[socketId] = socket;
-
+function handleConnection(socket: net$Socket): REPLSession {
   const rl = readline.createInterface({
     input: socket,
     output: socket,
   });
 
+  const session = createSession(rl, false);
+
+  socket.on('close', () => {
+    delete sockets[session.sessionId];
+    deleteSession(session);
+  });
+
+  sockets[session.sessionId] = socket;
+
   rl.on('line', (line: string) => {
     if (!socket.destroyed) {
-      processLine(rl, line, false);
+      processLine(session, line, false);
     }
   });
 
@@ -29,7 +36,8 @@ function handleConnection(socket: net$Socket): readline$Interface {
   // $FlowIssue - output missing from readline$Interface
   rl.output.write(createBanner());
   prompt(rl, false, 'cljs.user');
-  return rl;
+
+  return session;
 }
 
 export function close(): void {
@@ -39,12 +47,11 @@ export function close(): void {
     return;
   }
 
-  Object.keys(sockets)
-    .forEach((socketId: string) => {
-      try {
-        sockets[socketId].destroy();
-      } catch (e) {} // eslint-disable-line no-empty
-    });
+  sockets.forEach((socket: net$Socket) => {
+    try {
+      socket.destroy();
+    } catch (e) {} // eslint-disable-line no-empty
+  });
 
   socketServer.close();
 }

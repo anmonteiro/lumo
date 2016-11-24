@@ -44,7 +44,9 @@ function getVersionString(): string {
 export function createBanner(): string {
   return `${getVersionString()}
 ${getClojureScriptVersionString()}
+ Docs: (doc function-name-here)
  Exit: Control+D or :cljs/quit or exit
+
 `;
 }
 
@@ -125,9 +127,13 @@ function getCLIOpts(): CLIOptsType {
     args: [],
   };
   let foundMainOpt = false;
-  let option = parser.getopt();
 
-  while (!foundMainOpt && option != null) {
+  while (!foundMainOpt) {
+    const option = parser.getopt();
+    if (option == null) {
+      break;
+    }
+
     switch (option.option) {
       case '?':
         ret.help = true;
@@ -184,7 +190,6 @@ function getCLIOpts(): CLIOptsType {
       default:
         break;
     }
-    option = parser.getopt();
   }
 
   const optind = parser.optind();
@@ -198,15 +203,27 @@ function getCLIOpts(): CLIOptsType {
   return ret;
 }
 
-function processOpts(cliOpts: CLIOptsType): CLIOptsType {
-  const opts = { ...cliOpts };
-  const { cache, classpath, args, mainNSName, repl, scripts } = opts;
+export default function startCLI(): void {
+  const opts = getCLIOpts();
+  const { args, cache, classpath, help, legal, mainNsName,
+          mainScript, quiet, scripts } = opts;
   const autoCache = opts['auto-cache'];
-  const startSocketRepl = opts['socket-repl'];
+  const socketReplArgs = opts['socket-repl'];
 
-  opts.repl = (scripts.length === 0 &&
-               !mainNSName &&
-               args.length === 0) || repl;
+  // if help, print help and bail
+  if (help) {
+    return printHelp();
+  }
+
+  if (legal) {
+    return printLegal();
+  }
+
+  v8.setFlagsFromString('--use_strict');
+
+  if (scripts.length === 0 && !mainNsName && !mainScript && args.length === 0) {
+    opts.repl = true;
+  }
 
   if (cache || autoCache) {
     const cachePath = cache || '.lumo_cache';
@@ -227,35 +244,22 @@ function processOpts(cliOpts: CLIOptsType): CLIOptsType {
     lumo.addSourcePaths(srcPaths);
   }
 
-  if (startSocketRepl) {
-    const hostPortTokens = opts['socket-repl'].split(':');
-    if (hostPortTokens.length === 1 && !isNaN(hostPortTokens[0])) {
-      socketRepl.open(parseInt(hostPortTokens[0], 10));
-    } else if (hostPortTokens.length === 2 && !isNaN(hostPortTokens[1])) {
-      socketRepl.open(parseInt(hostPortTokens[1], 10), hostPortTokens[0]);
-    }
-  }
-
-  return opts;
-}
-
-export default function startCLI(): void {
-  const opts = processOpts(getCLIOpts());
-  v8.setFlagsFromString('--use_strict');
-
-  const { help, legal, quiet, repl } = opts;
-
-  // if help, print help and bail
-  if (help) {
-    return printHelp();
-  }
-
-  if (legal) {
-    return printLegal();
-  }
-
-  if (repl && !quiet) {
+  if (opts.repl && !quiet) {
     printBanner();
+  }
+
+  if (socketReplArgs != null) {
+    let [host, port] = socketReplArgs.split(':');
+
+    if (host != null && !isNaN(host)) {
+      [host, port] = [port, host];
+    }
+
+    socketRepl.open(parseInt(port, 10), host);
+    if (!quiet) {
+      process.stdout.write(
+        `Lumo socket REPL listening at ${host != null ? host : 'localhost'}:${port}.\n`);
+    }
   }
 
   return startClojureScriptEngine(opts);
