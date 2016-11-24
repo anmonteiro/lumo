@@ -7,7 +7,7 @@ import JSZip from 'jszip';
 import { isWindows } from './util';
 
 let nexeres;
-const sourcePaths = [];
+const sourcePaths = [''];
 
 if (!__DEV__) {
   // $FlowExpectedError: only exists in the Nexe bundle.
@@ -107,16 +107,16 @@ export function fileExists(filename: string): boolean {
   return false;
 }
 
-export function stat(path: string): fs.Stats {
-  return fs.statSync(path);
+export function stat(filePath: string): fs.Stats {
+  return fs.statSync(filePath);
 }
 
-export function readdir(path: string): string[] {
-  return fs.readdirSync(path);
+export function readdir(filePath: string): string[] {
+  return fs.readdirSync(filePath);
 }
 
-export function readSourcePaths(): string[]{
-  return sourcePaths.slice(0);
+export function readSourcePaths(): string[] {
+  return [...sourcePaths];
 }
 
 export function addSourcePaths(srcPaths: string[]): void {
