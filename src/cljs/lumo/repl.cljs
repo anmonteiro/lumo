@@ -512,8 +512,8 @@
   [lib]
   (str \/
     (.. (name lib)
-      (replace \- \_)
-      (replace \. \/))))
+      (split \-) (join \_)
+      (split \.) (join \/))))
 
 (defn- root-directory
   "Returns the root resource path for a lib"
