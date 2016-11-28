@@ -6,6 +6,8 @@
 
 - Regression where specifying a main script to be executed would print the banner
 as if entering the REPL.
+- Fix the semantics of the transformation of the load path into a classpath path
+when using the `load` REPL special ([#49](https://github.com/anmonteiro/lumo/issues/49)).
 
 ## [1.0.0](https://github.com/anmonteiro/lumo/compare/1.0.0-alpha3...1.0.0) (2016-11-22)
 

@@ -9,9 +9,9 @@ Copyright (c) 2016 Antonio Nuno Monteiro
 Distributed under the Eclipse Public License either version 1.0 or (at your
 option) any later version.
 
+
 Lumo may use the following copyrighted software, which use is hereby
 acknowledged.
-
 
 JSZip
 -----
@@ -21,10 +21,10 @@ Antonio Afonso
 MIT License
 
 
-minimist
---------
+node-getopt
+-----------
 
-Copyright (c) 2010 James Halliday (mail@substack.net)
+Copyright (c) 2013, Joyent, Inc. All rights reserved.
 MIT License
 
 

@@ -63,3 +63,7 @@
       (is (contains? (set (lumo/get-completions "fo")) "foo"))
       (is (contains? (set (lumo/get-completions "lon")) "longer-var"))
       (is (contains? (set (lumo/get-completions "(lon")) "(longer-var")))))
+
+(deftest test-root-resource
+  (is (= (lumo/root-resource 'foo-bar-baz) "/foo_bar_baz"))
+  (is (= (lumo/root-resource 'foo.bar.baz) "/foo/bar/baz")))
