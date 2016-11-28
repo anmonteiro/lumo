@@ -188,13 +188,9 @@ export function addSourcePaths(srcPaths: string[]): void {
   sourcePaths.push(...expanded);
 }
 
-export function stat(path: string): fs.Stats {
-  return fs.statSync(path);
-}
+export const stat = fs.statSync;
 
-export function readdir(filePath: string): string[] {
-  return fs.readdirSync(filePath);
-}
+export const readdir = fs.readdirSync;
 
 export function readSourcePaths(): string[] {
   return [...sourcePaths];
