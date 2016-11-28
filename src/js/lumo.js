@@ -107,13 +107,9 @@ export function fileExists(filename: string): boolean {
   return false;
 }
 
-export function stat(filePath: string): fs.Stats {
-  return fs.statSync(filePath);
-}
+export const stat = fs.statSync;
 
-export function readdir(filePath: string): string[] {
-  return fs.readdirSync(filePath);
-}
+export const readdir = fs.readdirSync;
 
 export function readSourcePaths(): string[] {
   return [...sourcePaths];

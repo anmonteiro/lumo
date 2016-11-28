@@ -1,45 +1,51 @@
 (ns lumo.classpath
   (:require [clojure.string :as string]))
 
-(defn directory?
+(defn- directory?
   [path]
   (. (js/LUMO_STAT path) isDirectory))
 
-(defn file?
+(defn- file?
   [path]
   (and (. (js/LUMO_STAT path) isFile) (or (string/ends-with? path ".cljs")
-                                          (string/ends-with? path ".cljc"))))
+                                          (string/ends-with? path ".cljc")
+                                          (string/ends-with? path ".clj"))))
 
-(defn jarfile?
+(defn- jarfile?
   [path]
   (string/ends-with? path ".jar"))
 
-(defn filenames
+(defn- filenames
   [path]
-  (if (or (= "" path) (jarfile? path))
+  (if (or (identical? "" path) (jarfile? path))
     path
-    (let [root (js->clj (js/LUMO_READDIR path))
+    (let [root (js/LUMO_READDIR path)
           root-files (filter #(file? (str path "/" %)) root)
           sub-dirs (map #(str path "/" %) (filter #(directory? (str path "/" %)) root))
-          sub-files (map filenames sub-dirs)]
-      (flatten [root-files sub-files]))))
+          sub-files (mapcat filenames sub-dirs)]
+      (mapcat identity [root-files sub-files]))))
 
-(defn ^:export classpath
+(defn classpath
+  "Returns a JS array of strings listing all folders on the classpath"
   []
   (js/LUMO_READ_SOURCES))
 
-(defn ^:export classpath-files
+(defn classpath-files
+  "Returns a list of all usable files on the classpath"
   []
-  (flatten (map filenames (classpath))))
+  (mapcat filenames (classpath)))
 
-(defn ^:export classpath-jarfiles
+(defn classpath-jarfiles
+  "Returns a list of all .jar files on the classpath"
   []
   (filter jarfile? (classpath)))
 
-(defn ^:export add-source!
+(defn add-source!
+  "Mutates the classpath by adding a source directory"
   [path]
   (js/LUMO_ADD_SOURCES #js [path]))
 
-(defn ^:export remove-source!
+(defn remove-source!
+  "Mutates the classpath by removing a source directory"
   [path]
   (js/LUMO_REMOVE_SOURCE path))
