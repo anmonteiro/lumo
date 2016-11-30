@@ -60,6 +60,11 @@ if (__DEV__) {
     global.LUMO_READ_CACHE = lumo.readCache;
     global.LUMO_READ_SOURCE = lumo.readSource;
     global.LUMO_WRITE_CACHE = lumo.writeCache;
+    global.LUMO_READ_SOURCES = lumo.readSourcePaths;
+    global.LUMO_ADD_SOURCES = lumo.addSourcePaths;
+    global.LUMO_REMOVE_SOURCE = lumo.removeSourcePath;
+    global.LUMO_STAT = lumo.stat;
+    global.LUMO_READDIR = lumo.readdir;
     global.LUMO_LOAD_UPS_DEPS_CLJS = lumo.loadUpstreamForeignLibs;
     global.LUMO_EXISTS = lumo.fileExists;
     global.LUMO_EVAL = lumoEval;
