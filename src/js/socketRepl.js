@@ -56,8 +56,6 @@ function handleConnection(socket: net$Socket, accept: Function): void {
 }
 
 export function close(): void {
-  unhookOutputStreams();
-
   if (!socketServer) {
     return;
   }
