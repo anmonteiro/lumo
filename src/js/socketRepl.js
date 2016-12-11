@@ -5,16 +5,14 @@ import readline from 'readline';
 import { createBanner } from './cli';
 import { createSession, deleteSession, prompt, processLine } from './repl';
 
-import type { REPLSession } from './repl';
-
 let socketServer: ?net$Server = null;
 const sockets: net$Socket[] = [];
 
 let sessionCount = 0;
-type AcceptFn = <T>(socket: net$Socket) => T;
+type AcceptFn = (socket: net$Socket) => void;
 
 // Default socket accept function. This opens a repl and handles the readline and repl lifecycle
-function openRepl(socket: net$Socket): REPLSession {
+function openRepl(socket: net$Socket): void {
   const rl = readline.createInterface({
     input: socket,
     output: socket,
@@ -38,8 +36,6 @@ function openRepl(socket: net$Socket): REPLSession {
 
   rl.output.write(createBanner());
   prompt(rl, false, 'cljs.user');
-
-  return session;
 }
 
 // Calls the `accept` function on the socket and handles the socket lifecycle
