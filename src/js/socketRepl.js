@@ -10,7 +10,10 @@ import type { REPLSession } from './repl';
 let socketServer: ?net$Server = null;
 const sockets: net$Socket[] = [];
 
-function handleConnection(socket: net$Socket): REPLSession {
+let sessionCount = 0;
+
+// XXX Whichever function is set to handle the socket should cleanup on the socket's `close` event
+function openRepl(socket: net$Socket): REPLSession {
   const rl = readline.createInterface({
     input: socket,
     output: socket,
@@ -19,13 +22,10 @@ function handleConnection(socket: net$Socket): REPLSession {
   const session = createSession(rl, false);
 
   socket.on('close', () => {
-    delete sockets[session.id];
     deleteSession(session);
   });
 
   socket.on('error', () => {});
-
-  sockets[session.id] = socket;
 
   rl.on('line', (line: string) => {
     if (!socket.destroyed) {
@@ -39,6 +39,21 @@ function handleConnection(socket: net$Socket): REPLSession {
   prompt(rl, false, 'cljs.user');
 
   return session;
+}
+
+// This takes in a socket, and handles the socket life cycle
+function handleConnection(socket: net$Socket, accept: Function): void {
+  accept(socket);
+
+  // ??? Do we actually care what session id the repl returns?
+  // AAA Let's go with no.
+  socket.on('close', () => {
+    delete sockets[sessionCount];
+  });
+
+  sockets[sessionCount] = socket;
+
+  sessionCount += 1;
 }
 
 export function close(): void {
@@ -56,10 +71,11 @@ export function close(): void {
 export function open(
   port: number,
   host?: string = 'localhost',
+  accept?: Function = openRepl,
 ): Promise<mixed> {
   return new Promise((resolve: mixed => void, reject: Error => void) => {
     socketServer = net.createServer((socket: net$Socket) =>
-      handleConnection(socket),
+                                    handleConnection(socket, accept),
     );
 
     // $FlowIssue - wrong type definitions for `listen`
