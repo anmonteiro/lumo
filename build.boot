@@ -6,10 +6,10 @@
                  [org.clojure/tools.reader    "1.0.0-beta3"]
                  [com.cognitect/transit-cljs  "0.8.239"]
                  [malabarba/lazy-map          "1.3"]
-                 [com.cognitect/transit-clj   "0.8.293"        :scope "test"]
+                 [com.cognitect/transit-clj   "0.8.297"        :scope "test"]
                  [com.cemerick/piggieback     "0.2.1"          :scope "test"]
                  [adzerk/boot-cljs            "1.7.228-2"      :scope "test"]
-                 [crisptrutski/boot-cljs-test "0.3.0-SNAPSHOT" :scope "test"]
+                 [crisptrutski/boot-cljs-test "0.3.0"          :scope "test"]
                  [org.clojure/tools.nrepl     "0.2.12"         :scope "test"]
                  [weasel                      "0.7.0"          :scope "test"]])
 
