@@ -3,7 +3,7 @@
 import net from 'net';
 import readline from 'readline';
 import { createBanner } from './cli';
-import { createSession, deleteSession, prompt, processLine, unhookOutputStreams } from './repl';
+import { createSession, deleteSession, prompt, processLine } from './repl';
 
 import type { REPLSession } from './repl';
 
@@ -11,6 +11,7 @@ let socketServer: ?net$Server = null;
 const sockets: net$Socket[] = [];
 
 let sessionCount = 0;
+type AcceptFn = <T>(socket: net$Socket) => T;
 
 // Default socket accept function. This opens a repl and handles the readline and repl lifecycle
 function openRepl(socket: net$Socket): REPLSession {
@@ -41,11 +42,11 @@ function openRepl(socket: net$Socket): REPLSession {
 }
 
 // Calls the `accept` function on the socket and handles the socket lifecycle
-function handleConnection(socket: net$Socket, accept: Function): void {
+function handleConnection(socket: net$Socket, accept: AcceptFn): void {
   accept(socket);
 
-  // The index needs to be unique for the socket server, but not for anyone else. For that reason we're
-  // using a module global `sessionCount` variable
+  // The index needs to be unique for the socket server, but not for anyone else.
+  // For that reason we're using a module global `sessionCount` variable
   socket.on('close', () => {
     delete sockets[sessionCount];
   });
@@ -69,7 +70,7 @@ export function close(): void {
   socketServer.close();
 }
 
-export function open(port: number, host?: string = 'localhost', accept?: Function = openRepl): void {
+export function open(port: number, host?: string = 'localhost', accept?: AcceptFn = openRepl): void {
   socketServer = net.createServer((socket: net$Socket) => handleConnection(socket, accept));
   socketServer.listen(port, host);
 
