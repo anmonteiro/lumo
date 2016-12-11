@@ -38,7 +38,7 @@ function openRepl(socket: net$Socket): void {
 }
 
 // Calls the `accept` function on the socket and handles the socket lifecycle
-function handleConnection(socket: net$Socket, accept: AcceptFn): void {
+function handleConnection(socket: net$Socket, accept: AcceptFn): number {
   accept(socket);
 
   // The index needs to be unique for the socket server, but not for anyone else.
@@ -50,6 +50,8 @@ function handleConnection(socket: net$Socket, accept: AcceptFn): void {
   sockets[sessionCount] = socket;
 
   sessionCount += 1;
+
+  return sessionCount;
 }
 
 export function close(): void {
