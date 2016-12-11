@@ -12,7 +12,7 @@ const sockets: net$Socket[] = [];
 
 let sessionCount = 0;
 
-// XXX Whichever function is set to handle the socket should cleanup on the socket's `close` event
+// Default socket accept function. This opens a repl and handles the readline and repl lifecycle
 function openRepl(socket: net$Socket): REPLSession {
   const rl = readline.createInterface({
     input: socket,
@@ -41,12 +41,12 @@ function openRepl(socket: net$Socket): REPLSession {
   return session;
 }
 
-// This takes in a socket, and handles the socket life cycle
+// Calls the `accept` function on the socket and handles the socket lifecycle
 function handleConnection(socket: net$Socket, accept: Function): void {
   accept(socket);
 
-  // ??? Do we actually care what session id the repl returns?
-  // AAA Let's go with no.
+  // The index needs to be unique for the socket server, but not for anyone else. For that reason we're
+  // using a module global `sessionCount` variable
   socket.on('close', () => {
     delete sockets[sessionCount];
   });
