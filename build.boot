@@ -41,7 +41,7 @@
       (testing)
       (test-cljs
         :js-env :node
-        :namespaces #{'lumo.js-deps-tests 'lumo.repl-tests}
+        :namespaces '#{lumo.js-deps-tests lumo.repl-tests lumo.path-tests}
         :cljs-opts {:parallel-build true}
         :exit? exit?))))
 
