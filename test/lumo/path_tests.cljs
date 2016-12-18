@@ -36,9 +36,9 @@
   (is (= "foo" (win/normalize "./foo"))))
 
 (deftest test-relative
-  (is (= ".." (path/relative  (path/resolve "package.json") ".")))
-  (is (= ".." (posix/relative (posix/resolve "package.json") ".")))
-  (is (= ".." (win/relative   (win/resolve "package.json") "."))))
+  (is (= ".." (path/relative  (path/resolve  "package.json") ".")))
+  (is (= ".." (posix/relative (posix/resolve "package.json") (posix/resolve "."))))
+  (is (= ".." (win/relative   (win/resolve "package.json")  "."))))
 
 (deftest test-resolve
   (is (= (path/resolve  ".") (path/resolve)))
