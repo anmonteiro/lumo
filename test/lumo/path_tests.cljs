@@ -22,8 +22,8 @@
 
 (deftest test-absolute?
   (is (path/absolute?  (path/resolve ".")))
-  (is (posix/absolute? (posix/resolve ".")))
-  (is (win/absolute?   (win/resolve "."))))
+  (is (posix/absolute? "/a/b"))
+  (is (win/absolute?   "C:\\a\\b")))
 
 (deftest test-join
   (is (#{"foo/bar" "foo\\bar"}  (path/join "foo" "bar")))
