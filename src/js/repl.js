@@ -200,7 +200,6 @@ function highlight(
       const oldInput = rl.input;
       const readStream = new tty.ReadStream(null, {});
       readStream.setRawMode(true);
-      // $FlowIssue
       readline.emitKeypressEvents(readStream, rl);
 
       readStream.once('keypress', (c: string, key: KeyType) => {
@@ -288,7 +287,6 @@ export default function startREPL(opts: CLIOptsType): void {
 
   const session = createSession(rl, true);
 
-  // $FlowIssue
   readline.emitKeypressEvents(process.stdin, rl);
   if (process.stdin.isTTY && !dumbTerminal) {
     // $FlowIssue

@@ -2,7 +2,7 @@ import net from 'net';
 
 let socketRepl = require('../socketRepl');
 
-const on = jest.fn((type: string, f: (x?: string) => void) => {
+const mockOn = jest.fn((type: string, f: (x?: string) => void) => {
   switch (type) {
     case 'line': f('(+ 1 2'); return f(')');
     default: return f();
@@ -11,8 +11,8 @@ const on = jest.fn((type: string, f: (x?: string) => void) => {
 
 jest.mock('../repl');
 jest.mock('readline', () => ({
-  createInterface: jest.fn((opts: {[key: string]: mixed}) => ({
-    on,
+  createInterface: jest.fn((opts: {[mockKey: string]: mixed}) => ({
+    on: mockOn,
     output: opts.output,
     write: jest.fn(),
   })),

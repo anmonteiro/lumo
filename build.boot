@@ -3,7 +3,7 @@
  :asset-paths #{"src/js"}
  :dependencies '[[org.clojure/clojure         "1.9.0-alpha14"]
                  [org.clojure/clojurescript   "1.9.293"]
-                 [org.clojure/tools.reader    "1.0.0-beta3"]
+                 [org.clojure/tools.reader    "1.0.0-beta4"]
                  [com.cognitect/transit-cljs  "0.8.239"]
                  [malabarba/lazy-map          "1.3"]
                  [com.cognitect/transit-clj   "0.8.297"        :scope "test"]

@@ -1,11 +1,14 @@
 /* @flow */
 
+// $FlowIssue: this module exists.
+import v8 from 'v8';
 import startCLI from '../cli';
 import cljs from '../cljs';
 import * as lumo from '../lumo';
 import * as socketRepl from '../socketRepl';
 
 jest.mock('net');
+jest.mock('v8');
 jest.mock('../cljs');
 jest.mock('../socketRepl');
 jest.mock('../version', () => 'X.X.X');
@@ -310,5 +313,17 @@ describe('print Functions', () => {
       startCLI();
       expect(process.stdout.write.mock.calls).toMatchSnapshot();
     });
+  });
+});
+
+describe('starting Lumo', () => {
+  it('always sets use-strict in V8\'s options', () => {
+    Object.defineProperty(process, 'argv', {
+      value: ['', ''],
+    });
+
+    startCLI();
+
+    expect(v8.setFlagsFromString).toHaveBeenCalledWith('--use_strict');
   });
 });
