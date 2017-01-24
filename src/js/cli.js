@@ -1,7 +1,7 @@
 /* @flow */
 
 // $FlowIssue: this module exists.
-import v8 from 'v8'; // eslint-disable-line import/no-unresolved
+import v8 from 'v8';
 // $FlowIssue: this is allowed
 import { BasicParser as GOParser } from 'posix-getopt';
 import startClojureScriptEngine from './cljs';

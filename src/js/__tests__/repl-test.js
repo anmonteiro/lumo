@@ -19,11 +19,11 @@ process.stdin.on = jest.fn((type: string, cb: (key: string) => void) => {
 
 process.stdin.setRawMode = jest.fn();
 
-const setPrompt = jest.fn();
-const prompt = jest.fn();
+const mockSetPrompt = jest.fn();
+const mockPrompt = jest.fn();
 let on;
 
-function genOn(line: ?string = null): JestMockFn {
+function mockOn(line: ?string = null): JestMockFn {
   on = jest.fn((type: string, f: (x?: string) => void) => {
     switch (type) {
       case 'line': f(line || '(+ 1 2'); return f(line || ')');
@@ -34,12 +34,12 @@ function genOn(line: ?string = null): JestMockFn {
   return on;
 }
 
-function mockReplHistory(line?: string, output?: stream$Writable): void {
+function mockReplHistory(mockLine?: string, mockOutput?: stream$Writable): void {
   jest.mock('../replHistory', () => jest.fn(() => ({
-    setPrompt,
-    prompt,
-    on: genOn(line),
-    output: output || { write: jest.fn() },
+    setPrompt: mockSetPrompt,
+    prompt: mockPrompt,
+    on: mockOn(mockLine),
+    output: mockOutput || { write: jest.fn() },
     write: jest.fn(),
   })));
 }
@@ -74,8 +74,8 @@ describe('startREPL', () => {
   beforeEach(() => {
     process.stdin.on.mockClear();
     replHistory.mockClear();
-    setPrompt.mockClear();
-    prompt.mockClear();
+    mockSetPrompt.mockClear();
+    mockPrompt.mockClear();
   });
 
   afterAll(() => {
@@ -92,8 +92,8 @@ describe('startREPL', () => {
   it('sets and emits the prompt', () => {
     startREPL({});
 
-    expect(setPrompt).toHaveBeenCalled();
-    expect(prompt).toHaveBeenCalled();
+    expect(mockSetPrompt).toHaveBeenCalled();
+    expect(mockPrompt).toHaveBeenCalled();
   });
 
   it('sets event handlers for line input and Ctrl+C', () => {
@@ -225,7 +225,6 @@ describe('startREPL', () => {
       expect(process.exit).toHaveBeenCalled();
     });
 
-
     it('should close the socket server', () => {
       mockReplHistory('exit', process.stdout);
       /* eslint-disable global-require */
@@ -324,13 +323,13 @@ describe('startREPL', () => {
       mockReplHistory();
       // eslint-disable-next-line global-require
       startREPL = require('../repl').default;
-      setPrompt.mockClear();
+      mockSetPrompt.mockClear();
     });
 
     it('should emit the primary prompt after input is completely readable', () => {
       startREPL({});
 
-      expect(setPrompt).toHaveBeenCalledWith('cljs.user=> ');
+      expect(mockSetPrompt).toHaveBeenCalledWith('cljs.user=> ');
     });
 
     it('should emit the secondary prompt', () => {
@@ -345,7 +344,7 @@ describe('startREPL', () => {
       startREPL = require('../repl').default;
 
       startREPL({});
-      expect(setPrompt).toHaveBeenCalledWith('       #_=> ');
+      expect(mockSetPrompt).toHaveBeenCalledWith('       #_=> ');
     });
   });
 });
