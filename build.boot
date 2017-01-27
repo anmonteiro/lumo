@@ -2,7 +2,7 @@
  :source-paths    #{"src/cljs"}
  :asset-paths #{"src/js"}
  :dependencies '[[org.clojure/clojure         "1.9.0-alpha14"]
-                 [org.clojure/clojurescript   "1.9.439"]
+                 [org.clojure/clojurescript   "1.9.440"]
                  [org.clojure/tools.reader    "1.0.0-beta4"]
                  [com.cognitect/transit-cljs  "0.8.239"]
                  [malabarba/lazy-map          "1.3"]
