@@ -2,7 +2,7 @@
  :source-paths    #{"src/cljs"}
  :asset-paths #{"src/js"}
  :dependencies '[[org.clojure/clojure         "1.9.0-alpha14"]
-                 [org.clojure/clojurescript   "1.9.293"]
+                 [org.clojure/clojurescript   "1.9.439"]
                  [org.clojure/tools.reader    "1.0.0-beta4"]
                  [com.cognitect/transit-cljs  "0.8.239"]
                  [malabarba/lazy-map          "1.3"]
@@ -112,7 +112,7 @@
     (sift :add-jar
       {'org.clojure/clojure #"^clojure[\\\/]template\.clj"
        'org.clojure/clojurescript
-       #"^cljs[\\\/](test\.cljc|core\.cljs\.cache\.aot\.edn|spec(\.cljc|[\\\/]test\.clj[sc]|[\\\/]impl[\\\/]gen\.cljc))$"}
+       #"^cljs[\\\/](test\.cljc|core\.cljs\.cache\.aot\.edn|reader\.clj|spec(\.cljc|[\\\/]test\.clj[sc]|[\\\/]impl[\\\/]gen\.cljc))$"}
       :move {#"^main.out[\\\/]((cljs|clojure|cognitect|lumo|lazy_map).*)" "$1"})
     (sift :include #{#"^main.js" #"^bundle.js" #"^cljs(?!\.js)"
                      #"^clojure" #"^cognitect" #"^lumo[\\\/]" #"^lazy_map[\\\/]"}
