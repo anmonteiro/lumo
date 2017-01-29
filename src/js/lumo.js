@@ -107,6 +107,7 @@ export function fileExists(filename: string): boolean {
   return false;
 }
 
+// $FlowIssue
 export function addSourcePaths(srcPaths: string[]): void {
   sourcePaths.push(...srcPaths);
 }
