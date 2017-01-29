@@ -2,6 +2,10 @@
 
 ## [master](https://github.com/anmonteiro/lumo/compare/1.0.0...HEAD) (unreleased)
 
+### Changes
+
+- Upgrade to ClojureScript 1.9.456 ([#71](https://github.com/anmonteiro/lumo/pull/71)).
+
 ### Bug fixes
 
 - Regression where specifying a main script to be executed would print the banner
