@@ -2,6 +2,10 @@
 
 ## [master](https://github.com/anmonteiro/lumo/compare/1.1.0...HEAD) (unreleased)
 
+### Changes
+
+- Upgrade Node.js to version 7.5.0.
+
 ## [1.1.0](https://github.com/anmonteiro/lumo/compare/1.0.0...1.1.0) (2017-01-28)
 
 ### Changes
