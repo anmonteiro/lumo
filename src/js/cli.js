@@ -8,7 +8,6 @@ import startClojureScriptEngine from './cljs';
 import printLegal from './legal';
 import * as lumo from './lumo';
 import * as util from './util';
-import * as socketRepl from './socketRepl';
 import version from './version';
 
 type ScriptsType = [string, string][];
@@ -208,7 +207,6 @@ export default function startCLI(): void {
   const { args, cache, classpath, help, legal, mainNsName,
           mainScript, quiet, scripts } = opts;
   const autoCache = opts['auto-cache'];
-  const socketReplArgs = opts['socket-repl'];
 
   // if help, print help and bail
   if (help) {
@@ -246,20 +244,6 @@ export default function startCLI(): void {
 
   if (opts.repl && !quiet) {
     printBanner();
-  }
-
-  if (socketReplArgs != null) {
-    let [host, port] = socketReplArgs.split(':');
-
-    if (host != null && !isNaN(host)) {
-      [host, port] = [port, host];
-    }
-
-    socketRepl.open(parseInt(port, 10), host);
-    if (!quiet) {
-      process.stdout.write(
-        `Lumo socket REPL listening at ${host != null ? host : 'localhost'}:${port}.\n`);
-    }
   }
 
   return startClojureScriptEngine(opts);
