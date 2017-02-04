@@ -6,7 +6,6 @@ import startClojureScriptEngine from './cljs';
 import printLegal from './legal';
 import * as lumo from './lumo';
 import * as util from './util';
-import * as socketRepl from './socketRepl';
 import lumoVersion from './version';
 
 type ScriptsType = [string, string][];
@@ -266,7 +265,6 @@ async function startCLI(): Promise<mixed> {
   } = opts;
   const autoCache = opts['auto-cache'];
   const localRepo = opts['local-repo'];
-  const socketReplArgs = opts['socket-repl'];
   const dumpSDK = opts['dump-sdk'];
 
   // if help, print help and bail
@@ -323,30 +321,6 @@ async function startCLI(): Promise<mixed> {
 
   if (opts.repl && !quiet) {
     printBanner();
-  }
-
-  if (socketReplArgs != null) {
-    let [host, port] = socketReplArgs.split(':');
-
-    if (host != null && !isNaN(host)) {
-      [host, port] = [port, host];
-    }
-
-    try {
-      await socketRepl.open(parseInt(port, 10), host);
-
-      if (!quiet) {
-        process.stdout.write(
-          `Lumo socket REPL listening at ${host != null
-            ? host
-            : 'localhost'}:${port}.\n`,
-        );
-      }
-    } catch (e) {
-      // I wanted to destructure with { message } but
-      // ran into https://github.com/facebook/flow/issues/3874
-      process.stderr.write(`Error: ${e.message}\n`);
-    }
   }
 
   return startClojureScriptEngine(opts);

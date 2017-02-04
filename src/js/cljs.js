@@ -9,6 +9,7 @@ import JSZip from 'jszip';
 import DiscardingSender from './discarding-sender';
 import * as lumo from './lumo';
 import startREPL, { currentREPLInterface } from './repl';
+import * as socketRepl from './socketRepl';
 
 import type { CLIOptsType } from './cli';
 
@@ -357,15 +358,33 @@ function processStdin(): void {
 }
 
 export default function startClojureScriptEngine(opts: CLIOptsType): void {
-  const { args, mainNsName, mainScript, repl, scripts } = opts;
+  const { args, mainNsName, mainScript, repl, scripts, quiet } = opts;
+  const socketReplArgs = opts['socket-repl'];
+
+  // The Socket Repl needs a CLJS Context to resolve the functions a user may pass in
+  // Instead of initializing in each if statement, we'll initialize once, then delete the
+  // context if it turns out we're not gonna use the context.
+  initClojureScriptEngine(opts);
+
+  if (socketReplArgs != null) {
+    let [host, port] = socketReplArgs.split(':');
+
+    if (host != null && !isNaN(host)) {
+      [host, port] = [port, host];
+    }
+
+    socketRepl.open(parseInt(port, 10), host);
+    if (!quiet) {
+      process.stdout.write(
+        `Lumo socket REPL listening at ${host != null ? host : 'localhost'}:${port}.\n`);
+    }
+  }
 
   if (scripts.length > 0) {
-    initClojureScriptEngine(opts);
     executeScripts(scripts);
   }
 
   if (mainScript) {
-    initClojureScriptEngine(opts);
     if (mainScript === '-') {
       processStdin();
     } else {
@@ -374,13 +393,11 @@ export default function startClojureScriptEngine(opts: CLIOptsType): void {
   }
 
   if (mainNsName) {
-    initClojureScriptEngine(opts);
     runMain(mainNsName, args);
   }
 
   if (repl) {
     process.nextTick(() => {
-      initClojureScriptEngine(opts);
       if (!__DEV__) {
         setPrintFns(new DiscardingSender());
       }
@@ -399,4 +416,7 @@ export default function startClojureScriptEngine(opts: CLIOptsType): void {
 
     startREPL(opts);
   }
+
+  ClojureScriptContext = null;
+  return undefined;
 }
