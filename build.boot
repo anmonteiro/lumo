@@ -1,26 +1,34 @@
 (set-env!
- :source-paths    #{"src/cljs"}
- :asset-paths #{"src/js"}
+ :source-paths #{"src/cljs/snapshot"}
+ :asset-paths #{"src/js" "src/cljs/bundled"}
  :dependencies '[[org.clojure/clojure         "1.9.0-alpha14"]
-                 [org.clojure/clojurescript   "1.9.456"]
+                 [org.clojure/clojurescript   "1.9.482"]
                  [org.clojure/tools.reader    "1.0.0-beta4"]
                  [com.cognitect/transit-cljs  "0.8.239"]
                  [malabarba/lazy-map          "1.3"]
+                 [org.clojure/google-closure-library "0.0-20160609-f42b4a24"]
+                 [org.clojure/data.json "0.2.6"]
+                 [com.google.javascript/closure-compiler-unshaded "v20161201"]
+                 [org.mozilla/rhino "1.7R5"]
                  [com.cognitect/transit-clj   "0.8.297"        :scope "test"]
                  [com.cemerick/piggieback     "0.2.1"          :scope "test"]
-                 [adzerk/boot-cljs            "1.7.228-2"      :scope "test"]
+                 [adzerk/boot-cljs            "2.0.0-SNAPSHOT"      :scope "test"]
                  [crisptrutski/boot-cljs-test "0.3.0"          :scope "test"]
                  [org.clojure/tools.nrepl     "0.2.12"         :scope "test"]
-                 [weasel                      "0.7.0"          :scope "test"]])
+                 [weasel                      "0.7.0"          :scope "test"]
+                 [doo                         "0.1.7"          :scope "test"]]
+ :exclusions '[org.clojure/clojurescript]
+ :local-repo "third_party")
 
 (require
- '[adzerk.boot-cljs      :refer [cljs]]
- '[crisptrutski.boot-cljs-test :refer [test-cljs]]
- '[boot.util             :as util]
- '[clojure.edn           :as edn]
- '[clojure.string        :as str]
- '[clojure.java.io       :as io]
- '[cognitect.transit     :as transit])
+  '[adzerk.boot-cljs      :refer [cljs]]
+  '[crisptrutski.boot-cljs-test :refer [test-cljs]]
+  '[boot.pod              :as pod]
+  '[boot.util             :as util]
+  '[clojure.edn           :as edn]
+  '[clojure.string        :as str]
+  '[clojure.java.io       :as io]
+  '[cognitect.transit     :as transit])
 
 (import [java.io ByteArrayOutputStream FileInputStream])
 
@@ -65,7 +73,8 @@
 (deftask bundle-js
   [d dev     bool  "Development build"]
   (with-pass-thru _
-    (dosh "node" "scripts/build.js" (when dev "--dev"))))
+    (dosh "node" "scripts/build.js" (when dev "--dev"))
+    (dosh "node" "scripts/bundleForeign.js")))
 
 (defn write-cache! [cache out-path]
   (let [out (ByteArrayOutputStream. 1000000)
@@ -111,13 +120,22 @@
   (comp
     (sift :add-jar
       {'org.clojure/clojure #"^clojure[\\\/]template\.clj"
-       'org.clojure/clojurescript
-       #"^cljs[\\\/](test\.cljc|core\.cljs\.cache\.aot\.edn|reader\.clj|spec(\.cljc|[\\\/]test\.clj[sc]|[\\\/]impl[\\\/]gen\.cljc))$"}
+       'org.clojure/google-closure-library #"^goog[\\\/].*(?<!_test)\.js$"
+       'org.clojure/google-closure-library-third-party #"^goog[\\\/].*(?<!_test)\.js$"
+       'org.clojure/tools.reader #"^cljs.*clj$"
+       'org.clojure/clojurescript #""
+       ;#"^cljs[\\\/](test\.cljc|core\.cljs\.cache\.aot\.edn|reader\.clj|spec(\.cljc|[\\\/]test\.clj[sc]|[\\\/]impl[\\\/]gen\.cljc))$"
+       }
       :move {#"^main.out[\\\/]((cljs|clojure|cognitect|lumo|lazy_map).*)" "$1"})
-    (sift :include #{#"^main.js" #"^bundle.js" #"^cljs(?!\.js)"
-                     #"^clojure" #"^cognitect" #"^lumo[\\\/]" #"^lazy_map[\\\/]"}
-      :to-resource #{#"^lumo[\\\/]repl\.clj$"})
-    (sift :include #{#"^cljs[\\\/]core\.cljs\.cache\.json$"} :invert true)))
+    (sift :include #{#"^main.js" #"^bundle.js" #"^cljs(?!\.js)" #"core\$macros"
+                     #"^clojure" #"^cognitect" #"^goog" #"^lumo[\\\/]" #"^lazy_map[\\\/]"}
+      :to-resource #{#"^lumo[\\\/](repl|util)\.clj$"})
+    (sift :include #{#"^cljs[\\\/]core\.cljs\.cache\.json$"
+                     #"^cljs[\\\/](analyzer[\\\/]utils|build|closure)"
+                     #"^cljs[\\\/](core[\\\/]macros|compiler[\\\/]api|repl([\\\/].*|(.cljc))|source_map.*clj$)"
+                     #"^cljs[\\\/](externs\.clj|util|js_deps)"
+                     #"^goog[\\\/](test_module.*?|transpile).js"}
+      :invert true)))
 
 (deftask compile-cljs []
   (cljs :compiler-options {:hashbang false

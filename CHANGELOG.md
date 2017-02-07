@@ -6,6 +6,11 @@
 
 - Upgrade Node.js to version 7.5.0.
 
+### Bug fixes
+
+- Fix a bug where `cljs.nodejs/require` wouldn't find modules in scripts run from
+nested directories.
+
 ## [1.1.0](https://github.com/anmonteiro/lumo/compare/1.0.0...1.1.0) (2017-01-28)
 
 ### Changes

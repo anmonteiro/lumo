@@ -234,7 +234,7 @@ describe('lumoEval', () => {
       });
       jest.runAllTicks();
 
-      cljsContext.LUMO_EVAL('source');
+      cljsContext.$$LUMO_GLOBALS.eval('source');
       expect(vm.runInContext).toHaveBeenCalledTimes(1);
     });
   });
@@ -268,7 +268,7 @@ describe('lumoEval', () => {
       });
       jest.runAllTicks();
 
-      cljsContext.LUMO_EVAL('source');
+      cljsContext.$$LUMO_GLOBALS.eval('source');
       expect(vm.runInThisContext).toHaveBeenCalledTimes(1);
     });
   });

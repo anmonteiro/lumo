@@ -1,7 +1,11 @@
 /* @flow */
 /* eslint-disable no-underscore-dangle  */
 
-import parinfer from 'parinfer';
+import crypto from 'crypto';
+import fs from 'fs';
+// $FlowIssue: this module exists
+import Module from 'module';
+import path from 'path';
 import vm from 'vm';
 import * as lumo from './lumo';
 import startREPL from './repl';
@@ -11,12 +15,52 @@ import type { CLIOptsType } from './cli';
 let newContext;
 let ClojureScriptContext;
 
-function lumoEval(source: string): mixed {
+function lumoEval(source: string, isForeign: boolean, execPath: ?string): mixed {
+  if (execPath != null && !__DEV__) {
+    const absoluteExecPath = path.resolve(execPath);
+    const module = new Module(execPath);
+
+    module.filename = absoluteExecPath;
+    module.paths = Module._nodeModulePaths(path.dirname(absoluteExecPath));
+
+    const script = 'global.require = require;\n' +
+          'return require("vm").' +
+          `runInThisContext(${JSON.stringify(source)}, ` +
+         `{ filename: ${JSON.stringify(absoluteExecPath)}, displayErrors: true });\n`;
+
+    return module._compile(script, `${execPath}-wrapper`);
+  }
+
+  // $FlowIssue: this exists
+  const _module = ClojureScriptContext.module;
+  // $FlowIssue: this also exists
+  const _exports = ClojureScriptContext.exports;
+  let ret;
+
+  if (isForeign) {
+    // this is a hack needed for foreign libraries to end up on global scope.
+    // Closure Library's goog.bootstrap.nodeJs does the same thing.
+    // $FlowIssue: this exists
+    ClojureScriptContext.module = undefined;
+    // $FlowIssue: this exists
+    ClojureScriptContext.exports = undefined;
+  }
+
   if (__DEV__) {
     // $FlowFixMe: this type differs according to the env
-    return vm.runInContext(source, ClojureScriptContext);
+    ret = vm.runInContext(source, ClojureScriptContext);
+  } else {
+    ret = vm.runInThisContext(source);
   }
-  return vm.runInThisContext(source);
+
+  if (isForeign) {
+    // $FlowIssue: this exists
+    ClojureScriptContext.module = _module;
+    // $FlowIssue: this exists
+    ClojureScriptContext.exports = _exports;
+  }
+
+  return ret;
 }
 
 if (__DEV__) {
@@ -31,14 +75,23 @@ if (__DEV__) {
       require,
       process,
       console,
-      parinfer,
-      LUMO_LOAD: lumo.load,
-      LUMO_READ_CACHE: lumo.readCache,
-      LUMO_READ_SOURCE: lumo.readSource,
-      LUMO_WRITE_CACHE: lumo.writeCache,
-      LUMO_LOAD_UPS_DEPS_CLJS: lumo.loadUpstreamForeignLibs,
-      LUMO_EXISTS: lumo.fileExists,
-      LUMO_EVAL: lumoEval,
+      $$LUMO_GLOBALS: {
+        crypto,
+        fs,
+        path,
+        getGoogleClosureCompiler: lumo.getGoogleClosureCompiler,
+        getParinfer: lumo.getParinfer,
+        getJSZip: lumo.getJSZip,
+        load: lumo.load,
+        readCache: lumo.readCache,
+        readSource: lumo.readSource,
+        writeCache: lumo.writeCache,
+        loadUpstreamForeignLibs: lumo.loadUpstreamForeignLibs,
+        resource: lumo.resource,
+        readSourceFromJar: lumo.readSourceFromJar,
+        eval: lumoEval,
+        readSourcePaths: lumo.readSourcePaths,
+      },
       global: undefined,
     };
 
@@ -50,16 +103,25 @@ if (__DEV__) {
   };
 } else {
   newContext = function newCtx(): {[key: string]: mixed} {
-    global.parinfer = parinfer;
-    global.LUMO_LOAD = lumo.load;
-    global.LUMO_READ_CACHE = lumo.readCache;
-    global.LUMO_READ_SOURCE = lumo.readSource;
-    global.LUMO_WRITE_CACHE = lumo.writeCache;
-    global.LUMO_LOAD_UPS_DEPS_CLJS = lumo.loadUpstreamForeignLibs;
-    global.LUMO_EXISTS = lumo.fileExists;
-    global.LUMO_EVAL = lumoEval;
+    global.$$LUMO_GLOBALS = {
+      crypto,
+      fs,
+      path,
+      getGoogleClosureCompiler: lumo.getGoogleClosureCompiler,
+      getParinfer: lumo.getParinfer,
+      getJSZip: lumo.getJSZip,
+      load: lumo.load,
+      readCache: lumo.readCache,
+      readSource: lumo.readSource,
+      writeCache: lumo.writeCache,
+      loadUpstreamForeignLibs: lumo.loadUpstreamForeignLibs,
+      resource: lumo.resource,
+      readSourceFromJar: lumo.readSourceFromJar,
+      eval: lumoEval,
+      readSourcePaths: lumo.readSourcePaths,
+    };
 
-    // $FlowExpectedError: only exists in the custom V8 startup snapshot
+    // // $FlowExpectedError: only exists in the custom V8 startup snapshot
     initialize(); // eslint-disable-line no-undef
 
     return global;

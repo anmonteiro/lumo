@@ -2,18 +2,22 @@
 
 import fs from 'fs';
 import os from 'os';
+import path from 'path';
 import { ensureDir, srcPathsFromClasspathStrings,
          isWhitespace, isWindows } from '../util';
 
 describe('srcPathsFromClasspathStrings', () => {
   const homedir = os.homedir;
+  const pathResolve = path.resolve;
 
   beforeEach(() => {
     os.homedir = jest.fn(() => '/Users/foo');
+    path.resolve = jest.fn((x: string) => x);
   });
 
   afterEach(() => {
     os.homedir = homedir;
+    path.resolve = pathResolve;
   });
 
   if (isWindows) {
@@ -62,7 +66,7 @@ describe('ensureDir', () => {
   });
 
   it('should create a new folder when it doesn\'t exist', () => {
-    fs.existsSync = jest.fn((path: string) => false);
+    fs.existsSync = jest.fn((_: string) => false);
     fs.mkdirSync = jest.fn();
 
     ensureDir('foo');
@@ -70,8 +74,8 @@ describe('ensureDir', () => {
   });
 
   it('should throw an error if path exists and is not a folder', () => {
-    fs.existsSync = jest.fn((path: string) => true);
-    fs.statSync = jest.fn((path: string) => new fs.Stats());
+    fs.existsSync = jest.fn((_: string) => true);
+    fs.statSync = jest.fn((_: string) => new fs.Stats());
     fs.Stats.prototype.isDirectory = jest.fn(() => false);
 
     expect(() => {
@@ -81,8 +85,8 @@ describe('ensureDir', () => {
 
   it('should flow through if everything is OK', () => {
     fs.mkdirSync = jest.fn();
-    fs.existsSync = jest.fn((path: string) => true);
-    fs.statSync = jest.fn((path: string) => new fs.Stats());
+    fs.existsSync = jest.fn((_: string) => true);
+    fs.statSync = jest.fn((_: string) => new fs.Stats());
     fs.Stats.prototype.isDirectory = jest.fn(() => true);
 
     expect(() => {
