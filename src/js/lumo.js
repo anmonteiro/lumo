@@ -196,6 +196,10 @@ export function readSourcePaths(): string[] {
   return [...sourcePaths];
 }
 
+export function removeSourcePath(srcPath: string): void {
+  sourcePaths.splice(sourcePaths.indexOf(srcPath), 1);
+}
+
 export function readSourceFromJar({
   jarPath,
   src,
@@ -250,8 +254,4 @@ export function getJSCompletions(
     }, []);
     return cb(completions);
   });
-}
-
-export function removeSourcePath(srcPath: string): void {
-  sourcePaths.splice(sourcePaths.indexOf(srcPath), 1);
 }
