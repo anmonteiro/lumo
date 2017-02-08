@@ -107,6 +107,7 @@ export function fileExists(filename: string): boolean {
   return false;
 }
 
+<<<<<<< HEAD
 export const stat = fs.statSync;
 
 export const readdir = fs.readdirSync;
@@ -115,7 +116,9 @@ export function readSourcePaths(): string[] {
   return [...sourcePaths];
 }
 
+=======
 // $FlowIssue
+>>>>>>> upstream/master
 export function addSourcePaths(srcPaths: string[]): void {
   sourcePaths.push(...srcPaths);
 }
