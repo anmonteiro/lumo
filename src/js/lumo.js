@@ -188,6 +188,8 @@ export function addSourcePaths(srcPaths: string[]): void {
   sourcePaths.push(...expanded);
 }
 
+export const readFile = fs.readFileSync;
+
 export const stat = fs.statSync;
 
 export const readdir = fs.readdirSync;
