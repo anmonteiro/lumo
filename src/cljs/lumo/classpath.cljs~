@@ -38,7 +38,7 @@
 (defn filenames-in-jar
   "Returns a list of all filenames in a jarfile"
   [jar-file]
-  (let [zip (.load (js/LUMO_JSZIP.) (js/LUMO_READFILE jar-file))]
+  (let [zip (.load (js/LUMO_JSZIP.) (LUMO_READFILE jar-file))]
     (filter #(re-find #".*\.clj.*" %) (js/Object.keys zip.files))))
 
 (defn classpath-jarfiles

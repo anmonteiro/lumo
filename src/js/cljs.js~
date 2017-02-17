@@ -42,7 +42,6 @@ if (__DEV__) {
       LUMO_WRITE_CACHE: lumo.writeCache,
       LUMO_LOAD_UPS_DEPS_CLJS: lumo.loadUpstreamForeignLibs,
       LUMO_EXISTS: lumo.fileExists,
-      LUMO_READFILE: lumo.readFile,
       LUMO_STAT: lumo.stat,
       LUMO_READDIR: lumo.readdir,
       LUMO_EVAL: lumoEval,
@@ -70,7 +69,6 @@ if (__DEV__) {
     global.LUMO_READDIR = lumo.readdir;
     global.LUMO_LOAD_UPS_DEPS_CLJS = lumo.loadUpstreamForeignLibs;
     global.LUMO_EXISTS = lumo.fileExists;
-    global.LUMO_READFILE = lumo.readFile;
     global.LUMO_EVAL = lumoEval;
 
     // $FlowExpectedError: only exists in the custom V8 startup snapshot
