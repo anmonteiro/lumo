@@ -35,6 +35,12 @@
   []
   (mapcat filenames (classpath)))
 
+(defn filenames-in-jar
+  "Returns a list of all filenames in a jarfile"
+  [jar-file]
+  (let [zip (. (new js/LUMO_JSZIP) load jar-file)]
+    (. zip file #".*")))
+
 (defn classpath-jarfiles
   "Returns a list of all .jar files on the classpath"
   []

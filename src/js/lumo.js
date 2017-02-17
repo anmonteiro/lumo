@@ -107,6 +107,8 @@ export function fileExists(filename: string): boolean {
   return false;
 }
 
+export const zip = JSZip;
+
 export const stat = fs.statSync;
 
 export const readdir = fs.readdirSync;

@@ -33,6 +33,7 @@ if (__DEV__) {
       console,
       parinfer,
       LUMO_LOAD: lumo.load,
+      LUMO_JSZIP: lumo.zip,
       LUMO_READ_SOURCES: lumo.readSourcePaths,
       LUMO_ADD_SOURCES: lumo.addSourcePaths,
       LUMO_REMOVE_SOURCE: lumo.removeSourcePath,
@@ -57,6 +58,7 @@ if (__DEV__) {
   newContext = function newCtx(): {[key: string]: mixed} {
     global.parinfer = parinfer;
     global.LUMO_LOAD = lumo.load;
+    global.LUMO_JSZIP = lumo.zip,
     global.LUMO_READ_CACHE = lumo.readCache;
     global.LUMO_READ_SOURCE = lumo.readSource;
     global.LUMO_WRITE_CACHE = lumo.writeCache;
