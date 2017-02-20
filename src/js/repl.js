@@ -6,7 +6,7 @@ import readline from 'readline';
 import tty from 'tty';
 import * as cljs from './cljs';
 import replHistory from './replHistory';
-import { currentTimeMicros, isWhitespace, isWindows } from './util';
+import { currentTimeMicros, isEmpty, isWindows } from './util';
 import { close as socketServerClose } from './socketRepl';
 
 import type { CLIOptsType } from './cli';
@@ -108,7 +108,7 @@ export function processLine(replSession: REPLSession, line: string): void {
     return isMain ? stopREPL() : rl.output.destroy();
   }
 
-  if (isWhitespace(input)) {
+  if (isEmpty(input)) {
     session.input = line;
   } else {
     session.input = `${input}\n${line}`;
@@ -121,7 +121,7 @@ export function processLine(replSession: REPLSession, line: string): void {
     if (extraForms !== false) {
       session.input = currentInput.substring(0, currentInput.length - extraForms.length);
 
-      if (!isWhitespace(session.input)) {
+      if (!isEmpty(session.input)) {
         hookOutputStreams(writeToResultBuffer,
                           isMain ? writeToErrorBuffer : writeToResultBuffer);
         cljs.execute(session.input);
@@ -131,7 +131,7 @@ export function processLine(replSession: REPLSession, line: string): void {
         consumeBuffer(resultBuffer, rl.output);
         consumeBuffer(errorBuffer, process.stderr);
       } else {
-        if (isWhitespace(line)) {
+        if (isEmpty(line)) {
           // $FlowIssue: rl.output is there
           rl.output.write('\n');
         }

@@ -32,8 +32,22 @@ export function ensureDir(dir: string): void {
   }
 }
 
-export function isWhitespace(s: string): boolean {
-  return s.trim() === '';
+/* Returns true if a string contains only comments or whitespace */
+
+export function isEmpty(s: string): boolean {
+  let i;
+
+  for (i = 0; i < s.length; i += 1) {
+    if (s[i] === ';') {
+      do {
+        i += 1;
+      }
+      while (i < s.length && s[i] !== '\n');
+    } else if (!/\s/.test(s[i])) {
+      return false;
+    }
+  }
+  return true;
 }
 
 export function currentTimeMicros(): number {

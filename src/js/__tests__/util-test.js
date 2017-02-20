@@ -3,7 +3,7 @@
 import fs from 'fs';
 import os from 'os';
 import { ensureDir, srcPathsFromClasspathStrings,
-         isWhitespace, isWindows } from '../util';
+         isEmpty, isWindows } from '../util';
 
 describe('srcPathsFromClasspathStrings', () => {
   const homedir = os.homedir;
@@ -94,18 +94,20 @@ describe('ensureDir', () => {
   });
 });
 
-describe('isWhitespace', () => {
+describe('isEmpty', () => {
   it('returns true given any whitespace string', () => {
-    expect(isWhitespace('')).toBe(true);
-    expect(isWhitespace('  ')).toBe(true);
-    expect(isWhitespace('\t')).toBe(true);
-    expect(isWhitespace('\n')).toBe(true);
-    expect(isWhitespace('\r')).toBe(true);
+    expect(isEmpty('')).toBe(true);
+    expect(isEmpty('  ')).toBe(true);
+    expect(isEmpty('\t')).toBe(true);
+    expect(isEmpty('\n')).toBe(true);
+    expect(isEmpty('\r')).toBe(true);
+    expect(isEmpty(' ;a')).toBe(true);
   });
 
   it('returns false given any non-whitespace string', () => {
-    expect(isWhitespace('a')).toBe(false);
-    expect(isWhitespace('a b')).toBe(false);
-    expect(isWhitespace('a\n')).toBe(false);
+    expect(isEmpty('a')).toBe(false);
+    expect(isEmpty('a b')).toBe(false);
+    expect(isEmpty('a\n')).toBe(false);
+    expect(isEmpty(' ;a\nb')).toBe(false);
   });
 });
