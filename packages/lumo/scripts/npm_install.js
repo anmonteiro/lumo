@@ -1,4 +1,4 @@
-var https = require('https');
+var request = require('request');
 var fs = require('fs');
 var zlib = require('zlib');
 var JSZip = require('jszip');
@@ -28,64 +28,73 @@ var url = [
 
 function handleError() {
   file.close();
-  console.error('Download failed.');
+  console.error('\nDownload failed.');
   process.exit(-1);
 }
 
-function hookProgressBar(response) {
-  var len = parseInt(response.headers['content-length'], 10);
-  console.log(/* just newline */)
-  var bar = new ProgressBar(' Downloading [:bar] :rate/bps :percent :etas', {
-    complete: '=',
-    imcomplete: ' ',
-    width: 40,
-    total: len
-  });
-  response.on('data', function(chunk) {
-    bar.tick(chunk.length);
-  });
-  response.on('end', function() {
+function hookProgressBar(req) {
+  req.on('response', function(response) {
     console.log(/* just newline */)
+
+    var len = parseInt(response.headers['content-length'], 10);
+    var bar = new ProgressBar(' Downloading [:bar] :rate/bps :percent :etas', {
+      complete: '=',
+      imcomplete: ' ',
+      width: 40,
+      total: len
+    });
+
+    response.on('data', function(chunk) {
+      bar.tick(chunk.length);
+    })
+
+    response.on('end', function() {
+      console.log(/* just newline */);
+    });
   });
 }
 
-var request = https.get(url, function(response) {
-  if (response.statusCode >= 300 &&
-      response.statusCode < 400 &&
-      response.headers['location'] != null) {
-    var location = response.headers['location'];
+function setRequestTimeout(ms, req, cb) {
+  var timer
 
-    var req = https.get(location, function(response) {
-      response.pipe(file);
-      hookProgressBar(response);
-      response.on('end', function() {
-        var fileContents = fs.readFileSync(platformZip);
-        var zipped = new JSZip().load(fileContents).file(executable);
+  req.on('response', function(response) {
+    timer = setTimeout(cb, ms)
 
-        try {
-          fs.mkdirSync('bin');
-        } catch(e) {
-          if (e.code !== 'EEXIST') {
-            throw e;
-          }
-        }
+    response.on('end', function() {
+      clearTimeout(timer)
+    })
+  });
 
-        fs.writeFileSync('./bin/' + executable, zipped.asBinary(), {
-          encoding: 'binary',
-          mode: zipped.options.unixPermissions,
-        });
-        fs.unlinkSync(platformZip);
-      });
-    });
+  req.on('error', function() {
+    clearTimeout(timer)
+  })
+}
 
-    req.setTimeout(30000, handleError);
+var req = request(url, {timeout: 30000});
 
-    req.on('error', handleError);
-  } else {
-    response.pipe(file);
-    hookProgressBar(response);
+setRequestTimeout(30000, req, handleError);
+
+hookProgressBar(req);
+
+req.pipe(file);
+
+req.on('error', handleError);
+
+req.on('end', function() {
+  var fileContents = fs.readFileSync(platformZip);
+  var zipped = new JSZip().load(fileContents).file(executable);
+
+  try {
+    fs.mkdirSync('bin');
+  } catch(e) {
+    if (e.code !== 'EEXIST') {
+      throw e;
+    }
   }
 
+  fs.writeFileSync('./bin/' + executable, zipped.asBinary(), {
+    encoding: 'binary',
+    mode: zipped.options.unixPermissions,
+  });
+  fs.unlinkSync(platformZip);
 });
-
-request.on('error', handleError);
