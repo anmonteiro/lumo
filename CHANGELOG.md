@@ -2,6 +2,10 @@
 
 ## [master](https://github.com/anmonteiro/lumo/compare/1.1.0...HEAD) (unreleased)
 
+### New features
+
+- Add the ability to compile ClojureScript projects.
+
 ### Changes
 
 - Upgrade Node.js to version 7.5.0.

@@ -1320,10 +1320,7 @@
                                              :defines (clj->js (.-defines compiler-options))})
         result (util/measure (:compiler-stats opts)
                  "Optimizing with Google Closure Compiler"
-                 (closure-compiler compiler-options))
-        res-clone (goog.object/clone result)]
-    (goog.object/remove res-clone "compiledCode")
-    (js/console.log "result" res-clone)
+                 (closure-compiler compiler-options))]
     ;; FIXME: Java GClosure -> JS GClosure
     (if (optimize-success? result)
       ;; compiler.getSourceMap().reset()
