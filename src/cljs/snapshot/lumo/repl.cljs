@@ -695,7 +695,9 @@
             eval-opts (merge (make-eval-opts)
                         (when expression?
                           {:context :expr
-                           :def-emits-var true}))]
+                           :def-emits-var true})
+                        (when-not print-nil-result?
+                          {:verbose false}))]
         (if (repl-special? form)
           ((get repl-special-fns (first form)) form eval-opts)
           (cljs/eval-str
