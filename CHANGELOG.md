@@ -2,6 +2,10 @@
 
 ## [master](https://github.com/anmonteiro/lumo/compare/1.2.0...HEAD) (unreleased)
 
+### Changes
+
+- Upgrade Node.js to version 7.6.0.
+
 ### Bug fixes
 
 - Enable caching for files executed from the filesystem, provided their namespace
