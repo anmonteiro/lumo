@@ -2,6 +2,11 @@
 
 ## [master](https://github.com/anmonteiro/lumo/compare/1.2.0...HEAD) (unreleased)
 
+### Bug fixes
+
+- Enable caching for files executed from the filesystem, provided their namespace
+matches their location ([#73](https://github.com/anmonteiro/lumo/issues/73)).
+
 ## [1.2.0](https://github.com/anmonteiro/lumo/compare/1.1.0...1.2.0) (2017-02-20)
 
 ### New features

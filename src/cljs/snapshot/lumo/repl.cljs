@@ -1,6 +1,7 @@
 (ns lumo.repl
   (:refer-clojure :exclude [load-file*])
   (:require-macros [cljs.env.macros :as env]
+                   [cljs.analyzer.macros :refer [no-warn]]
                    [lumo.repl])
   (:require [cljs.analyzer :as ana]
             [cljs.env :as env]
@@ -250,8 +251,9 @@
       (cb nil))))
 
 (defn- load-file* [filename cb]
-  (when-not (load-and-cb! nil filename filename false cb)
-    (cb nil)))
+  (let [path (string/replace filename #"\.[^/.]+$" "")]
+    (when-not (load-and-cb! nil path filename false cb)
+      (cb nil))))
 
 (defn- load [{:keys [name macros path file] :as m} cb]
   (cond
@@ -289,7 +291,7 @@
 (defn- caching-node-eval
   "Evaluates JavaScript in node, writing source and analysis cache to disk
    when desired."
-  [{:keys [name source cache path] :as m}]
+  [{:keys [name source cache path filename]}]
   (when-let [cache-path (and source cache path (:cache-path @app-opts))]
     (write-cache name path source cache cache-path))
   (let [foreign? *loading-foreign*
@@ -667,18 +669,38 @@
               r/*alias-map* (current-alias-map)]
       [(r/read {:read-cond :allow :features #{:cljs}} reader) (read-chars reader)])))
 
+(defn- ns-for-source [source]
+  (let [[ns-form] (repl-read-string source)
+        {:keys [op name]} (no-warn (ana/analyze (ana/empty-env) ns-form))]
+    (when (or (keyword-identical? op :ns)
+              (keyword-identical? op :ns*))
+      name)))
+
 (declare execute-source)
 
-(defn- execute-path [filename opts]
-  (load {:file filename}
-    (fn [{:keys [lang source cache]}]
+(defn- execute-path [file opts]
+  (load {:file file}
+    (fn [{:keys [lang source cache filename]}]
       (if source
-        (binding [*executing-path* filename]
-          (execute-source source (merge opts
-                                   {:type "text"
-                                    :filename filename
-                                    :expression? false})))
-        (handle-repl-error (ex-info (str "Could not load file " filename) {}))))))
+        (binding [cljs/*eval-fn*   caching-node-eval
+                  cljs/*load-fn*   load
+                  *executing-path* file]
+          (condp keyword-identical? lang
+            :clj (execute-source source (merge opts
+                                          {:type "text"
+                                           :filename file
+                                           :expression? false}))
+            :js (cljs/process-macros-deps {:*compiler* st} cache nil
+                  (fn [{:keys [error]}]
+                    (if-not (nil? error)
+                      (handle-repl-error error)
+                      (cljs/process-libs-deps {:*compiler* st} cache nil
+                        (fn [{:keys [error]}]
+                          (if-not (nil? error)
+                            (handle-repl-error error)
+                            (caching-node-eval {:source source
+                                                :filename filename})))))))))
+        (handle-repl-error (ex-info (str "Could not load file " file) {}))))))
 
 (defn- execute-text
   [source {:keys [expression? print-nil-result? filename] :as opts}]
@@ -705,7 +727,7 @@
             source
             (cond
               expression? source
-              filename filename
+              filename (or (ns-for-source source) 'cljs.user)
               :else "source")
             eval-opts
             (fn [{:keys [ns value error] :as ret}]
