@@ -59,6 +59,9 @@ browserify({
   }))
   .exclude('nexeres')
   .exclude('v8')
+  .exclude('google-closure-compiler-js')
+  .exclude('parinfer')
+  .exclude('jszip')
   .bundle((err, buf) => {
     if (err) {
       throw err;

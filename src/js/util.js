@@ -5,7 +5,9 @@ import os from 'os';
 import path from 'path';
 
 function expandPath(somePath: string): string {
-  return somePath.startsWith('~') ? somePath.replace(/^~/, os.homedir) : somePath;
+  const tildeExpandedPath = somePath.startsWith('~') ?
+        somePath.replace(/^~/, os.homedir) : somePath;
+  return path.resolve(tildeExpandedPath);
 }
 
 export const isWindows: boolean = /^Windows/.test(os.type());

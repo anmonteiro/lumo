@@ -1,6 +1,6 @@
 {
   "name": "lumo-cljs",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Fast, cross-platform, standalone ClojureScript REPL",
   "author": "anmonteiro",
   "license": "EPL-1.0",
@@ -18,7 +18,8 @@
   },
   "dependencies": {
     "jszip": "2.6.1",
-    "progress": "^1.1.8"
+    "progress": "^1.1.8",
+    "request": "2.79.0"
   },
   "bin": {
     "lumo": "./bin/lumo"

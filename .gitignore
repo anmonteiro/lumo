@@ -45,3 +45,6 @@ jspm_packages
 
 tmp/
 target/
+
+/build/
+lumo-cache/

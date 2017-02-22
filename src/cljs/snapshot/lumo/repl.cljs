@@ -1,6 +1,7 @@
 (ns lumo.repl
   (:refer-clojure :exclude [load-file*])
   (:require-macros [cljs.env.macros :as env]
+                   [cljs.analyzer.macros :refer [no-warn]]
                    [lumo.repl])
   (:require [cljs.analyzer :as ana]
             [cljs.env :as env]
@@ -12,8 +13,9 @@
             [cljs.tools.reader.reader-types :as rt]
             [clojure.string :as string]
             [cognitect.transit :as transit]
-            [lazy-map.core :refer [lazy-map]]
+            [goog.object :as gobj]
             [lumo.js-deps :as deps]
+            [lumo.common :as common]
             [lumo.repl-resources :refer [special-doc-map repl-special-doc-map]])
   (:import [goog.string StringBuffer]))
 
@@ -21,6 +23,7 @@
 ;; Globals
 
 (def ^:dynamic *loading-foreign* false)
+(def ^:dynamic *executing-path* nil)
 
 (defonce ^:private st (cljs/empty-state))
 
@@ -31,50 +34,6 @@
 (def ^:private ^:const could-not-eval-regex #"Could not eval")
 (def ^:private ^:const MACROS_SUFFIX "$macros")
 (def ^:private ^:const JS_EXT ".js")
-(def ^:private ^:const JSON_EXT ".json")
-
-;; =============================================================================
-;; Analysis cache
-
-(defn- transit-json->cljs
-  [json]
-  (let [rdr (transit/reader :json)]
-    (transit/read rdr json)))
-
-(defn- cljs->transit-json
-  [x]
-  (let [wtr (transit/writer :json)]
-    (transit/write wtr x)))
-
-(defn- load-core-analysis-cache
-  [eager? ns-sym file-prefix]
-  (let [keys [:rename-macros :renames :use-macros :excludes :name :imports
-              :requires :uses :defs :require-macros :cljs.analyzer/constants :doc]]
-    (letfn [(load-key [key]
-              (let [resource (js/LUMO_LOAD (str file-prefix (munge key) JSON_EXT))]
-                (transit-json->cljs resource)))
-            (lazy-load-key [key]
-              (load-key key))]
-      (cljs/load-analysis-cache! st ns-sym
-        (if eager?
-          (zipmap keys (map load-key keys))
-          (lazy-map
-            {:rename-macros           (lazy-load-key :rename-macros)
-             :renames                 (lazy-load-key :renames)
-             :use-macros              (lazy-load-key :use-macros)
-             :excludes                (lazy-load-key :excludes)
-             :name                    (lazy-load-key :name)
-             :imports                 (lazy-load-key :imports)
-             :requires                (lazy-load-key :requires)
-             :uses                    (lazy-load-key :uses)
-             :defs                    (lazy-load-key :defs)
-             :require-macros          (lazy-load-key :require-macros)
-             :cljs.analyzer/constants (lazy-load-key :cljs.analyzer/constants)
-             :doc                     (lazy-load-key :doc)}))))))
-
-(defn- load-core-analysis-caches [eager?]
-  (load-core-analysis-cache eager? 'cljs.core "cljs/core.cljs.cache.aot.")
-  (load-core-analysis-cache eager? 'cljs.core$macros "cljs/core$macros.cljc.cache."))
 
 ;; =============================================================================
 ;; Dependency loading
@@ -107,13 +66,51 @@
     (for [extension extensions]
       (str path extension))))
 
-(defn- load-goog
+(defn closure-index* []
+  (let [paths-to-deps
+        (map (fn [[_ path provides requires]]
+               [path
+                (map second
+                  (re-seq #"'(.*?)'" provides))
+                (map second
+                  (re-seq #"'(.*?)'" requires))])
+          (re-seq #"\ngoog\.addDependency\('(.*)', \[(.*?)\], \[(.*?)\].*"
+            (js/$$LUMO_GLOBALS.load "goog/deps.js")))]
+    (into {}
+      (for [[path provides requires] paths-to-deps
+            provide provides]
+        [(symbol provide) {:path (str "goog/" (second (re-find #"(.*)\.js$" path)))
+                           :requires requires}]))))
+
+(def closure-index (memoize closure-index*))
+
+(defonce goog-loaded
+  (volatile! '#{goog.object
+                goog.string
+                goog.string.StringBuffer
+                goog.array
+                goog.crypt.base64
+                goog.math.Long}))
+
+(defn goog-dep-source [name]
+  (let [index (closure-index)]
+    (when-let [{:keys [path]} (get index name)]
+      (let [sorted-deps (remove @goog-loaded (deps/topo-sort index name))]
+        (vswap! goog-loaded into sorted-deps)
+        (reduce str
+          (map (fn [dep-name]
+                 (let [{:keys [path]} (get index dep-name)]
+                   (js/$$LUMO_GLOBALS.load (str path ".js")))) sorted-deps))))))
+
+(defn load-goog
   "Loads a Google Closure implementation source file. `goog` namespaces are
    actually already included in the bundle because we compile with simple
    optimizations."
   [name cb]
-  (cb {:source ""
-       :lang   :js}))
+  (if-let [source (goog-dep-source name)]
+    (cb {:source source
+         :lang   :js})
+    (cb nil)))
 
 (defn- skip-load-js?
   "Indicates namespaces for which JS code is already loaded, but for which
@@ -121,12 +118,9 @@
   [name macros]
   (and (not macros)
     ('#{cljs.analyzer
-        cljs.analyzer.api
         cljs.compiler
         cljs.env
         cljs.js
-        cljs.nodejs
-        cljs.pprint
         cljs.reader
         cljs.repl
         cljs.source-map
@@ -135,16 +129,12 @@
         cljs.spec
         cljs.spec.impl.gen
         cljs.tagged-literals
-        cljs.test
         cljs.tools.reader
         cljs.tools.reader.reader-types
         cljs.tools.reader.impl.commons
         cljs.tools.reader.impl.utils
-        clojure.core.reducers
-        clojure.data
         clojure.string
         clojure.set
-        clojure.zip
         clojure.walk
         cognitect.transit
         lazy-map.core
@@ -152,21 +142,23 @@
         lumo.repl
         lumo.repl-resources
         lumo.classpath
-        lumo.js-deps} name)))
+        lumo.js-deps
+        lumo.common} name)))
 
 (defn- skip-load?
   [name macros?]
   ((if macros?
      '#{cljs.core
         cljs.js
-        cljs.pprint
         cljs.repl
-        cljs.env.macros
-        cljs.analyzer.macros
-        cljs.compiler.macros
-        cljs.tools.reader.reader-types
         lazy-map.core}
-     '#{cljs.core
+     '#{goog.object
+        goog.string
+        goog.string.StringBuffer
+        goog.array
+        goog.crypt.base64
+        goog.math.Long
+        cljs.core
         com.cognitect.transit
         com.cognitect.transit.delimiters
         com.cognitect.transit.handlers
@@ -180,17 +172,17 @@
    name))
 
 (defn- load-bundled [path source cb]
-  (when-let [cache-json (js/LUMO_LOAD (str path ".cache.json"))]
+  (when-let [cache-json (js/$$LUMO_GLOBALS.load (str path ".cache.json"))]
     (cb {:source source
          :lang :js
-         :cache (transit-json->cljs cache-json)})
+         :cache (common/transit-json->cljs cache-json)})
     :loaded))
 
 ;; TODO: we could be smarter and only load the libs that we haven't already loaded
 (defn- load-foreign-lib
   [name cb]
   (let [files (deps/files-to-load name)
-        sources (map js/LUMO_READ_SOURCE files)]
+        sources (map js/$$LUMO_GLOBALS.readSource files)]
     (binding [*loading-foreign* true]
       (cb {:lang :js
            :source (string/join "\n" sources)})
@@ -204,30 +196,30 @@
   (let [cache-dir (:cache-path @app-opts)
         cache-prefix (str cache-dir "/" (munge path) (when macros? MACROS_SUFFIX))]
     (if-let [cached-source (and cache-dir
-                                (js/LUMO_READ_CACHE (str cache-prefix JS_EXT)))]
-      (let [cache-json (js/LUMO_READ_CACHE (str cache-prefix ".cache.json"))]
+                             (js/$$LUMO_GLOBALS.readCache (str cache-prefix JS_EXT)))]
+      (let [cache-json (js/$$LUMO_GLOBALS.readCache (str cache-prefix ".cache.json"))]
         (cb {:lang :js
              :source cached-source
              :filename (str cache-prefix JS_EXT)
-             :cache (transit-json->cljs cache-json)})
+             :cache (common/transit-json->cljs cache-json)})
         :loaded)
       (let [filename file-path]
-        (when-let [source (js/LUMO_READ_SOURCE filename)]
+        (when-let [source (js/$$LUMO_GLOBALS.readSource filename)]
           (let [ret {:lang   (filename->lang filename)
                      :file   filename
                      :source source}]
             (if (or (string/ends-with? filename ".cljs")
                     (string/ends-with? filename ".cljc"))
-              (if-let [javascript-source (js/LUMO_READ_SOURCE (replace-extension filename JS_EXT))]
-                (if-let [cache-edn (js/LUMO_READ_SOURCE (str filename ".cache.edn"))]
+              (if-let [javascript-source (js/$$LUMO_GLOBALS.readSource (replace-extension filename JS_EXT))]
+                (if-let [cache-edn (js/$$LUMO_GLOBALS.readSource (str filename ".cache.edn"))]
                   (cb {:lang   :js
                        :source javascript-source
                        :cache  (parse-edn cache-edn)})
                   ;; one last attempt to read analysis cache
-                  (if-let [cache-json (js/LUMO_READ_SOURCE (str filename ".cache.json"))]
+                  (if-let [cache-json (js/$$LUMO_GLOBALS.readSource (str filename ".cache.json"))]
                     (cb {:lang   :js
                          :source javascript-source
-                         :cache  (transit-json->cljs cache-json)})
+                         :cache  (common/transit-json->cljs cache-json)})
                     (cb ret)))
                 (cb ret))
               (cb ret)))
@@ -237,7 +229,7 @@
   [name path file-path macros? cb]
   (let [bundled-src-prefix (cond-> path
                              macros? (str MACROS_SUFFIX))
-        bundled-source (js/LUMO_LOAD (str bundled-src-prefix JS_EXT))]
+        bundled-source (js/$$LUMO_GLOBALS.load (str bundled-src-prefix JS_EXT))]
     (cond
       (skip-load-js? name macros?)
       (load-bundled file-path "" cb)
@@ -260,8 +252,9 @@
       (cb nil))))
 
 (defn- load-file* [filename cb]
-  (when-not (load-and-cb! nil filename filename false cb)
-    (cb nil)))
+  (let [path (string/replace filename #"\.[^/.]+$" "")]
+    (when-not (load-and-cb! nil path filename false cb)
+      (cb nil))))
 
 (defn- load [{:keys [name macros path file] :as m} cb]
   (cond
@@ -292,24 +285,21 @@
               (handle-caching-error err)))]
     (let [macros? (macros-cache? cache)
           filename-prefix (str prefix-path "/" (munge path) (when macros? MACROS_SUFFIX))
-          cache-json (cljs->transit-json cache)]
-      (wrap-error (js/LUMO_WRITE_CACHE (str filename-prefix JS_EXT) source))
-      (wrap-error (js/LUMO_WRITE_CACHE (str filename-prefix ".cache.json") cache-json)))))
+          cache-json (common/cljs->transit-json cache)]
+      (wrap-error (js/$$LUMO_GLOBALS.writeCache (str filename-prefix JS_EXT) source))
+      (wrap-error (js/$$LUMO_GLOBALS.writeCache (str filename-prefix ".cache.json") cache-json)))))
 
 (defn- caching-node-eval
   "Evaluates JavaScript in node, writing source and analysis cache to disk
    when desired."
-  [{:keys [name source cache path] :as m}]
+  [{:keys [name source cache path filename]}]
   (when-let [cache-path (and source cache path (:cache-path @app-opts))]
     (write-cache name path source cache cache-path))
-  (if *loading-foreign*
-    ;; this is a hack needed for foreign libraries to end up on global scope.
-    ;; Closure Library's goog.bootstrap.nodeJs does the same thing.
-    (with-redefs [js/module js/undefined
-                  js/exports js/undefined]
-      (set! *loading-foreign* false)
-      (js/LUMO_EVAL source))
-    (js/LUMO_EVAL source)))
+  (let [foreign? *loading-foreign*
+        exec-path *executing-path*]
+    (set! *loading-foreign* false)
+    (set! *executing-path* nil)
+    (js/$$LUMO_GLOBALS.eval source foreign? exec-path)))
 
 ;; =============================================================================
 ;; REPL plumbing
@@ -326,12 +316,13 @@
   "Based on a partially entered form, returns the number of spaces with which
    to indent the next line. Returns 0 on failure to calculate."
   [text]
-  (let [pos (count text)
-        balanced (js/parinfer.indentMode text (calc-parinfer-opts text pos))]
+  (let [parinfer (js/$$LUMO_GLOBALS.getParinfer)
+        pos (count text)
+        balanced (parinfer.indentMode text (calc-parinfer-opts text pos))]
     (if (.-success balanced)
       (let [new-text (str (subs (.-text balanced) 0 pos) "\n"
                        (subs (.-text balanced) pos))
-            indented (js/parinfer.parenMode new-text
+            indented (parinfer.parenMode new-text
                        (calc-parinfer-opts new-text (inc pos)))]
         (if (.-success indented)
           (.-cursorX indented)
@@ -528,7 +519,7 @@
               path
               (str (root-directory @current-ns) \/ path))
         src (.substring src 1)]
-    (or (and (js/LUMO_EXISTS (str src ".cljs")) (str src ".cljs"))
+    (or (and (js/$$LUMO_GLOBALS.resource (str src ".cljs")) (str src ".cljs"))
         (str src ".cljc"))))
 
 (defn- wrap-special-fns
@@ -679,17 +670,38 @@
               r/*alias-map* (current-alias-map)]
       [(r/read {:read-cond :allow :features #{:cljs}} reader) (read-chars reader)])))
 
+(defn- ns-for-source [source]
+  (let [[ns-form] (repl-read-string source)
+        {:keys [op name]} (no-warn (ana/analyze (ana/empty-env) ns-form))]
+    (when (or (keyword-identical? op :ns)
+              (keyword-identical? op :ns*))
+      name)))
+
 (declare execute-source)
 
-(defn- execute-path [filename opts]
-  (load {:file filename}
-    (fn [{:keys [lang source cache]}]
+(defn- execute-path [file opts]
+  (load {:file file}
+    (fn [{:keys [lang source cache filename]}]
       (if source
-        (execute-source source (merge opts
-                                 {:type "text"
-                                  :filename filename
-                                  :expression? false}))
-        (handle-repl-error (ex-info (str "Could not load file " filename) {}))))))
+        (binding [cljs/*eval-fn*   caching-node-eval
+                  cljs/*load-fn*   load
+                  *executing-path* file]
+          (condp keyword-identical? lang
+            :clj (execute-source source (merge opts
+                                          {:type "text"
+                                           :filename file
+                                           :expression? false}))
+            :js (cljs/process-macros-deps {:*compiler* st} cache nil
+                  (fn [{:keys [error]}]
+                    (if-not (nil? error)
+                      (handle-repl-error error)
+                      (cljs/process-libs-deps {:*compiler* st} cache nil
+                        (fn [{:keys [error]}]
+                          (if-not (nil? error)
+                            (handle-repl-error error)
+                            (caching-node-eval {:source source
+                                                :filename filename})))))))))
+        (handle-repl-error (ex-info (str "Could not load file " file) {}))))))
 
 (defn- execute-text
   [source {:keys [expression? print-nil-result? filename] :as opts}]
@@ -706,7 +718,9 @@
             eval-opts (merge (make-eval-opts)
                         (when expression?
                           {:context :expr
-                           :def-emits-var true}))]
+                           :def-emits-var true})
+                        (when-not print-nil-result?
+                          {:verbose false}))]
         (if (repl-special? form)
           ((get repl-special-fns (first form)) form eval-opts)
           (cljs/eval-str
@@ -714,7 +728,7 @@
             source
             (cond
               expression? source
-              filename filename
+              filename (or (ns-for-source source) 'cljs.user)
               :else "source")
             eval-opts
             (fn [{:keys [ns value error] :as ret}]
@@ -794,7 +808,7 @@
                      :static-fns static-fns
                      :elide-asserts elide-asserts})
   (setup-assert! elide-asserts)
-  (load-core-analysis-caches repl?)
+  (common/load-core-analysis-caches st repl?)
   (deps/index-upstream-foreign-libs))
 
 ;; --------------------

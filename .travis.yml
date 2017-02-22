@@ -23,6 +23,9 @@ script:
 - yarn test
 - boot test
 - boot release-ci
+after_success:
+- chmod a+x build/lumo
+- zip -j build/lumo.zip build/lumo
 deploy:
   provider: s3
   bucket: lumo-linux

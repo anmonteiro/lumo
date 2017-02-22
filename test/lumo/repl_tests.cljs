@@ -3,7 +3,7 @@
             [cljs.test :refer [deftest is testing]]
             [lumo.repl :as lumo]))
 
-(set! js/parinfer (node/require "parinfer"))
+(set! (. js/global -$$LUMO_GLOBALS) #js {:getParinfer #(node/require "parinfer")})
 
 (deftest test-is-readable?
   (is (false? (lumo/is-readable? "(")))

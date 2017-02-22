@@ -19,7 +19,7 @@
     index libs))
 
 (defn index-upstream-foreign-libs []
-  (doseq [deps-cljs-str (js/LUMO_LOAD_UPS_DEPS_CLJS)]
+  (doseq [deps-cljs-str (js/$$LUMO_GLOBALS.loadUpstreamForeignLibs)]
     (let [{:keys [foreign-libs]} (r/read-string deps-cljs-str)]
       (vswap! foreign-libs-index index-foreign-libs foreign-libs))))
 

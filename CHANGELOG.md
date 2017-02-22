@@ -1,10 +1,30 @@
 # Changelog
 
-## [master](https://github.com/anmonteiro/lumo/compare/1.1.0...HEAD) (unreleased)
+## [master](https://github.com/anmonteiro/lumo/compare/1.2.0...HEAD) (unreleased)
+
+### Changes
+
+- Upgrade Node.js to version 7.6.0.
+
+### Bug fixes
+
+- Enable caching for files executed from the filesystem, provided their namespace
+matches their location ([#73](https://github.com/anmonteiro/lumo/issues/73)).
+
+## [1.2.0](https://github.com/anmonteiro/lumo/compare/1.1.0...1.2.0) (2017-02-20)
+
+### New features
+
+- Add the ability to compile ClojureScript projects.
 
 ### Changes
 
 - Upgrade Node.js to version 7.5.0.
+
+### Bug fixes
+
+- Fix a bug where `cljs.nodejs/require` wouldn't find modules in scripts run from
+nested directories.
 
 ## [1.1.0](https://github.com/anmonteiro/lumo/compare/1.0.0...1.1.0) (2017-01-28)
 
