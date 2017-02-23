@@ -1,0 +1,24 @@
+.navPusher {
+  padding-top: 100px;
+  position: relative;
+  left: 0;
+  z-index: 99;
+  height: 100%;
+
+  @media only screen and (min-width: 1024px) {
+    padding-top: 50px;
+  }
+
+  &::after {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 0;
+    height: 0;
+    background: rgba(0, 0, 0, 0.4);
+    content: '';
+    opacity: 0;
+    -webkit-transition: opacity 0.5s, width 0.1s 0.5s, height 0.1s 0.5s;
+    transition: opacity 0.5s, width 0.1s 0.5s, height 0.1s 0.5s;
+  }
+}

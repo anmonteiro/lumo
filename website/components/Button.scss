@@ -1,0 +1,23 @@
+.button {
+  margin: 4px;
+  border: 1px solid #99424f;
+  border-radius: 3px;
+  color: #99424f;
+  display: inline-block;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.2em;
+  padding: 10px;
+  text-transform: uppercase;
+  text-decoration: none !important;
+  transition: background 0.3s, color 0.3s;
+
+  &:hover {
+    background: #99424f;
+    color: #fff;
+  }
+}
+
+.blockButton {
+  display: block;
+}

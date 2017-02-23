@@ -1,0 +1,131 @@
+.homeContainer {
+  background: #fff;
+  color: #99424f;
+  text-align: center;
+
+  .homeWrapper {
+    padding: 2em 10px;
+
+    .homeWrapper .wrapper {
+      margin: 0px auto;
+      max-width: 900px;
+      padding: 0 20px;
+    }
+
+    @media only screen and (min-width: 480px) {
+      padding-left: 10px;
+      padding-right: 10px;
+    }
+  }
+}
+
+.projectTitle {
+  font-size: 250%;
+  line-height: 1em;
+  font-weight: 400;
+
+  & > small {
+    display: block;
+    font-size: 50%;
+    line-height: 1em;
+    font-weight: 300;
+    margin: 0.7em 0 1.3em;
+  }
+
+  @media only screen and (min-width: 480px) {
+    font-size: 300%;
+    margin: 0.3em 0;
+
+    & > small {
+      font-size: 50%;
+    }
+  }
+}
+
+.projectLogo {
+  display: none;
+  pointer-events: none;
+}
+.projectLogo img {
+  height: 100px;
+  margin-bottom: 0px;
+}
+
+@media only screen and (min-width: 480px) {
+  .projectLogo img {
+    margin-bottom: 10px;
+    height: 200px;
+  }
+}
+
+@media only screen and (min-width: 900px) {
+  .homeContainer .homeWrapper {
+    position: relative;
+  }
+  .homeContainer .homeWrapper #inner {
+    box-sizing: border-box;
+    max-width: 600px;
+    padding-right: 40px;
+  }
+}
+
+@media only screen and (min-width: 1200px) {
+  .homeContainer .homeWrapper #inner {
+    max-width: 750px;
+  }
+
+  .wrapper {
+    max-width: 1100px;
+  }
+  .homeContainer .homeWrapper .projectLogo {
+    align-items: center;
+    bottom: 0;
+    display: flex;
+    justify-content: flex-end;
+    left: 0;
+    padding: 2em 20px 4em;
+    position: absolute;
+    right: 0;
+    top: 0;
+  }
+  .homeContainer .homeWrapper .projectLogo img {
+    height: 100%;
+    max-height: 250px;
+  }
+}
+
+@media only screen and (min-width: 1500px) {
+  .homeContainer .homeWrapper #inner {
+    max-width: 1100px;
+    padding-bottom: 40px;
+    padding-top: 40px;
+  }
+}
+
+.promoSection {
+  display: flex;
+  flex-flow: column wrap;
+  font-size: 125%;
+  line-height: 1.6em;
+  position: relative;
+  z-index: 99;
+
+  .promoRow {
+    padding: 10px 0;
+
+    .pluginWrapper {
+      display: block;
+    }
+
+    .pluginRowBlock {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin: 0 -2px;
+
+      .pluginWrapper {
+        padding: 0 2px;
+      }
+    }
+  }
+}

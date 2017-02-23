@@ -1,0 +1,128 @@
+/** GridBlock **/
+.gridBlock {
+  margin: -5px 0;
+  padding: 0;
+
+  .twoByGridBlock, .fourByGridBlock {
+    padding: 5px 0;
+    img {
+      max-width: 100%;
+    }
+  }
+
+  .gridClear {
+    clear: both;
+  }
+}
+
+.alignCenter, .alignCenter h2 {
+  text-align: center;
+}
+
+.alignRight {
+  text-align: right;
+}
+
+.imageAlignSide {
+  display: flex;
+  flex-flow: row wrap;
+
+  .blockImage {
+    max-width: 500px;
+    flex: 0 1 500px;
+    margin-right: 20px;
+
+    @media only screen and (min-device-width: 360px) and (max-device-width: 736px) {
+      display: none;
+    }
+  }
+
+  .blockContent {
+    flex: 1 1;
+  }
+}
+
+.blockImage {
+  max-width: 730px;
+}
+
+.imageAlignBottom .blockImage {
+  max-width: 730px;
+  margin: 0 auto 20px;
+}
+
+.imageAlignBottom.alignCenter .blockImage {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.imageAlignTop .blockImage {
+  // max-width: 80px;
+  margin-bottom: 20px;
+
+  img {
+    max-height: 80px;
+  }
+}
+
+.imageAlignTop.alignCenter .blockImage {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.blockElement p {
+  padding: 0.8em 0;
+}
+
+@media only screen and (min-width: 1024px) {
+  .gridBlock {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    margin: -10px;
+
+    .twoByGridBlock {
+      box-sizing: border-box;
+      flex: 1 0 50%;
+      padding: 10px;
+    }
+
+    .fourByGridBlock {
+      box-sizing: border-box;
+      flex: 1 0 25%;
+      padding: 10px;
+    }
+  }
+
+  h2 + .gridBlock {
+    padding-top: 20px;
+  }
+}
+
+@media only screen and (min-width: 1400px) {
+  .gridBlock {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    margin: -10px -20px;
+
+    .twoByGridBlock {
+      box-sizing: border-box;
+      flex: 1 0 50%;
+      padding: 10px 20px;
+    }
+    .fourByGridBlock {
+      box-sizing: border-box;
+      flex: 1 0 25%;
+      padding: 10px 20px;
+    }
+  }
+}
+
+@media only screen and (min-device-width: 360px) and (max-device-width: 736px) {
+  .gridBlock .fourByGridBlock {
+    box-sizing: border-box;
+    flex: 1 0 26%;
+    padding: 10px;
+  }
+}

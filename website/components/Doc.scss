@@ -1,0 +1,12 @@
+/** GitHub **/
+.editPageLink {
+  float: right;
+  font-size: 10px;
+  font-weight: normal;
+  margin-top: 20px;
+  text-decoration: none;
+
+  @media only screen and (min-device-width: 360px) and (max-device-width: 736px) {
+    display: none;
+  }
+}

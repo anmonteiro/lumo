@@ -1,0 +1,37 @@
+.showcaseSection {
+  max-width: 900px;
+  text-align: center;
+  margin: 0 auto;
+
+  .prose {
+    max-width: 560px;
+    text-align: center;
+    margin: 0 auto;
+
+    h1 {
+      color: #99424f;
+      font-family: "Helvetica Neue", Arial, sans-serif;
+      text-align: center;
+      padding: 1.4em 0 0.4em;
+    }
+  }
+
+  .logos {
+    align-items: center;
+    display: flex;
+    flex-flow: row wrap;
+    justify-content: center;
+
+    img {
+      max-height: 128px;
+      width: 128px;
+      padding: 20px;
+
+      @media only screen and (min-device-width: 360px) and (max-device-width: 736px) {
+        max-height: 64px;
+        width: 64px;
+        padding: 20px;
+      }
+    }
+  }
+}

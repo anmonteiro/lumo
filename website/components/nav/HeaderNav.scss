@@ -1,0 +1,276 @@
+.fixedHeaderContainer {
+  box-sizing: border-box;
+  background: #99424f;
+  color: #fff;
+  height: 50px;
+  padding: 10px 0 8px;
+  position: fixed;
+  width: 100%;
+  z-index: 9999;
+
+  a {
+    align-items: center;
+    border: 0;
+    color: #fff;
+    display: flex;
+    flex-flow: row nowrap;
+    height: 34px;
+  }
+
+  header {
+    display: flex;
+    flex-flow: row nowrap;
+    position: relative;
+    text-align: left;
+
+    img {
+      height: 100%;
+      margin-right: 10px;
+    }
+
+    h2 {
+      display: block;
+      font-family: "Helvetica Neue", Arial, sans-serif;
+      font-weight: 400;
+      line-height: 18px;
+      position: relative;
+      z-index: 9999;
+    }
+  }
+}
+
+/** Search **/
+input[type="search"] {
+  -moz-appearance: none;
+  -webkit-appearance: none;
+}
+
+.navSearchWrapper {
+  align-self: center;
+  position: absolute;
+  top: 15px;
+  right: 10px;
+
+  &::before {
+    border: 3px solid #e5e5e5;
+    border-radius: 50%;
+    content: " ";
+    display: block;
+    height: 6px;
+    left: 15px;
+    width: 6px;
+    position: absolute;
+    top: 50%;
+    z-index: 1;
+    transform: translateY(-58%);
+  }
+
+  &::after {
+    background: #e5e5e5;
+    content: " ";
+    height: 7px;
+    left: 24px;
+    position: absolute;
+    transform: rotate(-45deg);
+    top: 55%;
+    width: 3px;
+    z-index: 1;
+  }
+
+  @media only screen and (min-width: 1024px) {
+    position: relative;
+    top: auto;
+    right: auto;
+    padding-left: 10px;
+
+    .algolia-autocomplete {
+      display: block;
+    }
+  }
+
+  @media only screen and (min-device-width: 360px) and (max-device-width: 736px) {
+    width: 50%;
+  }
+
+  :global {
+    .aa-dropdown-menu {
+      background: #f9f9f9;
+      border: 3px solid rgba(57, 57, 57, 0.25);
+      color: #393939;
+      font-size: 14px;
+      left: auto !important;
+      line-height: 1.2em;
+      right: 0 !important;
+
+      .algolia-docsearch-suggestion--category-header {
+        background: #99424f;
+        color: white;
+        font-family: "Helvetica Neue", Arial, sans-serif;
+        font-weight: 400;
+        font-size: 14px;
+
+        .algolia-docsearch-suggestion--highlight {
+          background-color: #99424f;
+          color: #fff;
+        }
+      }
+
+      .algolia-docsearch-suggestion--title .algolia-docsearch-suggestion--highlight,
+      .algolia-docsearch-suggestion--subcategory-column .algolia-docsearch-suggestion--highlight {
+        color: #99424f;
+      }
+
+      .algolia-docsearch-suggestion__secondary,
+      .algolia-docsearch-suggestion--subcategory-column {
+        border-color: rgba(57, 57, 57, 0.3);
+      }
+    }
+  }
+}
+
+input:global(#search_input_react) {
+  padding-left: 25px;
+  font-size: 14px;
+  font-family: "Helvetica Neue", Arial, sans-serif;
+  font-weight: 300;
+  line-height: 20px;
+  border-radius: 20px;
+  background-color: rgba(0, 0, 0, 0.2);
+  border: none;
+  color: #fff;
+  outline: none;
+  position: relative;
+  width: 170px;
+  transition: .5s width ease;
+  -webkit-transition: .5s width ease;
+  -moz-transition: .5s width ease;
+  -o-transition: .5s width ease;
+
+  &:focus, &:active {
+    color: #fff;
+    width: 220px;
+  }
+}
+
+@media only screen and (max-width: 1023px) {
+  .reactNavSearchWrapper {
+    &::before {
+      left: 6px;
+    }
+
+    &::after {
+      left: 15px;
+    }
+
+    & > span {
+      width: 100%;
+    }
+
+    input:global(#search_input_react) {
+      box-sizing: border-box;
+      padding-left: 25px;
+      font-size: 14px;
+      line-height: 20px;
+      border-radius: 20px;
+      background-color: rgba(242, 196, 178, 0.25);
+      border: none;
+      color: #393939;
+      outline: none;
+      position: relative;
+      transition: background-color 0.2s cubic-bezier(0.68, -0.55, 0.265, 1.55),
+        width 0.2s cubic-bezier(0.68, -0.55, 0.265, 1.55),
+        color 0.2s ease;
+      width: 100%;
+
+      &:focus, &:active {
+        background-color: #99424f;
+        color: #fff;
+      }
+    }
+
+    :global {
+      .algolia-docsearch-suggestion--subcategory-inline {
+        display: none;
+      }
+
+      .aa-dropdown-menu {
+        background: #f9f9f9;
+        border: 0px solid #f9f9f9;
+        color: #393939;
+        font-size: 12px;
+        line-height: 2em;
+        max-height: 140px;
+        min-width: auto;
+        overflow-y: scroll;
+        -webkit-overflow-scrolling: touch;
+        padding: 0;
+        border-radius: 0;
+        position: relative !important;
+        width: 100%;
+      }
+    }
+  }
+}
+
+@media only screen and (min-width: 1024px) {
+  .navigationSlider {
+    height: 34px;
+    margin-left: auto;
+    position: relative;
+
+    nav.slidingNav {
+      background: none;
+      height: auto;
+      position: relative;
+      right: auto;
+      top: auto;
+      width: auto;
+    }
+
+    .slidingNav {
+      box-sizing: border-box;
+      position: absolute;
+      left: -10px;
+      right: -10px;
+      top: -10px;
+      bottom: auto;
+
+      &.slidingNavActive {
+        height: auto;
+        padding-top: 42px;
+        width: 300px;
+      }
+
+      ul {
+        display: flex;
+        flex-flow: row nowrap;
+        margin: 0 -10px;
+        padding: 0;
+        background: none;
+        width: auto;
+
+        li a {
+          border: 0;
+          color: rgba(255, 255, 255, 0.8);
+          display: flex;
+          margin: 0;
+          padding: 0;
+          font-size: 16px;
+          font-weight: 300;
+          line-height: 1.2em;
+          padding: 6px 10px;
+          height: auto;
+          font-size: 1em;
+
+          &:hover {
+            color: #fff;
+          }
+
+          &:focus, &:hover {
+            background: #99424f;
+          }
+        }
+      }
+    }
+  }
+}

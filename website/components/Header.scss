@@ -1,0 +1,21 @@
+a {
+  &.anchor {
+    display: block;
+    position: relative;
+    top: -62px;
+  }
+  &.hashLink {
+    opacity: 0;
+    transition: opacity 0.3s;
+
+    &:hover {
+      opacity: 1 !important;
+    }
+  }
+}
+
+h1:hover, h2:hover, h3:hover, h4:hover {
+  a.hashLink {
+    opacity: 0.5;
+  }
+}
