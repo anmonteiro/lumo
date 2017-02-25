@@ -48,8 +48,10 @@
     "eslint-plugin-jsx-a11y": "^4.0.0",
     "eslint-plugin-react": "^6.10.0",
     "flow-bin": "^0.39.0",
+    "google-closure-compiler-js": "20170124.0.0",
     "jest-cli": "^19.0.1",
     "nexe": "github:nexe/nexe#master",
+    "require-from-string": "1.2.1",
     "uglify-js": "^2.7.5"
   },
   "jest": {
