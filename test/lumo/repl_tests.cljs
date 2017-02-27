@@ -1,9 +1,11 @@
 (ns lumo.repl-tests
   (:require [cljs.nodejs :as node]
-            [cljs.test :refer [deftest is testing]]
-            [lumo.repl :as lumo]))
+            [cljs.test :refer [deftest is testing use-fixtures]]
+            [lumo.repl :as lumo]
+            [lumo.common :as common]
+            [lumo.test-util :as test-util]))
 
-(set! (. js/global -$$LUMO_GLOBALS) #js {:getParinfer #(node/require "parinfer")})
+(use-fixtures :once test-util/with-parinfer test-util/with-cache)
 
 (deftest test-is-readable?
   (is (false? (lumo/is-readable? "(")))

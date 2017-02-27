@@ -46,7 +46,8 @@
         :js-env :node
         :namespaces #{'lumo.js-deps-tests 'lumo.repl-tests}
         :cljs-opts {:parallel-build true}
-        :exit? exit?))))
+        :exit? exit?
+        :ids #{"lumo_test/test_suite"}))))
 
 (deftask auto-test []
   (comp

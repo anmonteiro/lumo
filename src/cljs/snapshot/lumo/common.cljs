@@ -8,12 +8,12 @@
 
 (def ^:private ^:const JSON_EXT ".json")
 
-(defn- transit-json->cljs
+(defn transit-json->cljs
   [json]
   (let [rdr (transit/reader :json)]
     (transit/read rdr json)))
 
-(defn- cljs->transit-json
+(defn cljs->transit-json
   [x]
   (let [wtr (transit/writer :json)]
     (transit/write wtr x)))
