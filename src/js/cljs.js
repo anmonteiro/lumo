@@ -90,6 +90,7 @@ if (__DEV__) {
         resource: lumo.resource,
         readSourceFromJar: lumo.readSourceFromJar,
         eval: lumoEval,
+        addSourcePaths: lumo.addSourcePaths,
         readSourcePaths: lumo.readSourcePaths,
       },
       global: undefined,
@@ -118,6 +119,7 @@ if (__DEV__) {
       resource: lumo.resource,
       readSourceFromJar: lumo.readSourceFromJar,
       eval: lumoEval,
+      addSourcePaths: lumo.addSourcePaths,
       readSourcePaths: lumo.readSourcePaths,
     };
 
