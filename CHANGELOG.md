@@ -4,7 +4,8 @@
 
 ### Changes
 
-- Upgrade Node.js to version 7.6.0.
+- Upgrade Node.js to version 7.7.1.
+- Do not print verbose information on REPL startup, even if `--verbose`.
 
 ### Bug fixes
 

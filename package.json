@@ -42,7 +42,7 @@
     "eslint": "^3.16.1",
     "eslint-config-airbnb": "^14.0.0",
     "eslint-config-airbnb-base": "^11.0.1",
-    "eslint-plugin-babel": "^4.0.1",
+    "eslint-plugin-babel": "^4.1.0",
     "eslint-plugin-flowtype": "^2.30.0",
     "eslint-plugin-import": "^2.2.0",
     "eslint-plugin-jsx-a11y": "^4.0.0",
@@ -50,7 +50,7 @@
     "flow-bin": "^0.40.0",
     "jest-cli": "^19.0.2",
     "nexe": "github:nexe/nexe#master",
-    "uglify-js": "^2.7.5"
+    "uglify-js": "^2.8.4"
   },
   "jest": {
     "verbose": true,
