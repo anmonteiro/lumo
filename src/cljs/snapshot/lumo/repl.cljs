@@ -989,3 +989,34 @@
                             (completion-candidates top-level? ns-alias)))]
         (doto completions
           .sort)))))
+
+;; --------------------
+;; Socket Repl
+
+(defn ns-symbol [function]
+  (symbol (namespace (symbol function))))
+
+(defn fn-string [function]
+  (-> function symbol name))
+
+(defn ^:export run-accept-fn [accept-fn socket]
+  (let [ns-sym (ns-symbol accept-fn)
+        fn-str (fn-string accept-fn)
+        opts (make-eval-opts)]
+    (binding [cljs/*load-fn* load
+              cljs/*eval-fn* caching-node-eval]
+      (cljs/eval st
+                 `(~'require (quote ~ns-sym))
+                 opts
+                 (fn [{:keys [ns value error] :as ret}]
+                   (if error
+                     (handle-repl-error error)
+                     (cljs/eval-str st
+                                    (str "(var " fn-str ")")
+                                    nil
+                                    (merge opts {:ns (symbol ns-sym)})
+                                    (fn [{:keys [ns value error] :as ret}]
+                                      (try
+                                        (value socket)
+                                        (catch :default e
+                                          (handle-repl-error e)))))))))))

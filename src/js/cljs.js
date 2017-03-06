@@ -216,6 +216,12 @@ function runMain(mainNS: string, args: string[]): void {
   ClojureScriptContext.lumo.repl.run_main.apply(null, [mainNS, ...args]);
 }
 
+export function runAcceptFN(fn: string, socket?: net$Socket): undefined {
+  ClojureScriptContext.lumo.repl.run_accept_fn.call(null, fn, socket);
+
+  return undefined;
+}
+
 export default function startClojureScriptEngine(opts: CLIOptsType): void {
   const { args, mainNsName, mainScript, repl, scripts, quiet } = opts;
   const socketReplArgs = opts['socket-repl'];
