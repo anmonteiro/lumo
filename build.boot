@@ -13,7 +13,7 @@
                  [org.clojure/tools.nrepl     "0.2.12"         :scope "test"]
                  [weasel                      "0.7.0"          :scope "test"]
                  [doo                         "0.1.7"          :scope "test"]]
- :exclusions '[org.clojure/clojurescript])
+ :exclusions '[org.clojure/clojure org.clojure/clojurescript])
 
 (require
   '[adzerk.boot-cljs      :refer [cljs]]
