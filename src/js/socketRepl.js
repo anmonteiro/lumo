@@ -4,6 +4,7 @@ import net from 'net';
 import readline from 'readline';
 import { createBanner } from './cli';
 import { createSession, deleteSession, prompt, processLine } from './repl';
+import { runAcceptFN } from './cljs';
 
 let socketServer: ?net$Server = null;
 const sockets: net$Socket[] = [];
@@ -40,6 +41,7 @@ function openRepl(socket: net$Socket): void {
 
 // Calls the `accept` function on the socket and handles the socket lifecycle
 function handleConnection(socket: net$Socket, accept: AcceptFn): number {
+  runAcceptFN("hello.world/hello", socket);
   accept(socket);
 
   // The index needs to be unique for the socket server, but not for anyone else.
