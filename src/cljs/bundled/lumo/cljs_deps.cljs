@@ -2,7 +2,7 @@
   (:require [goog.string]
             [clojure.string :as string]
             [goog.object :as gobj]
-            [lumo.util :as util :refer [file-seq]]
+            [lumo.util :as util :refer [file-seq distinct-by]]
             [lumo.io :as io :refer [slurp]])
   (:import [goog.string format]))
 
@@ -184,7 +184,7 @@ case."
   [coll]
   (let [state (build-index (map pack-string coll))]
     (map unpack-string
-      (distinct
+      (distinct-by :provides
         (:order (reduce dependency-order-visit (assoc state :order []) (keys state)))))))
 
 
