@@ -8,7 +8,7 @@ type replHistory$Opts = {
   input: stream$Readable,
   output?: stream$Stream,
   // $FlowIssue: completer type definition is wrong
-  completer?: (line: string) => [string[], string],
+  completer?: (line: string, cb: (err: ?Error, [string[], string]) => void) => void,
   terminal?: boolean,
   historySize?: number,
   path: string,

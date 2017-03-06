@@ -3,7 +3,9 @@
 import os from 'os';
 import path from 'path';
 import readline from 'readline';
+import repl from 'repl';
 import tty from 'tty';
+import ArrayStream from './array-stream';
 import * as cljs from './cljs';
 import replHistory from './replHistory';
 import { currentTimeMicros, isWhitespace, isWindows } from './util';
@@ -267,10 +269,35 @@ export function createSession(rl: readline$Interface, isMain: boolean): REPLSess
   return session;
 }
 
-function completer(line: string): [string[], string] {
-  const completions = cljs.getCompletions(line);
+function getJSCompletions(
+  line: string,
+  match: string,
+  cb: (err: ?Error, [string[], string]) => void): void {
+  const flat = new ArrayStream();
+  const nodeReplServer = new repl.REPLServer('', flat);
+  const lineWithoutMatch = line.substring(0, line.length - match.length);
 
-  return [completions, line];
+  return nodeReplServer.completer(match, (err: ?Error, [jsCompletions]: [string[], string]) => {
+    const completions = jsCompletions.reduce((cs: string[], c: string) => {
+      if (c === '') {
+        return cs;
+      }
+
+      cs.push(`${lineWithoutMatch}${c}`);
+      return cs;
+    }, []);
+    return cb(err, [completions, line]);
+  });
+}
+
+function completer(line: string, cb: (err: ?Error, [string[], string]) => void): void {
+  const jsMatches = /js\/(\S*)$/g.exec(line);
+
+  if (jsMatches != null) {
+    return getJSCompletions(line, jsMatches[1], cb);
+  }
+
+  return cb(null, [cljs.getCompletions(line), line]);
 }
 
 export default function startREPL(opts: CLIOptsType): void {

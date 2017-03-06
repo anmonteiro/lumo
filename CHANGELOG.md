@@ -2,6 +2,10 @@
 
 ## [master](https://github.com/anmonteiro/lumo/compare/1.2.0...HEAD) (unreleased)
 
+### New features
+
+- Autocomplete JavaScript Node globals ([#85](https://github.com/anmonteiro/lumo/issues/85)).
+
 ### Changes
 
 - Upgrade Node.js to version 7.7.1.
