@@ -950,13 +950,11 @@
         ns-alias (second (re-find #"\(*(\b[a-zA-Z-.]+)/[a-zA-Z-]+$" line))]
     (let [line-match-suffix (re-find #":?[a-zA-Z-.]*$" line)
           line-prefix (subs line 0 (- (count line) (count line-match-suffix)))]
-      (if (= "" line-match-suffix)
-        #js []
-        (let [completions (reduce (fn [ret item]
-                                    (doto ret
-                                      (.push (str line-prefix item))))
-                            #js []
-                            (filter #(is-completion? line-match-suffix %)
-                              (completion-candidates top-level? ns-alias)))]
-          (doto completions
-            .sort))))))
+      (let [completions (reduce (fn [ret item]
+                                  (doto ret
+                                    (.push (str line-prefix item))))
+                          #js []
+                          (filter #(is-completion? line-match-suffix %)
+                            (completion-candidates top-level? ns-alias)))]
+        (doto completions
+          .sort)))))

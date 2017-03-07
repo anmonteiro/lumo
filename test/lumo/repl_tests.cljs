@@ -62,7 +62,10 @@
                                          :use-macros {longer-var bar.core}})]
       (is (contains? (set (lumo/get-completions "fo")) "foo"))
       (is (contains? (set (lumo/get-completions "lon")) "longer-var"))
-      (is (contains? (set (lumo/get-completions "(lon")) "(longer-var")))))
+      (is (contains? (set (lumo/get-completions "(lon")) "(longer-var"))))
+  (testing "LUMO-83"
+    (is (contains? (set (lumo/get-completions "clojure.core/")) "clojure.core/merge"))
+    (is (contains? (set (lumo/get-completions "")) "merge"))))
 
 (deftest test-root-resource
   (is (= (lumo/root-resource 'foo-bar-baz) "/foo_bar_baz"))

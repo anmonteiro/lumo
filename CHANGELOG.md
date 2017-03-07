@@ -16,6 +16,7 @@
 - Enable caching for files executed from the filesystem, provided their namespace
 matches their location ([#73](https://github.com/anmonteiro/lumo/issues/73)).
 - Port [CLJS-1948](http://dev.clojure.org/jira/browse/CLJS-1948)'s fix from upstream.
+- Show completions for the empty suffixes ([#83](https://github.com/anmonteiro/lumo/issues/83)).
 
 ## [1.2.0](https://github.com/anmonteiro/lumo/compare/1.1.0...1.2.0) (2017-02-20)
 
