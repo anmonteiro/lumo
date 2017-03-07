@@ -3,6 +3,7 @@
 import os from 'os';
 import path from 'path';
 import readline from 'readline';
+// $FlowIssue: it's there
 import repl from 'repl';
 import tty from 'tty';
 import ArrayStream from './array-stream';
@@ -272,7 +273,7 @@ export function createSession(rl: readline$Interface, isMain: boolean): REPLSess
 function getJSCompletions(
   line: string,
   match: string,
-  cb: (err: ?Error, [string[], string]) => void): void {
+  cb: (?Error, [string[], string]) => void): void {
   const flat = new ArrayStream();
   const nodeReplServer = new repl.REPLServer('', flat);
   const lineWithoutMatch = line.substring(0, line.length - match.length);

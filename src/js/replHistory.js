@@ -8,7 +8,7 @@ type replHistory$Opts = {
   input: stream$Readable,
   output?: stream$Stream,
   // $FlowIssue: completer type definition is wrong
-  completer?: (line: string, cb: (err: ?Error, [string[], string]) => void) => void,
+  completer?: (line: string, cb: (?Error, [string[], string]) => void) => void,
   terminal?: boolean,
   historySize?: number,
   path: string,
@@ -100,7 +100,6 @@ function loadHistory(path: string, maxLength: number, cb: (ret: string[]) => voi
 export default function createInterface(options: replHistory$Opts): readline$Interface {
   const { path, historySize, terminal } = options;
 
-  // $FlowIssue: completer type definition is wrong
   const rl = readline.createInterface(options);
 
   if (terminal) {

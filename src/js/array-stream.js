@@ -1,22 +1,26 @@
-const util = require('util');
 const Stream = require('stream');
 
 // A stream to push an array into a REPL
 // used in REPLServer.complete
-function ArrayStream() {
-  Stream.call(this);
+class ArrayStream extends Stream {
+  constructor(): void {
+    super();
 
-  this.run = function(data) {
-    var self = this;
-    data.forEach(function(line) {
-      self.emit('data', line + '\n');
-    });
-  };
+    this.run = function run(data: string | Buffer): void {
+      const self = this;
+      data.forEach((line: string) => {
+        self.emit('data', `${line}\n`);
+      });
+    };
+  }
+
+  readable = true;
+  writable = true;
+
+  /* eslint-disable class-methods-use-this */
+  resume(): void {}
+  write(): void {}
+  /* eslint-enable class-methods-use-this */
 }
-util.inherits(ArrayStream, Stream);
-ArrayStream.prototype.readable = true;
-ArrayStream.prototype.writable = true;
-ArrayStream.prototype.resume = function() {};
-ArrayStream.prototype.write = function() {};
 
 module.exports = ArrayStream;
