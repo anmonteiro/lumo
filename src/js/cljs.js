@@ -225,6 +225,7 @@ export function runAcceptFN(fn: string, socket?: net$Socket): undefined {
 export default function startClojureScriptEngine(opts: CLIOptsType): void {
   const { args, mainNsName, mainScript, repl, scripts, quiet } = opts;
   const socketReplArgs = opts['socket-repl'];
+  const acceptFN = opts['accept-fn'];
 
   // The Socket Repl needs a CLJS Context to resolve the functions a user may pass in
   // Instead of initializing in each if statement, we'll initialize once, then delete the
@@ -238,7 +239,7 @@ export default function startClojureScriptEngine(opts: CLIOptsType): void {
       [host, port] = [port, host];
     }
 
-    socketRepl.open(parseInt(port, 10), host);
+    socketRepl.open(parseInt(port, 10), host, acceptFN);
     if (!quiet) {
       process.stdout.write(
         `Lumo socket REPL listening at ${host != null ? host : 'localhost'}:${port}.\n`);

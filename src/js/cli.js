@@ -25,6 +25,7 @@ export type CLIOptsType = {
   cache?: string,
   classpath: string[],
   'socket-repl'?: string,
+  'accept-fn'?: string,
   mainNsName?: string,
   mainScript?: string,
   scripts: ScriptsType,
@@ -60,27 +61,28 @@ Usage:  lumo [init-opt*] [main-opt] [arg*]
   With no options or args, runs an interactive Read-Eval-Print Loop
 
   init options:
-    -i, --init path              Load a file or resource
-    -e, --eval string            Evaluate expressions in string; print
-                                 non-nil values
-    -c cp, --classpath cp        Use colon-delimited cp for source
-                                 directories and JARs
-    -K, --auto-cache             Create and use .planck_cache dir for cache
-    -k, --cache path             If dir exists at path, use it for cache
-    -q, --quiet                  Quiet mode; doesn't print the banner
-    -v, --verbose                Emit verbose diagnostic output
-    -d, --dumb-terminal          Disable line editing / VT100 terminal
-                                 control
-    -s, --static-fns             Generate static dispatch function calls
-    -n addr, --socket-repl addr  Enable a socket REPL where x is port or IP:port
+    -i, --init path                    Load a file or resource
+    -e, --eval string                  Evaluate expressions in string; print
+                                       non-nil values
+    -c cp, --classpath cp              Use colon-delimited cp for source
+                                       directories and JARs
+    -K, --auto-cache                   Create and use .planck_cache dir for cache
+    -k, --cache path                   If dir exists at path, use it for cache
+    -q, --quiet                        Quiet mode; doesn't print the banner
+    -v, --verbose                      Emit verbose diagnostic output
+    -d, --dumb-terminal                Disable line editing / VT100 terminal
+                                       control
+    -s, --static-fns                   Generate static dispatch function calls
+    -n addr, --socket-repl addr        Enable a socket REPL where x is port or IP:port
+    -A acceptFN, --accept-fn acceptFN  The function to run upon client connection
 
   main options:
-    -m ns-name, --main=ns-name   Call the -main function from a namespace
-                                 with args
-    -r, --repl                   Run a repl
-    path                         Run a script from a file or resource
-    -h, -?, --help               Print this help message and exit
-    -l, --legal                  Show legal info (licenses and copyrights)
+    -m ns-name, --main=ns-name         Call the -main function from a namespace
+                                       with args
+    -r, --repl                         Run a repl
+    path                               Run a script from a file or resource
+    -h, -?, --help                     Print this help message and exit
+    -l, --legal                        Show legal info (licenses and copyrights)
 
   The init options may be repeated and mixed freely, but must appear before
   any main option.
@@ -103,6 +105,7 @@ function getCLIOpts(): CLIOptsType {
     'v(verbose)',
     'd(dumb-terminal)',
     'n:(socket-repl)',
+    'A:(accept-fn)',
     's(static-fns)',
     'a(elide-asserts)',
     'm:(main)',
@@ -165,6 +168,9 @@ function getCLIOpts(): CLIOptsType {
         break;
       case 'n':
         ret['socket-repl'] = option.optarg;
+        break;
+      case 'A':
+        ret['accept-fn'] = option.optarg;
         break;
       case 's':
         ret['static-fns'] = true;
