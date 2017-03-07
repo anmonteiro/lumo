@@ -29,6 +29,7 @@ export type CLIOptsType = {
   cache?: string,
   classpath: string[],
   'socket-repl'?: string,
+  'accept-fn'?: string,
   mainNsName?: string,
   mainScript?: string,
   scripts: ScriptsType,
@@ -64,39 +65,39 @@ Usage:  lumo [init-opt*] [main-opt] [arg*]
   With no options or args, runs an interactive Read-Eval-Print Loop
 
   init options:
-    -i, --init path              Load a file or resource
-    -e, --eval string            Evaluate expressions in string; print
-                                 non-nil values
-    -c cp, --classpath cp        Use colon-delimited cp (semi-colon-delimited on
-                                 Windows) for source directories and JARs
-    -D dep, --dependencies dep   Use comma-separated list of dependencies to
-                                 look for in the local Maven repository.
-                                 Dependencies should be specified in the form
-                                 \`SYM:VERSION\` (e.g.: foo/bar:1.2.3).
-    -L path, --local-repo path   Path to the local Maven repository where Lumo
-                                 will look for dependencies. Defaults to
-                                 \`~/.m2/repository\`.
-    -K, --auto-cache             Create and use .lumo_cache dir for cache
-    -k, --cache path             If dir exists at path, use it for cache
-    -q, --quiet                  Quiet mode; doesn't print the banner
-    -v, --verbose                Emit verbose diagnostic output
-    -d, --dumb-terminal          Disable line editing / VT100 terminal
-                                 control
-    -s, --static-fns             Generate static dispatch function calls
-    -f, --fn-invoke-direct       Do not not generate \`.call(null...)\` calls
-                                 for unknown functions, but instead direct
-                                 invokes via \`f(a0,a1...)\`.
-    -n x, --socket-repl x        Enable a socket REPL where x is port or
-                                 \`hostname:port\`
+    -i, --init path                    Load a file or resource
+    -e, --eval string                  Evaluate expressions in string; print
+                                       non-nil values
+    -c cp, --classpath cp              Use colon-delimited cp (semi-colon-delimited on
+                                       Windows) for source directories and JARs
+    -D dep, --dependencies dep         Use comma-separated list of dependencies to
+                                       look for in the local Maven repository.
+                                       Dependencies should be specified in the form
+                                       \`SYM:VERSION\` (e.g.: foo/bar:1.2.3).
+    -L path, --local-repo path         Path to the local Maven repository where Lumo
+                                       will look for dependencies. Defaults to
+                                       \`~/.m2/repository\`.
+    -K, --auto-cache                   Create and use .lumo_cache dir for cache
+    -k, --cache path                   If dir exists at path, use it for cache
+    -q, --quiet                        Quiet mode; doesn't print the banner
+    -v, --verbose                      Emit verbose diagnostic output
+    -d, --dumb-terminal                Disable line editing / VT100 terminal
+                                       control
+    -s, --static-fns                   Generate static dispatch function calls
+    -f, --fn-invoke-direct             Do not not generate \`.call(null...)\` calls
+                                       for unknown functions, but instead direct
+                                       invokes via \`f(a0,a1...)\`.
+    -n addr, --socket-repl addr        Enable a socket REPL where x is port or IP:port
+    -A acceptFN, --accept-fn acceptFN  The function to run upon client connection
 
   main options:
-    -m ns-name, --main=ns-name   Call the -main function from a namespace
-                                 with args
-    -r, --repl                   Run a repl
-    path                         Run a script from a file or resource
-    -                            Run a script from standard input
-    -h, -?, --help               Print this help message and exit
-    -l, --legal                  Show legal info (licenses and copyrights)
+    -m ns-name, --main=ns-name         Call the -main function from a namespace
+                                       with args
+    -r, --repl                         Run a repl
+    path                               Run a script from a file or resource
+    -                                  Run a script from standard input
+    -h, -?, --help                     Print this help message and exit
+    -l, --legal                        Show legal info (licenses and copyrights)
 
   The init options may be repeated and mixed freely, but must appear before
   any main option.
@@ -119,6 +120,7 @@ function getCLIOpts(): CLIOptsType {
     'v(verbose)',
     'd(dumb-terminal)',
     'n:(socket-repl)',
+    'A:(accept-fn)',
     's(static-fns)',
     'f(fn-invoke-direct)',
     'a(elide-asserts)',
@@ -207,6 +209,9 @@ function getCLIOpts(): CLIOptsType {
         break;
       case 'n':
         ret['socket-repl'] = option.optarg;
+        break;
+      case 'A':
+        ret['accept-fn'] = option.optarg;
         break;
       case 's':
         ret['static-fns'] = true;

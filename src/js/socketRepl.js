@@ -10,7 +10,7 @@ let socketServer: ?net$Server = null;
 const sockets: net$Socket[] = [];
 
 let sessionCount = 0;
-type AcceptFn = (socket: net$Socket) => void;
+type AcceptFn = (socket: net$Socket) => void | string;
 
 // Default socket accept function. This opens a repl and handles the readline and repl lifecycle
 function openRepl(socket: net$Socket): void {
@@ -40,9 +40,12 @@ function openRepl(socket: net$Socket): void {
 }
 
 // Calls the `accept` function on the socket and handles the socket lifecycle
-function handleConnection(socket: net$Socket, accept: AcceptFn): number {
-  runAcceptFN("hello.world/hello", socket);
-  accept(socket);
+function handleConnection(socket: net$Socket, accept: AcceptFn, userAccept?: boolean): number {
+  if (typeof(accept)==='string') {
+    runAcceptFN(accept, socket);
+  } else {
+    accept(socket);
+  }
 
   // The index needs to be unique for the socket server, but not for anyone else.
   // For that reason we're using a module global `sessionCount` variable
