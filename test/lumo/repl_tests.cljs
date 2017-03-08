@@ -1,9 +1,11 @@
 (ns lumo.repl-tests
   (:require [cljs.nodejs :as node]
-            [cljs.test :refer [deftest is testing]]
-            [lumo.repl :as lumo]))
+            [cljs.test :refer [deftest is testing use-fixtures]]
+            [lumo.repl :as lumo]
+            [lumo.common :as common]
+            [lumo.test-util :as test-util]))
 
-(set! (. js/global -$$LUMO_GLOBALS) #js {:getParinfer #(node/require "parinfer")})
+(use-fixtures :once test-util/with-parinfer test-util/with-cache)
 
 (deftest test-is-readable?
   (is (false? (lumo/is-readable? "(")))
@@ -70,3 +72,8 @@
 (deftest test-root-resource
   (is (= (lumo/root-resource 'foo-bar-baz) "/foo_bar_baz"))
   (is (= (lumo/root-resource 'foo.bar.baz) "/foo/bar/baz")))
+
+(deftest test-get-arglists
+  (is (= (lumo/get-arglists "whatever") nil))
+  (is (= (lumo/get-arglists "map") '([f] [f coll] [f c1 c2] [f c1 c2 c3] [f c1 c2 c3 & colls])))
+  (is (= (lumo/get-arglists "when") '([test & body]))))

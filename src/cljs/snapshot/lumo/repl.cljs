@@ -811,6 +811,17 @@
   (deps/index-upstream-foreign-libs))
 
 ;; --------------------
+;; Introspection
+
+(defn ^:export get-arglists
+  "Return the argument lists for the given symbol as string."
+  [s]
+  (when-let [var (some->> s repl-read-string first (resolve-var @env/*compiler*))]
+    (if-not (:macro var)
+      (:arglists var)
+      (-> var :meta :arglists second))))
+
+;; --------------------
 ;; Autocompletion
 
 (defn- completion-candidates-for-ns
