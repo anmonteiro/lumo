@@ -24,25 +24,23 @@
               :requires :uses :defs :require-macros :cljs.analyzer/constants :doc]]
     (letfn [(load-key [key]
               (let [resource (js/$$LUMO_GLOBALS.load (str file-prefix (munge key) JSON_EXT))]
-                (transit-json->cljs resource)))
-            (lazy-load-key [key]
-              (load-key key))]
+                (transit-json->cljs resource)))]
       (cljs/load-analysis-cache! state ns-sym
         (if eager?
           (zipmap keys (map load-key keys))
           (lazy-map
-            {:rename-macros           (lazy-load-key :rename-macros)
-             :renames                 (lazy-load-key :renames)
-             :use-macros              (lazy-load-key :use-macros)
-             :excludes                (lazy-load-key :excludes)
-             :name                    (lazy-load-key :name)
-             :imports                 (lazy-load-key :imports)
-             :requires                (lazy-load-key :requires)
-             :uses                    (lazy-load-key :uses)
-             :defs                    (lazy-load-key :defs)
-             :require-macros          (lazy-load-key :require-macros)
-             :cljs.analyzer/constants (lazy-load-key :cljs.analyzer/constants)
-             :doc                     (lazy-load-key :doc)}))))))
+            {:rename-macros           (load-key :rename-macros)
+             :renames                 (load-key :renames)
+             :use-macros              (load-key :use-macros)
+             :excludes                (load-key :excludes)
+             :name                    (load-key :name)
+             :imports                 (load-key :imports)
+             :requires                (load-key :requires)
+             :uses                    (load-key :uses)
+             :defs                    (load-key :defs)
+             :require-macros          (load-key :require-macros)
+             :cljs.analyzer/constants (load-key :cljs.analyzer/constants)
+             :doc                     (load-key :doc)}))))))
 
 (defn- load-core-analysis-caches [state eager?]
   (load-core-analysis-cache state eager? 'cljs.core "cljs/core.cljs.cache.aot.")
