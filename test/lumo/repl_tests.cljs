@@ -72,3 +72,8 @@
 (deftest test-root-resource
   (is (= (lumo/root-resource 'foo-bar-baz) "/foo_bar_baz"))
   (is (= (lumo/root-resource 'foo.bar.baz) "/foo/bar/baz")))
+
+(deftest test-get-arglists
+  (is (= (lumo/get-arglists "whatever") nil))
+  (is (= (lumo/get-arglists "map") '([f] [f coll] [f c1 c2] [f c1 c2 c3] [f c1 c2 c3 & colls])))
+  (is (= (lumo/get-arglists "when") '([test & body]))))
