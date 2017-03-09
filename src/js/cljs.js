@@ -236,7 +236,7 @@ export default function startClojureScriptEngine(opts: CLIOptsType): void {
   if (repl) {
     process.nextTick(() => {
       initClojureScriptEngine(opts);
-      execute('(require \'[lumo.repl :refer-macros [doc]])',
+      execute('(require \'[lumo.repl :refer-macros [doc dir]])',
         'text', true, false, 'cljs.user');
     });
 

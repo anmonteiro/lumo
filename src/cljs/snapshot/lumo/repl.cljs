@@ -477,6 +477,20 @@
     :ns (get-namespace @current-ns)
     :context :expr))
 
+(defn- ns-syms
+  [nsname pred]
+  (into []
+    (comp (filter pred) (map key))
+    (:defs (get-namespace nsname))))
+
+(defn- public-syms
+  "Returns a sequence of the public symbols in a namespace."
+  [nsname]
+  (ns-syms nsname
+    (fn [[_ attrs]]
+      (and (not (:private attrs))
+           (not (:anonymous attrs))))))
+
 (defn- compiler-state-backup []
   {:st     @st
    :loaded @cljs/*loaded*})
@@ -565,6 +579,12 @@
 
 (defn- repl-special? [form]
   (and (seq? form) (contains? repl-special-fns (first form))))
+
+(defn- dir* [nsname]
+  (run! prn
+    (into
+      (apply sorted-set (public-syms nsname))
+      (public-syms (add-macros-suffix nsname)))))
 
 (defn- special-doc [name-symbol]
   (assoc (special-doc-map name-symbol)

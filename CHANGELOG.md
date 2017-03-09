@@ -5,6 +5,7 @@
 ### New features
 
 - Autocomplete JavaScript Node globals ([#85](https://github.com/anmonteiro/lumo/issues/85)).
+- Add `dir` REPL special ([#87](https://github.com/anmonteiro/lumo/issues/87)).
 
 ### Changes
 
