@@ -9,6 +9,7 @@ import path from 'path';
 import vm from 'vm';
 import * as lumo from './lumo';
 import startREPL from './repl';
+import * as socketRepl from './socketRepl';
 
 import type { CLIOptsType } from './cli';
 
@@ -215,27 +216,50 @@ function runMain(mainNS: string, args: string[]): void {
   ClojureScriptContext.lumo.repl.run_main.apply(null, [mainNS, ...args]);
 }
 
+export function runAcceptFN(fn: string, socket?: net$Socket): undefined {
+  ClojureScriptContext.lumo.repl.run_accept_fn.call(null, fn, socket);
+
+  return undefined;
+}
+
 export default function startClojureScriptEngine(opts: CLIOptsType): void {
-  const { args, mainNsName, mainScript, repl, scripts } = opts;
+  const { args, mainNsName, mainScript, repl, scripts, quiet } = opts;
+  const socketReplArgs = opts['socket-repl'];
+  const acceptFN = opts['accept-fn'];
+
+  // The Socket Repl needs a CLJS Context to resolve the functions a user may pass in
+  // Instead of initializing in each if statement, we'll initialize once, then delete the
+  // context if it turns out we're not gonna use the context.
+  initClojureScriptEngine(opts);
+
+  if (socketReplArgs != null) {
+    let [host, port] = socketReplArgs.split(':');
+
+    if (host != null && !isNaN(host)) {
+      [host, port] = [port, host];
+    }
+
+    socketRepl.open(parseInt(port, 10), host, acceptFN);
+    if (!quiet) {
+      process.stdout.write(
+        `Lumo socket REPL listening at ${host != null ? host : 'localhost'}:${port}.\n`);
+    }
+  }
 
   if (scripts.length > 0) {
-    initClojureScriptEngine(opts);
     executeScripts(scripts);
   }
 
   if (mainScript) {
-    initClojureScriptEngine(opts);
     return executeScript(mainScript, 'path');
   }
 
   if (mainNsName) {
-    initClojureScriptEngine(opts);
     return runMain(mainNsName, args);
   }
 
   if (repl) {
     process.nextTick(() => {
-      initClojureScriptEngine(opts);
       execute('(require \'[lumo.repl :refer-macros [doc dir]])',
         'text', true, false, 'cljs.user');
     });
@@ -243,5 +267,6 @@ export default function startClojureScriptEngine(opts: CLIOptsType): void {
     return startREPL(opts);
   }
 
+  ClojureScriptContext = null;
   return undefined;
 }

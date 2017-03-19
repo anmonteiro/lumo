@@ -3,14 +3,17 @@
 import net from 'net';
 import readline from 'readline';
 import { createBanner } from './cli';
-import { createSession, deleteSession, prompt, processLine, unhookOutputStreams } from './repl';
-
-import type { REPLSession } from './repl';
+import { createSession, deleteSession, prompt, processLine } from './repl';
+import { runAcceptFN } from './cljs';
 
 let socketServer: ?net$Server = null;
 const sockets: net$Socket[] = [];
 
-function handleConnection(socket: net$Socket): REPLSession {
+let sessionCount = 0;
+type AcceptFn = (socket: net$Socket) => void | string;
+
+// Default socket accept function. This opens a repl and handles the readline and repl lifecycle
+function openRepl(socket: net$Socket): void {
   const rl = readline.createInterface({
     input: socket,
     output: socket,
@@ -19,11 +22,8 @@ function handleConnection(socket: net$Socket): REPLSession {
   const session = createSession(rl, false);
 
   socket.on('close', () => {
-    delete sockets[session.sessionId];
     deleteSession(session);
   });
-
-  sockets[session.sessionId] = socket;
 
   rl.on('line', (line: string) => {
     if (!socket.destroyed) {
@@ -36,13 +36,30 @@ function handleConnection(socket: net$Socket): REPLSession {
   // $FlowIssue - output missing from readline$Interface
   rl.output.write(createBanner());
   prompt(rl, false, 'cljs.user');
+}
 
-  return session;
+// Calls the `accept` function on the socket and handles the socket lifecycle
+function handleConnection(socket: net$Socket, accept: AcceptFn, userAccept?: boolean): number {
+  if (typeof(accept)==='string') {
+    runAcceptFN(accept, socket);
+  } else {
+    accept(socket);
+  }
+
+  // The index needs to be unique for the socket server, but not for anyone else.
+  // For that reason we're using a module global `sessionCount` variable
+  socket.on('close', () => {
+    delete sockets[sessionCount];
+  });
+
+  sockets[sessionCount] = socket;
+
+  sessionCount += 1;
+
+  return sessionCount;
 }
 
 export function close(): void {
-  unhookOutputStreams();
-
   if (!socketServer) {
     return;
   }
@@ -56,8 +73,8 @@ export function close(): void {
   socketServer.close();
 }
 
-export function open(port: number, host?: string = 'localhost'): void {
-  socketServer = net.createServer((socket: net$Socket) => handleConnection(socket));
+export function open(port: number, host?: string = 'localhost', accept?: AcceptFn = openRepl): void {
+  socketServer = net.createServer((socket: net$Socket) => handleConnection(socket, accept));
   socketServer.listen(port, host);
 
   process.on('SIGTERM', close);

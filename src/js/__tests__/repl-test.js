@@ -311,8 +311,8 @@ describe('startREPL', () => {
       it('that are isolated by unique and incrementing ids', () => {
         startREPL({});
 
-        expect(handleConnection(socket).sessionId).toBe(1);
-        expect(handleConnection(socket).sessionId).toBe(2);
+        expect(handleConnection(socket)).toBe(1);
+        expect(handleConnection(socket)).toBe(2);
       });
     });
   });
