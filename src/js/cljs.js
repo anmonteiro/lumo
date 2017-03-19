@@ -357,16 +357,17 @@ function processStdin(): void {
   });
 }
 
-export function runAcceptFN(fn: string, socket?: net$Socket): undefined {
+// Runs the namespaced cljs function passed into it, which should accept a socket as it's only argument
+// TODO: Is this really the best generalization? Should it be?
+export function runAcceptFN(fn: string, socket?: net$Socket): void {
+  // $FlowIssue: context can have globals
   ClojureScriptContext.lumo.repl.run_accept_fn.call(null, fn, socket);
-
-  return undefined;
 }
 
 export default function startClojureScriptEngine(opts: CLIOptsType): void {
   const { args, mainNsName, mainScript, repl, scripts, quiet } = opts;
   const socketReplArgs = opts['socket-repl'];
-  const acceptFN = opts['accept-fn'];
+  const acceptFN: ?string = opts['accept-fn'];
 
   // The Socket Repl needs a CLJS Context to resolve the functions a user may pass in
   // Instead of initializing in each if statement, we'll initialize once, then delete the
