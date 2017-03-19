@@ -9,8 +9,9 @@
 
 ### Changes
 
-- Upgrade Node.js to version 7.7.1.
+- Upgrade Node.js to version 7.7.3.
 - Do not print verbose information on REPL startup, even if `--verbose`.
+- Upgrade Google Closure Compiler to v20170218.
 
 ### Bug fixes
 
