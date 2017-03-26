@@ -60,7 +60,7 @@ Usage:  lumo [init-opt*] [main-opt] [arg*]
     -d, --dumb-terminal          Disable line editing / VT100 terminal
                                  control
     -s, --static-fns             Generate static dispatch function calls
-    -n addr, --socket-repl addr  Enable a socket REPL where x is port or IP:port
+    -n x, --socket-repl x        Enable a socket REPL where x is port or IP:port
 
   main options:
     -m ns-name, --main=ns-name   Call the -main function from a namespace
