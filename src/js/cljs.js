@@ -174,7 +174,7 @@ export function execute(
 }
 
 function executeScript(code: string, type: string): void {
-  return execute(code, type, type !== 'path');
+  return execute(code, type, type !== 'path', false);
 }
 
 export function getCurrentNamespace(): string {
