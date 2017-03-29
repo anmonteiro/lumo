@@ -141,6 +141,7 @@
         lumo.core
         lumo.repl
         lumo.repl-resources
+        lumo.classpath
         lumo.js-deps
         lumo.common} name)))
 
@@ -891,6 +892,7 @@
       lumo.js-deps
       lumo.repl
       lumo.repl-resources
+      lumo.classpath
       cognitect.transit
       lazy-map.core
       cljs.source-map

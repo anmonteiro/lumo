@@ -221,6 +221,13 @@ export function resource(filename: string): ?ResourceType {
   return null;
 }
 
+export const zip = JSZip;
+
+export const readFile = fs.readFileSync;
+
+export const stat = fs.statSync;
+
+export const readdir = fs.readdirSync;
 // $FlowIssue
 export function addSourcePaths(srcPaths: string[]): void {
   sourcePaths.push(...srcPaths);
@@ -228,6 +235,10 @@ export function addSourcePaths(srcPaths: string[]): void {
 
 export function readSourcePaths(): string[] {
   return [...sourcePaths];
+}
+
+export function removeSourcePath(srcPath: string): void {
+  sourcePaths.splice(sourcePaths.indexOf(srcPath), 1);
 }
 
 export function readSourceFromJar({ jarPath, src }: {type: string,
@@ -239,4 +250,3 @@ export function readSourceFromJar({ jarPath, src }: {type: string,
   const source = zip.file(src);
 
   return source.asText();
-}
