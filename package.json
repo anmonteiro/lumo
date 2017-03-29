@@ -28,7 +28,7 @@
     "require-from-string": "^1.2.1"
   },
   "devDependencies": {
-    "babel-eslint": "^7.1.1",
+    "babel-eslint": "^7.2.1",
     "babel-jest": "^19.0.0",
     "babel-plugin-transform-flow-strip-types": "^6.22.0",
     "babel-polyfill": "^6.22.0",
@@ -40,16 +40,16 @@
     "envify": "^4.0.0",
     "eslint": "^3.18.0",
     "eslint-config-airbnb": "^14.0.0",
-    "eslint-config-airbnb-base": "^11.1.1",
+    "eslint-config-airbnb-base": "^11.1.2",
     "eslint-plugin-babel": "^4.1.1",
-    "eslint-plugin-flowtype": "^2.30.3",
+    "eslint-plugin-flowtype": "^2.30.4",
     "eslint-plugin-import": "^2.2.0",
     "eslint-plugin-jsx-a11y": "^4.0.0",
-    "eslint-plugin-react": "^6.10.1",
+    "eslint-plugin-react": "^6.10.3",
     "flow-bin": "^0.42.0",
     "jest-cli": "^19.0.2",
     "nexe": "github:nexe/nexe#master",
-    "uglify-js": "^2.8.14"
+    "uglify-js": "^2.8.18"
   },
   "jest": {
     "verbose": true,
