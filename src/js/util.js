@@ -21,8 +21,12 @@ export function srcPathsFromClasspathStrings(cpStrs: string[]): string[] {
   }, []);
 }
 
+export function isWhitespace(s: string): boolean {
+  return s.trim() === '';
+}
+
 /* eslint-disable consistent-return */
-export function ensureDir(dir: string): void {
+function ensureDirInner(dir: string): void {
   if (!fs.existsSync(dir)) {
     return fs.mkdirSync(dir);
   }
@@ -34,8 +38,15 @@ export function ensureDir(dir: string): void {
   }
 }
 
-export function isWhitespace(s: string): boolean {
-  return s.trim() === '';
+export function ensureDir(dir: string): void {
+  const dirs = dir.split(/(\/\w+)/);
+  const len = dirs.length;
+
+  for (let i = 0; i < len; i += 1) {
+    if (!isWhitespace(dirs[i])) {
+      ensureDirInner(dirs.slice(0, i + 1).join(''));
+    }
+  }
 }
 
 export function currentTimeMicros(): number {

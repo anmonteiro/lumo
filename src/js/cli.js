@@ -17,6 +17,7 @@ export type CLIOptsType = {
   verbose: boolean,
   help: boolean,
   version: boolean,
+  'dump-sdk'?: string,
   repl: boolean,
   'auto-cache'?: boolean,
   quiet: boolean,
@@ -116,6 +117,8 @@ function getCLIOpts(): CLIOptsType {
     'k:(cache)',
     'K(auto-cache)',
     'V(version)',
+    // undocumented
+    'D:(dump-sdk)',
   ].join('');
 
   const parser = new GOParser(optstr, argv, 0);
@@ -143,6 +146,7 @@ function getCLIOpts(): CLIOptsType {
 
     switch (option.option) {
       case '?':
+        foundMainOpt = true;
         ret.help = true;
         break;
       case 'h':
@@ -152,6 +156,10 @@ function getCLIOpts(): CLIOptsType {
       case 'V':
         foundMainOpt = true;
         ret.version = true;
+        break;
+      case 'D':
+        foundMainOpt = true;
+        ret['dump-sdk'] = option.optarg;
         break;
       case 'q':
         ret.quiet = true;
@@ -220,6 +228,7 @@ export default function startCLI(): void {
           mainScript, quiet, scripts, version } = opts;
   const autoCache = opts['auto-cache'];
   const socketReplArgs = opts['socket-repl'];
+  const dumpSDK = opts['dump-sdk'];
 
   // if help, print help and bail
   if (help) {
@@ -232,6 +241,10 @@ export default function startCLI(): void {
 
   if (legal) {
     return printLegal();
+  }
+
+  if (dumpSDK != null) {
+    return lumo.dumpSDK(dumpSDK);
   }
 
   v8.setFlagsFromString('--use_strict');

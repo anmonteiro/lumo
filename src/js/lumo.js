@@ -6,7 +6,7 @@ import path from 'path';
 import v8 from 'v8';
 import zlib from 'zlib';
 import requireFromString from 'require-from-string';
-import { isWindows } from './util';
+import * as util from './util';
 
 let nexeres;
 let bundledResources;
@@ -57,7 +57,7 @@ function isBundled(filename: string): boolean {
   if (bundledResources === undefined) {
     bundledResources = new Set(nexeres.keys());
   }
-  const fname = isWindows ? filename.replace(/\//g, '\\') : filename;
+  const fname = util.isWindows ? filename.replace(/\//g, '\\') : filename;
 
   return bundledResources.has(fname);
 }
@@ -67,7 +67,7 @@ export function load(filename: string): ?string {
     if (__DEV__) {
       return fs.readFileSync(`./target/${filename}`, 'utf8');
     }
-    const fname = isWindows ? filename.replace(/\//g, '\\') : filename;
+    const fname = util.isWindows ? filename.replace(/\//g, '\\') : filename;
     const gzipped = nexeres.get(fname);
 
     return zlib.inflateSync(gzipped).toString();
@@ -239,4 +239,19 @@ export function readSourceFromJar({ jarPath, src }: {type: string,
   const source = zip.file(src);
 
   return source.asText();
+}
+
+export function dumpSDK(outdir: string): void {
+  if (!__DEV__) {
+    nexeres.keys().forEach((res: string) => {
+      const idx = res.lastIndexOf('/');
+
+      if (idx !== -1) {
+        util.ensureDir(path.join(outdir, res.slice(0, idx)));
+      }
+
+      // $FlowFixMe: need to check result of res, but bundled resources will be
+      fs.writeFileSync(path.join(outdir, res), load(res), 'utf8');
+    });
+  }
 }
