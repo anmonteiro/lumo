@@ -9,13 +9,14 @@ import printLegal from './legal';
 import * as lumo from './lumo';
 import * as util from './util';
 import * as socketRepl from './socketRepl';
-import version from './version';
+import lumoVersion from './version';
 
 type ScriptsType = [string, string][];
 
 export type CLIOptsType = {
   verbose: boolean,
   help: boolean,
+  version: boolean,
   repl: boolean,
   'auto-cache'?: boolean,
   quiet: boolean,
@@ -38,7 +39,7 @@ function getClojureScriptVersionString(): string {
 }
 
 function getVersionString(): string {
-  return `Lumo ${version}`;
+  return `Lumo ${lumoVersion}`;
 }
 
 export function createBanner(): string {
@@ -52,6 +53,10 @@ ${getClojureScriptVersionString()}
 
 function printBanner(): void {
   process.stdout.write(createBanner());
+}
+
+function printVersion(): void {
+  process.stdout.write(`${lumoVersion}\n`);
 }
 
 function printHelp(): void {
@@ -110,6 +115,7 @@ function getCLIOpts(): CLIOptsType {
     'r(repl)',
     'k:(cache)',
     'K(auto-cache)',
+    'V(version)',
   ].join('');
 
   const parser = new GOParser(optstr, argv, 0);
@@ -117,6 +123,7 @@ function getCLIOpts(): CLIOptsType {
     scripts: [],
     classpath: [],
     help: false,
+    version: false,
     legal: false,
     repl: false,
     verbose: false,
@@ -141,6 +148,10 @@ function getCLIOpts(): CLIOptsType {
       case 'h':
         foundMainOpt = true;
         ret.help = true;
+        break;
+      case 'V':
+        foundMainOpt = true;
+        ret.version = true;
         break;
       case 'q':
         ret.quiet = true;
@@ -206,13 +217,17 @@ function getCLIOpts(): CLIOptsType {
 export default function startCLI(): void {
   const opts = getCLIOpts();
   const { args, cache, classpath, help, legal, mainNsName,
-          mainScript, quiet, scripts } = opts;
+          mainScript, quiet, scripts, version } = opts;
   const autoCache = opts['auto-cache'];
   const socketReplArgs = opts['socket-repl'];
 
   // if help, print help and bail
   if (help) {
     return printHelp();
+  }
+
+  if (version) {
+    return printVersion();
   }
 
   if (legal) {
