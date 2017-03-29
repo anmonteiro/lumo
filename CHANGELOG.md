@@ -12,6 +12,7 @@
 - Upgrade Node.js to version 7.7.3.
 - Do not print verbose information on REPL startup, even if `--verbose`.
 - Upgrade Google Closure Compiler to v20170218.
+- Don't print `nil` result on `--eval` ([#108](https://github.com/anmonteiro/lumo/issues/108)).
 
 ### Bug fixes
 
