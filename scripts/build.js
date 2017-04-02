@@ -40,10 +40,12 @@ function minify(filename) {
 
 writeClojureScriptVersion();
 
+// prettier-ignore
 console.log(
-  `Building ${isDevBuild ? 'development' : 'production'} bundle with Browserify...`,
+  `Building ${isDevBuild ? 'development' : 'production'} bundle with Browserify...`
 );
 
+// prettier-ignore
 browserify({
   entries: ['src/js/index.js'],
   commondir: false,
@@ -60,7 +62,7 @@ browserify({
     envify({
       _: 'purge',
       NODE_ENV: isDevBuild ? 'development' : 'production',
-    }),
+    })
   )
   .exclude('nexeres')
   .exclude('v8')
