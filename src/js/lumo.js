@@ -24,30 +24,35 @@ type jsCodeType = {
   sourceMap: string,
 };
 
-type ClosureCompilerType = (opts: {
-  jsCode: Array<jsCodeType>,
-  externs: string[],
-  languageIn: string,
-  languageOut: string,
-  compilationLevel: string,
-}) => {
+type ClosureCompilerType = (
+  opts: {
+    jsCode: Array<jsCodeType>,
+    externs: string[],
+    languageIn: string,
+    languageOut: string,
+    compilationLevel: string,
+  },
+) => {
   compiled: string,
   errors: string[],
   warnings: string[],
 };
 
-type ResourceType = {|
-  type: 'bundled',
-  src: string,
-|} | {|
-  type: 'file',
-  src: string,
-|} | {|
-  type: 'jar',
-  jarPath: string,
-  src: string,
-  date: number,
-|};
+type ResourceType =
+  | {|
+      type: 'bundled',
+      src: string,
+    |}
+  | {|
+      type: 'file',
+      src: string,
+    |}
+  | {|
+      type: 'jar',
+      jarPath: string,
+      src: string,
+      date: number,
+    |};
 
 function isBundled(filename: string): boolean {
   if (__DEV__) {
@@ -81,8 +86,11 @@ export function getGoogleClosureCompiler(): ClosureCompilerType {
   if (!Object.prototype.hasOwnProperty.call(bundledLibraries, property)) {
     v8.setFlagsFromString('--nouse_strict');
     if (__DEV__) {
-      // eslint-disable-next-line global-require
-      bundledLibraries[property] = require('google-closure-compiler-js').compile;
+      /* eslint-disable global-require */
+      bundledLibraries[
+        property
+      ] = require('google-closure-compiler-js').compile;
+      /* eslint-enable global-require */
     } else {
       const closureCompilerSource = load('googleClosureCompiler.js');
       bundledLibraries[property] = requireFromString(closureCompilerSource);
@@ -94,8 +102,13 @@ export function getGoogleClosureCompiler(): ClosureCompilerType {
   return bundledLibraries[property];
 }
 
-// eslint-disable-next-line flowtype/no-weak-types
-export function getParinfer(): {version: string, indentMode: Function, parenMode: Function} {
+/* eslint-disable flowtype/no-weak-types */
+export function getParinfer(): {
+  version: string,
+  indentMode: Function,
+  parenMode: Function,
+} {
+  /* eslint-enable flowtype/no-weak-types */
   const property = 'parinfer';
   if (!Object.prototype.hasOwnProperty.call(bundledLibraries, property)) {
     if (__DEV__) {
@@ -165,20 +178,23 @@ export function writeCache(filename: string, source: string): ?Error {
 
 export function loadUpstreamForeignLibs(): string[] {
   const JSZip = getJSZip();
-  return sourcePaths.reduce((ret: string[], srcPath: string) => {
-    if (srcPath.endsWith('.jar')) {
-      try {
-        const data = fs.readFileSync(srcPath);
-        const zip = new JSZip().load(data);
-        const source = zip.file('deps.cljs');
+  return sourcePaths.reduce(
+    (ret: string[], srcPath: string) => {
+      if (srcPath.endsWith('.jar')) {
+        try {
+          const data = fs.readFileSync(srcPath);
+          const zip = new JSZip().load(data);
+          const source = zip.file('deps.cljs');
 
-        if (source != null) {
-          ret.push(source.asText());
-        }
-      } catch (_) {} // eslint-disable-line no-empty
-    }
-    return ret;
-  }, []);
+          if (source != null) {
+            ret.push(source.asText());
+          }
+        } catch (_) {} // eslint-disable-line no-empty
+      }
+      return ret;
+    },
+    [],
+  );
 }
 
 export function resource(filename: string): ?ResourceType {
@@ -230,9 +246,16 @@ export function readSourcePaths(): string[] {
   return [...sourcePaths];
 }
 
-export function readSourceFromJar({ jarPath, src }: {type: string,
-                                                     jarPath: string,
-                                                     src: string}): string {
+export function readSourceFromJar(
+  {
+    jarPath,
+    src,
+  }: {
+    type: string,
+    jarPath: string,
+    src: string,
+  },
+): string {
   const JSZip = getJSZip();
   const data = fs.readFileSync(jarPath);
   const zip = new JSZip().load(data);

@@ -3,7 +3,13 @@
 import net from 'net';
 import readline from 'readline';
 import { createBanner } from './cli';
-import { createSession, deleteSession, prompt, processLine, unhookOutputStreams } from './repl';
+import {
+  createSession,
+  deleteSession,
+  prompt,
+  processLine,
+  unhookOutputStreams,
+} from './repl';
 
 import type { REPLSession } from './repl';
 
@@ -57,7 +63,8 @@ export function close(): void {
 }
 
 export function open(port: number, host?: string = 'localhost'): void {
-  socketServer = net.createServer((socket: net$Socket) => handleConnection(socket));
+  socketServer = net.createServer((socket: net$Socket) =>
+    handleConnection(socket));
   socketServer.listen(port, host);
 
   process.on('SIGTERM', close);

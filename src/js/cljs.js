@@ -15,7 +15,11 @@ import type { CLIOptsType } from './cli';
 let newContext;
 let ClojureScriptContext;
 
-function lumoEval(source: string, isForeign: boolean, execPath: ?string): mixed {
+function lumoEval(
+  source: string,
+  isForeign: boolean,
+  execPath: ?string,
+): mixed {
   if (execPath != null && !__DEV__) {
     const absoluteExecPath = path.resolve(execPath);
     const module = new Module(execPath);
@@ -24,9 +28,9 @@ function lumoEval(source: string, isForeign: boolean, execPath: ?string): mixed 
     module.paths = Module._nodeModulePaths(path.dirname(absoluteExecPath));
 
     const script = 'global.require = require;\n' +
-          'return require("vm").' +
-          `runInThisContext(${JSON.stringify(source)}, ` +
-         `{ filename: ${JSON.stringify(absoluteExecPath)}, displayErrors: true });\n`;
+      'return require("vm").' +
+      `runInThisContext(${JSON.stringify(source)}, ` +
+      `{ filename: ${JSON.stringify(absoluteExecPath)}, displayErrors: true });\n`;
 
     return module._compile(script, `${execPath}-wrapper`);
   }
@@ -103,7 +107,7 @@ if (__DEV__) {
     return ctx;
   };
 } else {
-  newContext = function newCtx(): {[key: string]: mixed} {
+  newContext = function newCtx(): { [key: string]: mixed } {
     global.$$LUMO_GLOBALS = {
       crypto,
       fs,
@@ -135,7 +139,13 @@ function setRuntimeOpts(opts: CLIOptsType): void {
   const staticFns = opts['static-fns'];
   const elideAsserts = opts['elide-asserts'];
   // $FlowIssue: context can have globals
-  ClojureScriptContext.lumo.repl.init(repl, verbose, cache, staticFns, elideAsserts);
+  ClojureScriptContext.lumo.repl.init(
+    repl,
+    verbose,
+    cache,
+    staticFns,
+    elideAsserts,
+  );
 }
 
 function initClojureScriptEngine(opts: CLIOptsType): void {
@@ -167,10 +177,16 @@ export function execute(
   type: string = 'text',
   expression: boolean = true,
   printNilResult: boolean = true,
-  setNS: ?string): void {
+  setNS: ?string,
+): void {
   // $FlowIssue: context can have globals
   return ClojureScriptContext.lumo.repl.execute(
-    type, code, expression, printNilResult, setNS);
+    type,
+    code,
+    expression,
+    printNilResult,
+    setNS,
+  );
 }
 
 function executeScript(code: string, type: string): void {
@@ -194,7 +210,8 @@ export function indentSpaceCount(text: string): number {
 
 export function getHighlightCoordinates(
   text: string[],
-  pos: number): [number, number] {
+  pos: number,
+): [number, number] {
   // $FlowIssue: context can have globals
   return ClojureScriptContext.lumo.repl.get_highlight_coordinates(text, pos);
 }
@@ -236,8 +253,13 @@ export default function startClojureScriptEngine(opts: CLIOptsType): void {
   if (repl) {
     process.nextTick(() => {
       initClojureScriptEngine(opts);
-      execute('(require \'[lumo.repl :refer-macros [doc dir]])',
-        'text', true, false, 'cljs.user');
+      execute(
+        "(require '[lumo.repl :refer-macros [doc dir]])",
+        'text',
+        true,
+        false,
+        'cljs.user',
+      );
     });
 
     return startREPL(opts);

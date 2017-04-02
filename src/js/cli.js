@@ -61,7 +61,8 @@ function printVersion(): void {
 }
 
 function printHelp(): void {
-  process.stdout.write(`${getVersionString()}
+  process.stdout.write(
+    `${getVersionString()}
 Usage:  lumo [init-opt*] [main-opt] [arg*]
 
   With no options or args, runs an interactive Read-Eval-Print Loop
@@ -93,7 +94,8 @@ Usage:  lumo [init-opt*] [main-opt] [arg*]
   any main option.
 
   Paths may be absolute or relative in the filesystem.
-`);
+`,
+  );
   // -                        Run a script from standard input
 }
 
@@ -224,8 +226,18 @@ function getCLIOpts(): CLIOptsType {
 
 export default function startCLI(): void {
   const opts = getCLIOpts();
-  const { args, cache, classpath, help, legal, mainNsName,
-          mainScript, quiet, scripts, version } = opts;
+  const {
+    args,
+    cache,
+    classpath,
+    help,
+    legal,
+    mainNsName,
+    mainScript,
+    quiet,
+    scripts,
+    version,
+  } = opts;
   const autoCache = opts['auto-cache'];
   const socketReplArgs = opts['socket-repl'];
   const dumpSDK = opts['dump-sdk'];
@@ -286,7 +298,8 @@ export default function startCLI(): void {
     socketRepl.open(parseInt(port, 10), host);
     if (!quiet) {
       process.stdout.write(
-        `Lumo socket REPL listening at ${host != null ? host : 'localhost'}:${port}.\n`);
+        `Lumo socket REPL listening at ${host != null ? host : 'localhost'}:${port}.\n`,
+      );
     }
   }
 

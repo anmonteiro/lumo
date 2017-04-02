@@ -1,7 +1,8 @@
 /* @flow */
 
 export default function printLegalInformation(): void {
-  process.stdout.write(`
+  process.stdout.write(
+    `
 Lumo
 ----
 
@@ -41,5 +42,6 @@ Parinfer
 
 Copyright (c) 2015 Shaun Williams and contributors
 MIT License
-`);
+`,
+  );
 }

@@ -5,20 +5,24 @@ import os from 'os';
 import path from 'path';
 
 function expandPath(somePath: string): string {
-  const tildeExpandedPath = somePath.startsWith('~') ?
-        somePath.replace(/^~/, os.homedir) : somePath;
+  const tildeExpandedPath = somePath.startsWith('~')
+    ? somePath.replace(/^~/, os.homedir)
+    : somePath;
   return path.resolve(tildeExpandedPath);
 }
 
 export const isWindows: boolean = /^Windows/.test(os.type());
 
 export function srcPathsFromClasspathStrings(cpStrs: string[]): string[] {
-  return cpStrs.reduce((ret: string[], colonSepPaths: string) => {
-    const sep = !isWindows ? ':' : /;|:/;
-    const paths = colonSepPaths.split(sep);
+  return cpStrs.reduce(
+    (ret: string[], colonSepPaths: string) => {
+      const sep = !isWindows ? ':' : /;|:/;
+      const paths = colonSepPaths.split(sep);
 
-    return ret.concat(paths.map(expandPath).map(path.normalize));
-  }, []);
+      return ret.concat(paths.map(expandPath).map(path.normalize));
+    },
+    [],
+  );
 }
 
 export function isWhitespace(s: string): boolean {
@@ -51,5 +55,6 @@ export function ensureDir(dir: string): void {
 
 export function currentTimeMicros(): number {
   const [secs, nanos] = process.hrtime();
-  return ((secs * 1e9) + nanos) / 1e3;
+  // eslint-disable-next-line no-mixed-operators
+  return (secs * 1e9 + nanos) / 1e3;
 }

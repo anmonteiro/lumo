@@ -40,15 +40,20 @@ let isPasting: boolean;
 const pendingHighlights = [];
 const stdoutWrite = process.stdout.write;
 const stderrWrite = process.stderr.write;
-const writeToResultBuffer = (line: string) => { resultBuffer.push(line); };
-const writeToErrorBuffer = (line: string) => { errorBuffer.push(line); };
+const writeToResultBuffer = (line: string) => {
+  resultBuffer.push(line);
+};
+const writeToErrorBuffer = (line: string) => {
+  errorBuffer.push(line);
+};
 
 const sessions: { [key: number]: REPLSession } = {};
 
 export function prompt(
   rl: readline$Interface,
   isSecondary: boolean = false,
-  p: string = cljs.getCurrentNamespace()): void {
+  p: string = cljs.getCurrentNamespace(),
+): void {
   let promptText;
 
   if (isSecondary) {
@@ -61,7 +66,10 @@ export function prompt(
   rl.prompt();
 }
 
-function hookOutputStreams(writeOutput: StreamWriteHandler, writeError: StreamWriteHandler): void {
+function hookOutputStreams(
+  writeOutput: StreamWriteHandler,
+  writeError: StreamWriteHandler,
+): void {
   // $FlowIssue - assignment of process.stdout.write
   process.stdout.write = writeOutput;
   // $FlowIssue - assignment of process.stderr.write
@@ -75,7 +83,10 @@ export function unhookOutputStreams(): void {
   process.stderr.write = stderrWrite;
 }
 
-function consumeBuffer(buffer: string[], stream: stream$Writable | tty$WriteStream): void {
+function consumeBuffer(
+  buffer: string[],
+  stream: stream$Writable | tty$WriteStream,
+): void {
   let len = buffer.length;
 
   while (len > 0) {
@@ -93,7 +104,8 @@ function stopREPL(): void {
   socketServerClose();
 
   const keys = Object.keys(sessions);
-  keys.forEach((sessionId: string) => deleteSession(sessions[parseInt(sessionId, 10)]));
+  keys.forEach((sessionId: string) =>
+    deleteSession(sessions[parseInt(sessionId, 10)]));
 
   unhookOutputStreams();
 
@@ -122,11 +134,16 @@ export function processLine(replSession: REPLSession, line: string): void {
     extraForms = cljs.isReadable(currentInput);
 
     if (extraForms !== false) {
-      session.input = currentInput.substring(0, currentInput.length - extraForms.length);
+      session.input = currentInput.substring(
+        0,
+        currentInput.length - extraForms.length,
+      );
 
       if (!isWhitespace(session.input)) {
-        hookOutputStreams(writeToResultBuffer,
-                          isMain ? writeToErrorBuffer : writeToResultBuffer);
+        hookOutputStreams(
+          writeToResultBuffer,
+          isMain ? writeToErrorBuffer : writeToResultBuffer,
+        );
         cljs.execute(session.input);
         unhookOutputStreams();
 
@@ -182,7 +199,8 @@ function highlight(
   replSession: REPLSession,
   char: string,
   line: string,
-  cursor: number): void {
+  cursor: number,
+): void {
   const session = replSession;
   const { rl, input } = session;
   const pos = cursor - 1;
@@ -209,7 +227,7 @@ function highlight(
         const [tid] = pendingHighlights.shift();
         clearTimeout(tid);
         // $FlowIssue
-        readline.moveCursor(rl.output, (cursor - cursorX), linesUp);
+        readline.moveCursor(rl.output, cursor - cursorX, linesUp);
         // $FlowIssue
         rl.input = oldInput;
         rl.resume();
@@ -223,19 +241,22 @@ function highlight(
       rl.input = readStream;
 
       const now = currentTimeMicros();
-      const timeout = setTimeout(() => {
-        const to = pendingHighlights[0];
+      const timeout = setTimeout(
+        () => {
+          const to = pendingHighlights[0];
 
-        if (to != null && to[1] === now) {
-          pendingHighlights.shift();
-          // $FlowIssue: rl.output is there
-          readline.moveCursor(rl.output, (cursor - cursorX), linesUp);
-          // $FlowIssue: rl.input is there
-          rl.input = oldInput;
-          rl.resume();
-          readStream.destroy();
-        }
-      }, 500);
+          if (to != null && to[1] === now) {
+            pendingHighlights.shift();
+            // $FlowIssue: rl.output is there
+            readline.moveCursor(rl.output, cursor - cursorX, linesUp);
+            // $FlowIssue: rl.input is there
+            rl.input = oldInput;
+            rl.resume();
+            readStream.destroy();
+          }
+        },
+        500,
+      );
 
       pendingHighlights.push([timeout, now]);
     }
@@ -246,7 +267,7 @@ function handleKeyPress(session: REPLSession, c: string, key: KeyType): void {
   const rl = session.rl;
 
   const now = currentTimeMicros();
-  isPasting = (now - lastKeypressTime) < 10000;
+  isPasting = now - lastKeypressTime < 10000;
   lastKeypressTime = now;
 
   if (!isPasting) {
@@ -255,7 +276,10 @@ function handleKeyPress(session: REPLSession, c: string, key: KeyType): void {
   }
 }
 
-export function createSession(rl: readline$Interface, isMain: boolean): REPLSession {
+export function createSession(
+  rl: readline$Interface,
+  isMain: boolean,
+): REPLSession {
   const session: REPLSession = {
     sessionId: sessionCount,
     rl,
@@ -273,25 +297,34 @@ export function createSession(rl: readline$Interface, isMain: boolean): REPLSess
 function getJSCompletions(
   line: string,
   match: string,
-  cb: (?Error, [string[], string]) => void): void {
+  cb: (?Error, [string[], string]) => void,
+): void {
   const flat = new ArrayStream();
   const nodeReplServer = new repl.REPLServer('', flat);
   const lineWithoutMatch = line.substring(0, line.length - match.length);
 
-  return nodeReplServer.completer(match, (err: ?Error, [jsCompletions]: [string[], string]) => {
-    const completions = jsCompletions.reduce((cs: string[], c: string) => {
-      if (c === '') {
-        return cs;
-      }
+  return nodeReplServer.completer(match, (err: ?Error, [
+    jsCompletions,
+  ]: [string[], string]) => {
+    const completions = jsCompletions.reduce(
+      (cs: string[], c: string) => {
+        if (c === '') {
+          return cs;
+        }
 
-      cs.push(`${lineWithoutMatch}${c}`);
-      return cs;
-    }, []);
+        cs.push(`${lineWithoutMatch}${c}`);
+        return cs;
+      },
+      [],
+    );
     return cb(err, [completions, line]);
   });
 }
 
-function completer(line: string, cb: (err: ?Error, [string[], string]) => void): void {
+function completer(
+  line: string,
+  cb: (err: ?Error, [string[], string]) => void,
+): void {
   const jsMatches = /js\/(\S*)$/g.exec(line);
 
   if (jsMatches != null) {
@@ -328,5 +361,6 @@ export default function startREPL(opts: CLIOptsType): void {
   rl.on('close', () => stopREPL());
 
   lastKeypressTime = currentTimeMicros();
-  process.stdin.on('keypress', (c: string, key: KeyType) => handleKeyPress(session, c, key));
+  process.stdin.on('keypress', (c: string, key: KeyType) =>
+    handleKeyPress(session, c, key));
 }

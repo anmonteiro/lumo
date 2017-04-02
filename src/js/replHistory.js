@@ -32,7 +32,8 @@ function onLoad(
   path: string,
   maxLength: number,
   offset: number,
-  cb: (ret: string[]) => void): void {
+  cb: (ret: string[]) => void,
+): void {
   // $FlowIssue: it's there
   const { fd } = getHistoryStream(path);
   const rs = fs.createReadStream(path, {
@@ -54,7 +55,8 @@ function onLoad(
     tail = tail.split('\n');
 
     if (offset > 0 && tail.length < maxLength) {
-      onLoad(path, maxLength, offset - (0x100 * maxLength), cb);
+      // eslint-disable-next-line no-mixed-operators
+      onLoad(path, maxLength, offset - 0x100 * maxLength, cb);
     } else {
       tail = tail.slice(-maxLength);
       tail.reverse();
@@ -63,7 +65,11 @@ function onLoad(
   });
 }
 
-function loadHistory(path: string, maxLength: number, cb: (ret: string[]) => void): void {
+function loadHistory(
+  path: string,
+  maxLength: number,
+  cb: (ret: string[]) => void,
+): void {
   fs.stat(path, (err: ?Error, stat: fs.Stats) => {
     const totalSize = stat.size;
     if (totalSize > maxDiskSize) {
@@ -97,7 +103,9 @@ function loadHistory(path: string, maxLength: number, cb: (ret: string[]) => voi
   });
 }
 
-export default function createInterface(options: replHistory$Opts): readline$Interface {
+export default function createInterface(
+  options: replHistory$Opts,
+): readline$Interface {
   const { path, historySize, terminal } = options;
 
   const rl = readline.createInterface(options);
