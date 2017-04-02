@@ -78,7 +78,7 @@ Promise.all(promises).then(() => {
       ].join(' '),
       startupSnapshot: 'target/main.js',
       framework: 'node',
-      nodeVersion: '7.7.3',
+      nodeVersion: '7.8.0',
     },
     err => {
       if (err) {

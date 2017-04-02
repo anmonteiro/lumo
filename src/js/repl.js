@@ -343,6 +343,7 @@ export default function startREPL(opts: CLIOptsType): void {
     input: process.stdin,
     output: process.stdout,
     terminal: !dumbTerminal,
+    removeHistoryDuplicates: true,
     completer,
   });
 

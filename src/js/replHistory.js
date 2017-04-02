@@ -12,6 +12,7 @@ type replHistory$Opts = {
   terminal?: boolean,
   historySize?: number,
   path: string,
+  removeHistoryDuplicates?: boolean,
 };
 
 const maxDiskSize = 0x1000000;

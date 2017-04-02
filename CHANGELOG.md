@@ -10,10 +10,12 @@
 
 ### Changes
 
-- Upgrade Node.js to version 7.7.3.
+- Upgrade Node.js to version 7.8.0.
 - Do not print verbose information on REPL startup, even if `--verbose`.
 - Upgrade Google Closure Compiler to v20170218.
 - Don't print `nil` result on `--eval` ([#108](https://github.com/anmonteiro/lumo/issues/108)).
+- Remove readline history duplicates (`removeHistoryDuplicates` option introduced
+in https://github.com/nodejs/node/pull/2982)
 
 ### Bug fixes
 
