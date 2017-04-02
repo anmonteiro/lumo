@@ -4,14 +4,17 @@ let socketRepl = require('../socketRepl');
 
 const mockOn = jest.fn((type: string, f: (x?: string) => void) => {
   switch (type) {
-    case 'line': f('(+ 1 2'); return f(')');
-    default: return f();
+    case 'line':
+      f('(+ 1 2');
+      return f(')');
+    default:
+      return f();
   }
 });
 
 jest.mock('../repl');
 jest.mock('readline', () => ({
-  createInterface: jest.fn((opts: {[mockKey: string]: mixed}) => ({
+  createInterface: jest.fn((opts: { [mockKey: string]: mixed }) => ({
     on: mockOn,
     output: opts.output,
     write: jest.fn(),
@@ -47,7 +50,9 @@ describe('open', () => {
       socketServer = new net.Server();
       return socketServer;
     });
-    net.Server.prototype.listen = jest.fn((port: number, host: ?string) => undefined);
+    net.Server.prototype.listen = jest.fn(
+      (port: number, host: ?string) => undefined,
+    );
     net.Server.prototype.close = jest.fn();
   });
 
@@ -69,8 +74,9 @@ describe('open', () => {
     socketRepl.open(serverPort, serverHost);
 
     expect(process.on).toHaveBeenCalledTimes(2);
-    expect(process.on.mock.calls.map((x: [string, () => void]) => x[0]))
-      .toEqual(['SIGTERM', 'SIGHUP']);
+    expect(
+      process.on.mock.calls.map((x: [string, () => void]) => x[0]),
+    ).toEqual(['SIGTERM', 'SIGHUP']);
   });
 
   it('defaults to localhost if no host specified', () => {
@@ -91,7 +97,9 @@ describe('close', () => {
       socketServer = new net.Server();
       return socketServer;
     });
-    net.Server.prototype.listen = jest.fn((port: number, host: ?string) => undefined);
+    net.Server.prototype.listen = jest.fn(
+      (port: number, host: ?string) => undefined,
+    );
     net.Server.prototype.close = jest.fn(() => {
       socketServer = null;
     });
@@ -105,7 +113,7 @@ describe('close', () => {
     net.Server.prototype.close = netServerClose;
   });
 
-  it('doesn\'t close the server if already closed', () => {
+  it("doesn't close the server if already closed", () => {
     socketRepl.close();
 
     expect(socketServer).toBeUndefined();

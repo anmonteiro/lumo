@@ -35,7 +35,7 @@ describe('lumo', () => {
         expect(lumo.load('foo')).toBe('fooContents');
       });
 
-      it('returns null when a file doesn\'t exist', () => {
+      it("returns null when a file doesn't exist", () => {
         expect(lumo.load('nonExistent')).toBe(null);
       });
     });
@@ -46,15 +46,19 @@ describe('lumo', () => {
       beforeEach(() => {
         jest.resetModules();
         zlib.inflateSync = jest.fn((x: string) => x);
-        jest.mock('nexeres', () => ({
-          get: (resource: string) => {
-            if (resource === 'foo') {
-              return 'fooContents';
-            }
-            throw new Error('Inexistent resource');
-          },
-          keys: () => ['foo'],
-        }), { virtual: true });
+        jest.mock(
+          'nexeres',
+          () => ({
+            get: (resource: string) => {
+              if (resource === 'foo') {
+                return 'fooContents';
+              }
+              throw new Error('Inexistent resource');
+            },
+            keys: () => ['foo'],
+          }),
+          { virtual: true },
+        );
 
         __DEV__ = false;
         lumo = require('../lumo'); // eslint-disable-line global-require
@@ -69,7 +73,7 @@ describe('lumo', () => {
         expect(lumo.load('foo')).toBe('fooContents');
       });
 
-      it('returns null when a file doesn\'t exist', () => {
+      it("returns null when a file doesn't exist", () => {
         expect(lumo.load('nonExistent')).toBe(null);
       });
     });
@@ -80,7 +84,7 @@ describe('lumo', () => {
       expect(lumo.readCache('foo')).toBe('fooContents');
     });
 
-    it('returns null when a file doesn\'t exist', () => {
+    it("returns null when a file doesn't exist", () => {
       expect(lumo.readCache('nonExistent')).toBe(null);
     });
   });
@@ -88,14 +92,14 @@ describe('lumo', () => {
   describe('writeCache', () => {
     const writeFileSync = fs.writeFileSync;
     beforeEach(() => {
-      fs.writeFileSync = jest.fn((fname: string,
-                                  contents: string,
-                                  encoding: string) => {
-        if (/foo/.test(fname)) {
-          return;
-        }
-        throw new Error('some error');
-      });
+      fs.writeFileSync = jest.fn(
+        (fname: string, contents: string, encoding: string) => {
+          if (/foo/.test(fname)) {
+            return;
+          }
+          throw new Error('some error');
+        },
+      );
     });
 
     afterEach(() => {
@@ -106,7 +110,7 @@ describe('lumo', () => {
       expect(lumo.writeCache('foo', 'bar')).toBeUndefined();
     });
 
-    it('catches and returns an error if it can\'t write', () => {
+    it("catches and returns an error if it can't write", () => {
       expect(lumo.writeCache('nonExistent', 'contents')).toBeInstanceOf(Error);
     });
   });
@@ -117,8 +121,7 @@ describe('lumo', () => {
       lumo = require('../lumo'); // eslint-disable-line global-require
     });
 
-    afterEach(() => {
-    });
+    afterEach(() => {});
 
     it('cycles through the source paths', () => {
       const srcPaths = ['a', 'b', 'c'];
@@ -135,7 +138,8 @@ describe('lumo', () => {
       expect(source).toBe(null);
       expect(fs.readFileSync).toHaveBeenCalledTimes(4);
       expect(mockCalls.map((x: string[]) => x[0])).toEqual(
-        lumoPaths.map((p: string) => path.join(p, 'bar/baz')));
+        lumoPaths.map((p: string) => path.join(p, 'bar/baz')),
+      );
     });
 
     describe('reads JAR archives', () => {
@@ -148,7 +152,7 @@ describe('lumo', () => {
         expect(source).toBe('zipContents');
       });
 
-      it('should return null when the JAR doesn\'t have the source', () => {
+      it("should return null when the JAR doesn't have the source", () => {
         const source = lumo.readSource('some/thing');
 
         expect(source).toBe(null);
@@ -171,13 +175,13 @@ describe('lumo', () => {
       expect(source).toEqual(['zipContents']);
     });
 
-    it('should return an empty array when the JAR doesn\'t have deps.cljs', () => {
+    it("should return an empty array when the JAR doesn't have deps.cljs", () => {
       const source = lumo.loadUpstreamForeignLibs('some/thing');
 
       expect(source).toEqual([]);
     });
 
-    it('shouldn\'t crash when a JAR isn\'t found', () => {
+    it("shouldn't crash when a JAR isn't found", () => {
       const srcPaths = ['bar.jar'];
       lumo.addSourcePaths(srcPaths);
 
@@ -206,7 +210,10 @@ describe('lumo', () => {
       expect(exists).toBe(null);
       expect(fs.existsSync).toHaveBeenCalledTimes(5);
       expect(mockCalls.map((x: string[]) => x[0])).toEqual(
-        ['./target/bar/baz'].concat(lumoPaths.map((p: string) => path.join(p, 'bar/baz'))));
+        ['./target/bar/baz'].concat(
+          lumoPaths.map((p: string) => path.join(p, 'bar/baz')),
+        ),
+      );
     });
 
     it('returns the representation for the resource when it exists', () => {
@@ -230,7 +237,7 @@ describe('lumo', () => {
         });
       });
 
-      it('should return false when the JAR doesn\'t have the file', () => {
+      it("should return false when the JAR doesn't have the file", () => {
         expect(lumo.resource('some/thing')).toBe(null);
       });
     });

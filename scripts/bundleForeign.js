@@ -17,19 +17,19 @@ browserify({
   },
   browserField: false,
 }).bundle((err, buf) => {
+  if (err) {
+    throw err;
+  }
+  const code = buf.toString();
+  const bundleFilename = path.join('target', 'googleClosureCompiler.js');
+  fs.writeFile(bundleFilename, derequire(code), 'utf8', err => {
     if (err) {
       throw err;
     }
-    const code = buf.toString();
-    const bundleFilename = path.join('target', 'googleClosureCompiler.js');
-    fs.writeFile(bundleFilename, derequire(code), 'utf8', (err) => {
-      if (err) {
-        throw err;
-      }
-    });
+  });
 });
 
-function minify(filename){
+function minify(filename) {
   const { code } = uglify.minify(filename, {
     warnings: true,
   });
@@ -48,17 +48,17 @@ browserify({
   },
   browserField: false,
 }).bundle((err, buf) => {
+  if (err) {
+    throw err;
+  }
+  const code = buf.toString();
+  const bundleFilename = path.join('target', 'parinfer.js');
+  fs.writeFile(bundleFilename, derequire(code), 'utf8', err => {
     if (err) {
       throw err;
     }
-    const code = buf.toString();
-    const bundleFilename = path.join('target', 'parinfer.js');
-    fs.writeFile(bundleFilename, derequire(code), 'utf8', (err) => {
-      if (err) {
-        throw err;
-      }
-      minify(bundleFilename);
-    });
+    minify(bundleFilename);
+  });
 });
 
 browserify({
@@ -73,15 +73,15 @@ browserify({
   },
   browserField: false,
 }).bundle((err, buf) => {
+  if (err) {
+    throw err;
+  }
+  const code = buf.toString();
+  const bundleFilename = path.join('target', 'jszip.js');
+  fs.writeFile(bundleFilename, derequire(code), 'utf8', err => {
     if (err) {
       throw err;
     }
-    const code = buf.toString();
-    const bundleFilename = path.join('target', 'jszip.js');
-    fs.writeFile(bundleFilename, derequire(code), 'utf8', (err) => {
-      if (err) {
-        throw err;
-      }
-      minify(bundleFilename);
-    });
+    minify(bundleFilename);
+  });
 });

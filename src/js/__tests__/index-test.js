@@ -6,7 +6,7 @@ import index from '../index';
 jest.mock('../cli');
 
 describe('index', () => {
-  it('doesn\'t export anything', () => {
+  it("doesn't export anything", () => {
     expect(index).toEqual({});
   });
   it('should defer to the cli module', () => {

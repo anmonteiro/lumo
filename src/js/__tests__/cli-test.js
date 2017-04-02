@@ -83,7 +83,8 @@ describe('getCliOpts', () => {
       expect(parsedOpts.scripts).toEqual([
         ['path', 'foo.cljs'],
         ['text', ':foo'],
-        ['path', 'bar.cljs']]);
+        ['path', 'bar.cljs'],
+      ]);
     });
   });
 
@@ -122,7 +123,11 @@ describe('getCliOpts', () => {
     startCLI();
     const [[parsedOpts]] = cljs.mock.calls;
 
-    expect(parsedOpts.args).toEqual(['--verbose', '--socket-repl', 'localhost:5555']);
+    expect(parsedOpts.args).toEqual([
+      '--verbose',
+      '--socket-repl',
+      'localhost:5555',
+    ]);
     expect(parsedOpts.repl).toBe(true);
   });
 
@@ -175,7 +180,7 @@ describe('getCliOpts', () => {
     });
   });
 
-  it('doesn\'t start a socket server if the options are earmuffed', () => {
+  it("doesn't start a socket server if the options are earmuffed", () => {
     const args = '-r -n 192.168.1.254:5555';
     Object.defineProperty(process, 'argv', {
       value: ['', ''].concat(args.split(' ')),
@@ -278,7 +283,7 @@ describe('print Functions', () => {
       expect(process.stdout.write.mock.calls).toMatchSnapshot();
     });
 
-    it('doesn\'t print if -q / --quiet', () => {
+    it("doesn't print if -q / --quiet", () => {
       Object.defineProperty(process, 'argv', {
         value: ['', '', '-q'],
       });
@@ -287,7 +292,7 @@ describe('print Functions', () => {
       expect(process.stdout.write).not.toHaveBeenCalled();
     });
 
-    it('doesn\'t print if not entering the REPL (main script)', () => {
+    it("doesn't print if not entering the REPL (main script)", () => {
       Object.defineProperty(process, 'argv', {
         value: ['', '', 'foo.cljs'],
       });
@@ -321,7 +326,7 @@ describe('print Functions', () => {
 });
 
 describe('starting Lumo', () => {
-  it('always sets use-strict in V8\'s options', () => {
+  it("always sets use-strict in V8's options", () => {
     Object.defineProperty(process, 'argv', {
       value: ['', ''],
     });

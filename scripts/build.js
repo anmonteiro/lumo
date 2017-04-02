@@ -14,7 +14,7 @@ function writeClojureScriptVersion() {
   let index = 0;
   let acc = '';
   rs
-    .on('data', (chunk) => {
+    .on('data', chunk => {
       index = chunk.indexOf('\n');
       acc += chunk;
       if (index !== -1) {
@@ -30,7 +30,7 @@ function writeClojureScriptVersion() {
     });
 }
 
-function minify(filename){
+function minify(filename) {
   const { code } = uglify.minify(filename, {
     warnings: true,
   });
@@ -40,7 +40,9 @@ function minify(filename){
 
 writeClojureScriptVersion();
 
-console.log(`Building ${isDevBuild ? 'development' : 'production'} bundle with Browserify...`);
+console.log(
+  `Building ${isDevBuild ? 'development' : 'production'} bundle with Browserify...`,
+);
 
 browserify({
   entries: ['src/js/index.js'],
@@ -52,11 +54,14 @@ browserify({
     process: undefined,
   },
   browserField: false,
-}).transform('babelify')
-  .transform(envify({
-    _: 'purge',
-    NODE_ENV: isDevBuild ? 'development' : 'production',
-  }))
+})
+  .transform('babelify')
+  .transform(
+    envify({
+      _: 'purge',
+      NODE_ENV: isDevBuild ? 'development' : 'production',
+    }),
+  )
   .exclude('nexeres')
   .exclude('v8')
   .exclude('google-closure-compiler-js')
@@ -68,7 +73,7 @@ browserify({
     }
     const code = buf.toString();
     const bundleFilename = path.join('target', 'bundle.js');
-    fs.writeFile(bundleFilename, derequire(code), 'utf8', (err) => {
+    fs.writeFile(bundleFilename, derequire(code), 'utf8', err => {
       if (err) {
         throw err;
       }

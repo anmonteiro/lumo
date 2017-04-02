@@ -92,7 +92,7 @@ describe('startClojureScriptEngine', () => {
     expect(ret2).toBeUndefined();
   });
 
-  it('calls `executeScript` and bails if there\'s a main opt', () => {
+  it("calls `executeScript` and bails if there's a main opt", () => {
     startCLJS({
       repl: false,
       mainScript: 'foo.cljs',
@@ -102,7 +102,7 @@ describe('startClojureScriptEngine', () => {
     expect(startREPL).not.toHaveBeenCalled();
   });
 
-  it('doesn\'t init the CLJS engine if it already started', () => {
+  it("doesn't init the CLJS engine if it already started", () => {
     startCLJS({
       repl: true,
       // scripts will init the ClojureScript engine
@@ -160,18 +160,24 @@ describe('startClojureScriptEngine', () => {
 
     beforeEach(() => {
       jest.resetModules();
-      Object.assign(global, {
-        initialize: jest.fn(),
-        __DEV__: false,
-      }, ctx);
+      Object.assign(
+        global,
+        {
+          initialize: jest.fn(),
+          __DEV__: false,
+        },
+        ctx,
+      );
       // eslint-disable-next-line global-require
       startClojureScriptEngine = require('../cljs').default;
     });
 
     afterEach(() => {
-      Object.keys(ctx).concat(['initialize']).forEach((key: string, idx: number) => {
-        global[key] = undefined;
-      });
+      Object.keys(ctx)
+        .concat(['initialize'])
+        .forEach((key: string, idx: number) => {
+          global[key] = undefined;
+        });
       __DEV__ = true;
     });
 
@@ -244,18 +250,24 @@ describe('lumoEval', () => {
 
     beforeEach(() => {
       jest.resetModules();
-      Object.assign(global, {
-        initialize: jest.fn(),
-        __DEV__: false,
-      }, ctx);
+      Object.assign(
+        global,
+        {
+          initialize: jest.fn(),
+          __DEV__: false,
+        },
+        ctx,
+      );
       // eslint-disable-next-line global-require
       startClojureScriptEngine = require('../cljs').default;
     });
 
     afterEach(() => {
-      Object.keys(ctx).concat(['initialize']).forEach((key: string, idx: number) => {
-        global[key] = undefined;
-      });
+      Object.keys(ctx)
+        .concat(['initialize'])
+        .forEach((key: string, idx: number) => {
+          global[key] = undefined;
+        });
       __DEV__ = true;
     });
 

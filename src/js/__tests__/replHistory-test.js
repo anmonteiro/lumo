@@ -13,7 +13,7 @@ readline.createInterface = jest.fn(() => ({
 
 jest.mock('fs');
 
-type statCbType = (err: ?Error, ret: {size: number}) => void;
+type statCbType = (err: ?Error, ret: { size: number }) => void;
 fs.stat = jest.fn((path: string, cb: statCbType) => {
   cb(null, { size: 10 });
 });
@@ -30,7 +30,9 @@ fs.createWriteStream = jest.fn(() => ({
   fd: 42,
 }));
 
-fs.createReadStream = jest.fn((path: string, opts: { [key: string]: string }) => ({
+fs.createReadStream = jest.fn((path: string, opts: {
+  [key: string]: string,
+}) => ({
   on: jest.fn((type: string, cb: (e?: string) => void) => {
     switch (type) {
       case 'data':
@@ -38,7 +40,8 @@ fs.createReadStream = jest.fn((path: string, opts: { [key: string]: string }) =>
       case 'end':
         return cb();
 
-      default: return undefined;
+      default:
+        return undefined;
     }
   }),
 }));
@@ -58,7 +61,7 @@ describe('replHistory', () => {
     expect(fs.createWriteStream).toHaveBeenCalled();
   });
 
-  it('doesn\'t save history when terminal is false', () => {
+  it("doesn't save history when terminal is false", () => {
     replHistory({});
 
     expect(fs.createWriteStream).not.toHaveBeenCalled();
@@ -74,8 +77,8 @@ describe('replHistory', () => {
     expect(rl.history.length).toBeGreaterThan(0);
   });
 
-  describe('doesn\'t load REPL history from file', () => {
-    it('if path isn\'t passed in options', () => {
+  describe("doesn't load REPL history from file", () => {
+    it("if path isn't passed in options", () => {
       const rl = replHistory({
         terminal: true,
         historySize: 10,
@@ -85,7 +88,7 @@ describe('replHistory', () => {
       expect(rl.history).toEqual([]);
     });
 
-    it('if path doesn\'t exist', () => {
+    it("if path doesn't exist", () => {
       const rl = replHistory({
         terminal: true,
         historySize: 10,
@@ -120,20 +123,23 @@ describe('replHistory', () => {
     });
   });
 
-  describe('renames an existent repl history file when it\'s past the maximum size', () => {
+  describe("renames an existent repl history file when it's past the maximum size", () => {
     const fsStat = fs.stat;
 
     beforeEach(() => {
-      fs.stat = jest.fn()
-        .mockImplementationOnce((path: string, cb: statCbType) => cb(null, { size: 0x10000000 }))
-        .mockImplementationOnce((path: string, cb: statCbType) => cb(null, { size: 0x100 }));
+      fs.stat = jest
+        .fn()
+        .mockImplementationOnce((path: string, cb: statCbType) =>
+          cb(null, { size: 0x10000000 }))
+        .mockImplementationOnce((path: string, cb: statCbType) =>
+          cb(null, { size: 0x100 }));
     });
 
     afterAll(() => {
       fs.stat = fsStat;
     });
 
-    it('if an old one doesn\'t exist', () => {
+    it("if an old one doesn't exist", () => {
       fs.exists = jest.fn((_: string, cb: (ret: boolean) => void) => cb(false));
 
       replHistory({

@@ -26,22 +26,30 @@ let on;
 function mockOn(line: ?string = null): JestMockFn {
   on = jest.fn((type: string, f: (x?: string) => void) => {
     switch (type) {
-      case 'line': f(line || '(+ 1 2'); return f(line || ')');
-      case 'SIGINT': return f();
-      default: return undefined;
+      case 'line':
+        f(line || '(+ 1 2');
+        return f(line || ')');
+      case 'SIGINT':
+        return f();
+      default:
+        return undefined;
     }
   });
   return on;
 }
 
-function mockReplHistory(mockLine?: string, mockOutput?: stream$Writable): void {
-  jest.mock('../replHistory', () => jest.fn(() => ({
-    setPrompt: mockSetPrompt,
-    prompt: mockPrompt,
-    on: mockOn(mockLine),
-    output: mockOutput || { write: jest.fn() },
-    write: jest.fn(),
-  })));
+function mockReplHistory(
+  mockLine?: string,
+  mockOutput?: stream$Writable,
+): void {
+  jest.mock('../replHistory', () =>
+    jest.fn(() => ({
+      setPrompt: mockSetPrompt,
+      prompt: mockPrompt,
+      on: mockOn(mockLine),
+      output: mockOutput || { write: jest.fn() },
+      write: jest.fn(),
+    })));
 }
 
 jest.mock('readline', () => ({
@@ -164,7 +172,7 @@ describe('startREPL', () => {
       expect(replHistoryCalls[0][0].terminal).toBe(false);
     });
 
-    it('doesn\'t set stdin to rawMode if dumbTerminal is true', () => {
+    it("doesn't set stdin to rawMode if dumbTerminal is true", () => {
       startREPL({
         'dumb-terminal': true,
       });
@@ -245,7 +253,7 @@ describe('startREPL', () => {
       /* eslint-enable global-require */
       const originalObjectKeys = Object.keys;
       let sessions;
-      Object.keys = jest.fn((x: {[key: mixed]: mixed}) => {
+      Object.keys = jest.fn((x: { [key: mixed]: mixed }) => {
         sessions = x;
         return originalObjectKeys(x);
       });

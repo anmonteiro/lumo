@@ -17,7 +17,7 @@ var file = fs.createWriteStream(platformZip);
 var executable = isWindows ? 'lumo.exe' : 'lumo';
 
 if (version == null) {
-  throw new Error('Aborting! $npm_package_version not defined in env.')
+  throw new Error('Aborting! $npm_package_version not defined in env.');
 }
 
 var url = [
@@ -34,19 +34,19 @@ function handleError() {
 
 function hookProgressBar(req) {
   req.on('response', function(response) {
-    console.log(/* just newline */)
+    console.log(/* just newline */);
 
     var len = parseInt(response.headers['content-length'], 10);
     var bar = new ProgressBar(' Downloading [:bar] :rate/bps :percent :etas', {
       complete: '=',
       imcomplete: ' ',
       width: 40,
-      total: len
+      total: len,
     });
 
     response.on('data', function(chunk) {
       bar.tick(chunk.length);
-    })
+    });
 
     response.on('end', function() {
       console.log(/* just newline */);
@@ -55,22 +55,22 @@ function hookProgressBar(req) {
 }
 
 function setRequestTimeout(ms, req, cb) {
-  var timer
+  var timer;
 
   req.on('response', function(response) {
-    timer = setTimeout(cb, ms)
+    timer = setTimeout(cb, ms);
 
     response.on('end', function() {
-      clearTimeout(timer)
-    })
+      clearTimeout(timer);
+    });
   });
 
   req.on('error', function() {
-    clearTimeout(timer)
-  })
+    clearTimeout(timer);
+  });
 }
 
-var req = request(url, {timeout: 30000});
+var req = request(url, { timeout: 30000 });
 
 setRequestTimeout(30000, req, handleError);
 
@@ -86,7 +86,7 @@ req.on('end', function() {
 
   try {
     fs.mkdirSync('bin');
-  } catch(e) {
+  } catch (e) {
     if (e.code !== 'EEXIST') {
       throw e;
     }

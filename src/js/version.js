@@ -1,3 +1,3 @@
 /* @flow */
 
-export default '1.2.0';
+export default '1.3.0';

@@ -3,8 +3,12 @@
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
-import { ensureDir, srcPathsFromClasspathStrings,
-         isWhitespace, isWindows } from '../util';
+import {
+  ensureDir,
+  srcPathsFromClasspathStrings,
+  isWhitespace,
+  isWindows,
+} from '../util';
 
 describe('srcPathsFromClasspathStrings', () => {
   const homedir = os.homedir;
@@ -22,12 +26,24 @@ describe('srcPathsFromClasspathStrings', () => {
 
   if (isWindows) {
     it('splits multiple paths with both ; and : separators', () => {
-      expect(srcPathsFromClasspathStrings(['a;b', 'c:d', 'e'])).toEqual(['a', 'b', 'c', 'd', 'e']);
+      expect(srcPathsFromClasspathStrings(['a;b', 'c:d', 'e'])).toEqual([
+        'a',
+        'b',
+        'c',
+        'd',
+        'e',
+      ]);
     });
   } else {
-    it('splits multiple paths on \':\' ', () => {
-      expect(srcPathsFromClasspathStrings(['a:b', 'c:d', 'e', 'f;g']))
-        .toEqual(['a', 'b', 'c', 'd', 'e', 'f;g']);
+    it("splits multiple paths on ':' ", () => {
+      expect(srcPathsFromClasspathStrings(['a:b', 'c:d', 'e', 'f;g'])).toEqual([
+        'a',
+        'b',
+        'c',
+        'd',
+        'e',
+        'f;g',
+      ]);
     });
   }
 
@@ -35,9 +51,19 @@ describe('srcPathsFromClasspathStrings', () => {
     const ret = srcPathsFromClasspathStrings(['a:~/b', '~/c:~/d']);
 
     if (isWindows) {
-      expect(ret).toEqual(['a', '\\Users\\foo\\b', '\\Users\\foo\\c', '\\Users\\foo\\d']);
+      expect(ret).toEqual([
+        'a',
+        '\\Users\\foo\\b',
+        '\\Users\\foo\\c',
+        '\\Users\\foo\\d',
+      ]);
     } else {
-      expect(ret).toEqual(['a', '/Users/foo/b', '/Users/foo/c', '/Users/foo/d']);
+      expect(ret).toEqual([
+        'a',
+        '/Users/foo/b',
+        '/Users/foo/c',
+        '/Users/foo/d',
+      ]);
     }
   });
 
@@ -45,7 +71,11 @@ describe('srcPathsFromClasspathStrings', () => {
     const ret = srcPathsFromClasspathStrings(['a//c/x/:~//b', '~/c//']);
 
     if (isWindows) {
-      expect(ret).toEqual(['a\\c\\x\\', '\\Users\\foo\\b', '\\Users\\foo\\c\\']);
+      expect(ret).toEqual([
+        'a\\c\\x\\',
+        '\\Users\\foo\\b',
+        '\\Users\\foo\\c\\',
+      ]);
     } else {
       expect(ret).toEqual(['a/c/x/', '/Users/foo/b', '/Users/foo/c/']);
     }
@@ -65,7 +95,7 @@ describe('ensureDir', () => {
     fs.Stats.prototype.isDirectory = isDir;
   });
 
-  it('should create a new folder when it doesn\'t exist', () => {
+  it("should create a new folder when it doesn't exist", () => {
     fs.existsSync = jest.fn((_: string) => false);
     fs.mkdirSync = jest.fn();
 
