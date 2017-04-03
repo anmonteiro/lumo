@@ -7,6 +7,7 @@ const zlib = require('zlib');
 function getDirContents(dir, accumPath = dir) {
   let filenames = fs.readdirSync(dir);
 
+  // prettier-ignore
   return filenames.reduce(
     (ret, filename) => {
       const fname = path.resolve(accumPath, filename);
@@ -20,7 +21,7 @@ function getDirContents(dir, accumPath = dir) {
       ret.push(path.join(accumPath, filename));
       return ret;
     },
-    [],
+    []
   );
 }
 
@@ -34,11 +35,12 @@ function deflate(fname) {
 }
 
 const outputPath = `build/${/^Windows/.test(os.type()) ? 'lumo.exe' : 'lumo'}`;
+// prettier-ignore
 const resources = getDirContents('target').filter(
   fname =>
     !fname.endsWith('main.js') &&
     !fname.endsWith('bundle.js') &&
-    !fname.endsWith('bundle.min.js'),
+    !fname.endsWith('bundle.min.js')
 );
 // .filter(fname => fname.endsWith('.json')
 //         /clojurescript-version/.test(fname) ||
@@ -49,6 +51,7 @@ const promises = [];
 resources.forEach(resource => promises.push(deflate(resource)));
 
 Promise.all(promises).then(() => {
+  // prettier-ignore
   nexe.compile(
     {
       input: 'target/bundle.min.js',
@@ -86,8 +89,8 @@ Promise.all(promises).then(() => {
       }
 
       console.log(
-        `Finished bundling. Nexe binary can be found in ${outputPath}`,
+        `Finished bundling. Nexe binary can be found in ${outputPath}`
       );
-    },
+    }
   );
 });
