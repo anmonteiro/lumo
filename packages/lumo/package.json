@@ -14,7 +14,7 @@
   "homepage": "https://github.com/anmonteiro/lumo",
   "preferGlobal": true,
   "scripts": {
-    "install": "node scripts/npm_install.js"
+    "install": "node scripts/npm_install.js || nodejs scripts/npm_install.js"
   },
   "dependencies": {
     "jszip": "2.6.1",
