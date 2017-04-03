@@ -1,6 +1,8 @@
 # Changelog
 
-## [master](https://github.com/anmonteiro/lumo/compare/1.2.0...HEAD) (unreleased)
+## [master](https://github.com/anmonteiro/lumo/compare/1.3.0...HEAD) (unreleased)
+
+## [1.3.0](https://github.com/anmonteiro/lumo/compare/1.2.0...1.3.0) (2017-04-02)
 
 ### New features
 
