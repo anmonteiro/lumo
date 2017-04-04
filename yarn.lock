@@ -1704,9 +1704,9 @@ escope@^3.6.0:
     esrecurse "^4.1.0"
     estraverse "^4.1.1"
 
-eslint-config-airbnb-base@^11.1.0, eslint-config-airbnb-base@^11.1.2:
-  version "11.1.2"
-  resolved "https://registry.yarnpkg.com/eslint-config-airbnb-base/-/eslint-config-airbnb-base-11.1.2.tgz#259209a7678bf693e31cbe8f953f206b6aa7ccc3"
+eslint-config-airbnb-base@^11.1.0, eslint-config-airbnb-base@^11.1.3:
+  version "11.1.3"
+  resolved "https://registry.yarnpkg.com/eslint-config-airbnb-base/-/eslint-config-airbnb-base-11.1.3.tgz#0e8db71514fa36b977fbcf977c01edcf863e0cf0"
 
 eslint-config-airbnb@^14.0.0:
   version "14.1.0"
@@ -1985,9 +1985,9 @@ flat-cache@^1.2.1:
     graceful-fs "^4.1.2"
     write "^0.2.1"
 
-flow-bin@^0.42.0:
-  version "0.42.0"
-  resolved "https://registry.yarnpkg.com/flow-bin/-/flow-bin-0.42.0.tgz#05dd754b6b052de7b150f9210e2160746961e3cf"
+flow-bin@^0.43.0:
+  version "0.43.0"
+  resolved "https://registry.yarnpkg.com/flow-bin/-/flow-bin-0.43.0.tgz#5cd16696be4311c0b14f0932e89ba8661a39b1c1"
 
 flow-parser@0.40.0:
   version "0.40.0"
@@ -3050,9 +3050,9 @@ ncp@^2.0.0:
   version "2.0.0"
   resolved "https://registry.yarnpkg.com/ncp/-/ncp-2.0.0.tgz#195a21d6c46e361d2fb1281ba38b91e9df7bdbb3"
 
-"nexe@github:anmonteiro/nexe#custom-monkeypatching-hooks":
+"nexe@github:anmonteiro/nexe#custom-monkeypatch":
   version "1.1.2"
-  resolved "https://codeload.github.com/anmonteiro/nexe/tar.gz/0ecbc325b9e4510d64201c604c4e4af5ec0b32bd"
+  resolved "https://codeload.github.com/anmonteiro/nexe/tar.gz/e1e7ed38dba4e83414c3283a3adc2e8dca637d8f"
   dependencies:
     async "^1.5.2"
     browserify "^13.0.0"
