@@ -14,6 +14,7 @@
             [clojure.string :as string]
             [cognitect.transit :as transit]
             [goog.object :as gobj]
+            [fipp.edn :as fipp]
             [lumo.js-deps :as deps]
             [lumo.common :as common]
             [lumo.repl-resources :refer [special-doc-map repl-special-doc-map]])
@@ -133,10 +134,22 @@
         cljs.tools.reader.reader-types
         cljs.tools.reader.impl.commons
         cljs.tools.reader.impl.utils
+        clojure.core.rrb-vector
+        clojure.core.rrb-vector.interop
+        clojure.core.rrb-vector.nodes
+        clojure.core.rrb-vector.protocols
+        clojure.core.rrb-vector.rrbt
+        clojure.core.rrb-vector.transients
+        clojure.core.rrb-vector.trees
         clojure.string
         clojure.set
         clojure.walk
         cognitect.transit
+        fipp.edn
+        fipp.ednize
+        fipp.visit
+        fipp.engine
+        fipp.deque
         lazy-map.core
         lumo.core
         lumo.repl
@@ -150,7 +163,8 @@
      '#{cljs.core
         cljs.js
         cljs.repl
-        lazy-map.core}
+        lazy-map.core
+        clojure.core.rrb-vector.macros}
      '#{goog.object
         goog.string
         goog.string.StringBuffer
@@ -669,6 +683,10 @@
     (= "EOF while reading" msg)
     (= "EOF while reading string" msg)))
 
+(defn print-value [value]
+  (prn value)
+  #_(fipp/pprint value))
+
 (defn- read-chars
   [reader]
   (let [sb (StringBuffer.)]
@@ -758,7 +776,7 @@
                 (when expression?
                   (when (or print-nil-result?
                             (not (nil? value)))
-                    (println (pr-str value)))
+                    (print-value value))
                   (vreset! current-ns ns))
                 (handle-error error)))))))
     (catch :default e
