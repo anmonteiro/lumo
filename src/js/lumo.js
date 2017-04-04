@@ -5,38 +5,17 @@ import path from 'path';
 // $FlowIssue: this module exists.
 import v8 from 'v8';
 import zlib from 'zlib';
-import requireFromString from 'require-from-string';
+import JSZip from 'jszip';
 import * as util from './util';
 
 let nexeres;
 let bundledResources;
-const bundledLibraries = {};
 const sourcePaths = [''];
 
 if (!__DEV__) {
   // $FlowExpectedError: only exists in the Nexe bundle.
   nexeres = require('nexeres'); // eslint-disable-line
 }
-
-type jsCodeType = {
-  src: string,
-  path: string,
-  sourceMap: string,
-};
-
-type ClosureCompilerType = (
-  opts: {
-    jsCode: Array<jsCodeType>,
-    externs: string[],
-    languageIn: string,
-    languageOut: string,
-    compilationLevel: string,
-  },
-) => {
-  compiled: string,
-  errors: string[],
-  warnings: string[],
-};
 
 type ResourceType =
   | {|
@@ -88,64 +67,20 @@ export function load(filename: string): ?string {
   return null;
 }
 
-export function getGoogleClosureCompiler(): ClosureCompilerType {
-  const property = 'closureCompiler';
-  if (!Object.prototype.hasOwnProperty.call(bundledLibraries, property)) {
-    v8.setFlagsFromString('--nouse_strict');
-    if (__DEV__) {
-      /* eslint-disable global-require */
-      bundledLibraries[
-        property
-      ] = require('google-closure-compiler-js').compile;
-      /* eslint-enable global-require */
-    } else {
-      const closureCompilerSource = load('googleClosureCompiler.js');
-      bundledLibraries[property] = requireFromString(closureCompilerSource);
-    }
-    // TODO: don't set use_strict back if it was never on in the first place
-    v8.setFlagsFromString('--use_strict');
-  }
+// eslint-disable-next-line flowtype/no-weak-types
+export function getGoogleClosureCompiler(): Function {
+  v8.setFlagsFromString('--nouse_strict');
 
-  return bundledLibraries[property];
-}
+  // eslint-disable-next-line global-require
+  const googleClosureCompiler = require('google-closure-compiler-js').compile;
 
-/* eslint-disable flowtype/no-weak-types */
-export function getParinfer(): {
-  version: string,
-  indentMode: Function,
-  parenMode: Function,
-} {
-  /* eslint-enable flowtype/no-weak-types */
-  const property = 'parinfer';
-  if (!Object.prototype.hasOwnProperty.call(bundledLibraries, property)) {
-    if (__DEV__) {
-      // eslint-disable-next-line global-require
-      bundledLibraries[property] = require('parinfer');
-    } else {
-      bundledLibraries[property] = requireFromString(load('parinfer.js'));
-    }
-  }
-
-  return bundledLibraries[property];
-}
-
-export function getJSZip(): Class<JSZip> {
-  const property = 'JSZip';
-  if (!Object.prototype.hasOwnProperty.call(bundledLibraries, property)) {
-    if (__DEV__) {
-      // eslint-disable-next-line global-require
-      bundledLibraries[property] = require('jszip');
-    } else {
-      bundledLibraries[property] = requireFromString(load('jszip.js'));
-    }
-  }
-
-  return bundledLibraries[property];
+  // TODO: don't set use_strict back if it was never on in the first place
+  v8.setFlagsFromString('--use_strict');
+  return googleClosureCompiler;
 }
 
 // TODO: cache JARs that we know have a given file / path
 export function readSource(filename: string): ?string {
-  const JSZip = getJSZip();
   const len = sourcePaths.length;
   for (let i = 0; i < len; i += 1) {
     const srcPath = sourcePaths[i];
@@ -184,7 +119,6 @@ export function writeCache(filename: string, source: string): ?Error {
 }
 
 export function loadUpstreamForeignLibs(): string[] {
-  const JSZip = getJSZip();
   return sourcePaths.reduce(
     (ret: string[], srcPath: string) => {
       if (srcPath.endsWith('.jar')) {
@@ -205,7 +139,6 @@ export function loadUpstreamForeignLibs(): string[] {
 }
 
 export function resource(filename: string): ?ResourceType {
-  const JSZip = getJSZip();
   const len = sourcePaths.length;
 
   if (isBundled(filename)) {
@@ -263,7 +196,6 @@ export function readSourceFromJar(
     src: string,
   },
 ): string {
-  const JSZip = getJSZip();
   const data = fs.readFileSync(jarPath);
   const zip = new JSZip().load(data);
   const source = zip.file(src);

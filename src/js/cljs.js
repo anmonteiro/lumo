@@ -7,6 +7,8 @@ import fs from 'fs';
 import Module from 'module';
 import path from 'path';
 import vm from 'vm';
+import JSZip from 'jszip';
+import parinfer from 'parinfer';
 import * as lumo from './lumo';
 import startREPL from './repl';
 
@@ -84,8 +86,8 @@ if (__DEV__) {
         fs,
         path,
         getGoogleClosureCompiler: lumo.getGoogleClosureCompiler,
-        getParinfer: lumo.getParinfer,
-        getJSZip: lumo.getJSZip,
+        parinfer,
+        JSZip,
         load: lumo.load,
         readCache: lumo.readCache,
         readSource: lumo.readSource,
@@ -114,8 +116,8 @@ if (__DEV__) {
       fs,
       path,
       getGoogleClosureCompiler: lumo.getGoogleClosureCompiler,
-      getParinfer: lumo.getParinfer,
-      getJSZip: lumo.getJSZip,
+      parinfer,
+      JSZip,
       load: lumo.load,
       readCache: lumo.readCache,
       readSource: lumo.readSource,

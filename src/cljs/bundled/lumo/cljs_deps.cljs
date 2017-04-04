@@ -23,7 +23,7 @@ If no ClassLoader is provided, RT/baseLoader is assumed."
        distinct)))
 
 (defn zip-file [jar-path]
-  (.load (new (js/$$LUMO_GLOBALS.getJSZip)) (js/$$LUMO_GLOBALS.fs.readFileSync jar-path))
+  (.load (new js/$$LUMO_GLOBALS.JSZip) (js/$$LUMO_GLOBALS.fs.readFileSync jar-path))
   #_(cond
     (instance? File jar-path) (ZipFile. ^File jar-path)
     (string? jar-path) (ZipFile. ^String jar-path)

@@ -25,8 +25,7 @@
     "google-closure-compiler-js": "^20170218.0.0",
     "jszip": "2.6.1",
     "parinfer": "2.0.0",
-    "posix-getopt": "github:anmonteiro/node-getopt#master",
-    "require-from-string": "^1.2.1"
+    "posix-getopt": "github:anmonteiro/node-getopt#master"
   },
   "devDependencies": {
     "babel-eslint": "^7.2.1",

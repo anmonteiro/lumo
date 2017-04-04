@@ -4,6 +4,8 @@ const path = require('path');
 const os = require('os');
 const zlib = require('zlib');
 
+const nodeVersion = '7.8.0';
+
 function getDirContents(dir, accumPath = dir) {
   let filenames = fs.readdirSync(dir);
 
@@ -40,17 +42,21 @@ const resources = getDirContents('target').filter(
   fname =>
     !fname.endsWith('main.js') &&
     !fname.endsWith('bundle.js') &&
-    !fname.endsWith('bundle.min.js')
+    !fname.endsWith('bundle.min.js') &&
+    !fname.endsWith('googleClosureCompiler.js') &&
+    !fname.endsWith('parinfer.js') &&
+    !fname.endsWith('jszip.js')
 );
-// .filter(fname => fname.endsWith('.json')
-//         /clojurescript-version/.test(fname) ||
-//         /\$macros\.js$/.test(fname));
 
-const promises = [];
+['parinfer.js', 'jszip.js', 'googleClosureCompiler.js'].forEach(lib => {
+  // prettier-ignore
+  fs.writeFileSync(
+    `tmp/node/${nodeVersion}/node-v${nodeVersion}/${lib}`,
+    fs.readFileSync(`target/${lib}`)
+  );
+});
 
-resources.forEach(resource => promises.push(deflate(resource)));
-
-Promise.all(promises).then(() => {
+Promise.all(resources.map(deflate)).then(() => {
   // prettier-ignore
   nexe.compile(
     {
@@ -63,6 +69,9 @@ Promise.all(promises).then(() => {
         '--without-inspector',
         '--without-etw',
         '--without-perfctr',
+        '--link-module', './googleClosureCompiler.js',
+        '--link-module', './parinfer.js',
+        '--link-module', './jszip.js',
       ],
       // nodeMakeArgs: ["-j", "4"], // when you want to control the make process.
       nodeVCBuildArgs: ['nosign', 'x64', 'noetw', 'noperfctr'], // when you want to control the make process for windows.
@@ -81,7 +90,7 @@ Promise.all(promises).then(() => {
       ].join(' '),
       startupSnapshot: 'target/main.js',
       framework: 'node',
-      nodeVersion: '7.8.0',
+      nodeVersion,
     },
     err => {
       if (err) {

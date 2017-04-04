@@ -315,7 +315,7 @@
   "Based on a partially entered form, returns the number of spaces with which
    to indent the next line. Returns 0 on failure to calculate."
   [text]
-  (let [parinfer (js/$$LUMO_GLOBALS.getParinfer)
+  (let [parinfer js/$$LUMO_GLOBALS.parinfer
         pos (count text)
         balanced (parinfer.indentMode text (calc-parinfer-opts text pos))]
     (if (.-success balanced)

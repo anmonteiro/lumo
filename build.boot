@@ -70,7 +70,8 @@
   [d dev     bool  "Development build"]
   (with-pass-thru _
     (dosh "node" "scripts/build.js" (when dev "--dev"))
-    (dosh "node" "scripts/bundleForeign.js")))
+    (when-not dev
+      (dosh "node" "scripts/bundleForeign.js"))))
 
 (defn write-cache! [cache out-path]
   (let [out (ByteArrayOutputStream. 1000000)
