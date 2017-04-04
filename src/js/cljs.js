@@ -96,6 +96,7 @@ if (__DEV__) {
         eval: lumoEval,
         addSourcePaths: lumo.addSourcePaths,
         readSourcePaths: lumo.readSourcePaths,
+        setExitValue: lumo.setExitValue,
       },
       global: undefined,
     };
@@ -125,6 +126,7 @@ if (__DEV__) {
       eval: lumoEval,
       addSourcePaths: lumo.addSourcePaths,
       readSourcePaths: lumo.readSourcePaths,
+      setExitValue: lumo.setExitValue,
     };
 
     // // $FlowExpectedError: only exists in the custom V8 startup snapshot
@@ -224,6 +226,9 @@ export function getCompletions(line: string): string[] {
 function executeScripts(scripts: [string, string][]): void {
   scripts.forEach(([type, script]: [string, string]) => {
     executeScript(script, type);
+    if (lumo.EXIT_VALUE !== 0) {
+      process.exit(lumo.EXIT_VALUE);
+    }
   });
 }
 
@@ -242,12 +247,14 @@ export default function startClojureScriptEngine(opts: CLIOptsType): void {
 
   if (mainScript) {
     initClojureScriptEngine(opts);
-    return executeScript(mainScript, 'path');
+    executeScript(mainScript, 'path');
+    return process.exit(lumo.EXIT_VALUE);
   }
 
   if (mainNsName) {
     initClojureScriptEngine(opts);
-    return runMain(mainNsName, args);
+    runMain(mainNsName, args);
+    return process.exit(lumo.EXIT_VALUE);
   }
 
   if (repl) {

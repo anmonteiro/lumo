@@ -411,7 +411,9 @@
       (println (str cause))
 
       :else
-      (println error))))
+      (println error))
+    (when-not (:repl? @app-opts)
+      (js/$$LUMO_GLOBALS.setExitValue 1))))
 
 ;; --------------------
 ;; REPL specials
@@ -822,7 +824,8 @@
   (set! *assert* (not elide-asserts)))
 
 (defn ^:export init [repl? verbose cache-path static-fns elide-asserts]
-  (vreset! app-opts {:verbose verbose
+  (vreset! app-opts {:repl? repl?
+                     :verbose verbose
                      :cache-path cache-path
                      :static-fns static-fns
                      :elide-asserts elide-asserts})

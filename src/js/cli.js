@@ -16,6 +16,7 @@ type ScriptsType = [string, string][];
 export type CLIOptsType = {
   verbose: boolean,
   help: boolean,
+  unrecognized: boolean,
   version: boolean,
   'dump-sdk'?: string,
   repl: boolean,
@@ -127,6 +128,7 @@ function getCLIOpts(): CLIOptsType {
   const ret: CLIOptsType = {
     scripts: [],
     classpath: [],
+    unrecognized: false,
     help: false,
     version: false,
     legal: false,
@@ -150,6 +152,7 @@ function getCLIOpts(): CLIOptsType {
       case '?':
         foundMainOpt = true;
         ret.help = true;
+        ret.unrecognized = option.optopt != null;
         break;
       case 'h':
         foundMainOpt = true;
@@ -230,6 +233,7 @@ export default function startCLI(): void {
     args,
     cache,
     classpath,
+    unrecognized,
     help,
     legal,
     mainNsName,
@@ -244,7 +248,8 @@ export default function startCLI(): void {
 
   // if help, print help and bail
   if (help) {
-    return printHelp();
+    printHelp();
+    return process.exit(unrecognized ? 1 : 0);
   }
 
   if (version) {

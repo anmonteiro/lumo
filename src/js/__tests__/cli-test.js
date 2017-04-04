@@ -22,6 +22,15 @@ const originalArgv = process.argv;
 const originalStdoutWrite = process.stdout.write;
 const originalStderrWrite = process.stderr.write;
 const pathResolve = path.resolve;
+const exit = process.exit;
+
+beforeAll(() => {
+  process.exit = jest.fn();
+});
+
+afterAll(() => {
+  process.exit = exit;
+});
 
 beforeEach(() => {
   process.stdout.write = jest.fn();

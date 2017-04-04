@@ -56,6 +56,16 @@ function setupVmMocks(): void {
 
 setupVmMocks();
 
+const exit = process.exit;
+
+beforeAll(() => {
+  process.exit = jest.fn();
+});
+
+afterAll(() => {
+  process.exit = exit;
+});
+
 describe('startClojureScriptEngine', () => {
   beforeEach(() => {
     startREPL.mockClear();

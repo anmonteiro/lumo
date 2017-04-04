@@ -8,6 +8,7 @@ import repl from 'repl';
 import tty from 'tty';
 import ArrayStream from './array-stream';
 import * as cljs from './cljs';
+import * as lumo from './lumo';
 import replHistory from './replHistory';
 import { currentTimeMicros, isWhitespace, isWindows } from './util';
 import { close as socketServerClose } from './socketRepl';
@@ -109,7 +110,7 @@ function stopREPL(): void {
 
   unhookOutputStreams();
 
-  process.exit();
+  process.exit(lumo.EXIT_VALUE);
 }
 
 export function processLine(replSession: REPLSession, line: string): void {

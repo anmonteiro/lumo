@@ -54,6 +54,13 @@ type ResourceType =
       date: number,
     |};
 
+// eslint-disable-next-line import/no-mutable-exports
+export let EXIT_VALUE = 0;
+
+export function setExitValue(exitValue: number): void {
+  EXIT_VALUE = exitValue;
+}
+
 function isBundled(filename: string): boolean {
   if (__DEV__) {
     return fs.existsSync(`./target/${filename}`);
