@@ -5,7 +5,7 @@
   (:require-macros [cljs.env.macros :as env]))
 
 (defn with-parinfer [f]
-  (set! (. js/global -$$LUMO_GLOBALS) #js {:getParinfer #(node/require "parinfer")})
+  (set! (. js/global -$$LUMO_GLOBALS) #js {:parinfer (node/require "parinfer")})
   (f)
   (set! (. js/global -$$LUMO_GLOBALS) nil))
 
