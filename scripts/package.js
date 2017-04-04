@@ -48,13 +48,17 @@ const resources = getDirContents('target').filter(
     !fname.endsWith('jszip.js')
 );
 
-['parinfer.js', 'jszip.js', 'googleClosureCompiler.js'].forEach(lib => {
-  // prettier-ignore
-  fs.writeFileSync(
-    `tmp/node/${nodeVersion}/node-v${nodeVersion}/${lib}`,
-    fs.readFileSync(`target/${lib}`)
-  );
-});
+function moveLibs(compiler, options, callback) {
+  ['parinfer', 'jszip', 'googleClosureCompiler'].forEach(lib => {
+    // prettier-ignore
+    fs.writeFileSync(
+      `${compiler.dir}/${lib}.js`,
+      fs.readFileSync(`target/${lib}.js`)
+    );
+  });
+
+  callback();
+}
 
 Promise.all(resources.map(deflate)).then(() => {
   // prettier-ignore
@@ -63,6 +67,7 @@ Promise.all(resources.map(deflate)).then(() => {
       input: 'target/bundle.min.js',
       output: outputPath,
       nodeTempDir: 'tmp',
+      patchFns: moveLibs,
       nodeConfigureArgs: [
         '--without-dtrace',
         '--without-npm',

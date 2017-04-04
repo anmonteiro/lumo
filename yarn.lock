@@ -3050,9 +3050,9 @@ ncp@^2.0.0:
   version "2.0.0"
   resolved "https://registry.yarnpkg.com/ncp/-/ncp-2.0.0.tgz#195a21d6c46e361d2fb1281ba38b91e9df7bdbb3"
 
-"nexe@github:nexe/nexe#master":
+"nexe@github:anmonteiro/nexe#custom-monkeypatching-hooks":
   version "1.1.2"
-  resolved "https://codeload.github.com/nexe/nexe/tar.gz/2f4356d6d2d24a90bde982e4299feff865958868"
+  resolved "https://codeload.github.com/anmonteiro/nexe/tar.gz/0ecbc325b9e4510d64201c604c4e4af5ec0b32bd"
   dependencies:
     async "^1.5.2"
     browserify "^13.0.0"
@@ -3586,10 +3586,6 @@ request@^2.67.0, request@^2.79.0:
 require-directory@^2.1.1:
   version "2.1.1"
   resolved "https://registry.yarnpkg.com/require-directory/-/require-directory-2.1.1.tgz#8c64ad5fd30dab1c976e2344ffe7f792a6a6df42"
-
-require-from-string@^1.2.1:
-  version "1.2.1"
-  resolved "https://registry.yarnpkg.com/require-from-string/-/require-from-string-1.2.1.tgz#529c9ccef27380adfec9a2f965b649bbee636418"
 
 require-main-filename@^1.0.1:
   version "1.0.1"

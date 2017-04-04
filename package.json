@@ -48,7 +48,7 @@
     "eslint-plugin-react": "^6.10.3",
     "flow-bin": "^0.42.0",
     "jest-cli": "^19.0.2",
-    "nexe": "github:nexe/nexe#master",
+    "nexe": "github:anmonteiro/nexe#custom-monkeypatching-hooks",
     "prettier": "^0.22.0",
     "uglify-js": "^2.8.21"
   },
