@@ -2,8 +2,9 @@ sudo: required
 dist: trusty
 language: node_js
 node_js:
-- 7
+  - "7"
 cache:
+  yarn: true
   directories:
   - node_modules
   - "~/.m2"
