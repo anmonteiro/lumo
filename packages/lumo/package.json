@@ -18,8 +18,8 @@
   },
   "dependencies": {
     "jszip": "2.6.1",
-    "progress": "^1.1.8",
-    "request": "2.79.0"
+    "progress": "^2.0.0",
+    "request": "2.81.0"
   },
   "bin": {
     "lumo": "./bin/lumo"
