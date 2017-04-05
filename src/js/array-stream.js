@@ -2,7 +2,7 @@ const Stream = require('stream');
 
 // A stream to push an array into a REPL
 // used in REPLServer.complete
-class ArrayStream extends Stream {
+export default class ArrayStream extends Stream {
   constructor(): void {
     super();
 
@@ -22,5 +22,3 @@ class ArrayStream extends Stream {
   write(): void {}
   /* eslint-enable class-methods-use-this */
 }
-
-module.exports = ArrayStream;
