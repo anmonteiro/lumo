@@ -3,7 +3,6 @@
 
 import crypto from 'crypto';
 import fs from 'fs';
-// $FlowIssue: this module exists
 import Module from 'module';
 import path from 'path';
 import vm from 'vm';
@@ -131,9 +130,6 @@ if (__DEV__) {
       setExitValue: lumo.setExitValue,
     };
 
-    // // $FlowExpectedError: only exists in the custom V8 startup snapshot
-    initialize(); // eslint-disable-line no-undef
-
     return global;
   };
 }
@@ -152,6 +148,30 @@ function setRuntimeOpts(opts: CLIOptsType): void {
   );
 }
 
+let cljsSender: stream$Writable;
+
+function printFn(...args: mixed[]): void {
+  cljsSender.write(args.join(' '));
+}
+
+function printErrFn(...args: mixed[]): void {
+  process.stderr.write(args.join(' '));
+}
+
+export function setPrintFns(stream?: stream$Writable): void {
+  if (stream == null || stream === process.stdout) {
+    cljsSender = process.stdout;
+    // $FlowIssue: context can have globals
+    ClojureScriptContext.cljs.core.set_print_err_fn_BANG_(printErrFn);
+  } else {
+    cljsSender = stream;
+    // $FlowIssue: context can have globals
+    ClojureScriptContext.cljs.core.set_print_err_fn_BANG_(printFn);
+  }
+  // $FlowIssue: context can have globals
+  ClojureScriptContext.cljs.core.set_print_fn_BANG_(printFn);
+}
+
 function initClojureScriptEngine(opts: CLIOptsType): void {
   if (ClojureScriptContext != null) {
     return;
@@ -161,9 +181,8 @@ function initClojureScriptEngine(opts: CLIOptsType): void {
   ClojureScriptContext = newContext();
   // $FlowIssue: context can have globals
   ClojureScriptContext.cljs.user = {};
-  /* eslint-disable no-underscore-dangle */
-  // $FlowIssue: context can have globals
-  ClojureScriptContext.cljs.nodejs.enable_util_print_BANG_();
+
+  setPrintFns();
 
   if (args.length > 0) {
     // $FlowIssue: context can have globals
@@ -171,7 +190,6 @@ function initClojureScriptEngine(opts: CLIOptsType): void {
       // $FlowIssue: context can have globals
       ClojureScriptContext.cljs.core.seq(args);
   }
-  /* eslint-enable no-underscore-dangle */
 
   setRuntimeOpts(opts);
 }
@@ -223,6 +241,11 @@ export function getHighlightCoordinates(
 export function getCompletions(line: string): string[] {
   // $FlowIssue: context can have globals
   return ClojureScriptContext.lumo.repl.get_completions(line);
+}
+
+export function isPrintingNewline(): boolean {
+  // $FlowIssue: context can have globals
+  return ClojureScriptContext.cljs.core._STAR_print_newline_STAR_;
 }
 
 function executeScripts(scripts: [string, string][]): void {

@@ -137,9 +137,7 @@
       :invert true)))
 
 (deftask compile-cljs []
-  (cljs :compiler-options {:hashbang false
-                           :target :nodejs
-                           :optimizations :simple
+  (cljs :compiler-options {:optimizations :simple
                            :main 'lumo.core
                            :cache-analysis true
                            :source-map false
@@ -147,6 +145,7 @@
                            :static-fns true
                            :optimize-constants false
                            :verbose true
+                           :closure-defines {'cljs.core/*target* "nodejs"}
                            :compiler-stats true
                            :parallel-build true}))
 

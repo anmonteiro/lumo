@@ -18,13 +18,12 @@ jest.useFakeTimers();
 const ctx = {
   cljs: {
     core: {
+      set_print_fn_BANG_: jest.fn(),
+      set_print_err_fn_BANG_: jest.fn(),
       // eslint-disable-next-line prefer-arrow-callback
       seq: jest.fn(function seq<T>(x: T[]): T[] {
         return x;
       }),
-    },
-    nodejs: {
-      enable_util_print_BANG_: () => {},
     },
   },
   lumo: {
@@ -162,46 +161,6 @@ describe('startClojureScriptEngine', () => {
       jest.runAllTicks();
       expect(vm.createContext).toHaveBeenCalled();
       expect(vm.createContext).toHaveBeenCalledTimes(1);
-    });
-  });
-
-  describe('in production', () => {
-    let startClojureScriptEngine;
-
-    beforeEach(() => {
-      jest.resetModules();
-      Object.assign(
-        global,
-        {
-          initialize: jest.fn(),
-          __DEV__: false,
-        },
-        ctx,
-      );
-      // eslint-disable-next-line global-require
-      startClojureScriptEngine = require('../cljs').default;
-    });
-
-    afterEach(() => {
-      Object.keys(ctx)
-        .concat(['initialize'])
-        .forEach((key: string, idx: number) => {
-          global[key] = undefined;
-        });
-      __DEV__ = true;
-    });
-
-    it('calls the global initialize function', () => {
-      startClojureScriptEngine({
-        repl: true,
-        scripts: [],
-        args: [],
-      });
-
-      jest.runAllTicks();
-
-      // eslint-disable-next-line no-undef
-      expect(initialize).toHaveBeenCalled();
     });
   });
 });

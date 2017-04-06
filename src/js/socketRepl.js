@@ -3,13 +3,7 @@
 import net from 'net';
 import readline from 'readline';
 import { createBanner } from './cli';
-import {
-  createSession,
-  deleteSession,
-  prompt,
-  processLine,
-  unhookOutputStreams,
-} from './repl';
+import { createSession, deleteSession, prompt, processLine } from './repl';
 
 import type { REPLSession } from './repl';
 
@@ -47,19 +41,15 @@ function handleConnection(socket: net$Socket): REPLSession {
 }
 
 export function close(): void {
-  unhookOutputStreams();
+  if (socketServer != null) {
+    sockets.forEach((socket: net$Socket) => {
+      try {
+        socket.destroy();
+      } catch (e) {} // eslint-disable-line no-empty
+    });
 
-  if (!socketServer) {
-    return;
+    socketServer.close();
   }
-
-  sockets.forEach((socket: net$Socket) => {
-    try {
-      socket.destroy();
-    } catch (e) {} // eslint-disable-line no-empty
-  });
-
-  socketServer.close();
 }
 
 export function open(port: number, host?: string = 'localhost'): void {
