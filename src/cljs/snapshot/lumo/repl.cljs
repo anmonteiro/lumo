@@ -395,23 +395,24 @@
 (defn- ^:boolean could-not-eval? [msg]
   (boolean (re-find could-not-eval-regex msg)))
 
-(defn- handle-repl-error [error]
+(defn- handle-error [error]
   (let [message (ex-message error)
         cause (ex-cause error)]
-    (cond
-      (could-not-eval? message)
-      (let [message (ex-message cause)
-            {:keys [column]} (ex-data cause)
-            column-indicator-str (str (apply str
-                                        (repeat (+ (count (name @current-ns)) 3 column) " "))
-                                   "⬆")]
-        (println column-indicator-str)
-        (println message))
-      (= message "ERROR")
-      (println (str cause))
+    (binding [*print-fn* *print-err-fn*]
+      (cond
+        (could-not-eval? message)
+        (let [message (ex-message cause)
+              {:keys [column]} (ex-data cause)
+              column-indicator-str (str (apply str
+                                          (repeat (+ (count (name @current-ns)) 3 column) " "))
+                                     "⬆")]
+          (println column-indicator-str)
+          (println message))
+        (= message "ERROR")
+        (println (str cause))
 
-      :else
-      (println error))
+        :else
+        (println error)))
     (when-not (:repl? @app-opts)
       (js/$$LUMO_GLOBALS.setExitValue 1))))
 
@@ -555,7 +556,7 @@
           (cljs/eval st maybe-quoted opts
             (fn [{:keys [error value]}]
               (if error
-                (handle-repl-error error)
+                (handle-error error)
                 (let [ns-name value]
                   (if-not (symbol? ns-name)
                     (binding [*print-fn* *print-err-fn*]
@@ -566,7 +567,7 @@
                         (cljs/eval st ns-form opts
                           (fn [{:keys [error]}]
                             (if error
-                              (handle-repl-error error)
+                              (handle-error error)
                               (vreset! current-ns ns-name))))))))))))]
     (wrap-special-fns wrap-self
       {'in-ns in-ns-fn
@@ -715,14 +716,14 @@
             :js (cljs/process-macros-deps {:*compiler* st} cache nil
                   (fn [{:keys [error]}]
                     (if-not (nil? error)
-                      (handle-repl-error error)
+                      (handle-error error)
                       (cljs/process-libs-deps {:*compiler* st} cache nil
                         (fn [{:keys [error]}]
                           (if-not (nil? error)
-                            (handle-repl-error error)
+                            (handle-error error)
                             (caching-node-eval {:source source
                                                 :filename filename})))))))))
-        (handle-repl-error (ex-info (str "Could not load file " file) {}))))))
+        (handle-error (ex-info (str "Could not load file " file) {}))))))
 
 (defn- execute-text
   [source {:keys [expression? print-nil-result? filename] :as opts}]
@@ -759,9 +760,9 @@
                             (not (nil? value)))
                     (println (pr-str value)))
                   (vreset! current-ns ns))
-                (handle-repl-error error)))))))
+                (handle-error error)))))))
     (catch :default e
-      (handle-repl-error e)))
+      (handle-error e)))
   nil)
 
 (defn- execute-source
@@ -788,7 +789,7 @@
           (= "EOF" msg) ""
           (reader-eof? msg) false
           :else (do
-                  ;(handle-repl-error e)
+                  ;(handle-error e)
                   ""))))))
 
 (defn- ^:export run-main
@@ -802,7 +803,7 @@
         opts
         (fn [{:keys [ns value error] :as ret}]
           (if error
-            (handle-repl-error error)
+            (handle-error error)
             (cljs/eval-str st
               (str "(var -main)")
               nil
@@ -811,7 +812,7 @@
                 (try
                   (apply value main-args)
                   (catch :default e
-                    (handle-repl-error e)))))))))
+                    (handle-error e)))))))))
     nil))
 
 (defn ^:export get-current-ns []

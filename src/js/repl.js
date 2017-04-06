@@ -22,8 +22,6 @@ type KeyType = {
   meta?: boolean,
 };
 
-type StreamWriteHandler = (line: string) => void;
-
 export type REPLSession = {
   sessionId: number,
   rl: readline$Interface,
@@ -33,20 +31,9 @@ export type REPLSession = {
 
 const exitCommands = new Set([':cljs/quit', 'exit']);
 let sessionCount = 0;
-// TODO: maybe include a result/errorBuffer per session
-const resultBuffer: string[] = [];
-const errorBuffer: string[] = [];
 let lastKeypressTime: number;
 let isPasting: boolean;
 const pendingHighlights = [];
-const stdoutWrite = process.stdout.write;
-const stderrWrite = process.stderr.write;
-const writeToResultBuffer = (line: string) => {
-  resultBuffer.push(line);
-};
-const writeToErrorBuffer = (line: string) => {
-  errorBuffer.push(line);
-};
 
 const sessions: { [key: number]: REPLSession } = {};
 
@@ -67,36 +54,6 @@ export function prompt(
   rl.prompt();
 }
 
-function hookOutputStreams(
-  writeOutput: StreamWriteHandler,
-  writeError: StreamWriteHandler,
-): void {
-  // $FlowIssue - assignment of process.stdout.write
-  process.stdout.write = writeOutput;
-  // $FlowIssue - assignment of process.stderr.write
-  process.stderr.write = writeError;
-}
-
-export function unhookOutputStreams(): void {
-  // $FlowIssue - assignment of process.stdout.write
-  process.stdout.write = stdoutWrite;
-  // $FlowIssue - assignment of process.stderr.write
-  process.stderr.write = stderrWrite;
-}
-
-function consumeBuffer(
-  buffer: string[],
-  stream: stream$Writable | tty$WriteStream,
-): void {
-  let len = buffer.length;
-
-  while (len > 0) {
-    const line = buffer.shift();
-    stream.write(line);
-    len -= 1;
-  }
-}
-
 export function deleteSession(session: REPLSession): void {
   delete sessions[session.sessionId];
 }
@@ -107,8 +64,6 @@ function stopREPL(): void {
   const keys = Object.keys(sessions);
   keys.forEach((sessionId: string) =>
     deleteSession(sessions[parseInt(sessionId, 10)]));
-
-  unhookOutputStreams();
 
   process.exit(lumo.EXIT_VALUE);
 }
@@ -141,16 +96,17 @@ export function processLine(replSession: REPLSession, line: string): void {
       );
 
       if (!isWhitespace(session.input)) {
-        hookOutputStreams(
-          writeToResultBuffer,
-          isMain ? writeToErrorBuffer : writeToResultBuffer,
-        );
+        // $FlowIssue: rl.output is there
+        cljs.setPrintFns(rl.output);
         cljs.execute(session.input);
-        unhookOutputStreams();
-
-        // $FlowIssue - use of rl.output
-        consumeBuffer(resultBuffer, rl.output);
-        consumeBuffer(errorBuffer, process.stderr);
+        cljs.setPrintFns();
+        // If *print-newline* is off, we need to emit a newline now, otherwise
+        // the prompt and line editing will overwrite any printed output on the
+        // current line.
+        if (!cljs.isPrintingNewline()) {
+          // $FlowIssue: rl.output is there
+          rl.output.write('\n');
+        }
       } else {
         if (isWhitespace(line)) {
           // $FlowIssue: rl.output is there

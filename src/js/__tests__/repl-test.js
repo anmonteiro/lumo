@@ -70,6 +70,8 @@ jest.mock('readline', () => ({
 jest.mock('../cljs', () => ({
   isReadable: jest.fn((input: string) => ''),
   execute: jest.fn(),
+  setPrintFns: jest.fn(),
+  isPrintingNewline: jest.fn(),
   getCurrentNamespace: jest.fn(() => 'cljs.user'),
 }));
 
