@@ -145,6 +145,7 @@
                            :static-fns true
                            :optimize-constants false
                            :verbose true
+                           :closure-defines {'cljs.core/*target* "nodejs"}
                            :compiler-stats true
                            :parallel-build true}))
 

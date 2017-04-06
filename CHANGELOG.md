@@ -6,6 +6,10 @@
 
 - Return exit code `1` on exception ([#58](https://github.com/anmonteiro/lumo/issues/58)).
 
+### Changes
+
+- Print namespaced maps at the REPL.
+
 ### Bug fixes
 
 - `print` always outputs newline ([#116](https://github.com/anmonteiro/lumo/issues/116)).

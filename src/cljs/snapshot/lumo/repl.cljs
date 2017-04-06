@@ -17,7 +17,8 @@
             [fipp.edn :as fipp]
             [lumo.js-deps :as deps]
             [lumo.common :as common]
-            [lumo.repl-resources :refer [special-doc-map repl-special-doc-map]])
+            [lumo.repl-resources :refer [special-doc-map repl-special-doc-map]]
+            [lumo.pprint.data])
   (:import [goog.string StringBuffer]))
 
 ;; =============================================================================
@@ -152,6 +153,7 @@
         fipp.deque
         lazy-map.core
         lumo.core
+        lumo.pprint.data
         lumo.repl
         lumo.repl-resources
         lumo.js-deps
@@ -684,8 +686,8 @@
     (= "EOF while reading string" msg)))
 
 (defn print-value [value]
-  (prn value)
-  #_(fipp/pprint value))
+  #_(prn value)
+  (lumo.pprint.data/pprint value))
 
 (defn- read-chars
   [reader]
@@ -849,6 +851,7 @@
                      :static-fns static-fns
                      :elide-asserts elide-asserts})
   (setup-assert! elide-asserts)
+  (set! *print-namespace-maps* repl?)
   (common/load-core-analysis-caches st repl?)
   (deps/index-upstream-foreign-libs))
 
