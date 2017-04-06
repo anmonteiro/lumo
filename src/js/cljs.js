@@ -3,7 +3,6 @@
 
 import crypto from 'crypto';
 import fs from 'fs';
-// $FlowIssue: this module exists
 import Module from 'module';
 import path from 'path';
 import vm from 'vm';
@@ -131,7 +130,7 @@ if (__DEV__) {
       setExitValue: lumo.setExitValue,
     };
 
-    // // $FlowExpectedError: only exists in the custom V8 startup snapshot
+    // $FlowExpectedError: only exists in the custom V8 startup snapshot
     initialize(); // eslint-disable-line no-undef
 
     return global;
