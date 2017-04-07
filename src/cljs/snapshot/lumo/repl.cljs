@@ -319,10 +319,13 @@
 ;; --------------------
 ;; Parinfer indentation
 
-(defn- calc-parinfer-opts [text pos]
-  (let [x (.lastIndexOf text "\n")]
-    #js {:cursorX    (- pos (inc x))
-         :cursorLine (dec (count (.split text "\n")))}))
+(defn- calc-parinfer-opts [text pos line]
+  (let [x (.indexOf text "\n")]
+    (if (or (== x -1)
+            (< pos (inc x)))
+      #js {:cursorX    pos
+           :cursorLine line}
+      (recur (subs text (inc x)) (- pos (inc x)) (inc line)))))
 
 (defn ^:export indent-space-count
   "Based on a partially entered form, returns the number of spaces with which
@@ -330,12 +333,12 @@
   [text]
   (let [parinfer js/$$LUMO_GLOBALS.parinfer
         pos (count text)
-        balanced (parinfer.indentMode text (calc-parinfer-opts text pos))]
+        balanced (parinfer.indentMode text (calc-parinfer-opts text pos 0))]
     (if (.-success balanced)
       (let [new-text (str (subs (.-text balanced) 0 pos) "\n"
                        (subs (.-text balanced) pos))
             indented (parinfer.parenMode new-text
-                       (calc-parinfer-opts new-text (inc pos)))]
+                       (calc-parinfer-opts new-text (inc pos) 0))]
         (if (.-success indented)
           (.-cursorX indented)
           0))

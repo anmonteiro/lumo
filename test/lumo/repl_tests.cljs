@@ -17,7 +17,8 @@
 (deftest indent-space-count-test
   (is (= (lumo/indent-space-count "(let [") 6))
   (is (= (lumo/indent-space-count "(do") 1))
-  (is (= (lumo/indent-space-count "(let [a 1") 6)))
+  (is (= (lumo/indent-space-count "(let [a 1") 6))
+  (is (= (lumo/indent-space-count "[[[[\n]") 2)))
 
 (deftest test-form-start
   (is (= (lumo/form-start "( )" 2) 0))
