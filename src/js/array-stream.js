@@ -1,4 +1,4 @@
-const Stream = require('stream');
+import Stream from 'stream';
 
 // A stream to push an array into a REPL
 // used in REPLServer.complete

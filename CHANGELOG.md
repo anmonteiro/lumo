@@ -5,6 +5,13 @@
 ### New features
 
 - Return exit code `1` on exception ([#58](https://github.com/anmonteiro/lumo/issues/58)).
+- Pretty print evaluation results.
+
+### Changes
+
+- Print namespaced maps at the REPL.
+- Do not print empty line if input is empty or whitespace only  (make behavior
+consistent with `clojure.main`).
 
 ### Bug fixes
 

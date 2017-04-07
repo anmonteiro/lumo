@@ -16,6 +16,7 @@
             [goog.object :as gobj]
             [lumo.js-deps :as deps]
             [lumo.common :as common]
+            [lumo.pprint.data :as pprint]
             [lumo.repl-resources :refer [special-doc-map repl-special-doc-map]])
   (:import [goog.string StringBuffer]))
 
@@ -133,12 +134,23 @@
         cljs.tools.reader.reader-types
         cljs.tools.reader.impl.commons
         cljs.tools.reader.impl.utils
+        clojure.core.rrb-vector
+        clojure.core.rrb-vector.interop
+        clojure.core.rrb-vector.nodes
+        clojure.core.rrb-vector.protocols
+        clojure.core.rrb-vector.rrbt
+        clojure.core.rrb-vector.transients
+        clojure.core.rrb-vector.trees
         clojure.string
         clojure.set
         clojure.walk
         cognitect.transit
+        fipp.visit
+        fipp.engine
+        fipp.deque
         lazy-map.core
         lumo.core
+        lumo.pprint.data
         lumo.repl
         lumo.repl-resources
         lumo.js-deps
@@ -150,7 +162,8 @@
      '#{cljs.core
         cljs.js
         cljs.repl
-        lazy-map.core}
+        lazy-map.core
+        clojure.core.rrb-vector.macros}
      '#{goog.object
         goog.string
         goog.string.StringBuffer
@@ -669,6 +682,9 @@
     (= "EOF while reading" msg)
     (= "EOF while reading string" msg)))
 
+(defn print-value [value]
+  (pprint/pprint value))
+
 (defn- read-chars
   [reader]
   (let [sb (StringBuffer.)]
@@ -740,9 +756,7 @@
             eval-opts (merge (make-eval-opts)
                         (when expression?
                           {:context :expr
-                           :def-emits-var true})
-                        (when-not print-nil-result?
-                          {:verbose false}))]
+                           :def-emits-var true}))]
         (if (repl-special? form)
           ((get repl-special-fns (first form)) form eval-opts)
           (cljs/eval-str
@@ -758,7 +772,7 @@
                 (when expression?
                   (when (or print-nil-result?
                             (not (nil? value)))
-                    (println (pr-str value)))
+                    (print-value value))
                   (vreset! current-ns ns))
                 (handle-error error)))))))
     (catch :default e
@@ -831,6 +845,7 @@
                      :static-fns static-fns
                      :elide-asserts elide-asserts})
   (setup-assert! elide-asserts)
+  (set! *print-namespace-maps* repl?)
   (common/load-core-analysis-caches st repl?)
   (deps/index-upstream-foreign-libs))
 

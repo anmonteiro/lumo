@@ -6,13 +6,14 @@
                  [org.clojure/tools.reader    "1.0.0-beta4"]
                  [com.cognitect/transit-cljs  "0.8.239"]
                  [malabarba/lazy-map          "1.3"]
-                 [com.cognitect/transit-clj   "0.8.300"        :scope "test"]
-                 [com.cemerick/piggieback     "0.2.1"          :scope "test"]
-                 [adzerk/boot-cljs            "2.0.0"          :scope "test"]
-                 [crisptrutski/boot-cljs-test "0.3.0"          :scope "test"]
-                 [org.clojure/tools.nrepl     "0.2.12"         :scope "test"]
-                 [weasel                      "0.7.0"          :scope "test"]
-                 [doo                         "0.1.7"          :scope "test"]]
+                 [fipp                        "0.6.8"]
+                 [com.cognitect/transit-clj   "0.8.300" :scope "test"]
+                 [com.cemerick/piggieback     "0.2.1"   :scope "test"]
+                 [adzerk/boot-cljs            "2.0.0"   :scope "test"]
+                 [crisptrutski/boot-cljs-test "0.3.0"   :scope "test"]
+                 [org.clojure/tools.nrepl     "0.2.12"  :scope "test"]
+                 [weasel                      "0.7.0"   :scope "test"]
+                 [doo                         "0.1.7"   :scope "test"]]
  :exclusions '[org.clojure/clojure org.clojure/clojurescript])
 
 (require
@@ -123,9 +124,10 @@
        'org.clojure/clojurescript #""
        ;#"^cljs[\\\/](test\.cljc|core\.cljs\.cache\.aot\.edn|reader\.clj|spec(\.cljc|[\\\/]test\.clj[sc]|[\\\/]impl[\\\/]gen\.cljc))$"
        }
-      :move {#"^main.out[\\\/]((cljs|clojure|cognitect|lumo|lazy_map).*)" "$1"})
+      :move {#"^main.out[\\\/]((cljs|clojure|cognitect|lumo|lazy_map|fipp).*)" "$1"})
     (sift :include #{#"^main.js" #"^bundle.js" #"^cljs(?!\.js)" #"core\$macros"
-                     #"^clojure" #"^cognitect" #"^goog" #"^lumo[\\\/]" #"^lazy_map[\\\/]"}
+                     #"^clojure" #"^cognitect" #"^goog" #"^lumo[\\\/]"
+                     #"^lazy_map[\\\/]" #"^fipp[\\\/]"}
       :to-resource #{#"^lumo[\\\/](repl|util)\.clj$"})
     (sift :include #{#"^cljs[\\\/]core\.cljs\.cache\.json$"
                      #"^cljs[\\\/](analyzer[\\\/]utils|build|closure)"
@@ -143,6 +145,7 @@
                            :static-fns true
                            :optimize-constants false
                            :verbose true
+                           :closure-defines {'cljs.core/*target* "nodejs"}
                            :compiler-stats true
                            :parallel-build true}))
 
