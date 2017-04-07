@@ -13,7 +13,6 @@ import startREPL from './repl';
 
 import type { CLIOptsType } from './cli';
 
-let newContext;
 let ClojureScriptContext;
 
 function lumoEval(
@@ -68,49 +67,17 @@ function lumoEval(
   return ret;
 }
 
-if (__DEV__) {
-  newContext = function newCtx(): vm$Context {
-    const cljsSrc = lumo.load('main.js');
-    // $FlowFixMe: we know for sure this file will exist.
-    const cljsScript = new vm.Script(cljsSrc, {});
+function newDevelopmentContext(): vm$Context {
+  // $FlowFixMe: we know for sure this file will exist.
+  const cljsScript = new vm.Script(lumo.load('main.js'), {});
 
-    const context = {
-      module,
-      exports,
-      require,
-      process,
-      console,
-      $$LUMO_GLOBALS: {
-        crypto,
-        fs,
-        path,
-        getGoogleClosureCompiler: lumo.getGoogleClosureCompiler,
-        parinfer,
-        JSZip,
-        load: lumo.load,
-        readCache: lumo.readCache,
-        readSource: lumo.readSource,
-        writeCache: lumo.writeCache,
-        loadUpstreamForeignLibs: lumo.loadUpstreamForeignLibs,
-        resource: lumo.resource,
-        readSourceFromJar: lumo.readSourceFromJar,
-        eval: lumoEval,
-        addSourcePaths: lumo.addSourcePaths,
-        readSourcePaths: lumo.readSourcePaths,
-        setExitValue: lumo.setExitValue,
-      },
-      global: undefined,
-    };
-
-    context.global = context;
-
-    const ctx = vm.createContext(context);
-    cljsScript.runInContext(ctx);
-    return ctx;
-  };
-} else {
-  newContext = function newCtx(): { [key: string]: mixed } {
-    global.$$LUMO_GLOBALS = {
+  const context = {
+    module,
+    exports,
+    require,
+    process,
+    console,
+    $$LUMO_GLOBALS: {
       crypto,
       fs,
       path,
@@ -128,10 +95,39 @@ if (__DEV__) {
       addSourcePaths: lumo.addSourcePaths,
       readSourcePaths: lumo.readSourcePaths,
       setExitValue: lumo.setExitValue,
-    };
-
-    return global;
+    },
+    global: undefined,
   };
+
+  context.global = context;
+
+  const ctx = vm.createContext(context);
+  cljsScript.runInContext(ctx);
+  return ctx;
+}
+
+function newClojureScriptContext(): { [key: string]: mixed } {
+  global.$$LUMO_GLOBALS = {
+    crypto,
+    fs,
+    path,
+    getGoogleClosureCompiler: lumo.getGoogleClosureCompiler,
+    parinfer,
+    JSZip,
+    load: lumo.load,
+    readCache: lumo.readCache,
+    readSource: lumo.readSource,
+    writeCache: lumo.writeCache,
+    loadUpstreamForeignLibs: lumo.loadUpstreamForeignLibs,
+    resource: lumo.resource,
+    readSourceFromJar: lumo.readSourceFromJar,
+    eval: lumoEval,
+    addSourcePaths: lumo.addSourcePaths,
+    readSourcePaths: lumo.readSourcePaths,
+    setExitValue: lumo.setExitValue,
+  };
+
+  return global;
 }
 
 function setRuntimeOpts(opts: CLIOptsType): void {
@@ -178,7 +174,10 @@ function initClojureScriptEngine(opts: CLIOptsType): void {
   }
   const { args } = opts;
 
-  ClojureScriptContext = newContext();
+  ClojureScriptContext = __DEV__
+    ? newDevelopmentContext()
+    : newClojureScriptContext();
+
   // $FlowIssue: context can have globals
   ClojureScriptContext.cljs.user = {};
 
