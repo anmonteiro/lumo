@@ -2,7 +2,6 @@
 
 // $FlowIssue: this module exists.
 import v8 from 'v8';
-// $FlowIssue: this is allowed
 import { BasicParser as GOParser } from 'posix-getopt';
 import startClojureScriptEngine from './cljs';
 import printLegal from './legal';
@@ -35,14 +34,10 @@ export type CLIOptsType = {
   args: string[],
 };
 
-function getClojureScriptVersionString(): string {
-  // $FlowFixMe: we know for sure this file will exist.
-  return `ClojureScript ${lumo.load('clojurescript-version')}`;
-}
-
 export function createBanner(): string {
+  // $FlowFixMe: we know for sure this file will exist.
   return `Lumo ${lumoVersion}
-${getClojureScriptVersionString()}
+ClojureScript ${lumo.load('clojurescript-version')}
  Docs: (doc function-name-here)
  Exit: Control+D or :cljs/quit or exit
 
