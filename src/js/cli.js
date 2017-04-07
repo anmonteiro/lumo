@@ -40,12 +40,8 @@ function getClojureScriptVersionString(): string {
   return `ClojureScript ${lumo.load('clojurescript-version')}`;
 }
 
-function getVersionString(): string {
-  return `Lumo ${lumoVersion}`;
-}
-
 export function createBanner(): string {
-  return `${getVersionString()}
+  return `Lumo ${lumoVersion}
 ${getClojureScriptVersionString()}
  Docs: (doc function-name-here)
  Exit: Control+D or :cljs/quit or exit
@@ -63,7 +59,7 @@ function printVersion(): void {
 
 function printHelp(): void {
   process.stdout.write(
-    `${getVersionString()}
+    `Lumo ${lumoVersion}
 Usage:  lumo [init-opt*] [main-opt] [arg*]
 
   With no options or args, runs an interactive Read-Eval-Print Loop
