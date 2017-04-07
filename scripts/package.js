@@ -43,13 +43,16 @@ const resources = getDirContents('target').filter(
     !fname.endsWith('main.js') &&
     !fname.endsWith('bundle.js') &&
     !fname.endsWith('bundle.min.js') &&
-    !fname.endsWith('google-closure-compiler-js.js') &&
-    !fname.endsWith('parinfer.js') &&
-    !fname.endsWith('jszip.js')
+    !fname.endsWith('google-closure-compiler-js.js')
+    // !fname.endsWith('parinfer.js') &&
+    // !fname.endsWith('jszip.js')
 );
 
 function moveLibs(compiler, options, callback) {
-  ['parinfer', 'jszip', 'google-closure-compiler-js'].forEach(lib => {
+  [
+    //'parinfer', 'jszip',
+    'google-closure-compiler-js',
+  ].forEach(lib => {
     // prettier-ignore
     fs.writeFileSync(
       `${compiler.dir}/${lib}.js`,
@@ -75,8 +78,8 @@ Promise.all(resources.map(deflate)).then(() => {
         '--without-etw',
         '--without-perfctr',
         '--link-module', './google-closure-compiler-js.js',
-        '--link-module', './parinfer.js',
-        '--link-module', './jszip.js',
+        // '--link-module', './parinfer.js',
+        // '--link-module', './jszip.js',
       ],
       // nodeMakeArgs: ["-j", "4"], // when you want to control the make process.
       nodeVCBuildArgs: ['nosign', 'x64', 'noetw', 'noperfctr'], // when you want to control the make process for windows.

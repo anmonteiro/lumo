@@ -36,52 +36,52 @@ function minify(filename) {
   fs.writeFileSync(filename, code, 'utf8');
 }
 
-browserify({
-  entries: ['node_modules/parinfer'],
-  standalone: 'parinfer',
-  commondir: false,
-  builtins: false,
-  insertGlobals: true,
-  detectGlobals: true,
-  insertGlobalVars: {
-    process: undefined,
-  },
-  browserField: false,
-}).bundle((err, buf) => {
-  if (err) {
-    throw err;
-  }
-  const code = buf.toString();
-  const bundleFilename = path.join('target', 'parinfer.js');
-  fs.writeFile(bundleFilename, derequire(code), 'utf8', err => {
-    if (err) {
-      throw err;
-    }
-    minify(bundleFilename);
-  });
-});
+// browserify({
+//   entries: ['node_modules/parinfer'],
+//   standalone: 'parinfer',
+//   commondir: false,
+//   builtins: false,
+//   insertGlobals: true,
+//   detectGlobals: true,
+//   insertGlobalVars: {
+//     process: undefined,
+//   },
+//   browserField: false,
+// }).bundle((err, buf) => {
+//   if (err) {
+//     throw err;
+//   }
+//   const code = buf.toString();
+//   const bundleFilename = path.join('target', 'parinfer.js');
+//   fs.writeFile(bundleFilename, derequire(code), 'utf8', err => {
+//     if (err) {
+//       throw err;
+//     }
+//     minify(bundleFilename);
+//   });
+// });
 
-browserify({
-  entries: ['node_modules/jszip'],
-  standalone: 'JSZip',
-  commondir: false,
-  builtins: false,
-  insertGlobals: true,
-  detectGlobals: true,
-  insertGlobalVars: {
-    process: undefined,
-  },
-  browserField: false,
-}).bundle((err, buf) => {
-  if (err) {
-    throw err;
-  }
-  const code = buf.toString();
-  const bundleFilename = path.join('target', 'jszip.js');
-  fs.writeFile(bundleFilename, derequire(code), 'utf8', err => {
-    if (err) {
-      throw err;
-    }
-    minify(bundleFilename);
-  });
-});
+// browserify({
+//   entries: ['node_modules/jszip'],
+//   standalone: 'JSZip',
+//   commondir: false,
+//   builtins: false,
+//   insertGlobals: true,
+//   detectGlobals: true,
+//   insertGlobalVars: {
+//     process: undefined,
+//   },
+//   browserField: false,
+// }).bundle((err, buf) => {
+//   if (err) {
+//     throw err;
+//   }
+//   const code = buf.toString();
+//   const bundleFilename = path.join('target', 'jszip.js');
+//   fs.writeFile(bundleFilename, derequire(code), 'utf8', err => {
+//     if (err) {
+//       throw err;
+//     }
+//     minify(bundleFilename);
+//   });
+// });
