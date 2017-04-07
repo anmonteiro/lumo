@@ -7,7 +7,7 @@ const uglify = require('uglify-js');
 
 browserify({
   entries: ['node_modules/google-closure-compiler-js/compile.js'],
-  standalone: 'googleClosureCompiler',
+  standalone: 'google-closure-compiler-js',
   commondir: false,
   builtins: false,
   insertGlobals: true,
@@ -21,7 +21,7 @@ browserify({
     throw err;
   }
   const code = buf.toString();
-  const bundleFilename = path.join('target', 'googleClosureCompiler.js');
+  const bundleFilename = path.join('target', 'google-closure-compiler-js.js');
   fs.writeFile(bundleFilename, derequire(code), 'utf8', err => {
     if (err) {
       throw err;

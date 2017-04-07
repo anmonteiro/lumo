@@ -43,13 +43,13 @@ const resources = getDirContents('target').filter(
     !fname.endsWith('main.js') &&
     !fname.endsWith('bundle.js') &&
     !fname.endsWith('bundle.min.js') &&
-    !fname.endsWith('googleClosureCompiler.js') &&
+    !fname.endsWith('google-closure-compiler-js.js') &&
     !fname.endsWith('parinfer.js') &&
     !fname.endsWith('jszip.js')
 );
 
 function moveLibs(compiler, options, callback) {
-  ['parinfer', 'jszip', 'googleClosureCompiler'].forEach(lib => {
+  ['parinfer', 'jszip', 'google-closure-compiler-js'].forEach(lib => {
     // prettier-ignore
     fs.writeFileSync(
       `${compiler.dir}/${lib}.js`,
@@ -74,7 +74,7 @@ Promise.all(resources.map(deflate)).then(() => {
         '--without-inspector',
         '--without-etw',
         '--without-perfctr',
-        '--link-module', './googleClosureCompiler.js',
+        '--link-module', './google-closure-compiler-js.js',
         '--link-module', './parinfer.js',
         '--link-module', './jszip.js',
       ],
@@ -84,7 +84,7 @@ Promise.all(resources.map(deflate)).then(() => {
       // You can check all available options and its default values here:
       // https://github.com/nodejs/node/blob/master/vcbuild.bat
       resourceFiles: resources,
-      browserifyExcludes: resources,
+      browserifyExcludes: resources.concat(['nexeres', 'v8', 'google-closure-compiler-js', 'parinfer', 'jszip']),
       resourceRoot: 'target',
       flags: true, // use this for applications that need command line flags.
       jsFlags: [

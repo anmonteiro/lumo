@@ -1,4 +1,4 @@
 {
-  "presets": ["es2015", "stage-2"],
-  "plugins": ["transform-flow-strip-types", "./scripts/babel/strip-dev"]
+  "presets": ["stage-2"],
+  "plugins": ["external-helpers", "transform-flow-strip-types", "./scripts/babel/strip-dev"]
 }
