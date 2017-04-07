@@ -108,10 +108,6 @@ export function processLine(replSession: REPLSession, line: string): void {
           rl.output.write('\n');
         }
       } else {
-        if (isWhitespace(line)) {
-          // $FlowIssue: rl.output is there
-          rl.output.write('\n');
-        }
         prompt(rl);
         break;
       }

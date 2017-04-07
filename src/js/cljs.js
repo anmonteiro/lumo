@@ -5,6 +5,7 @@ import crypto from 'crypto';
 import fs from 'fs';
 import Module from 'module';
 import path from 'path';
+import Stream from 'stream';
 import vm from 'vm';
 import JSZip from 'jszip';
 import parinfer from 'parinfer';
@@ -150,6 +151,18 @@ function setRuntimeOpts(opts: CLIOptsType): void {
 
 let cljsSender: stream$Writable;
 
+class DiscardingSender extends Stream.Writable {
+  // eslint-disable-next-line class-methods-use-this
+  _write(
+    chunk: Buffer | string,
+    encoding: string,
+    cb: (error: ?Error, data?: Buffer | string) => void,
+  ): boolean {
+    setImmediate(cb);
+    return false;
+  }
+}
+
 function printFn(...args: mixed[]): void {
   cljsSender.write(args.join(' '));
 }
@@ -285,6 +298,8 @@ export default function startClojureScriptEngine(opts: CLIOptsType): void {
   if (repl) {
     process.nextTick(() => {
       initClojureScriptEngine(opts);
+      setPrintFns(new DiscardingSender());
+
       execute(
         "(require '[lumo.repl :refer-macros [doc dir]])",
         'text',
@@ -292,6 +307,8 @@ export default function startClojureScriptEngine(opts: CLIOptsType): void {
         false,
         'cljs.user',
       );
+
+      setPrintFns();
     });
 
     return startREPL(opts);

@@ -14,9 +14,9 @@
             [clojure.string :as string]
             [cognitect.transit :as transit]
             [goog.object :as gobj]
-            [fipp.edn :as fipp]
             [lumo.js-deps :as deps]
             [lumo.common :as common]
+            [lumo.pprint.data :as pprint]
             [lumo.repl-resources :refer [special-doc-map repl-special-doc-map]])
   (:import [goog.string StringBuffer]))
 
@@ -145,13 +145,12 @@
         clojure.set
         clojure.walk
         cognitect.transit
-        fipp.edn
-        fipp.ednize
         fipp.visit
         fipp.engine
         fipp.deque
         lazy-map.core
         lumo.core
+        lumo.pprint.data
         lumo.repl
         lumo.repl-resources
         lumo.js-deps
@@ -684,7 +683,7 @@
     (= "EOF while reading string" msg)))
 
 (defn print-value [value]
-  (fipp/pprint value))
+  (pprint/pprint value))
 
 (defn- read-chars
   [reader]
@@ -757,9 +756,7 @@
             eval-opts (merge (make-eval-opts)
                         (when expression?
                           {:context :expr
-                           :def-emits-var true})
-                        (when-not print-nil-result?
-                          {:verbose false}))]
+                           :def-emits-var true}))]
         (if (repl-special? form)
           ((get repl-special-fns (first form)) form eval-opts)
           (cljs/eval-str
