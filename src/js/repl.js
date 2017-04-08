@@ -54,6 +54,9 @@ export function prompt(
   rl.prompt();
 }
 
+// eslint-disable-next-line import/no-mutable-exports
+export let currentREPLInterface: ?readline$Interface;
+
 export function deleteSession(session: REPLSession): void {
   delete sessions[session.sessionId];
 }
@@ -98,7 +101,11 @@ export function processLine(replSession: REPLSession, line: string): void {
       if (!isWhitespace(session.input)) {
         // $FlowIssue: rl.output is there
         cljs.setPrintFns(rl.output);
+        currentREPLInterface = rl;
+
         cljs.execute(session.input);
+
+        currentREPLInterface = null;
         cljs.setPrintFns();
         // If *print-newline* is off, we need to emit a newline now, otherwise
         // the prompt and line editing will overwrite any printed output on the

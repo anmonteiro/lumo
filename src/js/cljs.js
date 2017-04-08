@@ -10,11 +10,19 @@ import vm from 'vm';
 import JSZip from 'jszip';
 import parinfer from 'parinfer';
 import * as lumo from './lumo';
-import startREPL from './repl';
+import startREPL, { currentREPLInterface } from './repl';
 
 import type { CLIOptsType } from './cli';
 
+// $FlowIssue: process has a binding function
+const utilBinding = process.binding('util');
+
 let ClojureScriptContext;
+
+const scriptOptions = {
+  displayErrors: true,
+  breakOnSigint: true,
+};
 
 function lumoEval(
   source: string,
@@ -28,10 +36,13 @@ function lumoEval(
     module.filename = absoluteExecPath;
     module.paths = Module._nodeModulePaths(path.dirname(absoluteExecPath));
 
-    const script = 'global.require = require;\n' +
-      'return require("vm").' +
-      `runInThisContext(${JSON.stringify(source)}, ` +
-      `{ filename: ${JSON.stringify(absoluteExecPath)}, displayErrors: true });\n`;
+    const script = `global.require = require;
+return require("vm")
+  .runInThisContext(
+    ${JSON.stringify(source)},
+    Object.assign(
+      { filename: ${JSON.stringify(absoluteExecPath)} },
+      ${JSON.stringify(scriptOptions)}));\n`;
 
     return module._compile(script, `${execPath}-wrapper`);
   }
@@ -51,11 +62,32 @@ function lumoEval(
     ClojureScriptContext.exports = undefined;
   }
 
-  if (__DEV__) {
-    // $FlowFixMe: this type differs according to the env
-    ret = vm.runInContext(source, ClojureScriptContext);
+  utilBinding.startSigintWatchdog();
+
+  if (currentREPLInterface != null) {
+    const previouslyInRawMode = currentREPLInterface._setRawMode(false);
+    try {
+      ret = __DEV__
+        ? // $FlowFixMe: this type differs according to the env
+          vm.runInContext(source, ClojureScriptContext, scriptOptions)
+        : vm.runInThisContext(source, scriptOptions);
+    } catch (e) {
+      if (e.message !== 'Script execution interrupted.') {
+        throw e;
+      }
+    } finally {
+      currentREPLInterface._setRawMode(previouslyInRawMode);
+
+      const hadPendingSignals = utilBinding.stopSigintWatchdog();
+      if (hadPendingSignals) {
+        currentREPLInterface.emit('SIGINT');
+      }
+    }
   } else {
-    ret = vm.runInThisContext(source);
+    ret = __DEV__
+      ? // $FlowFixMe: this type differs according to the env
+        vm.runInContext(source, ClojureScriptContext, scriptOptions)
+      : vm.runInThisContext(source, scriptOptions);
   }
 
   if (isForeign) {
@@ -285,13 +317,13 @@ export default function startClojureScriptEngine(opts: CLIOptsType): void {
   if (mainScript) {
     initClojureScriptEngine(opts);
     executeScript(mainScript, 'path');
-    return process.exit(lumo.EXIT_VALUE);
+    process.exit(lumo.EXIT_VALUE);
   }
 
   if (mainNsName) {
     initClojureScriptEngine(opts);
     runMain(mainNsName, args);
-    return process.exit(lumo.EXIT_VALUE);
+    process.exit(lumo.EXIT_VALUE);
   }
 
   if (repl) {
@@ -310,8 +342,6 @@ export default function startClojureScriptEngine(opts: CLIOptsType): void {
       setPrintFns();
     });
 
-    return startREPL(opts);
+    startREPL(opts);
   }
-
-  return undefined;
 }

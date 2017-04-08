@@ -6,6 +6,7 @@
 
 - Return exit code `1` on exception ([#58](https://github.com/anmonteiro/lumo/issues/58)).
 - Pretty print evaluation results.
+- Add ability to kill infinite loops at the REPL with `ctrl+c`.
 
 ### Changes
 
