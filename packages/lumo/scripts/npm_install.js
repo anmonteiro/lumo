@@ -15,7 +15,6 @@ var platformZip = 'lumo_' + platform2release[process.platform] + '.zip';
 var version = process.env.npm_package_version;
 var file = fs.createWriteStream(platformZip);
 var executable = isWindows ? 'lumo.exe' : 'lumo';
-var requestTimeout = 60 * 1000;
 
 if (version == null) {
   throw new Error('Aborting! $npm_package_version not defined in env.');
@@ -26,12 +25,6 @@ var url = [
   version,
   platformZip,
 ].join('/');
-
-function handleError() {
-  file.close();
-  console.error('\nDownload failed.');
-  process.exit(-1);
-}
 
 function hookProgressBar(req) {
   req.on('response', function(response) {
@@ -55,31 +48,17 @@ function hookProgressBar(req) {
   });
 }
 
-function setRequestTimeout(ms, req, cb) {
-  var timer;
-
-  req.on('response', function(response) {
-    timer = setTimeout(cb, ms);
-
-    response.on('end', function() {
-      clearTimeout(timer);
-    });
-  });
-
-  req.on('error', function() {
-    clearTimeout(timer);
-  });
-}
-
-var req = request(url, { timeout: requestTimeout });
-
-setRequestTimeout(requestTimeout, req, handleError);
+var req = request(url);
 
 hookProgressBar(req);
 
 req.pipe(file);
 
-req.on('error', handleError);
+req.on('error', function(err) {
+  file.close();
+  console.error('\nDownload failed.');
+  process.exit(-1);
+});
 
 req.on('end', function() {
   var fileContents = fs.readFileSync(platformZip);
