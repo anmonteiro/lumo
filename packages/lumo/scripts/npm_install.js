@@ -15,6 +15,7 @@ var platformZip = 'lumo_' + platform2release[process.platform] + '.zip';
 var version = process.env.npm_package_version;
 var file = fs.createWriteStream(platformZip);
 var executable = isWindows ? 'lumo.exe' : 'lumo';
+var requestTimeout = 60 * 1000;
 
 if (version == null) {
   throw new Error('Aborting! $npm_package_version not defined in env.');
@@ -70,9 +71,9 @@ function setRequestTimeout(ms, req, cb) {
   });
 }
 
-var req = request(url, { timeout: 30000 });
+var req = request(url, { timeout: requestTimeout });
 
-setRequestTimeout(30000, req, handleError);
+setRequestTimeout(requestTimeout, req, handleError);
 
 hookProgressBar(req);
 
