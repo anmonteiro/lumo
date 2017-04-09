@@ -12,6 +12,7 @@
   },
   "plugins" : ["flowtype", "import", "babel"],
   "rules" : {
+    "linebreak-style": 0,
     "no-duplicate-imports": 0,
     "no-unused-vars": ["error", { "args": "none" }],
     "no-cond-assign": [2, "except-parens"],
