@@ -1,0 +1,32 @@
+version: 0.1
+
+environment_variables:
+  plaintext:
+    BOOT_JVM_OPTIONS: "-client -XX:+TieredCompilation -XX:TieredStopAtLevel=1 -Xmx2g -XX:+UseConcMarkSweepGC -XX:+CMSClassUnloadingEnabled -Xverify:none"
+
+phases:
+  install:
+    commands:
+      - npm install -g yarn
+      - wget https://github.com/boot-clj/boot-bin/releases/download/latest/boot.sh
+      - mv boot.sh boot && chmod a+x boot && sudo mv boot /usr/local/bin
+  pre_build:
+    commands:
+      - boot
+      - yarn install
+  build:
+    commands:
+      - yarn lint
+      - yarn type:check
+      - yarn test
+      - boot test
+      - boot release-ci
+  post_build:
+    commands:
+      - chmod a+x build/lumo
+      - zip -j build/lumo.zip build/lumo
+artifacts:
+  files:
+    - '*'
+  discard-paths: yes
+  base-directory: build
