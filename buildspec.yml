@@ -3,6 +3,7 @@ version: 0.1
 environment_variables:
   plaintext:
     BOOT_JVM_OPTIONS: "-client -XX:+TieredCompilation -XX:TieredStopAtLevel=1 -Xmx2g -XX:+UseConcMarkSweepGC -XX:+CMSClassUnloadingEnabled -Xverify:none"
+    BOOT_AS_ROOT: yes
 
 phases:
   install:
