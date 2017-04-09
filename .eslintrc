@@ -7,7 +7,8 @@
     "jest": true
   },
   "globals" : {
-    "__DEV__": true
+    "__DEV__": true,
+    "lumo": true,
   },
   "plugins" : ["flowtype", "import", "babel"],
   "rules" : {

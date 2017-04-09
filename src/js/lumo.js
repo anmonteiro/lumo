@@ -8,14 +8,7 @@ import zlib from 'zlib';
 import JSZip from 'jszip';
 import * as util from './util';
 
-let nexeres;
-let bundledResources;
 const sourcePaths = [''];
-
-if (!__DEV__) {
-  // $FlowExpectedError: only exists in the Nexe bundle.
-  nexeres = require('nexeres'); // eslint-disable-line
-}
 
 type ResourceType =
   | {|
@@ -45,22 +38,23 @@ function isBundled(filename: string): boolean {
     return fs.existsSync(`./target/${filename}`);
   }
 
-  if (bundledResources === undefined) {
-    bundledResources = new Set(nexeres.keys());
-  }
   const fname = util.isWindows ? filename.replace(/\//g, '\\') : filename;
 
-  return bundledResources.has(fname);
+  return lumo.internal.embedded.resources[fname] != null;
 }
 
 export function load(filename: string): ?string {
-  if (isBundled(filename)) {
-    if (__DEV__) {
+  if (__DEV__) {
+    try {
       return fs.readFileSync(`./target/${filename}`, 'utf8');
+    } catch (e) {
+      return null;
     }
-    const fname = util.isWindows ? filename.replace(/\//g, '\\') : filename;
-    const gzipped = nexeres.get(fname);
+  }
 
+  const fname = util.isWindows ? filename.replace(/\//g, '\\') : filename;
+  const gzipped = lumo.internal.embedded.get(fname);
+  if (gzipped != null) {
     return zlib.inflateSync(gzipped).toString();
   }
 
@@ -205,7 +199,7 @@ export function readSourceFromJar(
 
 export function dumpSDK(outdir: string): void {
   if (!__DEV__) {
-    nexeres.keys().forEach((res: string) => {
+    lumo.internal.embedded.keys().forEach((res: string) => {
       const idx = res.lastIndexOf('/');
 
       if (idx !== -1) {
