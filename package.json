@@ -16,7 +16,7 @@
     "type:check": "flow check",
     "lint": "eslint src/js",
     "prettier": "prettier --print-width 80 --single-quote --trailing-comma all --parser flow --write \"./{src,scripts,lib,packages}/**/**.js\"",
-    "test": "jest",
+    "test": "jest --useStderr",
     "bundle": "node scripts/build.js --dev",
     "dev": "node target/bundle.js -k lumo-cache -c target"
   },
