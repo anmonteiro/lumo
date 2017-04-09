@@ -1,9 +1,11 @@
-const browserify = require('browserify');
 const fs = require('fs');
-const path = require('path');
-const envify = require('envify/custom');
-const derequire = require('derequire');
-const uglify = require('uglify-js');
+const rollup = require('rollup').rollup;
+const babel = require('rollup-plugin-babel');
+const replace = require('rollup-plugin-replace');
+const resolve = require('rollup-plugin-node-resolve');
+const commonjs = require('rollup-plugin-commonjs');
+const uglify = require('rollup-plugin-uglify');
+const minify = require('uglify-js-harmony').minify;
 
 const argv = process.argv.slice(2);
 const isDevBuild = /(--dev|-d)$/.test(argv[0]);
@@ -30,57 +32,58 @@ function writeClojureScriptVersion() {
     });
 }
 
-function minify(filename) {
-  const { code } = uglify.minify(filename, {
-    warnings: true,
-  });
-  const matches = /(.*)(\.[^.]+)$/.exec(filename);
-  fs.writeFile(`${matches[1]}.min${matches[2]}`, code, 'utf8');
-}
-
 writeClojureScriptVersion();
 
-// prettier-ignore
-console.log(
-  `Building ${isDevBuild ? 'development' : 'production'} bundle with Browserify...`
-);
+console.log(`Building ${isDevBuild ? 'development' : 'production'} bundle...`);
 
-// prettier-ignore
-browserify({
-  entries: ['src/js/index.js'],
-  commondir: false,
-  builtins: false,
-  insertGlobals: true,
-  detectGlobals: true,
-  insertGlobalVars: {
-    process: undefined,
-  },
-  browserField: false,
+const external = [
+  'google-closure-compiler-js',
+  'assert',
+  'crypto',
+  'fs',
+  'module',
+  'net',
+  'os',
+  'path',
+  'readline',
+  'repl',
+  'tty',
+  'v8',
+  'vm',
+  'zlib',
+];
+
+// TODO:
+// - babili
+const replacement = JSON.stringify(isDevBuild ? 'development' : 'production');
+const plugins = [
+  babel(),
+  replace({
+    'process.env.NODE_ENV': replacement,
+  }),
+  resolve({
+    jsnext: true,
+    main: true,
+    preferBuiltins: true,
+  }),
+  commonjs({
+    include: /posix-getopt|parinfer|jszip|pako/,
+  }),
+];
+
+if (!isDevBuild) {
+  plugins.push(uglify({}, minify));
+}
+
+rollup({
+  entry: 'src/js/index.js',
+  plugins,
+  external,
 })
-  .transform('babelify')
-  .transform(
-    envify({
-      _: 'purge',
-      NODE_ENV: isDevBuild ? 'development' : 'production',
-    })
-  )
-  .exclude('nexeres')
-  .exclude('v8')
-  .exclude('google-closure-compiler-js')
-  .exclude('parinfer')
-  .exclude('jszip')
-  .bundle((err, buf) => {
-    if (err) {
-      throw err;
-    }
-    const code = buf.toString();
-    const bundleFilename = path.join('target', 'bundle.js');
-    fs.writeFile(bundleFilename, derequire(code), 'utf8', err => {
-      if (err) {
-        throw err;
-      }
-      if (!isDevBuild) {
-        minify(bundleFilename);
-      }
+  .then(bundle => {
+    bundle.write({
+      format: 'cjs',
+      dest: `target/bundle${!isDevBuild ? '.min' : ''}.js`,
     });
-  });
+  })
+  .catch(console.error);

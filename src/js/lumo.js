@@ -72,7 +72,7 @@ export function getGoogleClosureCompiler(): Function {
   v8.setFlagsFromString('--nouse_strict');
 
   // eslint-disable-next-line global-require
-  const googleClosureCompiler = require('google-closure-compiler-js').compile;
+  const googleClosureCompiler = require('google-closure-compiler-js');
 
   // TODO: don't set use_strict back if it was never on in the first place
   v8.setFlagsFromString('--use_strict');
