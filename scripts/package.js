@@ -44,21 +44,14 @@ const resources = getDirContents('target').filter(
     !fname.endsWith('bundle.js') &&
     !fname.endsWith('bundle.min.js') &&
     !fname.endsWith('google-closure-compiler-js.js')
-    // !fname.endsWith('parinfer.js') &&
-    // !fname.endsWith('jszip.js')
 );
 
 function moveLibs(compiler, options, callback) {
-  [
-    //'parinfer', 'jszip',
-    'google-closure-compiler-js',
-  ].forEach(lib => {
-    // prettier-ignore
-    fs.writeFileSync(
-      `${compiler.dir}/${lib}.js`,
-      fs.readFileSync(`target/${lib}.js`)
-    );
-  });
+  // prettier-ignore
+  fs.writeFileSync(
+    `${compiler.dir}/google-closure-compiler-js.js`,
+    fs.readFileSync(`target/google-closure-compiler-js.js`)
+  );
 
   callback();
 }
@@ -78,25 +71,14 @@ Promise.all(resources.map(deflate)).then(() => {
         '--without-etw',
         '--without-perfctr',
         '--link-module', './google-closure-compiler-js.js',
-        // '--link-module', './parinfer.js',
-        // '--link-module', './jszip.js',
       ],
-      // nodeMakeArgs: ["-j", "4"], // when you want to control the make process.
-      nodeVCBuildArgs: ['nosign', 'x64', 'noetw', 'noperfctr'], // when you want to control the make process for windows.
-      // By default "nosign" option will be specified
-      // You can check all available options and its default values here:
-      // https://github.com/nodejs/node/blob/master/vcbuild.bat
+      nodeMakeArgs: ['-j', '4'],
+      nodeVCBuildArgs: ['nosign', 'x64', 'noetw', 'noperfctr'],
       resourceFiles: resources,
-      browserifyExcludes: resources.concat(['nexeres', 'v8', 'google-closure-compiler-js', 'parinfer', 'jszip']),
       resourceRoot: 'target',
-      flags: true, // use this for applications that need command line flags.
-      jsFlags: [
-        // '--use_strict',
-        // '--prepare_always_opt',
-        // '--always_opt',
-        // '--compiled_keyed_generic_loads',
-      ].join(' '),
+      flags: true,
       startupSnapshot: 'target/main.js',
+      noBundle: true,
       framework: 'node',
       nodeVersion,
     },
@@ -104,7 +86,6 @@ Promise.all(resources.map(deflate)).then(() => {
       if (err) {
         throw err;
       }
-
       console.log(
         `Finished bundling. Nexe binary can be found in ${outputPath}`
       );

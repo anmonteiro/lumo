@@ -1,87 +1,26 @@
-const browserify = require('browserify');
-const fs = require('fs');
-const path = require('path');
-const envify = require('envify/custom');
-const derequire = require('derequire');
-const uglify = require('uglify-js');
+const rollup = require('rollup').rollup;
+const resolve = require('rollup-plugin-node-resolve');
+const replace = require('rollup-plugin-replace');
+const commonjs = require('rollup-plugin-commonjs');
 
-browserify({
-  entries: ['node_modules/google-closure-compiler-js/compile.js'],
-  standalone: 'google-closure-compiler-js',
-  commondir: false,
-  builtins: false,
-  insertGlobals: true,
-  detectGlobals: true,
-  insertGlobalVars: {
-    process: undefined,
-  },
-  browserField: false,
-}).bundle((err, buf) => {
-  if (err) {
-    throw err;
-  }
-  const code = buf.toString();
-  const bundleFilename = path.join('target', 'google-closure-compiler-js.js');
-  fs.writeFile(bundleFilename, derequire(code), 'utf8', err => {
-    if (err) {
-      throw err;
-    }
-  });
-});
-
-function minify(filename) {
-  const { code } = uglify.minify(filename, {
-    warnings: true,
-  });
-  fs.writeFileSync(filename, code, 'utf8');
-}
-
-// browserify({
-//   entries: ['node_modules/parinfer'],
-//   standalone: 'parinfer',
-//   commondir: false,
-//   builtins: false,
-//   insertGlobals: true,
-//   detectGlobals: true,
-//   insertGlobalVars: {
-//     process: undefined,
-//   },
-//   browserField: false,
-// }).bundle((err, buf) => {
-//   if (err) {
-//     throw err;
-//   }
-//   const code = buf.toString();
-//   const bundleFilename = path.join('target', 'parinfer.js');
-//   fs.writeFile(bundleFilename, derequire(code), 'utf8', err => {
-//     if (err) {
-//       throw err;
-//     }
-//     minify(bundleFilename);
-//   });
-// });
-
-// browserify({
-//   entries: ['node_modules/jszip'],
-//   standalone: 'JSZip',
-//   commondir: false,
-//   builtins: false,
-//   insertGlobals: true,
-//   detectGlobals: true,
-//   insertGlobalVars: {
-//     process: undefined,
-//   },
-//   browserField: false,
-// }).bundle((err, buf) => {
-//   if (err) {
-//     throw err;
-//   }
-//   const code = buf.toString();
-//   const bundleFilename = path.join('target', 'jszip.js');
-//   fs.writeFile(bundleFilename, derequire(code), 'utf8', err => {
-//     if (err) {
-//       throw err;
-//     }
-//     minify(bundleFilename);
-//   });
-// });
+rollup({
+  entry: 'node_modules/google-closure-compiler-js/compile.js',
+  plugins: [
+    replace({
+      'process.env.NODE_ENV': JSON.stringify('production'),
+    }),
+    resolve({
+      jsnext: true,
+      main: true,
+    }),
+    commonjs(),
+  ],
+})
+  .then(bundle => {
+    bundle.write({
+      format: 'cjs',
+      dest: 'target/google-closure-compiler-js.js',
+      useStrict: false,
+    });
+  })
+  .catch(console.error);

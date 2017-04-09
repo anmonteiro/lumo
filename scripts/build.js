@@ -1,7 +1,6 @@
 const fs = require('fs');
 const rollup = require('rollup').rollup;
 const babel = require('rollup-plugin-babel');
-const babelrc = require('babelrc-rollup').default;
 const replace = require('rollup-plugin-replace');
 const resolve = require('rollup-plugin-node-resolve');
 const commonjs = require('rollup-plugin-commonjs');
@@ -39,33 +38,37 @@ console.log(`Building ${isDevBuild ? 'development' : 'production'} bundle...`);
 
 const external = [
   'google-closure-compiler-js',
-  // 'jszip',
-  // 'parinfer',
-  // 'v8',
-  // 'readline',
-  // 'net',
-  // 'tty',
-  // 'repl',
-  // 'path',
-  // 'fs',
-  // 'crypto',
-  // 'module',
-  // 'vm',
-  // 'os',
-  // 'zlib',
+  'assert',
+  'crypto',
+  'fs',
+  'module',
+  'net',
+  'os',
+  'path',
+  'readline',
+  'repl',
+  'tty',
+  'v8',
+  'vm',
+  'zlib',
 ];
 
 // TODO:
-// - how can I know if something is being included in the bundle that I
-//   don't know about?
-// - patch nexe to not run browserify at all
+// - babili
+const replacement = JSON.stringify(isDevBuild ? 'development' : 'production');
 const plugins = [
   babel(),
   replace({
-    'process.env.NODE_ENV': JSON.stringify('production'),
+    'process.env.NODE_ENV': replacement,
   }),
-  resolve({ jsnext: true, main: true }),
-  // commonjs(),
+  resolve({
+    jsnext: true,
+    main: true,
+    preferBuiltins: true,
+  }),
+  commonjs({
+    include: /posix-getopt|parinfer|jszip|pako/,
+  }),
 ];
 
 if (!isDevBuild) {
@@ -76,24 +79,11 @@ rollup({
   entry: 'src/js/index.js',
   plugins,
   external,
-  // targets: [
-  //   {
-  //     dest: 'x.js',
-  //     format: 'cjs',
-  //     sourceMap: true,
-  //   },
-  // ]
 })
   .then(bundle => {
-    // const result = bundle.generate({
-    //   format: 'cjs',
-    // });
-
     bundle.write({
       format: 'cjs',
       dest: `target/bundle${!isDevBuild ? '.min' : ''}.js`,
     });
   })
-  .catch(error => {
-    console.log('err?', error);
-  });
+  .catch(console.error);
