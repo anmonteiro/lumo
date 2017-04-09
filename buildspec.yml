@@ -7,6 +7,8 @@ environment_variables:
 phases:
   install:
     commands:
+      - curl -sL https://deb.nodesource.com/setup_7.x | sudo -E bash -
+      - sudo apt-get install -y nodejs
       - npm install -g yarn
       - wget https://github.com/boot-clj/boot-bin/releases/download/latest/boot.sh
       - mv boot.sh boot && chmod a+x boot && sudo mv boot /usr/local/bin
