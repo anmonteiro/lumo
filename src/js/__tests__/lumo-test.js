@@ -54,6 +54,7 @@ describe('lumo', () => {
                 if (resource === 'foo') {
                   return 'fooContents';
                 }
+                return null;
               }),
             },
           },
