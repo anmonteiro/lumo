@@ -3,6 +3,17 @@ language: node_js
 node_js:
   - 7.8.0
 
+env:
+  - BOOT_AS_ROOT=yes BOOT_JVM_OPTIONS="
+    -client
+    -XX:+TieredCompilation
+    -XX:TieredStopAtLevel=1
+    -Xmx2g
+    -XX:+UseConcMarkSweepGC
+    -XX:+CMSClassUnloadingEnabled
+    -Xverify:none"
+
+
 build:
   # pre_ci_boot:
   #   image_name: drydock/u14nod
@@ -24,7 +35,7 @@ build:
     - boot test
     - boot release-ci
 
-  post_ci:
+  after_success:
     - chmod a+x build/lumo
     - zip -j build/lumo.zip build/lumo
 
