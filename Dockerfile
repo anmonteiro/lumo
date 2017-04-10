@@ -50,7 +50,7 @@ COPY package.json /out/
 COPY build.boot /out/
 COPY boot.properties /out/
 
-RUN boot > /dev/null
+RUN boot
 RUN yarn install
 
 CMD [ "/bin/bash" ]
