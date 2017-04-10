@@ -32,9 +32,6 @@ ENV JAVA_HOME /usr/lib/jvm/java-8-oracle
 ENV BOOT_VERSION=2.7.1
 ENV BOOT_INSTALL=/usr/local/bin/
 
-WORKDIR /tmp
-
-# Download the whole repo as an archive
 RUN mkdir -p $BOOT_INSTALL \
   && wget --quiet https://github.com/boot-clj/boot-bin/releases/download/latest/boot.sh \
   && mv boot.sh boot && chmod a+x boot && sudo mv boot $BOOT_INSTALL
@@ -44,5 +41,16 @@ ENV PATH=$PATH:$BOOT_INSTALL
 ENV LANG C.UTF-8
 
 ENV JAVA_TOOL_OPTIONS -Dfile.encoding=UTF8
+
+RUN mkdir -p /out
+
+WORKDIR /out
+
+COPY package.json /out/
+COPY build.boot /out/
+COPY boot.properties /out/
+
+RUN boot > /dev/null
+RUN yarn install
 
 CMD [ "/bin/bash" ]

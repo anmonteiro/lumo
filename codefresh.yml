@@ -1,0 +1,18 @@
+version: '1.0'
+steps:
+
+  build_step:
+    type: build
+    dockerfile: Dockerfile
+    image-name: anmonteiro/lumo
+    tag: ${{CF_BRANCH}}
+
+  unit_tests:
+    image: ${{build_step}}
+    fail-fast: true
+    commands:
+      - yarn lint
+      - yarn type:check
+      - yarn test
+      - boot test
+      - boot release-ci
