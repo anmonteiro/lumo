@@ -17,5 +17,4 @@ steps:
       - yarn test
       - boot test
       - boot release-ci
-    on_success:
       - aws s3 sync build "s3://lumo-linux" --region "us-east-1" --acl "public-read"
