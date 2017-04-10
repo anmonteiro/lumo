@@ -30,6 +30,10 @@ RUN curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add - && \
 
 ENV JAVA_HOME /usr/lib/jvm/java-8-oracle
 
+# Install AWS CLI (needed for build artifacts)
+
+RUN pip install --upgrade awscli
+
 # Install Boot
 
 ENV BOOT_VERSION=2.7.1
@@ -48,7 +52,7 @@ ENV JAVA_TOOL_OPTIONS -Dfile.encoding=UTF8
 ENV BOOT_HOME /.boot
 ENV BOOT_AS_ROOT yes
 ENV BOOT_LOCAL_REPO /m2
-ENV BOOT_JVM_OPTIONS=-Xmx2g
+ENV BOOT_JVM_OPTIONS="-client -XX:+TieredCompilation -XX:TieredStopAtLevel=1 -Xmx2g -XX:+UseConcMarkSweepGC -XX:+CMSClassUnloadingEnabled -Xverify:none"
 
 RUN mkdir -p /out
 
