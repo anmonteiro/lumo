@@ -1,9 +1,9 @@
-FROM ubuntu:14.04
+FROM ubuntu:16.04
 MAINTAINER António Monteiro <anmonteiro@gmail.com>
 
 # install dependencies
 RUN apt-get update
-RUN apt-get -y install git make g++ python curl chrpath unzip software-properties-common python-software-properties && apt-get clean
+RUN apt-get -y install apt-transport-https git make g++ python curl chrpath unzip software-properties-common python-software-properties && apt-get clean
 
 # Install Java
 RUN \
@@ -16,17 +16,16 @@ RUN \
 
 # Install Node & Yarn
 
-RUN wget https://yarnpkg.com/latest.tar.gz \
-  && tar xvf latest.tar.gz \
-  && mkdir -p /opt/yarn \
-  && mv dist /opt/yarn
-
 ENV NPM_CONFIG_LOGLEVEL info
 ENV NODE_VERSION 7.8.0
 
 RUN wget https://nodejs.org/dist/v$NODE_VERSION/node-v$NODE_VERSION-linux-x64.tar.xz \
   && tar -xJf "node-v$NODE_VERSION-linux-x64.tar.xz" -C /usr/local --strip-components=1 \
   && rm "node-v$NODE_VERSION-linux-x64.tar.xz"
+
+RUN curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add - && \
+  echo "deb https://dl.yarnpkg.com/debian/ stable main" | tee /etc/apt/sources.list.d/yarn.list && \
+  apt-get update && apt-get -y install yarn
 
 ENV JAVA_HOME /usr/lib/jvm/java-8-oracle
 
@@ -55,9 +54,6 @@ RUN mkdir -p /out
 WORKDIR /out
 
 COPY . /out
-#COPY package.json /out/
-#COPY build.boot /out/
-#COPY boot.properties /out/
 
 RUN $BOOT_INSTALL/boot
 RUN yarn install
