@@ -51,9 +51,10 @@ RUN mkdir -p /out
 
 WORKDIR /out
 
-COPY package.json /out/
-COPY build.boot /out/
-COPY boot.properties /out/
+COPY . /out
+#COPY package.json /out/
+#COPY build.boot /out/
+#COPY boot.properties /out/
 
 RUN $BOOT_INSTALL/boot
 RUN yarn install
