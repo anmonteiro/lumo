@@ -16,7 +16,10 @@ RUN \
 
 # Install Node & Yarn
 
-RUN wget https://yarnpkg.com/latest.tar.gz
+RUN wget https://yarnpkg.com/latest.tar.gz \
+  && tar xvf latest.tar.gz \
+  && mkdir -p /opt/yarn \
+  && mv dist /opt/yarn
 
 ENV NPM_CONFIG_LOGLEVEL info
 ENV NODE_VERSION 7.8.0
@@ -36,7 +39,7 @@ RUN mkdir -p $BOOT_INSTALL \
 && curl -fsSLo $BOOT_INSTALL/boot https://github.com/boot-clj/boot-bin/releases/download/latest/boot.sh \
    && chmod 755 $BOOT_INSTALL/boot
 
-ENV PATH=$PATH:$BOOT_INSTALL
+ENV PATH=$PATH:$BOOT_INSTALL:/opt/yarn/bin
 
 ENV LANG C.UTF-8
 
