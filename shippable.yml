@@ -21,21 +21,20 @@ build:
   #   pull: true
   #   options: '--privileged=true --net=bridge -e FOO=true -e BOO=false'
 
-  pre_ci:
+  ci:
     - npm install -g yarn
     - wget https://github.com/boot-clj/boot-bin/releases/download/latest/boot.sh
     - mv boot.sh boot && chmod a+x boot && sudo mv boot /usr/local/bin
     - boot
     - yarn install
 
-  ci:
     - yarn lint
     - yarn type:check
     - yarn test
     - boot test
     - boot release-ci
 
-  after_success:
+  on_success:
     - chmod a+x build/lumo
     - zip -j build/lumo.zip build/lumo
 
