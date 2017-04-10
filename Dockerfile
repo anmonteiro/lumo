@@ -45,7 +45,7 @@ RUN mkdir -p $BOOT_INSTALL \
 && curl -fsSLo $BOOT_INSTALL/boot https://github.com/boot-clj/boot-bin/releases/download/latest/boot.sh \
    && chmod 755 $BOOT_INSTALL/boot
 
-ENV PATH=$PATH:$BOOT_INSTALL:/opt/yarn/bin
+ENV PATH=$PATH:$BOOT_INSTALL
 
 ENV LANG C.UTF-8
 

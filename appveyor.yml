@@ -12,7 +12,7 @@ matrix:
 
 cache:
   - '%UserProfile%\.m2'
-#  - tmp -> scripts\package.js
+  - tmp -> scripts\package.js
   - '%APPDATA%\npm-cache -> yarn.lock'
   - node_modules -> yarn.lock
   - '%SystemRoot%\boot.exe -> boot.properties'
