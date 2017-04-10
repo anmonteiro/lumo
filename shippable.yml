@@ -1,0 +1,38 @@
+language: node_js
+
+node_js:
+  - 7.8.0
+
+build:
+  # pre_ci_boot:
+  #   image_name: drydock/u14nod
+  #   image_tag: prod
+  #   pull: true
+  #   options: '--privileged=true --net=bridge -e FOO=true -e BOO=false'
+
+  pre_ci:
+    - npm install -g yarn
+    - wget https://github.com/boot-clj/boot-bin/releases/download/latest/boot.sh
+    - mv boot.sh boot && chmod a+x boot && sudo mv boot /usr/local/bin
+    - boot
+    - yarn install
+
+  ci:
+    - yarn lint
+    - yarn type:check
+    - yarn test
+    - boot test
+    - boot release-ci
+
+  post_ci:
+    - chmod a+x build/lumo
+    - zip -j build/lumo.zip build/lumo
+
+  cache: true
+
+  cache_dir_list:
+    - $SHIPPABLE_BUILD_DIR/node_modules
+    - "~/.m2"
+    - $SHIPPABLE_BUILD_DIR/tmp
+    - "~/.boot/cache/lib"
+    - "~/.boot/cache/bin"
