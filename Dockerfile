@@ -4,7 +4,9 @@ MAINTAINER António Monteiro <anmonteiro@gmail.com>
 # install dependencies
 RUN apt-get update
 RUN apt-get -y install ocaml libelf-dev apt-transport-https git make g++ python \
-  curl chrpath unzip software-properties-common python-software-properties && apt-get clean
+  python-pip python-dev build-essential curl chrpath unzip software-properties-common \
+  python-software-properties \
+  && apt-get clean
 
 # Install Java
 RUN \
