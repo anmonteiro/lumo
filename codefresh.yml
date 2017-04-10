@@ -9,6 +9,7 @@ steps:
 
   unit_tests:
     image: ${{build_step}}
+    working_directory: IMAGE_WORK_DIR
     fail-fast: true
     commands:
       - yarn lint
