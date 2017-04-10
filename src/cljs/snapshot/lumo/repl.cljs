@@ -859,9 +859,12 @@
   "Return the argument lists for the given symbol as string."
   [s]
   (when-let [var (some->> s repl-read-string first (resolve-var @env/*compiler*))]
-    (if-not (:macro var)
-      (:arglists var)
-      (-> var :meta :arglists second))))
+    (let [arglists (if-not (:macro var)
+                     (:arglists var)
+                     (-> var :meta :arglists second))]
+      (if (= 'quote (first arglists))
+        (second arglists)
+        arglists))))
 
 ;; --------------------
 ;; Autocompletion
