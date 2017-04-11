@@ -81,6 +81,17 @@ describe('lumo', () => {
   });
 
   describe('readCache', () => {
+    const statSync = fs.statSync;
+    beforeEach(() => {
+      fs.statSync = jest.fn((filename: string) => ({
+        mtime: new Date(),
+      }));
+    });
+
+    afterEach(() => {
+      fs.statSync = statSync;
+    });
+
     it('returns the contents of a (cached) file when it exists', () => {
       expect(lumo.readCache('foo')).toEqual({
         source: 'fooContents',
