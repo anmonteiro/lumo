@@ -42,33 +42,48 @@
          [5 3]))
   (is (= (js->clj (lumo/get-highlight-coordinates #js ["(())"] 3)) [0 0])))
 
+(defn is-completion [i o]
+  (lumo/get-completions i
+    (fn [completions]
+      (is (= (js->clj completions) (sort (into [] (map str) o)))))))
+
+(defn is-contains-completion
+  ([i o]
+   (is-contains-completion i o identity))
+  ([i o f]
+   (lumo/get-completions i
+     (fn [completions]
+       (is (f (contains? (set completions) o)))))))
+
 (deftest test-get-completions
   (testing "keyword completions"
-    (is (= (js->clj (lumo/get-completions ":")) (sort (into [] (map str) lumo/keyword-completions))))
-    (is (= (js->clj (lumo/get-completions ":a")) [":args" ":as"]))
-    (is (= (js->clj (lumo/get-completions ":ref")) [":refer" ":refer-clojure" ":refer-macros"])))
+    (is-completion ":" lumo/keyword-completions)
+    (is-completion ":a" [":args" ":as"])
+    (is-completion ":ref" [":refer" ":refer-clojure" ":refer-macros"]))
   (testing "aliased namespaces completions"
     (with-redefs [lumo/current-alias-map (fn []
                                            '{string clojure.string})]
-      (is (contains? (set (lumo/get-completions "str")) "string/"))
-      (is (contains? (set (lumo/get-completions "(str")) "(string/"))
-      (is (not (contains? (set (lumo/get-completions "(set")) "(set/"))))
+      (is-contains-completion "str" "string/")
+      (is-contains-completion "(str" "(string/")
+      (is-contains-completion "(set" "(set/" not))
     (with-redefs [lumo/all-ns (fn [] '(clojure.set clojure.string))]
-      (is (contains? (set (lumo/get-completions "(clojure.s")) "(clojure.set"))))
+      (is-contains-completion "(clojure.s" "(clojure.set")))
   (testing "cljs.core function completions"
-    (is (contains? (set (lumo/get-completions "sub")) "subs"))
-    (is (contains? (set (lumo/get-completions "mer")) "merge")))
+    (is-contains-completion "sub" "subs")
+    (is-contains-completion "mer" "merge"))
   (testing "referred vars completions"
     (with-redefs [lumo/get-namespace (fn [_]
                                        '{:uses {foo foo.core}
                                          :requires {foo.core foo.core}
                                          :use-macros {longer-var bar.core}})]
-      (is (contains? (set (lumo/get-completions "fo")) "foo"))
-      (is (contains? (set (lumo/get-completions "lon")) "longer-var"))
-      (is (contains? (set (lumo/get-completions "(lon")) "(longer-var"))))
+      (is-contains-completion "fo" "foo")
+      (is-contains-completion "lon" "longer-var")
+      (is-contains-completion "(lon" "(longer-var")))
   (testing "LUMO-83"
-    (is (contains? (set (lumo/get-completions "clojure.core/")) "clojure.core/merge"))
-    (is (contains? (set (lumo/get-completions "")) "merge"))))
+    (is-contains-completion "clojure.core/" "clojure.core/merge")
+    (is-contains-completion "" "merge"))
+  (testing "JS Completions"
+    (is-contains-completion "js/con" "js/console")))
 
 (deftest test-root-resource
   (is (= (lumo/root-resource 'foo-bar-baz) "/foo_bar_baz"))

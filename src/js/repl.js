@@ -3,10 +3,7 @@
 import os from 'os';
 import path from 'path';
 import readline from 'readline';
-// $FlowIssue: it's there
-import repl from 'repl';
 import tty from 'tty';
-import ArrayStream from './array-stream';
 import * as cljs from './cljs';
 import * as lumo from './lumo';
 import replHistory from './replHistory';
@@ -254,44 +251,13 @@ export function createSession(
   return session;
 }
 
-function getJSCompletions(
-  line: string,
-  match: string,
-  cb: (?Error, [string[], string]) => void,
-): void {
-  const flat = new ArrayStream();
-  const nodeReplServer = new repl.REPLServer('', flat);
-  const lineWithoutMatch = line.substring(0, line.length - match.length);
-
-  return nodeReplServer.completer(match, (err: ?Error, [
-    jsCompletions,
-  ]: [string[], string]) => {
-    const completions = jsCompletions.reduce(
-      (cs: string[], c: string) => {
-        if (c === '') {
-          return cs;
-        }
-
-        cs.push(`${lineWithoutMatch}${c}`);
-        return cs;
-      },
-      [],
-    );
-    return cb(err, [completions, line]);
-  });
-}
-
 function completer(
   line: string,
   cb: (err: ?Error, [string[], string]) => void,
 ): void {
-  const jsMatches = /js\/(\S*)$/g.exec(line);
-
-  if (jsMatches != null) {
-    return getJSCompletions(line, jsMatches[1], cb);
-  }
-
-  return cb(null, [cljs.getCompletions(line), line]);
+  return cljs.getCompletions(line, (completions: string[]) => {
+    cb(null, [completions, line]);
+  });
 }
 
 export default function startREPL(opts: CLIOptsType): void {

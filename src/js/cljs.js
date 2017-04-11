@@ -115,6 +115,7 @@ function newDevelopmentContext(): vm$Context {
       fs,
       path,
       getGoogleClosureCompiler: lumo.getGoogleClosureCompiler,
+      getJSCompletions: lumo.getJSCompletions,
       parinfer,
       JSZip,
       load: lumo.load,
@@ -145,6 +146,7 @@ function newClojureScriptContext(): { [key: string]: mixed } {
     fs,
     path,
     getGoogleClosureCompiler: lumo.getGoogleClosureCompiler,
+    getJSCompletions: lumo.getJSCompletions,
     parinfer,
     JSZip,
     load: lumo.load,
@@ -282,9 +284,9 @@ export function getHighlightCoordinates(
   return ClojureScriptContext.lumo.repl.get_highlight_coordinates(text, pos);
 }
 
-export function getCompletions(line: string): string[] {
+export function getCompletions(line: string, cb: (string[]) => void): void {
   // $FlowIssue: context can have globals
-  return ClojureScriptContext.lumo.repl.get_completions(line);
+  return ClojureScriptContext.lumo.repl.get_completions(line, cb);
 }
 
 export function isPrintingNewline(): boolean {

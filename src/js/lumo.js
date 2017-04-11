@@ -2,10 +2,13 @@
 
 import fs from 'fs';
 import path from 'path';
+// $FlowIssue: it's there
+import { REPLServer } from 'repl';
 // $FlowIssue: this module exists.
 import v8 from 'v8';
 import zlib from 'zlib';
 import JSZip from 'jszip';
+import ArrayStream from './array-stream';
 import * as util from './util';
 
 const sourcePaths = [''];
@@ -210,4 +213,32 @@ export function dumpSDK(outdir: string): void {
       fs.writeFileSync(path.join(outdir, res), load(res), 'utf8');
     });
   }
+}
+
+// based on https://github.com/nodejs/node/blob/98971/lib/repl.js#L710
+export function getJSCompletions(
+  line: string,
+  match: string,
+  cb: (string[]) => void,
+): void {
+  const flat = new ArrayStream();
+  const nodeReplServer = new REPLServer('', flat);
+  const lineWithoutMatch = line.substring(0, line.length - match.length);
+
+  return nodeReplServer.completer(match, (err: ?Error, [
+    jsCompletions,
+  ]: [string[], string]) => {
+    const completions = jsCompletions.reduce(
+      (cs: string[], c: string) => {
+        if (c === '') {
+          return cs;
+        }
+
+        cs.push(`${lineWithoutMatch}${c}`);
+        return cs;
+      },
+      [],
+    );
+    return cb(completions);
+  });
 }
