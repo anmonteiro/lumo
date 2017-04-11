@@ -58,13 +58,11 @@ ENV BOOT_JVM_OPTIONS="-client -XX:+TieredCompilation -XX:TieredStopAtLevel=1 -Xm
 
 RUN mkdir -p /out
 
-RUN mkdir -p /lumo
-
-RUN git clone https://github.com/anmonteiro/lumo.git /lumo \
-  && cd /lumo \
+RUN git clone https://github.com/anmonteiro/lumo.git /out \
+  && cd /out \
   && git checkout fa334d2a18ff5ba867e4f5fe2c12b5885346af77 \
   && boot release-ci \
-  && mv tmp /out
+  && ls | grep -v tmp | xargs rm -rf
 
 WORKDIR /out
 
