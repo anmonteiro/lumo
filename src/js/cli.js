@@ -38,6 +38,7 @@ export function createBanner(): string {
   // $FlowFixMe: we know for sure this file will exist.
   return `Lumo ${lumoVersion}
 ClojureScript ${lumo.load('clojurescript-version')}
+Node.js ${process.version}
  Docs: (doc function-name-here)
  Exit: Control+D or :cljs/quit or exit
 
