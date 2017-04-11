@@ -23,6 +23,7 @@
   '[boot.util             :as util]
   '[clojure.edn           :as edn]
   '[clojure.string        :as str]
+  '[clojure.data.json     :as json]
   '[clojure.java.io       :as io]
   '[cognitect.transit     :as transit])
 
@@ -136,6 +137,9 @@
                      #"^goog[\\\/](test_module.*?|transpile).js"}
       :invert true)))
 
+(def lumo-version
+  (get (json/read-str (slurp "package.json")) "version"))
+
 (deftask compile-cljs []
   (cljs :compiler-options {:optimizations :simple
                            :main 'lumo.core
@@ -145,7 +149,8 @@
                            :static-fns true
                            :optimize-constants false
                            :verbose true
-                           :closure-defines {'cljs.core/*target* "nodejs"}
+                           :closure-defines {'cljs.core/*target* "nodejs"
+                                             'lumo.core/*lumo-version* lumo-version}
                            :compiler-stats true
                            :parallel-build true}))
 
