@@ -6,9 +6,9 @@
 
 - Return exit code `1` on exception ([#58](https://github.com/anmonteiro/lumo/issues/58)).
 - Pretty print evaluation results.
-- Add ability to kill infinite loops at the REPL with `ctrl+c`.
-- Print the version node.js in the repl ([#104](https://github.com/anmonteiro/lumo/issues/104)).
-- Add programmatic access to lumo version through `lumo.core/*lumo-version*`
+- Add ability to kill infinite loops at the REPL with `Ctrl+C`.
+- Print the Node.js version in the repl ([#104](https://github.com/anmonteiro/lumo/issues/104)).
+- Add programmatic access to Lumo's version through `lumo.core/*lumo-version*`
 ([#127](https://github.com/anmonteiro/lumo/issues/127)).
 
 ### Changes
@@ -16,7 +16,6 @@
 - Print namespaced maps at the REPL.
 - Do not print empty line if input is empty or whitespace only  (make behavior
 consistent with `clojure.main`).
-- JavaScript completion only works in readline mode ([#103](https://github.com/anmonteiro/lumo/issues/103)).
 - Invalidate cache when source file changes ([#54](https://github.com/anmonteiro/lumo/issues/54)).
 
 ### Bug fixes
@@ -25,6 +24,7 @@ consistent with `clojure.main`).
 - Fix crash related to calculating indentation when entering multi-line forms at
 the REPL ([#120](https://github.com/anmonteiro/lumo/issues/120)).
 - Fix `doc` for special forms ([#124](https://github.com/anmonteiro/lumo/issues/124)).
+- JavaScript completion only works in readline mode ([#103](https://github.com/anmonteiro/lumo/issues/103)).
 - Comments in the REPL cause reader exception errors ([#74](https://github.com/anmonteiro/lumo/issues/74)).
 
 ## [1.3.0](https://github.com/anmonteiro/lumo/compare/1.2.0...1.3.0) (2017-04-02)
