@@ -47,6 +47,7 @@ const external = [
   'path',
   'readline',
   'repl',
+  'stream',
   'tty',
   'v8',
   'vm',

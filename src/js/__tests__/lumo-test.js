@@ -46,19 +46,19 @@ describe('lumo', () => {
       beforeEach(() => {
         jest.resetModules();
         zlib.inflateSync = jest.fn((x: string) => x);
-        jest.mock(
-          'nexeres',
-          () => ({
-            get: (resource: string) => {
-              if (resource === 'foo') {
-                return 'fooContents';
-              }
-              throw new Error('Inexistent resource');
+        global.lumo = {
+          internal: {
+            embedded: {
+              keys: jest.fn(() => ['foo']),
+              get: jest.fn((resource: string) => {
+                if (resource === 'foo') {
+                  return 'fooContents';
+                }
+                return null;
+              }),
             },
-            keys: () => ['foo'],
-          }),
-          { virtual: true },
-        );
+          },
+        };
 
         __DEV__ = false;
         lumo = require('../lumo'); // eslint-disable-line global-require
@@ -67,6 +67,7 @@ describe('lumo', () => {
       afterEach(() => {
         __DEV__ = true;
         zlib.inflateSync = inflateSync;
+        delete global.lumo;
       });
 
       it('returns the contents of a (bundled) file when it exists', () => {

@@ -126,12 +126,15 @@ describe('startREPL', () => {
 
   describe('sets dumb-terminal', () => {
     const isWin = util.isWindows;
+    const isTTY = process.stdin.isTTY;
 
     beforeEach(() => {
+      process.stdin.isTTY = true;
       process.stdin.setRawMode.mockClear();
     });
 
     afterEach(() => {
+      process.stdin.isTTY = isTTY;
       util.isWindows = isWin;
     });
 

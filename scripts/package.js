@@ -3,6 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const os = require('os');
 const zlib = require('zlib');
+const embed = require('./embed');
 
 const nodeVersion = '7.8.0';
 
@@ -57,6 +58,8 @@ function moveLibs(compiler, options, callback) {
 }
 
 Promise.all(resources.map(deflate)).then(() => {
+  embed(resources, 'target');
+
   // prettier-ignore
   nexe.compile(
     {
@@ -74,8 +77,6 @@ Promise.all(resources.map(deflate)).then(() => {
       ],
       nodeMakeArgs: ['-j', '4'],
       nodeVCBuildArgs: ['nosign', 'x64', 'noetw', 'noperfctr'],
-      resourceFiles: resources,
-      resourceRoot: 'target',
       flags: true,
       startupSnapshot: 'target/main.js',
       noBundle: true,

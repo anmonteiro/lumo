@@ -7,10 +7,12 @@
     "jest": true
   },
   "globals" : {
-    "__DEV__": true
+    "__DEV__": true,
+    "lumo": true,
   },
   "plugins" : ["flowtype", "import", "babel"],
   "rules" : {
+    "linebreak-style": 0,
     "no-duplicate-imports": 0,
     "no-unused-vars": ["error", { "args": "none" }],
     "no-cond-assign": [2, "except-parens"],
