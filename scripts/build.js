@@ -4,8 +4,7 @@ const babel = require('rollup-plugin-babel');
 const replace = require('rollup-plugin-replace');
 const resolve = require('rollup-plugin-node-resolve');
 const commonjs = require('rollup-plugin-commonjs');
-const uglify = require('rollup-plugin-uglify');
-const minify = require('uglify-js-harmony').minify;
+const babili = require('rollup-plugin-babili');
 
 const argv = process.argv.slice(2);
 const isDevBuild = /(--dev|-d)$/.test(argv[0]);
@@ -54,8 +53,6 @@ const external = [
   'zlib',
 ];
 
-// TODO:
-// - babili
 const replacement = JSON.stringify(isDevBuild ? 'development' : 'production');
 const plugins = [
   babel(),
@@ -73,7 +70,14 @@ const plugins = [
 ];
 
 if (!isDevBuild) {
-  plugins.push(uglify({}, minify));
+  // prettier-ignore
+  plugins.push(
+    babili({
+      comments: false,
+      removeConsole: true,
+      removeDebugger: true,
+    })
+  );
 }
 
 rollup({
