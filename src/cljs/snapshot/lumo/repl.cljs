@@ -635,7 +635,9 @@
     (doc* special-name)
     (cond
       (special-doc-map name)
-      (cljs.repl/print-doc (special-doc-map name))
+      (cljs.repl/print-doc (merge (special-doc-map name)
+                             {:special-form true
+                              :name name}))
 
       (repl-special-doc-map name)
       (cljs.repl/print-doc (repl-special-doc name))

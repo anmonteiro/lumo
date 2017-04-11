@@ -19,6 +19,7 @@ consistent with `clojure.main`).
 - `print` always outputs newline ([#116](https://github.com/anmonteiro/lumo/issues/116)).
 - Fix crash related to calculating indentation when entering multi-line forms at
 the REPL ([#120](https://github.com/anmonteiro/lumo/issues/120)).
+- Fix `doc` for special forms ([#124](https://github.com/anmonteiro/lumo/issues/124)).
 
 ## [1.3.0](https://github.com/anmonteiro/lumo/compare/1.2.0...1.3.0) (2017-04-02)
 

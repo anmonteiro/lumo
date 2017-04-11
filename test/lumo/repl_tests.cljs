@@ -78,3 +78,24 @@
   (is (= (lumo/get-arglists "whatever") nil))
   (is (= (lumo/get-arglists "map") '([f] [f coll] [f c1 c2] [f c1 c2 c3] [f c1 c2 c3 & colls])))
   (is (= (lumo/get-arglists "when") '([test & body]))))
+
+(deftest test-repl-special-doc
+  (is (= (with-out-str (lumo/doc merge))
+         "-------------------------
+cljs.core/merge
+([& maps])
+  Returns a map that consists of the rest of the maps conj-ed onto
+  the first.  If a key occurs in more than one map, the mapping from
+  the latter (left-to-right) will be the mapping in the result.
+"))
+  (is (= (with-out-str (lumo/doc if))
+         "-------------------------
+if
+   (if test then else?)
+Special Form
+  Evaluates test. If not the singular values nil or false,
+  evaluates and yields then, otherwise, evaluates and yields else. If
+  else is not supplied it defaults to nil.
+
+  Please see http://clojure.org/special_forms#if
+")))
