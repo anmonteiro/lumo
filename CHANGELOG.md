@@ -8,6 +8,8 @@
 - Pretty print evaluation results.
 - Add ability to kill infinite loops at the REPL with `ctrl+c`.
 - Print the version node.js in the repl ([#104](https://github.com/anmonteiro/lumo/issues/104)).
+- Add programmatic access to lumo version through `lumo.core/*lumo-version*`
+([#127](https://github.com/anmonteiro/lumo/issues/127)).
 
 ### Changes
 

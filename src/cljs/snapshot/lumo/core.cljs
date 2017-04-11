@@ -6,4 +6,6 @@
   none were supplied"}
   *command-line-args* nil)
 
-(set! *main-cli-fn* (fn []))
+(def *lumo-version*
+  "A string containing the version of the Lumo executable."
+  js/$$LUMO_GLOBALS.lumoVersion)

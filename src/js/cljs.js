@@ -11,6 +11,7 @@ import JSZip from 'jszip';
 import parinfer from 'parinfer';
 import * as lumo from './lumo';
 import startREPL, { currentREPLInterface } from './repl';
+import version from './version';
 
 import type { CLIOptsType } from './cli';
 
@@ -129,6 +130,7 @@ function newDevelopmentContext(): vm$Context {
       addSourcePaths: lumo.addSourcePaths,
       readSourcePaths: lumo.readSourcePaths,
       setExitValue: lumo.setExitValue,
+      lumoVersion: version,
     },
     global: undefined,
   };
@@ -160,6 +162,7 @@ function newClojureScriptContext(): { [key: string]: mixed } {
     addSourcePaths: lumo.addSourcePaths,
     readSourcePaths: lumo.readSourcePaths,
     setExitValue: lumo.setExitValue,
+    lumoVersion: version,
   };
 
   return global;
