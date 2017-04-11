@@ -23,12 +23,15 @@ const originalStdoutWrite = process.stdout.write;
 const originalStderrWrite = process.stderr.write;
 const pathResolve = path.resolve;
 const exit = process.exit;
+const nodeVersion = process.version;
 
 beforeAll(() => {
+  process.version = 'X.X.X';
   process.exit = jest.fn();
 });
 
 afterAll(() => {
+  process.version = nodeVersion;
   process.exit = exit;
 });
 

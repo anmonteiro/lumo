@@ -14,7 +14,7 @@ Array [
   Array [
     "Lumo X.X.X
 ClojureScript clojurescript-version
-Node.js ${process.version}
+Node.js X.X.X
  Docs: (doc function-name-here)
  Exit: Control+D or :cljs/quit or exit
 
@@ -32,7 +32,7 @@ Array [
   Array [
     "Lumo X.X.X
 ClojureScript clojurescript-version
-Node.js ${process.version}
+Node.js X.X.X
  Docs: (doc function-name-here)
  Exit: Control+D or :cljs/quit or exit
 
