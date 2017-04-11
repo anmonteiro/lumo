@@ -66,9 +66,11 @@ RUN git clone https://github.com/anmonteiro/lumo.git /out \
 
 WORKDIR /out
 
-COPY . /out
+COPY package.json /out
+COPY yarn.lock /out
 
-RUN $BOOT_INSTALL/boot
 RUN yarn install
+
+COPY . /out
 
 CMD [ "/bin/bash" ]

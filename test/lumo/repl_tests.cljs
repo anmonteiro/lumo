@@ -5,7 +5,7 @@
             [lumo.common :as common]
             [lumo.test-util :as test-util]))
 
-(use-fixtures :once test-util/with-parinfer test-util/with-cache)
+(use-fixtures :once test-util/with-lumo-globals test-util/with-cache)
 
 (deftest test-is-readable?
   (is (false? (lumo/is-readable? "(")))

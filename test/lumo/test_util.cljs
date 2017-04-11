@@ -4,8 +4,10 @@
             [lumo.common :as common])
   (:require-macros [cljs.env.macros :as env]))
 
-(defn with-parinfer [f]
-  (set! (. js/global -$$LUMO_GLOBALS) #js {:parinfer (node/require "parinfer")})
+(defn with-lumo-globals [f]
+  (set! (. js/global -$$LUMO_GLOBALS)
+    #js {:parinfer (node/require "parinfer")
+         :getJSCompletions (fn [_ _ cb] (cb #js ["js/console"]))})
   (f)
   (set! (. js/global -$$LUMO_GLOBALS) nil))
 
