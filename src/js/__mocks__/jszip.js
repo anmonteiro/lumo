@@ -6,6 +6,7 @@ JSZip.mockImplementation(() => ({
       return {
         file: () => ({
           asText: () => 'zipContents',
+          date: new Date(),
         }),
       };
     }

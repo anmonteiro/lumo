@@ -82,7 +82,10 @@ describe('lumo', () => {
 
   describe('readCache', () => {
     it('returns the contents of a (cached) file when it exists', () => {
-      expect(lumo.readCache('foo')).toBe('fooContents');
+      expect(lumo.readCache('foo')).toEqual({
+        source: 'fooContents',
+        modified: expect.any(Number),
+      });
     });
 
     it("returns null when a file doesn't exist", () => {
@@ -150,7 +153,10 @@ describe('lumo', () => {
 
         const source = lumo.readSource('some/thing');
 
-        expect(source).toBe('zipContents');
+        expect(source).toEqual({
+          source: 'zipContents',
+          modified: expect.any(Number),
+        });
       });
 
       it("should return null when the JAR doesn't have the source", () => {
