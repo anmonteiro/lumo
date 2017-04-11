@@ -22,6 +22,7 @@ consistent with `clojure.main`).
 - Fix crash related to calculating indentation when entering multi-line forms at
 the REPL ([#120](https://github.com/anmonteiro/lumo/issues/120)).
 - Fix `doc` for special forms ([#124](https://github.com/anmonteiro/lumo/issues/124)).
+- Comments in the REPL cause reader exception errors ([#74](https://github.com/anmonteiro/lumo/issues/74)).
 
 ## [1.3.0](https://github.com/anmonteiro/lumo/compare/1.2.0...1.3.0) (2017-04-02)
 

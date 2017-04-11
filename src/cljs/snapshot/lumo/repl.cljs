@@ -781,7 +781,9 @@
                   (vreset! current-ns ns))
                 (handle-error error)))))))
     (catch :default e
-      (handle-error e)))
+      ;; `;;` and `#_`
+      (when-not (identical? (.-message e) "EOF")
+        (handle-error e))))
   nil)
 
 (defn- execute-source
