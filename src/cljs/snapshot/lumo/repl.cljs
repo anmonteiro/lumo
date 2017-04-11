@@ -200,42 +200,48 @@
            :source (string/join "\n" sources)})
       :loaded)))
 
-;; TODO: can be optimized e.g. to just analyze CLJ source
-;; if JS present but no analysis cache
+;; TODO: build options (e.g.: static-fns) also affect cache
+(defn- cached-callback-data
+  [cache-dir cache-prefix source-data]
+  (when-not (nil? cache-dir)
+    (let [cache-filename (str cache-prefix JS_EXT)
+          cached-data (js/$$LUMO_GLOBALS.readCache cache-filename)]
+      (when (and cached-data
+              (> (.-modified cached-data) (.-modified source-data)))
+        (when-let [cache-json (js/$$LUMO_GLOBALS.readCache (str cache-prefix ".cache.json"))]
+          {:lang :js
+           :source (.-source cached-data)
+           :filename cache-filename
+           :cache (common/transit-json->cljs (.-source cache-json))})))))
+
+;; TODO: can be optimized e.g. to just analyze CLJ sourced if JS present
+;; but no analysis cache
 (defn- load-external
-  [path file-path macros? cb]
-  ;; first check if the source is cached
-  (let [cache-dir (:cache-path @app-opts)
-        cache-prefix (str cache-dir "/" (munge path) (when macros? MACROS_SUFFIX))]
-    (if-let [cached-source (and cache-dir
-                             (js/$$LUMO_GLOBALS.readCache (str cache-prefix JS_EXT)))]
-      (let [cache-json (js/$$LUMO_GLOBALS.readCache (str cache-prefix ".cache.json"))]
-        (cb {:lang :js
-             :source cached-source
-             :filename (str cache-prefix JS_EXT)
-             :cache (common/transit-json->cljs cache-json)})
-        :loaded)
-      (let [filename file-path]
-        (when-let [source (js/$$LUMO_GLOBALS.readSource filename)]
-          (let [ret {:lang   (filename->lang filename)
-                     :file   filename
-                     :source source}]
-            (if (or (string/ends-with? filename ".cljs")
-                    (string/ends-with? filename ".cljc"))
-              (if-let [javascript-source (js/$$LUMO_GLOBALS.readSource (replace-extension filename JS_EXT))]
-                (if-let [cache-edn (js/$$LUMO_GLOBALS.readSource (str filename ".cache.edn"))]
+  [path filename macros? cb]
+  (when-let [source-data (js/$$LUMO_GLOBALS.readSource filename)]
+    (let [cache-dir (:cache-path @app-opts)
+          cache-prefix (str cache-dir "/" (munge path) (when macros? MACROS_SUFFIX))]
+      (if-let [cached-callback-data (cached-callback-data cache-dir cache-prefix source-data)]
+        (cb cached-callback-data)
+        (let [ret {:lang   (filename->lang filename)
+                   :file   filename
+                   :source (.-source source-data)}]
+          (if (or (string/ends-with? filename ".cljs")
+                (string/ends-with? filename ".cljc"))
+            (if-let [javascript-source (js/$$LUMO_GLOBALS.readSource (replace-extension filename JS_EXT))]
+              (if-let [cache-edn (js/$$LUMO_GLOBALS.readSource (str filename ".cache.edn"))]
+                (cb {:lang   :js
+                     :source (.-source javascript-source)
+                     :cache  (parse-edn cache-edn)})
+                ;; one last attempt to read analysis cache
+                (if-let [cache-json (js/$$LUMO_GLOBALS.readSource (str filename ".cache.json"))]
                   (cb {:lang   :js
-                       :source javascript-source
-                       :cache  (parse-edn cache-edn)})
-                  ;; one last attempt to read analysis cache
-                  (if-let [cache-json (js/$$LUMO_GLOBALS.readSource (str filename ".cache.json"))]
-                    (cb {:lang   :js
-                         :source javascript-source
-                         :cache  (common/transit-json->cljs cache-json)})
-                    (cb ret)))
-                (cb ret))
-              (cb ret)))
-          :loaded)))))
+                       :source (.-source javascript-source)
+                       :cache  (common/transit-json->cljs cache-json)})
+                  (cb ret)))
+              (cb ret))
+            (cb ret))))
+      :loaded)))
 
 (defn- load-and-cb!
   [name path file-path macros? cb]

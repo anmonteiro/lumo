@@ -13,6 +13,11 @@ import * as util from './util';
 
 const sourcePaths = [''];
 
+type SourceType = {|
+  source: string,
+  modified: number,
+|};
+
 type ResourceType =
   | {|
       type: 'bundled',
@@ -77,7 +82,7 @@ export function getGoogleClosureCompiler(): Function {
 }
 
 // TODO: cache JARs that we know have a given file / path
-export function readSource(filename: string): ?string {
+export function readSource(filename: string): ?SourceType {
   const len = sourcePaths.length;
   for (let i = 0; i < len; i += 1) {
     const srcPath = sourcePaths[i];
@@ -86,22 +91,31 @@ export function readSource(filename: string): ?string {
       if (srcPath.endsWith('.jar')) {
         const data = fs.readFileSync(srcPath);
         const zip = new JSZip().load(data);
-        const source = zip.file(filename);
+        const file = zip.file(filename);
 
-        if (source != null) {
-          return source.asText();
+        if (file != null) {
+          return {
+            source: file.asText(),
+            modified: file.date.getTime(),
+          };
         }
       }
-
-      return fs.readFileSync(path.join(srcPath, filename), 'utf8');
+      const filePath = path.join(srcPath, filename);
+      return {
+        source: fs.readFileSync(filePath, 'utf8'),
+        modified: fs.statSync(filePath).mtime.getTime(),
+      };
     } catch (_) {} // eslint-disable-line no-empty
   }
   return null;
 }
 
-export function readCache(filename: string): ?string {
+export function readCache(filename: string): ?SourceType {
   try {
-    return fs.readFileSync(filename, 'utf8');
+    return {
+      source: fs.readFileSync(filename, 'utf8'),
+      modified: fs.statSync(filename).mtime.getTime(),
+    };
   } catch (_) {
     return null;
   }

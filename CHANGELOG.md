@@ -17,6 +17,7 @@
 - Do not print empty line if input is empty or whitespace only  (make behavior
 consistent with `clojure.main`).
 - JavaScript completion only works in readline mode ([#103](https://github.com/anmonteiro/lumo/issues/103)).
+- Invalidate cache when source file changes ([#54](https://github.com/anmonteiro/lumo/issues/54)).
 
 ### Bug fixes
 
