@@ -62,10 +62,10 @@ return require("vm")
     ClojureScriptContext.exports = undefined;
   }
 
-  utilBinding.startSigintWatchdog();
-
   if (currentREPLInterface != null) {
+    utilBinding.startSigintWatchdog();
     const previouslyInRawMode = currentREPLInterface._setRawMode(false);
+
     try {
       ret = __DEV__
         ? // $FlowFixMe: this type differs according to the env
@@ -77,7 +77,6 @@ return require("vm")
       }
     } finally {
       currentREPLInterface._setRawMode(previouslyInRawMode);
-
       const hadPendingSignals = utilBinding.stopSigintWatchdog();
       if (hadPendingSignals) {
         currentREPLInterface.emit('SIGINT');
@@ -100,6 +99,28 @@ return require("vm")
   return ret;
 }
 
+function doPrint(cb: (value: string) => void, arg: string): void {
+  if (currentREPLInterface != null) {
+    utilBinding.startSigintWatchdog();
+
+    const previouslyInRawMode = currentREPLInterface._setRawMode(false);
+    try {
+      cb(arg);
+    } catch (_) {
+      // eslint-disable-line no-empty
+    } finally {
+      currentREPLInterface._setRawMode(previouslyInRawMode);
+
+      const hadPendingSignals = utilBinding.stopSigintWatchdog();
+      if (hadPendingSignals) {
+        currentREPLInterface.emit('SIGINT');
+      }
+    }
+  } else {
+    cb(arg);
+  }
+}
+
 function newDevelopmentContext(): vm$Context {
   // $FlowFixMe: we know for sure this file will exist.
   const cljsScript = new vm.Script(lumo.load('main.js'), {});
@@ -117,6 +138,7 @@ function newDevelopmentContext(): vm$Context {
       getGoogleClosureCompiler: lumo.getGoogleClosureCompiler,
       getJSCompletions: lumo.getJSCompletions,
       parinfer,
+      doPrint,
       JSZip,
       load: lumo.load,
       readCache: lumo.readCache,
@@ -148,6 +170,7 @@ function newClojureScriptContext(): { [key: string]: mixed } {
     getGoogleClosureCompiler: lumo.getGoogleClosureCompiler,
     getJSCompletions: lumo.getJSCompletions,
     parinfer,
+    doPrint,
     JSZip,
     load: lumo.load,
     readCache: lumo.readCache,
@@ -193,11 +216,18 @@ class DiscardingSender extends Stream.Writable {
   }
 }
 
-function printFn(...args: mixed[]): void {
+function printFn(...args: string[]): void {
+  if (utilBinding.watchdogHasPendingSigint()) {
+    throw null; // eslint-disable-line no-throw-literal
+  }
   cljsSender.write(args.join(' '));
 }
 
-function printErrFn(...args: mixed[]): void {
+function printErrFn(...args: string[]): void {
+  if (utilBinding.watchdogHasPendingSigint()) {
+    throw null; // eslint-disable-line no-throw-literal
+  }
+
   process.stderr.write(args.join(' '));
 }
 

@@ -23,6 +23,8 @@ function handleConnection(socket: net$Socket): REPLSession {
     deleteSession(session);
   });
 
+  socket.on('error', () => {});
+
   sockets[session.sessionId] = socket;
 
   rl.on('line', (line: string) => {

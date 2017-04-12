@@ -415,7 +415,7 @@
 ;; Error handling
 
 (defn- ^:boolean could-not-eval? [msg]
-  (boolean (re-find could-not-eval-regex msg)))
+  (and (not (nil? msg)) (boolean (re-find could-not-eval-regex msg))))
 
 (defn- handle-error [error]
   (let [message (ex-message error)
@@ -783,7 +783,7 @@
                 (when expression?
                   (when (or print-nil-result?
                             (not (nil? value)))
-                    (print-value value))
+                    (js/$$LUMO_GLOBALS.doPrint print-value value))
                   (vreset! current-ns ns))
                 (handle-error error)))))))
     (catch :default e

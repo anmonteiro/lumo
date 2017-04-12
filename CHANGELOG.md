@@ -10,6 +10,7 @@
 - Print the Node.js version in the repl ([#104](https://github.com/anmonteiro/lumo/issues/104)).
 - Add programmatic access to Lumo's version through `lumo.core/*lumo-version*`
 ([#127](https://github.com/anmonteiro/lumo/issues/127)).
+- Interrupt printing at the REPL with `Ctrl+C` ([#107](https://github.com/anmonteiro/lumo/issues/107))
 
 ### Changes
 
