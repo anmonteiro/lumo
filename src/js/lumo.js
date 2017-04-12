@@ -188,18 +188,16 @@ export function addSourcePaths(srcPaths: string[]): void {
   sourcePaths.push(...expanded);
 }
 
-export const readFile = fs.readFileSync;
-
-export const stat = fs.statSync;
-
-export const readdir = fs.readdirSync;
-
 export function readSourcePaths(): string[] {
   return [...sourcePaths];
 }
 
 export function removeSourcePath(srcPath: string): void {
-  sourcePaths.splice(sourcePaths.indexOf(srcPath), 1);
+  const idx = sourcePaths.indexOf(srcPath);
+
+  if (idx !== -1) {
+    sourcePaths.splice(idx, 1);
+  }
 }
 
 export function readSourceFromJar({
