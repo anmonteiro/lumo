@@ -18,6 +18,8 @@
 - Do not print empty line if input is empty or whitespace only  (make behavior
 consistent with `clojure.main`).
 - Invalidate cache when source file changes ([#54](https://github.com/anmonteiro/lumo/issues/54)).
+- Upgrade ClojureScript to version 1.9.518.
+- Upgrade Closure Compiler JS to version v20170409.
 
 ### Bug fixes
 
