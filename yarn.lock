@@ -257,8 +257,8 @@ babel-core@6, babel-core@^6.0.0, babel-core@^6.21.0, babel-core@^6.24.1:
     source-map "^0.5.0"
 
 babel-eslint@^7.2.1:
-  version "7.2.1"
-  resolved "https://registry.yarnpkg.com/babel-eslint/-/babel-eslint-7.2.1.tgz#079422eb73ba811e3ca0865ce87af29327f8c52f"
+  version "7.2.2"
+  resolved "https://registry.yarnpkg.com/babel-eslint/-/babel-eslint-7.2.2.tgz#0da2cbe6554fd0fb069f19674f2db2f9c59270ff"
   dependencies:
     babel-code-frame "^6.22.0"
     babel-traverse "^6.23.1"
@@ -3108,7 +3108,7 @@ ncp@^2.0.0:
 
 "nexe@github:anmonteiro/nexe#master":
   version "1.1.2"
-  resolved "https://codeload.github.com/anmonteiro/nexe/tar.gz/b6d4ca38a39f418a5816cbed282596442dbd487f"
+  resolved "https://codeload.github.com/anmonteiro/nexe/tar.gz/0c2c1a7f35dcc44c3a4e4d9ec4c9ed68eed61518"
   dependencies:
     async "^1.5.2"
     browserify "^13.0.0"
