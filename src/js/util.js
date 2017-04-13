@@ -43,7 +43,7 @@ function ensureDirInner(dir: string): void {
 }
 
 export function ensureDir(dir: string): void {
-  const dirs = dir.split(/(\/[^\/]+)/);
+  const dirs = dir.split(/(\/[^\/]+)/); // eslint-disable-line no-useless-escape
   const len = dirs.length;
 
   for (let i = 0; i < len; i += 1) {
