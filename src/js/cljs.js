@@ -19,6 +19,7 @@ const utilBinding = process.binding('util');
 
 let ClojureScriptContext;
 
+const interruptSentinel = {};
 const scriptOptions = {
   displayErrors: true,
   breakOnSigint: true,
@@ -106,8 +107,10 @@ function doPrint(cb: (value: string) => void, arg: string): void {
 
     try {
       cb(arg);
-    } catch (_) {
-      // eslint-disable-line no-empty
+    } catch (e) {
+      if (e !== interruptSentinel) {
+        throw e;
+      }
     } finally {
       currentREPLInterface._setRawMode(previouslyInRawMode);
 
@@ -218,14 +221,14 @@ class DiscardingSender extends Stream.Writable {
 
 function printFn(...args: string[]): void {
   if (utilBinding.watchdogHasPendingSigint()) {
-    throw null; // eslint-disable-line no-throw-literal
+    throw interruptSentinel;
   }
   cljsSender.write(args.join(' '));
 }
 
 function printErrFn(...args: string[]): void {
   if (utilBinding.watchdogHasPendingSigint()) {
-    throw null; // eslint-disable-line no-throw-literal
+    throw interruptSentinel;
   }
 
   process.stderr.write(args.join(' '));
