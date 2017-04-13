@@ -73,6 +73,7 @@ jest.mock('../cljs', () => ({
   setPrintFns: jest.fn(),
   isPrintingNewline: jest.fn(),
   getCurrentNamespace: jest.fn(() => 'cljs.user'),
+  clearREPLSessionState: jest.fn,
 }));
 
 jest.mock('../socketRepl', () => ({
@@ -309,7 +310,7 @@ describe('startREPL', () => {
         const repl = require('../repl'); // eslint-disable-line global-require
         const replCreateSession = repl.createSession;
         repl.createSession = jest.fn(() => ({
-          sessionId: 0,
+          id: 0,
         }));
         startREPL({});
 
@@ -324,8 +325,8 @@ describe('startREPL', () => {
       it('that are isolated by unique and incrementing ids', () => {
         startREPL({});
 
-        expect(handleConnection(socket).sessionId).toBe(1);
-        expect(handleConnection(socket).sessionId).toBe(2);
+        expect(handleConnection(socket).id).toBe(1);
+        expect(handleConnection(socket).id).toBe(2);
       });
     });
   });

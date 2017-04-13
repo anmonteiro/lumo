@@ -435,8 +435,9 @@
 
         :else
         (println error)))
-    (when-not (:repl? @app-opts)
-      (js/$$LUMO_GLOBALS.setExitValue 1))))
+    (if-not (:repl? @app-opts)
+      (js/$$LUMO_GLOBALS.setExitValue 1)
+      (set! *e error))))
 
 ;; --------------------
 ;; REPL specials
@@ -693,9 +694,6 @@
     (= "EOF while reading" msg)
     (= "EOF while reading string" msg)))
 
-(defn print-value [value]
-  (pprint/pprint value))
-
 (defn- read-chars
   [reader]
   (let [sb (StringBuffer.)]
@@ -726,6 +724,72 @@
               (keyword-identical? op :ns*))
       name)))
 
+(defn print-value [value]
+  (pprint/pprint value))
+
+(defn- capture-session-state
+  "Captures all of the commonly set global vars as a session state map."
+  []
+  {:*print-meta* *print-meta*
+   :*print-length* *print-length*
+   :*print-level* *print-level*
+   :*print-namespace-maps* *print-namespace-maps*
+   :*unchecked-if* *unchecked-if*
+   :*assert* *assert*
+   :*1 *1
+   :*2 *2
+   :*3 *3
+   :*e *e})
+
+(defn- set-session-state
+  "Sets the session state given a sesssion state map."
+  [session-state]
+  (set! *print-meta* (:*print-meta* session-state))
+  (set! *print-length* (:*print-length* session-state))
+  (set! *print-level* (:*print-level* session-state))
+  (set! *print-namespace-maps* (:*print-namespace-maps* session-state))
+  (set! *unchecked-if* (:*unchecked-if* session-state))
+  (set! *assert* (:*assert* session-state))
+  (set! *1 (:*1 session-state))
+  (set! *2 (:*2 session-state))
+  (set! *3 (:*3 session-state))
+  (set! *e (:*e session-state)))
+
+(def ^{:private true
+       :doc     "The default state used to initialize a new REPL session."} default-session-state
+  (atom (capture-session-state)))
+
+(defonce ^{:private true
+           :doc     "The state for each session, keyed by session ID."} session-states (atom {}))
+
+(defn- ^:export clear-state-for-session
+  "Clears the session state for a completed session."
+  [session-id]
+  (swap! session-states dissoc session-id))
+
+(defn- set-session-state-for-session-id!
+  "Sets the session state for a given session."
+  [session-id]
+  (set-session-state (get @session-states session-id @default-session-state)))
+
+(defn- capture-session-state-for-session-id
+  "Captures the session state for a given session."
+  [session-id]
+  (swap! session-states assoc session-id (capture-session-state)))
+
+(defn- ns-form?
+  [form]
+  (and (seq? form) (symbol-identical? 'ns (first form))))
+
+(defn- process-1-2-3
+  [form value]
+  (when-not
+    (or ('#{*1 *2 *3 *e} form)
+        (ns-form? form))
+    (set! *3 *2)
+    (set! *2 *1)
+    (set! *1 value)))
+
 (declare execute-source)
 
 (defn- execute-path [file opts]
@@ -753,8 +817,9 @@
         (handle-error (ex-info (str "Could not load file " file) {}))))))
 
 (defn- execute-text
-  [source {:keys [expression? print-nil-result? filename] :as opts}]
+  [source {:keys [expression? print-nil-result? filename session-id] :as opts}]
   (try
+    (set-session-state-for-session-id! session-id)
     (binding [cljs/*eval-fn*   caching-node-eval
               cljs/*load-fn*   load
               ana/*cljs-ns*    @current-ns
@@ -784,12 +849,14 @@
                   (when (or print-nil-result?
                             (not (nil? value)))
                     (js/$$LUMO_GLOBALS.doPrint print-value value))
+                  (process-1-2-3 form value)
                   (vreset! current-ns ns))
                 (handle-error error)))))))
     (catch :default e
       ;; `;;` and `#_`
       (when-not (identical? (.-message e) "EOF")
-        (handle-error e))))
+        (handle-error e)))
+    (finally (capture-session-state-for-session-id session-id)))
   nil)
 
 (defn- execute-source
@@ -799,12 +866,13 @@
     (execute-text source-or-path opts)))
 
 (defn ^:export execute
-  [type source-or-path expression? print-nil-result? setNS]
+  [type source-or-path expression? print-nil-result? setNS session-id]
   (when setNS
     (vreset! current-ns (symbol setNS)))
   (execute-source source-or-path {:type type
                                   :expression? expression?
-                                  :print-nil-result? print-nil-result?}))
+                                  :print-nil-result? print-nil-result?
+                                  :session-id session-id}))
 
 (defn ^:export is-readable?
   [form]

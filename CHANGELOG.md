@@ -11,6 +11,7 @@
 - Add programmatic access to Lumo's version through `lumo.core/*lumo-version*`
 ([#127](https://github.com/anmonteiro/lumo/issues/127)).
 - Interrupt printing at the REPL with `Ctrl+C` ([#107](https://github.com/anmonteiro/lumo/issues/107))
+- Add missing Clojure repl special vars (*1, *2, *3, *e) ([#101](https://github.com/anmonteiro/lumo/issues/101))
 
 ### Changes
 

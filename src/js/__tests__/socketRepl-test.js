@@ -24,7 +24,7 @@ jest.mock('readline', () => ({
 function mockCreateSession(): void {
   const repl = require('../repl'); // eslint-disable-line global-require
   repl.createSession = jest.fn((rl: readline$Interface, isMain: boolean) => ({
-    sessionId: 1,
+    id: 1,
     rl,
     isMain,
   }));

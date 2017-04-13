@@ -102,8 +102,8 @@ return require("vm")
 function doPrint(cb: (value: string) => void, arg: string): void {
   if (currentREPLInterface != null) {
     utilBinding.startSigintWatchdog();
-
     const previouslyInRawMode = currentREPLInterface._setRawMode(false);
+
     try {
       cb(arg);
     } catch (_) {
@@ -272,10 +272,11 @@ function initClojureScriptEngine(opts: CLIOptsType): void {
 
 export function execute(
   code: string,
-  type: string = 'text',
-  expression: boolean = true,
-  printNilResult: boolean = true,
-  setNS: ?string,
+  type?: string = 'text',
+  expression?: boolean = true,
+  printNilResult?: boolean = true,
+  sessionID?: number = 0,
+  setNS?: string,
 ): void {
   // $FlowIssue: context can have globals
   return ClojureScriptContext.lumo.repl.execute(
@@ -284,6 +285,7 @@ export function execute(
     expression,
     printNilResult,
     setNS,
+    sessionID,
   );
 }
 
@@ -322,6 +324,11 @@ export function getCompletions(line: string, cb: (string[]) => void): void {
 export function isPrintingNewline(): boolean {
   // $FlowIssue: context can have globals
   return ClojureScriptContext.cljs.core._STAR_print_newline_STAR_;
+}
+
+export function clearREPLSessionState(sessionID: number): void {
+  // $FlowIssue: context can have globals
+  return ClojureScriptContext.lumo.repl.clear_state_for_session(sessionID);
 }
 
 function executeScripts(scripts: [string, string][]): void {
@@ -368,6 +375,7 @@ export default function startClojureScriptEngine(opts: CLIOptsType): void {
         'text',
         true,
         false,
+        0,
         'cljs.user',
       );
 

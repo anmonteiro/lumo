@@ -19,13 +19,13 @@ function handleConnection(socket: net$Socket): REPLSession {
   const session = createSession(rl, false);
 
   socket.on('close', () => {
-    delete sockets[session.sessionId];
+    delete sockets[session.id];
     deleteSession(session);
   });
 
   socket.on('error', () => {});
 
-  sockets[session.sessionId] = socket;
+  sockets[session.id] = socket;
 
   rl.on('line', (line: string) => {
     if (!socket.destroyed) {

@@ -20,7 +20,7 @@ type KeyType = {
 };
 
 export type REPLSession = {
-  sessionId: number,
+  id: number,
   rl: readline$Interface,
   isMain: boolean,
   input: string,
@@ -55,15 +55,15 @@ export function prompt(
 export let currentREPLInterface: ?readline$Interface;
 
 export function deleteSession(session: REPLSession): void {
-  delete sessions[session.sessionId];
+  cljs.clearREPLSessionState(session.id);
+  delete sessions[session.id];
 }
 
 function stopREPL(): void {
   socketServerClose();
 
   const keys = Object.keys(sessions);
-  keys.forEach((sessionId: string) =>
-    deleteSession(sessions[parseInt(sessionId, 10)]));
+  keys.forEach((id: string) => deleteSession(sessions[parseInt(id, 10)]));
 
   process.exit(lumo.EXIT_VALUE);
 }
@@ -100,7 +100,7 @@ export function processLine(replSession: REPLSession, line: string): void {
         cljs.setPrintFns(rl.output);
         currentREPLInterface = rl;
 
-        cljs.execute(session.input);
+        cljs.execute(session.input, 'text', true, true, session.id);
 
         currentREPLInterface = null;
         cljs.setPrintFns();
@@ -238,7 +238,7 @@ export function createSession(
   isMain: boolean,
 ): REPLSession {
   const session: REPLSession = {
-    sessionId: sessionCount,
+    id: sessionCount,
     rl,
     input: '',
     isMain,
@@ -246,7 +246,7 @@ export function createSession(
 
   sessionCount += 1;
 
-  sessions[session.sessionId] = session;
+  sessions[session.id] = session;
 
   return session;
 }
