@@ -130,9 +130,11 @@ describe('replHistory', () => {
       fs.stat = jest
         .fn()
         .mockImplementationOnce((path: string, cb: statCbType) =>
-          cb(null, { size: 0x10000000 }))
+          cb(null, { size: 0x10000000 }),
+        )
         .mockImplementationOnce((path: string, cb: statCbType) =>
-          cb(null, { size: 0x100 }));
+          cb(null, { size: 0x100 }),
+        );
     });
 
     afterAll(() => {

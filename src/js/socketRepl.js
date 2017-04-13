@@ -56,7 +56,8 @@ export function close(): void {
 
 export function open(port: number, host?: string = 'localhost'): void {
   socketServer = net.createServer((socket: net$Socket) =>
-    handleConnection(socket));
+    handleConnection(socket),
+  );
   socketServer.listen(port, host);
 
   process.on('SIGTERM', close);

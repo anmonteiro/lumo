@@ -130,23 +130,20 @@ export function writeCache(filename: string, source: string): ?Error {
 }
 
 export function loadUpstreamForeignLibs(): string[] {
-  return sourcePaths.reduce(
-    (ret: string[], srcPath: string) => {
-      if (srcPath.endsWith('.jar')) {
-        try {
-          const data = fs.readFileSync(srcPath);
-          const zip = new JSZip().load(data);
-          const source = zip.file('deps.cljs');
+  return sourcePaths.reduce((ret: string[], srcPath: string) => {
+    if (srcPath.endsWith('.jar')) {
+      try {
+        const data = fs.readFileSync(srcPath);
+        const zip = new JSZip().load(data);
+        const source = zip.file('deps.cljs');
 
-          if (source != null) {
-            ret.push(source.asText());
-          }
-        } catch (_) {} // eslint-disable-line no-empty
-      }
-      return ret;
-    },
-    [],
-  );
+        if (source != null) {
+          ret.push(source.asText());
+        }
+      } catch (_) {} // eslint-disable-line no-empty
+    }
+    return ret;
+  }, []);
 }
 
 export function resource(filename: string): ?ResourceType {
@@ -197,16 +194,14 @@ export function readSourcePaths(): string[] {
   return [...sourcePaths];
 }
 
-export function readSourceFromJar(
-  {
-    jarPath,
-    src,
-  }: {
-    type: string,
-    jarPath: string,
-    src: string,
-  },
-): string {
+export function readSourceFromJar({
+  jarPath,
+  src,
+}: {
+  type: string,
+  jarPath: string,
+  src: string,
+}): string {
   const data = fs.readFileSync(jarPath);
   const zip = new JSZip().load(data);
   const source = zip.file(src);
@@ -233,26 +228,24 @@ export function dumpSDK(outdir: string): void {
 export function getJSCompletions(
   line: string,
   match: string,
-  cb: (string[]) => void,
+  cb: string[] => void,
 ): void {
   const flat = new ArrayStream();
   const nodeReplServer = new REPLServer('', flat);
   const lineWithoutMatch = line.substring(0, line.length - match.length);
 
-  return nodeReplServer.completer(match, (err: ?Error, [
-    jsCompletions,
-  ]: [string[], string]) => {
-    const completions = jsCompletions.reduce(
-      (cs: string[], c: string) => {
-        if (c === '') {
-          return cs;
-        }
-
-        cs.push(`${lineWithoutMatch}${c}`);
+  return nodeReplServer.completer(match, (err: ?Error, [jsCompletions]: [
+    string[],
+    string,
+  ]) => {
+    const completions = jsCompletions.reduce((cs: string[], c: string) => {
+      if (c === '') {
         return cs;
-      },
-      [],
-    );
+      }
+
+      cs.push(`${lineWithoutMatch}${c}`);
+      return cs;
+    }, []);
     return cb(completions);
   });
 }

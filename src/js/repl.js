@@ -198,22 +198,19 @@ function highlight(
       rl.input = readStream;
 
       const now = currentTimeMicros();
-      const timeout = setTimeout(
-        () => {
-          const to = pendingHighlights[0];
+      const timeout = setTimeout(() => {
+        const to = pendingHighlights[0];
 
-          if (to != null && to[1] === now) {
-            pendingHighlights.shift();
-            // $FlowIssue: rl.output is there
-            readline.moveCursor(rl.output, cursor - cursorX, linesUp);
-            // $FlowIssue: rl.input is there
-            rl.input = oldInput;
-            rl.resume();
-            readStream.destroy();
-          }
-        },
-        500,
-      );
+        if (to != null && to[1] === now) {
+          pendingHighlights.shift();
+          // $FlowIssue: rl.output is there
+          readline.moveCursor(rl.output, cursor - cursorX, linesUp);
+          // $FlowIssue: rl.input is there
+          rl.input = oldInput;
+          rl.resume();
+          readStream.destroy();
+        }
+      }, 500);
 
       pendingHighlights.push([timeout, now]);
     }
@@ -289,5 +286,6 @@ export default function startREPL(opts: CLIOptsType): void {
 
   lastKeypressTime = currentTimeMicros();
   process.stdin.on('keypress', (c: string, key: KeyType) =>
-    handleKeyPress(session, c, key));
+    handleKeyPress(session, c, key),
+  );
 }

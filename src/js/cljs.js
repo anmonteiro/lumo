@@ -316,7 +316,7 @@ export function getHighlightCoordinates(
   return ClojureScriptContext.lumo.repl.get_highlight_coordinates(text, pos);
 }
 
-export function getCompletions(line: string, cb: (string[]) => void): void {
+export function getCompletions(line: string, cb: string[] => void): void {
   // $FlowIssue: context can have globals
   return ClojureScriptContext.lumo.repl.get_completions(line, cb);
 }

@@ -14,15 +14,12 @@ function expandPath(somePath: string): string {
 export const isWindows: boolean = /^Windows/.test(os.type());
 
 export function srcPathsFromClasspathStrings(cpStrs: string[]): string[] {
-  return cpStrs.reduce(
-    (ret: string[], colonSepPaths: string) => {
-      const sep = !isWindows ? ':' : /;|:/;
-      const paths = colonSepPaths.split(sep);
+  return cpStrs.reduce((ret: string[], colonSepPaths: string) => {
+    const sep = !isWindows ? ':' : /;|:/;
+    const paths = colonSepPaths.split(sep);
 
-      return ret.concat(paths.map(expandPath).map(path.normalize));
-    },
-    [],
-  );
+    return ret.concat(paths.map(expandPath).map(path.normalize));
+  }, []);
 }
 
 export function isWhitespace(s: string): boolean {

@@ -17,14 +17,16 @@ function embed(resourceFiles = [], resourceRoot = '') {
     throw new Error('Bad Argument: resourceFiles is not an array');
   }
 
-  let buffer = 'lumo.internal={embedded: {}};lumo.internal.embedded.resources={\n';
+  let buffer =
+    'lumo.internal={embedded: {}};lumo.internal.embedded.resources={\n';
   for (let i = 0; i < resourceFiles.length; i++) {
-    buffer += JSON.stringify(path.relative(resourceRoot, resourceFiles[i])) +
-      ':"';
+    buffer +=
+      JSON.stringify(path.relative(resourceRoot, resourceFiles[i])) + ':"';
     buffer += encode(resourceFiles[i]) + '",\n';
   }
 
-  buffer += '\n};\n\nlumo.internal.embedded.keys=function(){return Object.keys(lumo.internal.embedded.resources);}';
+  buffer +=
+    '\n};\n\nlumo.internal.embedded.keys=function(){return Object.keys(lumo.internal.embedded.resources);}';
   buffer += '\n\nlumo.internal.embedded.get=';
   buffer += accessor.toString();
   fs.appendFileSync('target/main.js', buffer);

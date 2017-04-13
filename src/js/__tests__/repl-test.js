@@ -49,7 +49,8 @@ function mockReplHistory(
       on: mockOn(mockLine),
       output: mockOutput || { write: jest.fn() },
       write: jest.fn(),
-    })));
+    })),
+  );
 }
 
 jest.mock('readline', () => ({

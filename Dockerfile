@@ -60,7 +60,7 @@ RUN mkdir -p /out
 
 RUN git clone https://github.com/anmonteiro/lumo.git /out \
   && cd /out \
-  && git checkout c46431deecff2b9595f3f114f03165d4b1ea7490 \
+  && git checkout 5aee0f6d3b83b5ab47f9da2bfdb033d5605f3102 \
   && boot release-ci \
   && ls | grep -v tmp | xargs rm -rf
 
