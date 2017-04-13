@@ -35,6 +35,7 @@ $(pwd)/build/lumo --quiet -c target -sdk lumo-cljs/out/macros-tmp <<REPL_INPUT
                 'cljs.pprint
                 'cljs.spec
                 'cljs.spec.impl.gen
+                'cljs.support
                 'cljs.test
                 'cljs.reader
                 'cljs.tools.reader.reader-types
@@ -88,6 +89,8 @@ mv lumo-cljs/out/macros-tmp/cljs_SLASH_env_SLASH_macros\$macros.js target/cljs/e
 mv lumo-cljs/out/macros-tmp/cljs_SLASH_env_SLASH_macros\$macros.cache.json target/cljs/env/macros\$macros.cache.json
 mv lumo-cljs/out/macros-tmp/cljs_SLASH_pprint\$macros.js target/cljs/pprint\$macros.js
 mv lumo-cljs/out/macros-tmp/cljs_SLASH_pprint\$macros.cache.json target/cljs/pprint\$macros.cache.json
+mv lumo-cljs/out/macros-tmp/cljs_SLASH_support\$macros.js target/cljs/support\$macros.js
+mv lumo-cljs/out/macros-tmp/cljs_SLASH_support\$macros.cache.json target/cljs/support\$macros.cache.json
 mv lumo-cljs/out/macros-tmp/cljs_SLASH_test\$macros.js target/cljs/test\$macros.js
 mv lumo-cljs/out/macros-tmp/cljs_SLASH_test\$macros.cache.json target/cljs/test\$macros.cache.json
 mv lumo-cljs/out/macros-tmp/cljs_SLASH_reader\$macros.js target/cljs/reader\$macros.js

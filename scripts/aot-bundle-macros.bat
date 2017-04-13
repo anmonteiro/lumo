@@ -11,7 +11,7 @@ echo "### Compiling Macro Namespaces"
 
 mkdir lumo-cljs\out\macros-tmp || goto :error
 
-echo (require 'lumo.build.api 'lumo.analyzer 'lumo.cljs-deps 'lumo.closure 'lumo.compiler 'lumo.io 'lumo.json 'lumo.util 'clojure.core.reducers 'clojure.zip 'clojure.data 'cljs.nodejs 'cljs.pprint 'cljs.test 'cljs.analyzer.api) (require-macros 'lumo.repl 'lumo.util 'clojure.template 'cljs.pprint 'cljs.spec 'cljs.spec.impl.gen 'cljs.test 'cljs.reader 'cljs.env.macros 'cljs.analyzer.macros 'cljs.compiler.macros) | build\lumo.exe --quiet -c target -sdk lumo-cljs/out/macros-tmp || goto :error
+echo (require 'lumo.build.api 'lumo.analyzer 'lumo.cljs-deps 'lumo.closure 'lumo.compiler 'lumo.io 'lumo.json 'lumo.util 'clojure.core.reducers 'clojure.zip 'clojure.data 'cljs.nodejs 'cljs.pprint 'cljs.test 'cljs.analyzer.api) (require-macros 'lumo.repl 'lumo.util 'clojure.template 'cljs.pprint 'cljs.support 'cljs.spec 'cljs.spec.impl.gen 'cljs.test 'cljs.reader 'cljs.env.macros 'cljs.analyzer.macros 'cljs.compiler.macros) | build\lumo.exe --quiet -c target -sdk lumo-cljs/out/macros-tmp || goto :error
 
 mv lumo-cljs\out\macros-tmp\clojure_SLASH_core_SLASH_reducers.js target\clojure\core\reducers.js || goto :error
 mv lumo-cljs\out\macros-tmp\clojure_SLASH_core_SLASH_reducers.cache.json target\clojure\core\reducers.cache.json || goto :error
@@ -58,6 +58,8 @@ mv lumo-cljs\out\macros-tmp\cljs_SLASH_env_SLASH_macros$macros.js target\cljs\en
 mv lumo-cljs\out\macros-tmp\cljs_SLASH_env_SLASH_macros$macros.cache.json target\cljs\env\macros$macros.cache.json || goto :error
 mv lumo-cljs\out\macros-tmp\cljs_SLASH_pprint$macros.js target\cljs\pprint$macros.js || goto :error
 mv lumo-cljs\out\macros-tmp\cljs_SLASH_pprint$macros.cache.json target\cljs\pprint$macros.cache.json || goto :error
+mv lumo-cljs\out\macros-tmp\cljs_SLASH_support$macros.js target\cljs\support$macros.js || goto :error
+mv lumo-cljs\out\macros-tmp\cljs_SLASH_support$macros.cache.json target\cljs\support$macros.cache.json || goto :error
 mv lumo-cljs\out\macros-tmp\cljs_SLASH_test$macros.js target\cljs\test$macros.js || goto :error
 mv lumo-cljs\out\macros-tmp\cljs_SLASH_test$macros.cache.json target\cljs\test$macros.cache.json || goto :error
 mv lumo-cljs\out\macros-tmp\cljs_SLASH_reader$macros.js target\cljs\reader$macros.js || goto :error

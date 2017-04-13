@@ -21,6 +21,7 @@ consistent with `clojure.main`).
 - Invalidate cache when source file changes ([#54](https://github.com/anmonteiro/lumo/issues/54)).
 - Upgrade ClojureScript to version 1.9.518.
 - Upgrade Closure Compiler JS to version v20170409.
+- Upgrade to Node.js version 7.9.0.
 
 ### Bug fixes
 

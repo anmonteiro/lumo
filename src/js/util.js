@@ -43,7 +43,7 @@ function ensureDirInner(dir: string): void {
 }
 
 export function ensureDir(dir: string): void {
-  const dirs = dir.split(/(\/\w+)/);
+  const dirs = dir.split(/(\/[^\/]+)/);
   const len = dirs.length;
 
   for (let i = 0; i < len; i += 1) {
