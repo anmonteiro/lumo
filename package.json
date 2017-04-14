@@ -44,7 +44,7 @@
     "flow-bin": "^0.44.0",
     "jest-cli": "^19.0.2",
     "nexe": "github:anmonteiro/nexe#master",
-    "prettier": "^1.0.2",
+    "prettier": "^1.1.0",
     "rollup": "^0.41.6",
     "rollup-plugin-babel": "^2.7.1",
     "rollup-plugin-babili": "^2.0.0",

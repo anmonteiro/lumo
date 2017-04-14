@@ -228,7 +228,7 @@ export function dumpSDK(outdir: string): void {
 export function getJSCompletions(
   line: string,
   match: string,
-  cb: string[] => void,
+  cb: (string[]) => void,
 ): void {
   const flat = new ArrayStream();
   const nodeReplServer = new REPLServer('', flat);
