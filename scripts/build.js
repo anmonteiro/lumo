@@ -58,8 +58,10 @@ const replacement = JSON.stringify(isDevBuild ? 'development' : 'production');
 const plugins = [
   babel(),
   replace({
-    'process.env.NODE_ENV': replacement,
-    'process.env.LUMO_VERSION': JSON.stringify(pkg.version),
+    values: {
+      'process.env.NODE_ENV': replacement,
+      'process.env.LUMO_VERSION': JSON.stringify(pkg.version),
+    },
   }),
   resolve({
     jsnext: true,

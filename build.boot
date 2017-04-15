@@ -122,9 +122,7 @@
        'org.clojure/google-closure-library #"^goog[\\\/].*(?<!_test)\.js$"
        'org.clojure/google-closure-library-third-party #"^goog[\\\/].*(?<!_test)\.js$"
        'org.clojure/tools.reader #"^cljs.*clj$"
-       'org.clojure/clojurescript #""
-       ;#"^cljs[\\\/](test\.cljc|core\.cljs\.cache\.aot\.edn|reader\.clj|spec(\.cljc|[\\\/]test\.clj[sc]|[\\\/]impl[\\\/]gen\.cljc))$"
-       }
+       'org.clojure/clojurescript #""}
       :move {#"^main.out[\\\/]((cljs|clojure|cognitect|lumo|lazy_map|fipp).*)" "$1"})
     (sift :include #{#"^main.js" #"^bundle.js" #"^cljs(?!\.js)" #"core\$macros"
                      #"^clojure" #"^cognitect" #"^goog" #"^lumo[\\\/]"
@@ -140,11 +138,12 @@
 (def lumo-version
   (get (json/read-str (slurp "package.json")) "version"))
 
-(deftask compile-cljs []
-  (cljs :compiler-options {:optimizations :simple
+(deftask compile-cljs
+  [o optimizations VAL kw "Compiler optimizations. Defaults to :simple."]
+  (cljs :compiler-options {:optimizations (or optimizations :simple)
                            :main 'lumo.core
                            :cache-analysis true
-                           :source-map false
+                           :source-map true
                            :dump-core false
                            :static-fns true
                            :optimize-constants false
@@ -159,6 +158,7 @@
     (check-node-modules)
     (watch)
     (speak)
+    (compile-cljs :optimizations :none)
     (compile-cljs)
     (sift-cljs-resources)
     (cache-edn->transit)
