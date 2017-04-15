@@ -2,12 +2,14 @@
   (:refer-clojure :exclude [load-file*])
   (:require-macros [cljs.env.macros :as env]
                    [cljs.analyzer.macros :refer [no-warn]]
-                   [lumo.repl])
+                   [lumo.repl :refer [with-err-str]])
   (:require [cljs.analyzer :as ana]
             [cljs.env :as env]
             [cljs.js :as cljs]
             [cljs.reader :as reader]
             [cljs.repl]
+            [cljs.source-map :as sm]
+            [cljs.stacktrace :as st]
             [cljs.tagged-literals :as tags]
             [cljs.tools.reader :as r]
             [cljs.tools.reader.reader-types :as rt]
@@ -216,6 +218,7 @@
         bundled-src-prefix (cond-> path
                              macros? (str MACROS_SUFFIX))
         bundled-source (js/$$LUMO_GLOBALS.load (str bundled-src-prefix JS_EXT))]
+    (println "loading" name path file-path (if macros? "macros!" "not macros") (some? bundled-source))
     (cond
       (skip-load-js? name)
       (load-bundled name bundled-src-prefix file-path "" cb)
@@ -382,30 +385,101 @@
 ;; --------------------
 ;; Error handling
 
+(defn- print-value [value]
+  (pprint/pprint value))
+
 (defn- ^:boolean could-not-eval? [msg]
   (and (not (nil? msg)) (boolean (re-find could-not-eval-regex msg))))
 
-(defn- handle-error [error]
-  (let [message (ex-message error)
-        cause (ex-cause error)]
-    (binding [*print-fn* *print-err-fn*]
-      (cond
-        (could-not-eval? message)
-        (let [message (ex-message cause)
-              {:keys [column]} (ex-data cause)
-              column-indicator-str (str (apply str
-                                          (repeat (+ (count (name @current-ns)) 3 column) " "))
-                                     "⬆")]
-          (println column-indicator-str)
-          (println message))
-        (identical? message "ERROR")
-        (println (str cause))
+(defn- form-indicator-str
+  [column current-ns]
+  (str
+    (apply str
+      (repeat (+ (count (name current-ns)) 2 column) " "))
+    "⬆"))
 
-        :else
-        (println error)))
-    (if-not (:repl? @app-opts)
-      (set! (. js/process -exitValue) 1)
-      (set! *e error))))
+(defn- print-error-column-indicator
+  [error]
+  (when-let [cause (and (could-not-eval? (ex-message error)) (ex-cause error))]
+    (let [{:keys [column]} (ex-data cause)
+          column-indicator-str (form-indicator-str column @current-ns)]
+      (println column-indicator-str))))
+
+(defn- extract-cljs-js-error [error]
+  (let [message (ex-message error)]
+    (cond-> error
+      (and (instance? ExceptionInfo error)
+        (= :cljs/analysis-error (:tag (ex-data error)))
+        (or (identical? "ERROR" message)
+            (could-not-eval? message))
+        (ex-cause error))
+      ex-cause)))
+
+(defn- ^:boolean reader-error?
+  [e]
+  (keyword-identical? :reader-exception (:type (ex-data e))))
+
+(defn- location-info
+  [error]
+  (let [data (ex-data error)]
+    (when (and (:line data)
+               (:file data))
+      (str " at line " (:line data) " " (:file data)#_(file-path (:file data))))))
+
+(defn- load-core-source-maps!
+  []
+  (when-not (get (:source-maps @st) 'cljs.core)
+    (swap! st update-in [:source-maps]
+      merge {'cljs.core
+             (sm/decode
+               (js/JSON.parse
+                 (js/$$LUMO_GLOBALS.load "cljs/core.js.map")))
+             'cljs.core$macros
+             (sm/decode
+               (js/JSON.parse
+                 (js/$$LUMO_GLOBALS.load "cljs/core$macros.js.map")))})))
+
+(defn- print-error
+  ([error stacktrace?]
+   (print-error error stacktrace? nil))
+  ([error stacktrace? printed-message]
+   (binding [*print-fn* *print-err-fn*]
+     (print-error-column-indicator error)
+     (let [error (extract-cljs-js-error error)
+           message (ex-message error)]
+       (when (or (not ((fnil string/starts-with? "") printed-message message))
+                 stacktrace?)
+         (println (str message (when (reader-error? error)
+                                 (location-info error)))))
+       #_(when-let [data (and print-ex-data? (ex-data error))]
+         (print-value data {::as-code? false}))
+       (when stacktrace?
+         #_(load-core-source-maps!)
+         (let [canonical-stacktrace (st/parse-stacktrace
+                                      {}
+                                      (.-stack error)
+                                      {:ua-product :nodejs}
+                                      {:output-dir "file://(/goog/..)?"})]
+           (println
+             (st/mapped-stacktrace canonical-stacktrace {})
+             #_(mapped-stacktrace-str
+               canonical-stacktrace
+               (or (:source-maps @st) {})
+               nil))
+           (println
+             canonical-stacktrace
+             #_(mapped-stacktrace-str
+               canonical-stacktrace
+               (or (:source-maps @st) {})
+               nil))))
+       (when-let [cause (.-cause error)]
+         (recur cause stacktrace? message))))))
+
+(defn- handle-error [error stacktrace?]
+  (print-error error stacktrace?)
+  (if-not (:repl? @app-opts)
+    (js/$$LUMO_GLOBALS.setExitValue 1)
+    (set! *e (extract-cljs-js-error error))))
 
 ;; --------------------
 ;; REPL specials
@@ -415,6 +489,12 @@
   (if (string/ends-with? ns-name MACROS_SUFFIX)
     (apply str (drop-last 7 ns-name))
     ns-name))
+
+(defn- maybe-eliminate-macros-suffix
+  [x]
+  (if (symbol? x)
+    (symbol (drop-macros-suffix (namespace x)) (name x))
+    x))
 
 (defn- add-macros-suffix
   [sym]
@@ -547,7 +627,7 @@
           (cljs/eval st maybe-quoted opts
             (fn [{:keys [error value]}]
               (if error
-                (handle-error error)
+                (handle-error error true)
                 (let [ns-name value]
                   (if-not (symbol? ns-name)
                     (binding [*print-fn* *print-err-fn*]
@@ -558,7 +638,7 @@
                         (cljs/eval st ns-form opts
                           (fn [{:keys [error]}]
                             (if error
-                              (handle-error error)
+                              (handle-error error true)
                               (vreset! current-ns ns-name))))))))))))]
     (wrap-special-fns wrap-self
       {'in-ns in-ns-fn
@@ -649,7 +729,8 @@
   (let [{:keys [verbose static-fns]} @app-opts]
     {:ns            @current-ns
      :verbose       verbose
-     :static-fns    static-fns}))
+     :static-fns    static-fns
+     :source-map    true}))
 
 (defn- current-alias-map []
   (let [cur-ns @current-ns]
@@ -691,9 +772,6 @@
     (when (or (keyword-identical? op :ns)
               (keyword-identical? op :ns*))
       name)))
-
-(defn print-value [value]
-  (pprint/pprint value))
 
 (defn- capture-session-state
   "Captures all of the commonly set global vars as a session state map."
@@ -758,6 +836,17 @@
     (set! *2 *1)
     (set! *1 value)))
 
+(defn- warning-handler [warning-type env extra]
+  (let [warning-string (with-err-str
+                         (ana/default-warning-handler warning-type env
+                           (update extra :js-op maybe-eliminate-macros-suffix)))]
+    (binding [*print-fn* *print-err-fn*]
+      (when-not (empty? warning-string)
+        (when-let [column (:column env)]
+          (do ;when (show-indicator?)
+            (println (form-indicator-str column @current-ns))))
+        (print warning-string)))))
+
 (declare execute-source)
 
 (defn- execute-path [file opts]
@@ -775,20 +864,24 @@
             :js (cljs/process-macros-deps {:*compiler* st} cache nil
                   (fn [{:keys [error]}]
                     (if-not (nil? error)
-                      (handle-error error)
+                      (handle-error error false)
                       (cljs/process-libs-deps {:*compiler* st} cache nil
                         (fn [{:keys [error]}]
                           (if-not (nil? error)
-                            (handle-error error)
+                            (handle-error error false)
                             (caching-node-eval {:source source
                                                 :filename filename})))))))))
-        (handle-error (ex-info (str "Could not load file " file) {}))))))
+        ;; TODO: why does Planck set this to false?
+        (handle-error (ex-info (str "Could not load file " file) {}) true)))))
 
 (defn- execute-text
   [source {:keys [expression? print-nil-result? filename session-id] :as opts}]
   (try
     (set-session-state-for-session-id! session-id)
-    (binding [cljs/*eval-fn*   caching-node-eval
+    (binding [ana/*cljs-warning-handlers* (if expression?
+                                              [warning-handler]
+                                              [ana/default-warning-handler])
+              cljs/*eval-fn*   caching-node-eval
               cljs/*load-fn*   load
               ana/*cljs-ns*    @current-ns
               *ns*             (create-ns @current-ns)
@@ -819,11 +912,11 @@
                     (js/$$LUMO_GLOBALS.doPrint print-value value))
                   (process-1-2-3 form value)
                   (vreset! current-ns ns))
-                (handle-error error)))))))
+                (handle-error error true)))))))
     (catch :default e
       ;; `;;` and `#_`
       (when-not (identical? (.-message e) "EOF")
-        (handle-error e)))
+        (handle-error e true)))
     (finally (capture-session-state-for-session-id session-id)))
   nil)
 
@@ -866,7 +959,7 @@
         opts
         (fn [{:keys [ns value error] :as ret}]
           (if error
-            (handle-error error)
+            (handle-error error true)
             (cljs/eval-str st
               (str "(var -main)")
               nil
@@ -875,7 +968,7 @@
                 (try
                   (apply value main-args)
                   (catch :default e
-                    (handle-error e)))))))))
+                    (handle-error e true)))))))))
     nil))
 
 (defn ^:export get-current-ns []

@@ -268,6 +268,7 @@ function initClojureScriptEngine(opts: CLIOptsType): void {
       ClojureScriptContext.cljs.core.seq(args);
   }
 
+  // require('source-map-support').install();
   setRuntimeOpts(opts);
 }
 
@@ -369,7 +370,9 @@ export default function startClojureScriptEngine(opts: CLIOptsType): void {
   if (repl) {
     process.nextTick(() => {
       initClojureScriptEngine(opts);
-      setPrintFns(new DiscardingSender());
+      if (!__DEV__) {
+        setPrintFns(new DiscardingSender());
+      }
 
       execute(
         "(require '[lumo.repl :refer-macros [doc dir]])",
