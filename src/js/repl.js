@@ -5,7 +5,6 @@ import path from 'path';
 import readline from 'readline';
 import tty from 'tty';
 import * as cljs from './cljs';
-import * as lumo from './lumo';
 import replHistory from './replHistory';
 import { currentTimeMicros, isWhitespace, isWindows } from './util';
 import { close as socketServerClose } from './socketRepl';
@@ -65,7 +64,7 @@ function stopREPL(): void {
   const keys = Object.keys(sessions);
   keys.forEach((id: string) => deleteSession(sessions[parseInt(id, 10)]));
 
-  process.exit(lumo.EXIT_VALUE);
+  process.exit(process.exitValue);
 }
 
 export function processLine(replSession: REPLSession, line: string): void {

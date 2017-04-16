@@ -44,7 +44,9 @@ const resources = getDirContents('target').filter(
     !fname.endsWith('main.js') &&
     !fname.endsWith('bundle.js') &&
     !fname.endsWith('bundle.min.js') &&
-    !fname.endsWith('google-closure-compiler-js.js')
+    !fname.endsWith('google-closure-compiler-js.js') &&
+    !fname.endsWith('aot.edn') &&
+    !/target[\\\/]cljs[\\/]core.js/.test(fname)
 );
 
 function moveLibs(compiler, options, callback) {

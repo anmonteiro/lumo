@@ -153,7 +153,6 @@ function newDevelopmentContext(): vm$Context {
       eval: lumoEval,
       addSourcePaths: lumo.addSourcePaths,
       readSourcePaths: lumo.readSourcePaths,
-      setExitValue: lumo.setExitValue,
     },
     global: undefined,
   };
@@ -185,7 +184,6 @@ function newClojureScriptContext(): { [key: string]: mixed } {
     eval: lumoEval,
     addSourcePaths: lumo.addSourcePaths,
     readSourcePaths: lumo.readSourcePaths,
-    setExitValue: lumo.setExitValue,
   };
 
   return global;
@@ -337,8 +335,8 @@ export function clearREPLSessionState(sessionID: number): void {
 function executeScripts(scripts: [string, string][]): void {
   scripts.forEach(([type, script]: [string, string]) => {
     executeScript(script, type);
-    if (lumo.EXIT_VALUE !== 0) {
-      process.exit(lumo.EXIT_VALUE);
+    if (process.exitValue != null) {
+      process.exit(process.exitValue);
     }
   });
 }
@@ -359,13 +357,13 @@ export default function startClojureScriptEngine(opts: CLIOptsType): void {
   if (mainScript) {
     initClojureScriptEngine(opts);
     executeScript(mainScript, 'path');
-    process.exit(lumo.EXIT_VALUE);
+    process.exit(process.exitValue);
   }
 
   if (mainNsName) {
     initClojureScriptEngine(opts);
     runMain(mainNsName, args);
-    process.exit(lumo.EXIT_VALUE);
+    process.exit(process.exitValue);
   }
 
   if (repl) {

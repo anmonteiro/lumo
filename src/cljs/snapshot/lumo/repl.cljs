@@ -35,6 +35,7 @@
 (def ^:private ^:const could-not-eval-regex #"Could not eval")
 (def ^:private ^:const MACROS_SUFFIX "$macros")
 (def ^:private ^:const JS_EXT ".js")
+(def ^:private ^:const CACHE_SUFFIX ".cache.json")
 
 ;; =============================================================================
 ;; Dependency loading
@@ -101,7 +102,7 @@
         (reduce str
           (map (fn [dep-name]
                  (let [{:keys [path]} (get index dep-name)]
-                   (js/$$LUMO_GLOBALS.load (str path ".js")))) sorted-deps))))))
+                   (js/$$LUMO_GLOBALS.load (str path JS_EXT)))) sorted-deps))))))
 
 (defn load-goog
   "Loads a Google Closure implementation source file. `goog` namespaces are
@@ -116,45 +117,8 @@
 (defn- skip-load-js?
   "Indicates namespaces for which JS code is already loaded, but for which
    we might need to load the corresponding analysis cache."
-  [name macros]
-  (and (not macros)
-    ('#{cljs.analyzer
-        cljs.compiler
-        cljs.env
-        cljs.js
-        cljs.reader
-        cljs.repl
-        cljs.source-map
-        cljs.source-map.base64
-        cljs.source-map.base64-vlq
-        cljs.spec
-        cljs.spec.impl.gen
-        cljs.tagged-literals
-        cljs.tools.reader
-        cljs.tools.reader.reader-types
-        cljs.tools.reader.impl.commons
-        cljs.tools.reader.impl.utils
-        clojure.core.rrb-vector
-        clojure.core.rrb-vector.interop
-        clojure.core.rrb-vector.nodes
-        clojure.core.rrb-vector.protocols
-        clojure.core.rrb-vector.rrbt
-        clojure.core.rrb-vector.transients
-        clojure.core.rrb-vector.trees
-        clojure.string
-        clojure.set
-        clojure.walk
-        cognitect.transit
-        fipp.visit
-        fipp.engine
-        fipp.deque
-        lazy-map.core
-        lumo.core
-        lumo.pprint.data
-        lumo.repl
-        lumo.repl-resources
-        lumo.js-deps
-        lumo.common} name)))
+  [name]
+  (exists? (apply gobj/getValueByKeys js/global (string/split name "."))))
 
 (defn- skip-load?
   [name macros?]
@@ -183,8 +147,9 @@
         com.cognitect.transit.impl.writer})
    name))
 
-(defn- load-bundled [path source cb]
-  (when-let [cache-json (js/$$LUMO_GLOBALS.load (str path ".cache.json"))]
+(defn- load-bundled [name path file-path source cb]
+  (when-let [cache-json (or (js/$$LUMO_GLOBALS.load (str file-path ".cache.json"))
+                            (js/$$LUMO_GLOBALS.load (str path ".cache.json")))]
     (cb {:source source
          :lang :js
          :cache (common/transit-json->cljs cache-json)})
@@ -208,7 +173,7 @@
           cached-data (js/$$LUMO_GLOBALS.readCache cache-filename)]
       (when (and cached-data
               (> (.-modified cached-data) (.-modified source-data)))
-        (when-let [cache-json (js/$$LUMO_GLOBALS.readCache (str cache-prefix ".cache.json"))]
+        (when-let [cache-json (js/$$LUMO_GLOBALS.readCache (str cache-prefix CACHE_SUFFIX))]
           {:lang :js
            :source (.-source cached-data)
            :filename cache-filename
@@ -234,7 +199,7 @@
                      :source (.-source javascript-source)
                      :cache  (parse-edn cache-edn)})
                 ;; one last attempt to read analysis cache
-                (if-let [cache-json (js/$$LUMO_GLOBALS.readSource (str filename ".cache.json"))]
+                (if-let [cache-json (js/$$LUMO_GLOBALS.readSource (str filename CACHE_SUFFIX))]
                   (cb {:lang   :js
                        :source (.-source javascript-source)
                        :cache  (common/transit-json->cljs cache-json)})
@@ -245,16 +210,19 @@
 
 (defn- load-and-cb!
   [name path file-path macros? cb]
-  (let [bundled-src-prefix (cond-> path
+  (let [name (if macros?
+               (symbol (str name MACROS_SUFFIX))
+               name)
+        bundled-src-prefix (cond-> path
                              macros? (str MACROS_SUFFIX))
         bundled-source (js/$$LUMO_GLOBALS.load (str bundled-src-prefix JS_EXT))]
     (cond
-      (skip-load-js? name macros?)
-      (load-bundled file-path "" cb)
+      (skip-load-js? name)
+      (load-bundled name bundled-src-prefix file-path "" cb)
 
-      bundled-source
+      (some? bundled-source)
       ;; bundled source are AOTed macros which don't have the `.clj[sc]*` extension
-      (load-bundled bundled-src-prefix bundled-source cb)
+      (load-bundled name bundled-src-prefix file-path bundled-source cb)
 
       (deps/foreign-lib? name)
       (load-foreign-lib name cb)
@@ -305,12 +273,12 @@
           filename-prefix (str prefix-path "/" (munge path) (when macros? MACROS_SUFFIX))
           cache-json (common/cljs->transit-json cache)]
       (wrap-error (js/$$LUMO_GLOBALS.writeCache (str filename-prefix JS_EXT) source))
-      (wrap-error (js/$$LUMO_GLOBALS.writeCache (str filename-prefix ".cache.json") cache-json)))))
+      (wrap-error (js/$$LUMO_GLOBALS.writeCache (str filename-prefix CACHE_SUFFIX) cache-json)))))
 
 (defn- caching-node-eval
   "Evaluates JavaScript in node, writing source and analysis cache to disk
    when desired."
-  [{:keys [name source cache path filename]}]
+  [{:keys [name source cache path]}]
   (when-let [cache-path (and source cache path (:cache-path @app-opts))]
     (write-cache name path source cache cache-path))
   (let [foreign? *loading-foreign*
@@ -375,7 +343,7 @@
     (loop [searchable-source source]
       (let [match-idx (.lastIndexOf searchable-source match)
             idx (cond-> match-idx
-                  (= (aget source (dec match-idx)) "#")
+                  (identical? (aget source (dec match-idx)) "#")
                   dec)
             candidate-form (subs source idx (inc pos))]
         (when-not (neg? idx)
@@ -430,13 +398,13 @@
                                      "⬆")]
           (println column-indicator-str)
           (println message))
-        (= message "ERROR")
+        (identical? message "ERROR")
         (println (str cause))
 
         :else
         (println error)))
     (if-not (:repl? @app-opts)
-      (js/$$LUMO_GLOBALS.setExitValue 1)
+      (set! (. js/process -exitValue) 1)
       (set! *e error))))
 
 ;; --------------------
@@ -444,13 +412,13 @@
 
 (defn- drop-macros-suffix
   [ns-name]
-  (if (string/ends-with? ns-name "$macros")
+  (if (string/ends-with? ns-name MACROS_SUFFIX)
     (apply str (drop-last 7 ns-name))
     ns-name))
 
 (defn- add-macros-suffix
   [sym]
-  (symbol (str (name sym) "$macros")))
+  (symbol (str (name sym) MACROS_SUFFIX)))
 
 (defn- all-ns
   "Returns a sequence of all namespaces."
@@ -459,7 +427,7 @@
 
 (defn- all-macros-ns []
   (->> (all-ns)
-    (filter #(string/ends-with? (str %) "$macros"))))
+    (filter #(string/ends-with? (str %) MACROS_SUFFIX))))
 
 (defn- get-namespace
   "Gets the AST for a given namespace."
@@ -494,7 +462,7 @@
         (-> (cond-> var
               (not (:ns var))
               (assoc :ns (symbol (namespace (:name var))))
-              (= (namespace (:name var)) (str (:ns var)))
+              (identical? (namespace (:name var)) (str (:ns var)))
               (update :name #(symbol (name %))))
           (update :ns (comp symbol drop-macros-suffix str)))))))
 
@@ -554,7 +522,7 @@
 
 (defn- load-path->cp-path
   [path]
-  (let [src (if (= "/" (first path))
+  (let [src (if (identical? "/" (first path))
               path
               (str (root-directory @current-ns) \/ path))
         src (.substring src 1)]
@@ -685,14 +653,14 @@
 
 (defn- current-alias-map []
   (let [cur-ns @current-ns]
-    (into {} (remove (fn [[k v]] (= k v)))
+    (into {} (remove (fn [[k v]] (symbol-identical? k v)))
       (merge (get-in @st [::ana/namespaces cur-ns :requires])
         (get-in @st [::ana/namespaces cur-ns :require-macros])))))
 
 (defn- reader-eof? [msg]
   (or
-    (= "EOF while reading" msg)
-    (= "EOF while reading string" msg)))
+    (identical? "EOF while reading" msg)
+    (identical? "EOF while reading string" msg)))
 
 (defn- read-chars
   [reader]
@@ -861,7 +829,7 @@
 
 (defn- execute-source
   [source-or-path {:keys [type] :as opts}]
-  (if-not (= type "text")
+  (if-not (identical? type "text")
     (execute-path source-or-path opts)
     (execute-text source-or-path opts)))
 
@@ -881,7 +849,7 @@
     (catch :default e
       (let [msg (.-message e)]
         (cond
-          (= "EOF" msg) ""
+          (identical? "EOF" msg) ""
           (reader-eof? msg) false
           :else (do
                   ;(handle-error e)
@@ -940,7 +908,7 @@
     (let [arglists (if-not (:macro var)
                      (:arglists var)
                      (-> var :meta :arglists second))]
-      (if (= 'quote (first arglists))
+      (if (symbol-identical? 'quote (first arglists))
         (second arglists)
         arglists))))
 
@@ -1084,14 +1052,14 @@
     (if-not (nil? js-matches)
       (js/$$LUMO_GLOBALS.getJSCompletions line (second js-matches) cb)
       (let [top-level? (boolean (re-find #"^\s*\(\s*[^()\s]*$" line))
-            ns-alias (second (re-find #"\(*(\b[a-zA-Z-.]+)/[a-zA-Z-]+$" line))]
-        (let [line-match-suffix (re-find #":?[a-zA-Z-.]*$" line)
-              line-prefix (subs line 0 (- (count line) (count line-match-suffix)))]
-          (let [completions (reduce (fn [ret item]
-                                      (doto ret
-                                        (.push (str line-prefix item))))
-                              #js []
-                              (filter #(is-completion? line-match-suffix %)
-                                (completion-candidates top-level? ns-alias)))]
-            (cb (doto completions
-                  .sort))))))))
+            ns-alias (second (re-find #"\(*(\b[a-zA-Z-.]+)/[a-zA-Z-]+$" line))
+            line-match-suffix (re-find #":?[a-zA-Z-.]*$" line)
+            line-prefix (subs line 0 (- (count line) (count line-match-suffix)))
+            completions (reduce (fn [ret item]
+                                  (doto ret
+                                    (.push (str line-prefix item))))
+                          #js []
+                          (filter #(is-completion? line-match-suffix %)
+                            (completion-candidates top-level? ns-alias)))]
+        (cb (doto completions
+              .sort))))))

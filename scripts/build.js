@@ -6,6 +6,7 @@ const resolve = require('rollup-plugin-node-resolve');
 const commonjs = require('rollup-plugin-commonjs');
 const babili = require('rollup-plugin-babili');
 
+const pkg = require('../package.json');
 const argv = process.argv.slice(2);
 const isDevBuild = /(--dev|-d)$/.test(argv[0]);
 
@@ -58,6 +59,7 @@ const plugins = [
   babel(),
   replace({
     'process.env.NODE_ENV': replacement,
+    'process.env.LUMO_VERSION': JSON.stringify(pkg.version),
   }),
   resolve({
     jsnext: true,
