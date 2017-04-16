@@ -21,6 +21,7 @@
   '[crisptrutski.boot-cljs-test :refer [test-cljs]]
   '[boot.pod              :as pod]
   '[boot.util             :as util]
+  '[cljs.source-map       :as sm]
   '[clojure.edn           :as edn]
   '[clojure.string        :as str]
   '[clojure.data.json     :as json]
@@ -97,6 +98,20 @@
             (write-cache! (edn/read-string (slurp in-file)) out-file)))
         (-> fileset (add-resource tmp) commit!)))))
 
+(deftask source-maps->transit []
+  (let [tmp (tmp-dir!)]
+    (with-pre-wrap fileset
+      (empty-dir! tmp)
+      (let [input-files (input-files fileset)
+            source-map-files (by-ext [".map"] input-files)]
+        (doseq [in source-map-files]
+          (let [in-file  (tmp-file in)
+                in-path  (tmp-path in)
+                out-path (str in-path ".json")
+                out-file (io/file tmp out-path)]
+            (write-cache! (sm/decode (json/read-str (slurp in-file) :key-fn keyword)) out-file)))
+        (-> fileset (add-resource tmp) commit!)))))
+
 (deftask write-core-analysis-caches []
   (let [core-caches-re #"^cljs[\\\/]core(\$macros)?\.(cljs\.cache\.aot|cljc\.cache)\.json$"
         tmp (tmp-dir!)]
@@ -132,6 +147,7 @@
                      #"^cljs[\\\/](analyzer[\\\/]utils|build|closure)"
                      #"^cljs[\\\/](core[\\\/]macros|compiler[\\\/]api|repl([\\\/].*|(.cljc))|source_map.*clj$)"
                      #"^cljs[\\\/](externs\.clj|util|js_deps)"
+                     #"^cljs_deps.js$"
                      #"^goog[\\\/](test_module.*?|transpile).js"}
       :invert true)))
 
@@ -143,7 +159,7 @@
   (cljs :compiler-options {:optimizations (or optimizations :simple)
                            :main 'lumo.core
                            :cache-analysis true
-                           :source-map true
+                           :source-map (identical? optimizations :none)
                            :dump-core false
                            :static-fns true
                            :optimize-constants false
@@ -162,6 +178,7 @@
     (compile-cljs)
     (sift-cljs-resources)
     (cache-edn->transit)
+    (source-maps->transit)
     (write-core-analysis-caches)
     (target)
     (bundle-js :dev true)))
@@ -192,9 +209,11 @@
 (deftask release-ci []
   (comp
     (check-node-modules)
+    (compile-cljs :optimizations :none)
     (compile-cljs)
     (sift-cljs-resources)
     (cache-edn->transit)
+    (source-maps->transit)
     (write-core-analysis-caches)
     (target)
     (bundle-js)

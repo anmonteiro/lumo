@@ -16,6 +16,7 @@
             [clojure.string :as string]
             [cognitect.transit :as transit]
             [goog.object :as gobj]
+            [lazy-map.core :refer [lazy-map]]
             [lumo.js-deps :as deps]
             [lumo.common :as common]
             [lumo.pprint.data :as pprint]
@@ -152,10 +153,16 @@
 (defn- load-bundled [name path file-path source cb]
   (when-let [cache-json (or (js/$$LUMO_GLOBALS.load (str file-path ".cache.json"))
                             (js/$$LUMO_GLOBALS.load (str path ".cache.json")))]
-    (cb {:source source
-         :lang :js
-         :cache (common/transit-json->cljs cache-json)})
-    :loaded))
+    (let [source-map-json (js/$$LUMO_GLOBALS.load (str path JS_EXT ".map.json"))]
+      (swap! st update-in [:source-maps]
+        (fn [source-maps]
+          (if (nil? source-maps)
+            (lazy-map {name (common/transit-json->cljs source-map-json)})
+            (assoc source-maps name (delay (common/transit-json->cljs source-map-json))))))
+      (cb {:source source
+           :lang :js
+           :cache (common/transit-json->cljs cache-json)})
+      :loaded)))
 
 ;; TODO: we could be smarter and only load the libs that we haven't already loaded
 (defn- load-foreign-lib
@@ -176,6 +183,7 @@
       (when (and cached-data
               (> (.-modified cached-data) (.-modified source-data)))
         (when-let [cache-json (js/$$LUMO_GLOBALS.readCache (str cache-prefix CACHE_SUFFIX))]
+          ;; TODO: read source maps
           {:lang :js
            :source (.-source cached-data)
            :filename cache-filename
@@ -218,7 +226,6 @@
         bundled-src-prefix (cond-> path
                              macros? (str MACROS_SUFFIX))
         bundled-source (js/$$LUMO_GLOBALS.load (str bundled-src-prefix JS_EXT))]
-    (println "loading" name path file-path (if macros? "macros!" "not macros") (some? bundled-source))
     (cond
       (skip-load-js? name)
       (load-bundled name bundled-src-prefix file-path "" cb)
@@ -276,7 +283,11 @@
           filename-prefix (str prefix-path "/" (munge path) (when macros? MACROS_SUFFIX))
           cache-json (common/cljs->transit-json cache)]
       (wrap-error (js/$$LUMO_GLOBALS.writeCache (str filename-prefix JS_EXT) source))
-      (wrap-error (js/$$LUMO_GLOBALS.writeCache (str filename-prefix CACHE_SUFFIX) cache-json)))))
+      (wrap-error (js/$$LUMO_GLOBALS.writeCache (str filename-prefix CACHE_SUFFIX) cache-json))
+      (when-let [sm (get-in @st [:source-maps name])]
+        (wrap-error (js/$$LUMO_GLOBALS.writeCache
+                      (str filename-prefix JS_EXT ".map.json")
+                      (common/cljs->transit-json sm)))))))
 
 (defn- caching-node-eval
   "Evaluates JavaScript in node, writing source and analysis cache to disk
@@ -431,13 +442,75 @@
   (when-not (get (:source-maps @st) 'cljs.core)
     (swap! st update-in [:source-maps]
       merge {'cljs.core
-             (sm/decode
-               (js/JSON.parse
-                 (js/$$LUMO_GLOBALS.load "cljs/core.js.map")))
+             (common/transit-json->cljs
+               (js/$$LUMO_GLOBALS.load "cljs/core.aot.js.map.json"))
              'cljs.core$macros
-             (sm/decode
-               (js/JSON.parse
-                 (js/$$LUMO_GLOBALS.load "cljs/core$macros.js.map")))})))
+             (common/transit-json->cljs
+               (js/$$LUMO_GLOBALS.load "cljs/core$macros.js.map.json"))})))
+
+(declare all-ns ns-syms)
+
+(defn- form-demunge-map
+  "Forms a map from munged function symbols (as they appear in stacktraces)
+  to their unmunged forms."
+  [ns]
+  {:pre [(symbol? ns)]}
+  (let [ns-str (str ns)
+        munged-ns-str (string/replace ns-str #"\." "$")]
+    (into {} (for [sym (ns-syms ns (constantly true))]
+               [(str munged-ns-str "$" (munge sym)) (symbol ns-str (str sym))]))))
+
+(def ^:private core-demunge-map
+  (delay (form-demunge-map 'cljs.core)))
+
+(defn- non-core-demunge-maps
+  []
+  (let [non-core-nss (remove #{'cljs.core 'cljs.core$macros} (all-ns))]
+    (map form-demunge-map non-core-nss)))
+
+(defn- lookup-sym
+  [demunge-maps munged-sym]
+  (some #(% munged-sym) demunge-maps))
+
+(defn- demunge-local
+  [demunge-maps munged-sym]
+  (let [[_ fn local] (re-find #"(.*)_\$_(.*)" munged-sym)]
+    (when fn
+      (when-let [fn-sym (lookup-sym demunge-maps fn)]
+        (str fn-sym " " (demunge local))))))
+
+(defn- demunge-protocol-fn
+  [demunge-maps munged-sym]
+  (let [[_ ns prot fn] (re-find #"(.*)\$(.*)\$(.*)\$arity\$.*" munged-sym)]
+    (when ns
+      (when-let [prot-sym (lookup-sym demunge-maps (str ns "$" prot))]
+        (when-let [fn-sym (lookup-sym demunge-maps (str ns "$" fn))]
+          (str fn-sym " [" prot-sym "]"))))))
+
+(defn- gensym?
+  [sym]
+  (string/starts-with? (name sym) "G__"))
+
+(defn- demunge-sym
+  [munged-sym]
+  (let [demunge-maps (cons @core-demunge-map (non-core-demunge-maps))]
+    (str (or (lookup-sym demunge-maps munged-sym)
+             (demunge-protocol-fn demunge-maps munged-sym)
+             (demunge-local demunge-maps munged-sym)
+           (if (gensym? munged-sym)
+             munged-sym
+             (demunge munged-sym))))))
+
+(defn- mapped-stacktrace-str
+  ([stacktrace sms]
+   (mapped-stacktrace-str stacktrace sms nil))
+  ([stacktrace sms opts]
+   (apply str
+     (for [{:keys [function file line column]} (st/mapped-stacktrace stacktrace sms opts)
+           :let [demunged (str (when function (demunge-sym function)))]
+           :when (not= demunged "cljs.core/-invoke [cljs.core/IFn]")]
+       (str \tab demunged " (" file (when line (str ":" line))
+         (when column (str ":" column)) ")" \newline)))))
 
 (defn- print-error
   ([error stacktrace?]
@@ -454,15 +527,16 @@
        #_(when-let [data (and print-ex-data? (ex-data error))]
          (print-value data {::as-code? false}))
        (when stacktrace?
-         #_(load-core-source-maps!)
+         (load-core-source-maps!)
          (let [canonical-stacktrace (st/parse-stacktrace
                                       {}
                                       (.-stack error)
                                       {:ua-product :nodejs}
                                       {:output-dir "file://(/goog/..)?"})]
+           (println (.-stack error) (empty? (or (:source-maps @st) {})))
            (println
-             (st/mapped-stacktrace canonical-stacktrace {})
-             #_(mapped-stacktrace-str
+             #_(st/mapped-stacktrace canonical-stacktrace (or (:source-maps @st) {}))
+             (mapped-stacktrace-str
                canonical-stacktrace
                (or (:source-maps @st) {})
                nil))
@@ -474,6 +548,17 @@
                nil))))
        (when-let [cause (.-cause error)]
          (recur cause stacktrace? message))))))
+
+"    at Object.cljs.core.seq (evalmachine.<anonymous>:394:410)
+    at Object.cljs.core.first (evalmachine.<anonymous>:395:215)
+    at cljs.core.ffirst (evalmachine.<anonymous>:460:301)
+    at Expression.js?rel=1492318461828:1:18
+    at ContextifyScript.Script.runInContext (vm.js:32:29)
+    at Object.runInContext (vm.js:87:6)
+    at Object.lumoEval [as eval] (/Users/anmonteiro/Documents/github/lumo/target/bundle.js:11497:16)
+    at lumo.repl.caching_node_eval (evalmachine.<anonymous>:6106:194)
+    at evalmachine.<anonymous>:4920:29
+    at x (evalmachine.<anonymous>:4921:13)"
 
 (defn- handle-error [error stacktrace?]
   (print-error error stacktrace?)
@@ -874,6 +959,36 @@
         ;; TODO: why does Planck set this to false?
         (handle-error (ex-info (str "Could not load file " file) {}) true)))))
 
+#_(defn- extract-namespace
+  [source]
+  (try
+    (let [first-form (first (repl-read-string source))]
+      (when (ns-form? first-form)
+        (second first-form)))
+    (catch :default _
+      nil)))
+
+#_(defn- extract-cache-metadata
+  [source]
+  (let [file-namespace (or (extract-namespace source)
+                           'cljs.user)
+        relpath (cljs/ns->relpath file-namespace)]
+    [file-namespace relpath]))
+
+#_(def ^:private extract-cache-metadata-mem (memoize extract-cache-metadata))
+
+#_(defn- cache-source-fn
+  [source-text]
+  (fn [x cb]
+    (println "wtf am I doing" source-text "\n" x)
+    (when (:source x)
+      (let [source (:source x)
+            [file-namespace relpath] (extract-cache-metadata-mem source-text)
+            cache (get-namespace file-namespace)]
+        (write-cache file-namespace relpath source cache (:cache-path @app-opts))))
+    (cb {:value nil})))
+
+;; TODO: if expression?, either disable source maps or put them under "Expression"
 (defn- execute-text
   [source {:keys [expression? print-nil-result? filename session-id] :as opts}]
   (try
@@ -891,16 +1006,18 @@
               r/*alias-map*    (current-alias-map)]
       (let [form (and expression? (first (repl-read-string source)))
             eval-opts (merge (make-eval-opts)
-                        (when expression?
+                        (if expression?
                           {:context :expr
-                           :def-emits-var true}))]
+                           :def-emits-var true}
+                          #_(when (:cache-path @app-opts)
+                            {:cache-source (cache-source-fn source)})))]
         (if (repl-special? form)
           ((get repl-special-fns (first form)) form eval-opts)
           (cljs/eval-str
             st
             source
             (cond
-              expression? source
+              expression? "Expression" ;source
               filename (or (ns-for-source source) 'cljs.user)
               :else "source")
             eval-opts
