@@ -23,8 +23,15 @@
 ;; =============================================================================
 ;; Globals
 
-(def ^:dynamic *loading-foreign* false)
-(def ^:dynamic *executing-path* nil)
+(def ^{:dynamic true
+       :doc "*pprint-results* controls whether Lumo REPL results are
+  pretty printed. If it is bound to logical false, results
+  are printed in a plain fashion. Otherwise, results are
+  pretty printed."}
+  *pprint-results* true)
+
+(def ^:private ^:dynamic *loading-foreign* false)
+(def ^:private ^:dynamic *executing-path* nil)
 
 (defonce ^:private st (cljs/empty-state))
 
@@ -693,7 +700,9 @@
       name)))
 
 (defn print-value [value]
-  (pprint/pprint value))
+  (if *pprint-results*
+    (pprint/pprint value)
+    (prn value)))
 
 (defn- capture-session-state
   "Captures all of the commonly set global vars as a session state map."

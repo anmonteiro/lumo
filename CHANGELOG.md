@@ -5,7 +5,8 @@
 ### New features
 
 - Return exit code `1` on exception ([#58](https://github.com/anmonteiro/lumo/issues/58)).
-- Pretty print evaluation results.
+- Pretty print evaluation results. This is turned on by default. It is posisble to
+turn off pretty printing by binding `lumo.repl/*pprint-results*` to `false`.
 - Add ability to kill infinite loops at the REPL with `Ctrl+C`.
 - Print the Node.js version in the repl ([#104](https://github.com/anmonteiro/lumo/issues/104)).
 - Add programmatic access to Lumo's version through `lumo.core/*lumo-version*`
