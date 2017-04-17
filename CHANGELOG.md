@@ -34,6 +34,7 @@ the REPL ([#120](https://github.com/anmonteiro/lumo/issues/120)).
 - Fix error when calling `child_process.fork` ([#53](https://github.com/anmonteiro/lumo/issues/53)).
 - Fix a bug that would prevent TTY support on Windows. Lumo is now at feature-parity
 with every other supported platform.
+- NPM installer defaults to Windows executable on failure ([#129](https://github.com/anmonteiro/lumo/issues/129)).
 
 ## [1.3.0](https://github.com/anmonteiro/lumo/compare/1.2.0...1.3.0) (2017-04-02)
 
