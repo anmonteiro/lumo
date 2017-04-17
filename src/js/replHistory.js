@@ -40,7 +40,7 @@ function onLoad(
   const rs = fs.createReadStream(path, {
     encoding: 'utf-8',
     fd,
-    start: offset,
+    start: Math.max(offset, 0),
     autoClose: false,
   });
   let tail = '';

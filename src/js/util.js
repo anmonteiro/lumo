@@ -26,7 +26,7 @@ export function isWhitespace(s: string): boolean {
   return s.trim() === '';
 }
 
-/* eslint-disable consistent-return */
+// eslint-disable-next-line consistent-return
 function ensureDirInner(dir: string): void {
   if (!fs.existsSync(dir)) {
     return fs.mkdirSync(dir);

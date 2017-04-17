@@ -127,7 +127,6 @@ describe('startREPL', () => {
   });
 
   describe('sets dumb-terminal', () => {
-    const isWin = util.isWindows;
     const isTTY = process.stdin.isTTY;
 
     beforeEach(() => {
@@ -137,12 +136,9 @@ describe('startREPL', () => {
 
     afterEach(() => {
       process.stdin.isTTY = isTTY;
-      util.isWindows = isWin;
     });
 
-    describe('according to the option in non-windows platforms', () => {
-      util.isWindows = false;
-
+    describe('according to the option on all platforms', () => {
       it('when dumb-terminal is false', () => {
         startREPL({
           'dumb-terminal': false,
@@ -164,19 +160,6 @@ describe('startREPL', () => {
         expect(replHistory).toHaveBeenCalledTimes(1);
         expect(replHistoryCalls[0][0].terminal).toBe(false);
       });
-    });
-
-    it('to true on Windows regardless', () => {
-      util.isWindows = true;
-
-      startREPL({
-        'dumb-terminal': false,
-      });
-
-      const replHistoryCalls = replHistory.mock.calls;
-
-      expect(replHistory).toHaveBeenCalledTimes(1);
-      expect(replHistoryCalls[0][0].terminal).toBe(false);
     });
 
     it("doesn't set stdin to rawMode if dumbTerminal is true", () => {

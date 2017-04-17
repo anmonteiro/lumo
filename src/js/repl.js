@@ -6,7 +6,7 @@ import readline from 'readline';
 import tty from 'tty';
 import * as cljs from './cljs';
 import replHistory from './replHistory';
-import { currentTimeMicros, isWhitespace, isWindows } from './util';
+import { currentTimeMicros, isWhitespace } from './util';
 import { close as socketServerClose } from './socketRepl';
 
 import type { CLIOptsType } from './cli';
@@ -257,7 +257,7 @@ function completer(
 }
 
 export default function startREPL(opts: CLIOptsType): void {
-  const dumbTerminal = isWindows ? true : opts['dumb-terminal'];
+  const dumbTerminal = opts['dumb-terminal'];
 
   const rl = replHistory({
     path: path.join(os.homedir(), '.lumo_history'),
