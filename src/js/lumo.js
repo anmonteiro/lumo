@@ -11,6 +11,7 @@ import JSZip from 'jszip';
 import ArrayStream from './array-stream';
 import * as util from './util';
 
+// TODO: make this a set
 const sourcePaths = [''];
 
 type SourceType = {|
@@ -178,9 +179,13 @@ export function resource(filename: string): ?ResourceType {
   return null;
 }
 
-// $FlowIssue
 export function addSourcePaths(srcPaths: string[]): void {
-  sourcePaths.push(...srcPaths);
+  const expanded = srcPaths.map((srcPath: string) =>
+    // $FlowIssue
+    path.normalize(util.expandPath(srcPath)),
+  );
+
+  sourcePaths.push(...expanded);
 }
 
 export function readSourcePaths(): string[] {

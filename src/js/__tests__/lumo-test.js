@@ -131,12 +131,16 @@ describe('lumo', () => {
   });
 
   describe('readSource', () => {
+    const pathResolve = path.resolve;
     beforeEach(() => {
       jest.resetModules();
       lumo = require('../lumo'); // eslint-disable-line global-require
+      path.resolve = jest.fn((x: string) => x);
     });
 
-    afterEach(() => {});
+    afterEach(() => {
+      path.resolve = pathResolve;
+    });
 
     it('cycles through the source paths', () => {
       const srcPaths = ['a', 'b', 'c'];
@@ -210,9 +214,16 @@ describe('lumo', () => {
   });
 
   describe('resource', () => {
+    const pathResolve = path.resolve;
+
     beforeEach(() => {
       jest.resetModules();
       lumo = require('../lumo'); // eslint-disable-line global-require
+      path.resolve = jest.fn((x: string) => x);
+    });
+
+    afterEach(() => {
+      path.resolve = pathResolve;
     });
 
     it('cycles through the source paths', () => {

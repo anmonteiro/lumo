@@ -4,7 +4,7 @@ import fs from 'fs';
 import os from 'os';
 import path from 'path';
 
-function expandPath(somePath: string): string {
+export function expandPath(somePath: string): string {
   const tildeExpandedPath = somePath.startsWith('~')
     ? somePath.replace(/^~/, os.homedir)
     : somePath;
@@ -18,7 +18,8 @@ export function srcPathsFromClasspathStrings(cpStrs: string[]): string[] {
     const sep = !isWindows ? ':' : /;|:/;
     const paths = colonSepPaths.split(sep);
 
-    return ret.concat(paths.map(expandPath).map(path.normalize));
+    ret.push(...paths);
+    return ret;
   }, []);
 }
 

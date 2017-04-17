@@ -46,40 +46,6 @@ describe('srcPathsFromClasspathStrings', () => {
       ]);
     });
   }
-
-  it('expands ', () => {
-    const ret = srcPathsFromClasspathStrings(['a:~/b', '~/c:~/d']);
-
-    if (isWindows) {
-      expect(ret).toEqual([
-        'a',
-        '\\Users\\foo\\b',
-        '\\Users\\foo\\c',
-        '\\Users\\foo\\d',
-      ]);
-    } else {
-      expect(ret).toEqual([
-        'a',
-        '/Users/foo/b',
-        '/Users/foo/c',
-        '/Users/foo/d',
-      ]);
-    }
-  });
-
-  it('normalizes paths', () => {
-    const ret = srcPathsFromClasspathStrings(['a//c/x/:~//b', '~/c//']);
-
-    if (isWindows) {
-      expect(ret).toEqual([
-        'a\\c\\x\\',
-        '\\Users\\foo\\b',
-        '\\Users\\foo\\c\\',
-      ]);
-    } else {
-      expect(ret).toEqual(['a/c/x/', '/Users/foo/b', '/Users/foo/c/']);
-    }
-  });
 });
 
 describe('ensureDir', () => {
