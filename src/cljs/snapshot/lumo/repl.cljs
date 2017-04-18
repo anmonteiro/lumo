@@ -13,7 +13,6 @@
             [cljs.tools.reader.reader-types :as rt]
             [clojure.string :as string]
             [cognitect.transit :as transit]
-            [goog.object :as gobj]
             [lumo.js-deps :as deps]
             [lumo.common :as common]
             [lumo.pprint.data :as pprint]
@@ -124,8 +123,45 @@
 (defn- skip-load-js?
   "Indicates namespaces for which JS code is already loaded, but for which
    we might need to load the corresponding analysis cache."
-  [name]
-  (exists? (apply gobj/getValueByKeys js/global (string/split name "."))))
+  [name macros]
+  (and (not macros)
+    ('#{cljs.analyzer
+        cljs.compiler
+        cljs.env
+        cljs.js
+        cljs.reader
+        cljs.repl
+        cljs.source-map
+        cljs.source-map.base64
+        cljs.source-map.base64-vlq
+        cljs.spec
+        cljs.spec.impl.gen
+        cljs.tagged-literals
+        cljs.tools.reader
+        cljs.tools.reader.reader-types
+        cljs.tools.reader.impl.commons
+        cljs.tools.reader.impl.utils
+        clojure.core.rrb-vector
+        clojure.core.rrb-vector.interop
+        clojure.core.rrb-vector.nodes
+        clojure.core.rrb-vector.protocols
+        clojure.core.rrb-vector.rrbt
+        clojure.core.rrb-vector.transients
+        clojure.core.rrb-vector.trees
+        clojure.string
+        clojure.set
+        clojure.walk
+        cognitect.transit
+        fipp.visit
+        fipp.engine
+        fipp.deque
+        lazy-map.core
+        lumo.core
+        lumo.pprint.data
+        lumo.repl
+        lumo.repl-resources
+        lumo.js-deps
+        lumo.common} name)))
 
 (defn- skip-load?
   [name macros?]
@@ -224,7 +260,7 @@
                              macros? (str MACROS_SUFFIX))
         bundled-source (js/$$LUMO_GLOBALS.load (str bundled-src-prefix JS_EXT))]
     (cond
-      (skip-load-js? name)
+      (skip-load-js? name macros?)
       (load-bundled name bundled-src-prefix file-path "" cb)
 
       (some? bundled-source)
