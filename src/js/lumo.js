@@ -11,8 +11,7 @@ import JSZip from 'jszip';
 import ArrayStream from './array-stream';
 import * as util from './util';
 
-// TODO: make this a set
-const sourcePaths = [''];
+const sourcePaths = new Set(['']);
 
 type SourceType = {|
   source: string,
@@ -77,10 +76,7 @@ export function getGoogleClosureCompiler(): Function {
 
 // TODO: cache JARs that we know have a given file / path
 export function readSource(filename: string): ?SourceType {
-  const len = sourcePaths.length;
-  for (let i = 0; i < len; i += 1) {
-    const srcPath = sourcePaths[i];
-
+  for (const srcPath of sourcePaths.values()) {
     try {
       if (srcPath.endsWith('.jar')) {
         const data = fs.readFileSync(srcPath);
@@ -124,7 +120,8 @@ export function writeCache(filename: string, source: string): ?Error {
 }
 
 export function loadUpstreamForeignLibs(): string[] {
-  return sourcePaths.reduce((ret: string[], srcPath: string) => {
+  const ret = [];
+  for (const srcPath of sourcePaths.values()) {
     if (srcPath.endsWith('.jar')) {
       try {
         const data = fs.readFileSync(srcPath);
@@ -136,13 +133,11 @@ export function loadUpstreamForeignLibs(): string[] {
         }
       } catch (_) {} // eslint-disable-line no-empty
     }
-    return ret;
-  }, []);
+  }
+  return ret;
 }
 
 export function resource(filename: string): ?ResourceType {
-  const len = sourcePaths.length;
-
   if (isBundled(filename)) {
     return {
       type: 'bundled',
@@ -150,9 +145,7 @@ export function resource(filename: string): ?ResourceType {
     };
   }
 
-  for (let i = 0; i < len; i += 1) {
-    const srcPath = sourcePaths[i];
-
+  for (const srcPath of sourcePaths.values()) {
     if (srcPath.endsWith('.jar')) {
       const data = fs.readFileSync(srcPath);
       const zip = new JSZip().load(data);
@@ -185,19 +178,15 @@ export function addSourcePaths(srcPaths: string[]): void {
     path.normalize(util.expandPath(srcPath)),
   );
 
-  sourcePaths.push(...expanded);
+  expanded.forEach((p: string) => sourcePaths.add(p));
 }
 
 export function readSourcePaths(): string[] {
   return [...sourcePaths];
 }
 
-export function removeSourcePath(srcPath: string): void {
-  const idx = sourcePaths.indexOf(srcPath);
-
-  if (idx !== -1) {
-    sourcePaths.splice(idx, 1);
-  }
+export function removeSourcePath(srcPath: string): boolean {
+  return sourcePaths.delete(srcPath);
 }
 
 export function readSourceFromJar({
