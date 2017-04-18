@@ -13,6 +13,8 @@ turn off pretty printing by binding `lumo.repl/*pprint-results*` to `false`.
 ([#127](https://github.com/anmonteiro/lumo/issues/127)).
 - Interrupt printing at the REPL with `Ctrl+C` ([#107](https://github.com/anmonteiro/lumo/issues/107))
 - Add missing Clojure repl special vars (*1, *2, *3, *e) ([#101](https://github.com/anmonteiro/lumo/issues/101))
+- Make the classpath dynamic, add a new namespace `lumo.classpath` to interact
+with the Lumo classpath ([#31](https://github.com/anmonteiro/lumo/issues/31)).
 
 ### Changes
 
@@ -20,9 +22,9 @@ turn off pretty printing by binding `lumo.repl/*pprint-results*` to `false`.
 - Do not print empty line if input is empty or whitespace only  (make behavior
 consistent with `clojure.main`).
 - Invalidate cache when source file changes ([#54](https://github.com/anmonteiro/lumo/issues/54)).
-- Upgrade ClojureScript to version 1.9.518.
+- Upgrade ClojureScript to version 1.9.521.
 - Upgrade Closure Compiler JS to version v20170409.
-- Upgrade to Node.js version 7.9.0.
+- Upgrade Node.js to version 7.9.0.
 
 ### Bug fixes
 

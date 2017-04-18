@@ -1007,6 +1007,7 @@
       lumo.js-deps
       lumo.repl
       lumo.repl-resources
+      lumo.classpath
       cognitect.transit
       lazy-map.core
       cljs.source-map
@@ -1091,6 +1092,7 @@
            (map str (keys special-doc-map))
            (map str (keys repl-special-doc-map))))])))
 
+;; TODO: "str/" returns all cljs.core symbols
 (defn ^:export get-completions
   [line cb]
   (let [js-matches (re-find #"js/(\S*)$" line)]

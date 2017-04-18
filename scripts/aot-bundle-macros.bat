@@ -11,7 +11,7 @@ echo "### Compiling Macro Namespaces"
 
 mkdir lumo-cljs\out\macros-tmp || goto :error
 
-echo (require 'lumo.build.api 'lumo.analyzer 'lumo.cljs-deps 'lumo.closure 'lumo.compiler 'lumo.io 'lumo.json 'lumo.util 'clojure.core.reducers 'clojure.zip 'clojure.data 'cljs.nodejs 'cljs.pprint 'cljs.test 'cljs.analyzer.api) (require-macros 'lumo.repl 'lumo.util 'clojure.template 'cljs.pprint 'cljs.support 'cljs.spec 'cljs.spec.impl.gen 'cljs.test 'cljs.reader 'cljs.env.macros 'cljs.analyzer.macros 'cljs.compiler.macros) | build\lumo.exe --quiet -c target -sdk lumo-cljs/out/macros-tmp || goto :error
+echo (require 'lumo.build.api 'lumo.analyzer 'lumo.cljs-deps 'lumo.classpath 'lumo.closure 'lumo.compiler 'lumo.io 'lumo.json 'lumo.util 'clojure.core.reducers 'clojure.zip 'clojure.data 'cljs.nodejs 'cljs.pprint 'cljs.test 'cljs.analyzer.api) (require-macros 'lumo.repl 'lumo.util 'clojure.template 'cljs.pprint 'cljs.support 'cljs.spec 'cljs.spec.impl.gen 'cljs.test 'cljs.reader 'cljs.env.macros 'cljs.analyzer.macros 'cljs.compiler.macros) | build\lumo.exe --quiet -c target -sdk lumo-cljs/out/macros-tmp || goto :error
 
 mv lumo-cljs\out\macros-tmp\clojure_SLASH_core_SLASH_reducers.js target\clojure\core\reducers.js || goto :error
 mv lumo-cljs\out\macros-tmp\clojure_SLASH_core_SLASH_reducers.cache.json target\clojure\core\reducers.cache.json || goto :error
@@ -33,6 +33,8 @@ mv lumo-cljs\out\macros-tmp\lumo_SLASH_build_SLASH_api.js target\lumo\build\api.
 mv lumo-cljs\out\macros-tmp\lumo_SLASH_build_SLASH_api.cache.json target\lumo\build\api.cache.json || goto :error
 mv lumo-cljs\out\macros-tmp\lumo_SLASH_cljs_deps.js target\lumo\cljs_deps.js || goto :error
 mv lumo-cljs\out\macros-tmp\lumo_SLASH_cljs_deps.cache.json target\lumo\cljs_deps.cache.json || goto :error
+mv lumo-cljs\out\macros-tmp\lumo_SLASH_classpath.js target\lumo\classpath.js || goto :error
+mv lumo-cljs\out\macros-tmp\lumo_SLASH_classpath.cache.json target\lumo\classpath.cache.json || goto :error
 mv lumo-cljs\out\macros-tmp\lumo_SLASH_closure.js target\lumo\closure.js || goto :error
 mv lumo-cljs\out\macros-tmp\lumo_SLASH_closure.cache.json target\lumo\closure.cache.json || goto :error
 mv lumo-cljs\out\macros-tmp\lumo_SLASH_compiler.js target\lumo\compiler.js || goto :error

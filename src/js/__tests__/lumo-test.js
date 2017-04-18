@@ -132,6 +132,7 @@ describe('lumo', () => {
 
   describe('readSource', () => {
     const pathResolve = path.resolve;
+
     beforeEach(() => {
       jest.resetModules();
       lumo = require('../lumo'); // eslint-disable-line global-require
@@ -145,7 +146,7 @@ describe('lumo', () => {
     it('cycles through the source paths', () => {
       const srcPaths = ['a', 'b', 'c'];
       lumo.addSourcePaths(srcPaths);
-      const lumoPaths = ['', ...srcPaths];
+      const lumoPaths = [process.cwd(), ...srcPaths];
 
       fs.readFileSync = jest.fn((filename: string) => {
         throw new Error(`file doesn't exist: ${filename}`);
@@ -229,7 +230,7 @@ describe('lumo', () => {
     it('cycles through the source paths', () => {
       const srcPaths = ['a', 'b', 'c'];
       lumo.addSourcePaths(srcPaths);
-      const lumoPaths = ['', ...srcPaths];
+      const lumoPaths = [process.cwd(), ...srcPaths];
 
       fs.existsSync = jest.fn((_: string) => false);
 
