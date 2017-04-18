@@ -13,6 +13,8 @@ turn off pretty printing by binding `lumo.repl/*pprint-results*` to `false`.
 ([#127](https://github.com/anmonteiro/lumo/issues/127)).
 - Interrupt printing at the REPL with `Ctrl+C` ([#107](https://github.com/anmonteiro/lumo/issues/107))
 - Add missing Clojure repl special vars (*1, *2, *3, *e) ([#101](https://github.com/anmonteiro/lumo/issues/101))
+- Make the classpath dynamic, add a new namespace `lumo.classpath` to interact
+with the Lumo classpath ([#31](https://github.com/anmonteiro/lumo/issues/31)).
 
 ### Changes
 

@@ -172,21 +172,20 @@ export function resource(filename: string): ?ResourceType {
   return null;
 }
 
+export function getSourcePaths(): string[] {
+  return [...sourcePaths];
+}
+
 export function addSourcePaths(srcPaths: string[]): void {
   const expanded = srcPaths.map((srcPath: string) =>
-    // $FlowIssue
     path.normalize(util.expandPath(srcPath)),
   );
 
   expanded.forEach((p: string) => sourcePaths.add(p));
 }
 
-export function readSourcePaths(): string[] {
-  return [...sourcePaths];
-}
-
 export function removeSourcePath(srcPath: string): boolean {
-  return sourcePaths.delete(srcPath);
+  return sourcePaths.delete(util.expandPath(srcPath));
 }
 
 export function readSourceFromJar({

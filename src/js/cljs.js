@@ -152,7 +152,8 @@ function newDevelopmentContext(): vm$Context {
       readSourceFromJar: lumo.readSourceFromJar,
       eval: lumoEval,
       addSourcePaths: lumo.addSourcePaths,
-      readSourcePaths: lumo.readSourcePaths,
+      getSourcePaths: lumo.getSourcePaths,
+      removeSourcePath: lumo.removeSourcePath,
     },
     global: undefined,
   };
@@ -183,7 +184,8 @@ function newClojureScriptContext(): { [key: string]: mixed } {
     readSourceFromJar: lumo.readSourceFromJar,
     eval: lumoEval,
     addSourcePaths: lumo.addSourcePaths,
-    readSourcePaths: lumo.readSourcePaths,
+    getSourcePaths: lumo.getSourcePaths,
+    removeSourcePath: lumo.removeSourcePath,
   };
 
   return global;
