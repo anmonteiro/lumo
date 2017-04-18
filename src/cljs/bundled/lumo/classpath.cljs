@@ -1,55 +1,42 @@
 (ns lumo.classpath
   (:require [clojure.string :as string]))
 
-;; TODO: add this to the AOT list
+(def fs (js/require "fs"))
 
-(defn- directory?
-  [path]
-  (.isDirectory (js/$$LUMO_GLOBALS.fs.statSync path)))
-
-(defn- file?
-  [path]
-  (and (. (js/LUMO_STAT path) isFile)
-    (or (string/ends-with? path ".cljs")
-        (string/ends-with? path ".cljc")
-        (string/ends-with? path ".clj"))))
-
-(defn jarfile?
+(defn jar-file?
   "Returns true if file is a normal file with a .jar or .JAR extension."
-  [path]
-  (or (.endsWith path ".jar")
-      (.endsWith path ".JAR")))
-
-(defn- filenames
-  [path]
-  (if (or (identical? "" path) (jarfile? path))
-    path
-    (let [root (js/$$LUMO_GLOBALS.fs.readdirSync path)
-          root-files (filter #(file? (str path "/" %)) root)
-          sub-dirs (map #(str path "/" %) (filter #(directory? (str path "/" %)) root))
-          sub-files (mapcat filenames sub-dirs)]
-      (mapcat identity [root-files sub-files]))))
-
-(defn classpath
-  "Returns a JS array of strings listing all folders on the classpath."
-  []
-  (js/$$LUMO_GLOBALS.readSourcePaths))
-
-(defn classpath-files
-  "Returns a list of all usable files on the classpath."
-  []
-  (mapcat filenames (classpath)))
+  [f]
+  (and (try
+         (.. fs (statSync f) (isFile))
+         (catch :default _ false))
+       (or (.endsWith f ".jar")
+           (.endsWith f ".JAR"))))
 
 (defn filenames-in-jar
   "Returns a list of all filenames in a jarfile."
   [jar-file]
-  (let [zip (.load (js/$$LUMO_GLOBALS.JSZip.) (js/$$LUMO_GLOBALS.fs.readFileSync jar-file))]
-    (filter #(re-find #".*\.clj.*" %) (js/Object.keys zip.files))))
+  (let [zip (.load (js/$$LUMO_GLOBALS.JSZip.) (fs.readFileSync jar-file))]
+    (seq (js/Object.keys zip.files))))
+
+(defn- directory? [x]
+  (try
+    (.. fs (statSync x) (isDirectory))
+    (catch :default _ false)))
+
+(defn classpath
+  "Returns a sequence of the elements on the classpath."
+  []
+  (seq (js/$$LUMO_GLOBALS.readSourcePaths)))
+
+(defn classpath-directories
+  "Returns a sequence of the directories on the classpath."
+  []
+  (filter directory? (classpath)))
 
 (defn classpath-jarfiles
-  "Returns a list of all JAR files on the classpath"
+  "Returns a sequence of the JAR files on the classpath."
   []
-  (filter jarfile? (classpath)))
+  (filter jar-file? (classpath)))
 
 (defn add-source!
   "Add a directory or JAR file to the Lumo classpath."

@@ -11,7 +11,7 @@ import JSZip from 'jszip';
 import ArrayStream from './array-stream';
 import * as util from './util';
 
-const sourcePaths = new Set(['']);
+const sourcePaths = new Set([process.cwd()]);
 
 type SourceType = {|
   source: string,

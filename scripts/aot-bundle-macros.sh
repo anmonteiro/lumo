@@ -17,6 +17,7 @@ $(pwd)/build/lumo --quiet -c target -sdk lumo-cljs/out/macros-tmp <<REPL_INPUT
 (require 'lumo.build.api
          'lumo.analyzer
          'lumo.cljs-deps
+         'lumo.classpath
          'lumo.closure
          'lumo.compiler
          'lumo.io
@@ -64,6 +65,8 @@ mv lumo-cljs/out/macros-tmp/lumo_SLASH_build_SLASH_api.js target/lumo/build/api.
 mv lumo-cljs/out/macros-tmp/lumo_SLASH_build_SLASH_api.cache.json target/lumo/build/api.cache.json
 mv lumo-cljs/out/macros-tmp/lumo_SLASH_cljs_deps.js target/lumo/cljs_deps.js
 mv lumo-cljs/out/macros-tmp/lumo_SLASH_cljs_deps.cache.json target/lumo/cljs_deps.cache.json
+mv lumo-cljs/out/macros-tmp/lumo_SLASH_classpath.js target/lumo/classpath.js
+mv lumo-cljs/out/macros-tmp/lumo_SLASH_classpath.cache.json target/lumo/classpath.cache.json
 mv lumo-cljs/out/macros-tmp/lumo_SLASH_closure.js target/lumo/closure.js
 mv lumo-cljs/out/macros-tmp/lumo_SLASH_closure.cache.json target/lumo/closure.cache.json
 mv lumo-cljs/out/macros-tmp/lumo_SLASH_compiler.js target/lumo/compiler.js
