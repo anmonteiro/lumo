@@ -70,7 +70,8 @@
       (is-contains-completion "(clojure.s" "(clojure.set")))
   (testing "cljs.core function completions"
     (is-contains-completion "sub" "subs")
-    (is-contains-completion "mer" "merge"))
+    (is-contains-completion "mer" "merge")
+    (is-contains-completion "clojure.core/mer" "clojure.core/merge"))
   (testing "referred vars completions"
     (with-redefs [lumo/get-namespace (fn [_]
                                        '{:uses {foo foo.core}
@@ -81,7 +82,10 @@
       (is-contains-completion "(lon" "(longer-var")))
   (testing "LUMO-83"
     (is-contains-completion "clojure.core/" "clojure.core/merge")
-    (is-contains-completion "" "merge"))
+    (is-contains-completion "" "merge")
+    (with-redefs [lumo/current-alias-map (fn []
+                                           '{string clojure.string})]
+      (is-contains-completion "(string/" "(string/merge" not)))
   (testing "JS Completions"
     (is-contains-completion "js/con" "js/console")))
 

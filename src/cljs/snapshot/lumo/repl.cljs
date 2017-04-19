@@ -1045,6 +1045,7 @@
       cljs.test
       cljs.tools.reader
       cljs.tools.reader.reader-types
+      clojure.core
       clojure.core.reducers
       clojure.data
       clojure.string
@@ -1069,9 +1070,12 @@
   "Expand a namespace alias symbol to a known namespace, consulting
    current namespace aliases if necessary."
   [alias]
-  (or (get-in st [:cljs.analyzer/namespaces alias :name])
-      (alias (current-alias-map))
-      alias))
+  (let [alias (if (symbol-identical? alias 'clojure.core)
+                'cljs.core
+                alias)]
+    (or (get-in st [:cljs.analyzer/namespaces alias :name])
+        (alias (current-alias-map))
+        alias)))
 
 (defn- completion-candidates
   [top-level? ns-alias]
@@ -1092,14 +1096,13 @@
            (map str (keys special-doc-map))
            (map str (keys repl-special-doc-map))))])))
 
-;; TODO: "str/" returns all cljs.core symbols
 (defn ^:export get-completions
   [line cb]
   (let [js-matches (re-find #"js/(\S*)$" line)]
     (if-not (nil? js-matches)
       (js/$$LUMO_GLOBALS.getJSCompletions line (second js-matches) cb)
       (let [top-level? (boolean (re-find #"^\s*\(\s*[^()\s]*$" line))
-            ns-alias (second (re-find #"\(*(\b[a-zA-Z-.]+)/[a-zA-Z-]+$" line))
+            ns-alias (second (re-find #"\(*(\b[a-zA-Z-.]+)/[a-zA-Z-]*$" line))
             line-match-suffix (re-find #":?[a-zA-Z-.]*$" line)
             line-prefix (subs line 0 (- (count line) (count line-match-suffix)))
             completions (reduce (fn [ret item]
