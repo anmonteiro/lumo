@@ -228,18 +228,18 @@ export function getJSCompletions(
   const nodeReplServer = new REPLServer('', flat);
   const lineWithoutMatch = line.substring(0, line.length - match.length);
 
-  return nodeReplServer.completer(match, (err: ?Error, [jsCompletions]: [
-    string[],
-    string,
-  ]) => {
-    const completions = jsCompletions.reduce((cs: string[], c: string) => {
-      if (c === '') {
-        return cs;
-      }
+  return nodeReplServer.completer(
+    match,
+    (err: ?Error, [jsCompletions]: [string[], string]) => {
+      const completions = jsCompletions.reduce((cs: string[], c: string) => {
+        if (c === '') {
+          return cs;
+        }
 
-      cs.push(`${lineWithoutMatch}${c}`);
-      return cs;
-    }, []);
-    return cb(completions);
-  });
+        cs.push(`${lineWithoutMatch}${c}`);
+        return cs;
+      }, []);
+      return cb(completions);
+    },
+  );
 }

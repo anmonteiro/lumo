@@ -30,21 +30,26 @@ fs.createWriteStream = jest.fn(() => ({
   fd: 42,
 }));
 
-fs.createReadStream = jest.fn((path: string, opts: {
-  [key: string]: string,
-}) => ({
-  on: jest.fn((type: string, cb: (e?: string) => void) => {
-    switch (type) {
-      case 'data':
-        return path === 'nonExistent' ? cb('') : cb('foo\nbar\n');
-      case 'end':
-        return cb();
+fs.createReadStream = jest.fn(
+  (
+    path: string,
+    opts: {
+      [key: string]: string,
+    },
+  ) => ({
+    on: jest.fn((type: string, cb: (e?: string) => void) => {
+      switch (type) {
+        case 'data':
+          return path === 'nonExistent' ? cb('') : cb('foo\nbar\n');
+        case 'end':
+          return cb();
 
-      default:
-        return undefined;
-    }
+        default:
+          return undefined;
+      }
+    }),
   }),
-}));
+);
 
 describe('replHistory', () => {
   beforeEach(() => {
