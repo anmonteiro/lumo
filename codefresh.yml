@@ -5,7 +5,7 @@ steps:
     type: build
     dockerfile: Dockerfile
     image-name: anmonteiro/lumo
-    tag: ${{CF_BRANCH}}
+    tag: '${{CF_BRANCH}}'
 
   unit_tests:
     image: ${{build_step}}
