@@ -347,13 +347,13 @@ export default function startClojureScriptEngine(opts: CLIOptsType): void {
   if (mainScript) {
     initClojureScriptEngine(opts);
     executeScript(mainScript, 'path');
-    process.exit(process.exitValue);
+    setImmediate(process.exit, process.exitValue);
   }
 
   if (mainNsName) {
     initClojureScriptEngine(opts);
     runMain(mainNsName, args);
-    process.exit(process.exitValue);
+    setImmediate(process.exit, process.exitValue);
   }
 
   if (repl) {
