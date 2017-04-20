@@ -1,0 +1,9 @@
+Vagrant.configure(2) do |config|
+
+  config.vm.box = "nixos/nixos-16.09-x86_64"
+
+  config.vm.provision "shell", inline: <<-SHELL
+    nix-env -iA nixos.git nixos.pkgconfig nixos.vim nixos.wget
+  SHELL
+
+end

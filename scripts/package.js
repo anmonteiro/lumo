@@ -76,7 +76,7 @@ Promise.all(resources.map(deflate)).then(() => {
         '--without-etw',
         '--without-perfctr',
         '--link-module', './google-closure-compiler-js.js',
-      ],
+      ].concat(os.type() === 'Linux' ? ['--fully-static'] : []),
       nodeMakeArgs: ['-j', '8'],
       nodeVCBuildArgs: ['nosign', 'x64', 'noetw', 'noperfctr'],
       flags: true,

@@ -2,6 +2,14 @@
 
 ## [master](https://github.com/anmonteiro/lumo/compare/1.4.0...HEAD) (unreleased)
 
+### Changes
+
+- Statically link the Lumo binary on Linux ([#137](https://github.com/anmonteiro/lumo/issues/137)).
+
+### Bug fixes
+
+- Allow all asynchronous operations to finish before exiting when running scripts.
+
 ## [1.4.0](https://github.com/anmonteiro/lumo/compare/1.3.0...1.4.0) (2017-04-19)
 
 ### New features
