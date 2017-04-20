@@ -1,0 +1,6 @@
+#!/bin/sh
+
+# Placeholder script. This gets overwritten by scripts/npm_install.js
+
+echo "FATAL: Lumo installation failed to complete. Please try re-installing (npm install -g lumo-cljs)." >&2
+exit 1
