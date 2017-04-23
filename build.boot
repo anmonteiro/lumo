@@ -172,7 +172,9 @@
 
 (deftask package-executable []
   (with-pass-thru _
-    (dosh "node" "scripts/package.js")))
+    (dosh "node" "scripts/package.js")
+    (when-not windows?
+      (dosh "strip" "build/lumo"))))
 
 (deftask backup-resources
   "Backup resources to be gzipped in the 2nd stage binary
