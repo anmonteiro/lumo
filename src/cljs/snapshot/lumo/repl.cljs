@@ -74,7 +74,7 @@
     (for [extension extensions]
       (str path extension))))
 
-(defn closure-index* []
+(defn- closure-index* []
   (let [paths-to-deps
         (map (fn [[_ path provides requires]]
                [path
@@ -100,7 +100,7 @@
                 goog.crypt.base64
                 goog.math.Long}))
 
-(defn goog-dep-source [name]
+(defn- goog-dep-source [name]
   (let [index (closure-index)]
     (when-let [{:keys [path]} (get index name)]
       (let [sorted-deps (remove @goog-loaded (deps/topo-sort index name))]
@@ -110,7 +110,7 @@
                  (let [{:keys [path]} (get index dep-name)]
                    (js/$$LUMO_GLOBALS.load (str path JS_EXT)))) sorted-deps))))))
 
-(defn load-goog
+(defn- load-goog
   "Loads a Google Closure implementation source file. `goog` namespaces are
    actually already included in the bundle because we compile with simple
    optimizations."
@@ -346,7 +346,7 @@
            :cursorLine line}
       (recur (subs text (inc x)) (- pos (inc x)) (inc line)))))
 
-(defn ^:export indent-space-count
+(defn- ^:export indent-space-count
   "Based on a partially entered form, returns the number of spaces with which
    to indent the next line. Returns 0 on failure to calculate."
   [text]
@@ -413,7 +413,7 @@
                 (recur (- start-idx (inc line-char-count)) (dec line-ndx) lines)))))))
     [-1 -1]))
 
-(defn ^:export get-highlight-coordinates
+(defn- ^:export get-highlight-coordinates
   "Returns the highlight coordinates [cursorX dy] for the matching brace of the
    one at pos. cursorX is the horizontal position of the cursor starting from
    the beginning of the line. dy is the number of lines above the current
@@ -687,27 +687,6 @@
                                :arglists (seq sigs)}]))
                 (into {})))))))))
 
-(defn- namespace-doc [nspace]
-  (select-keys (get-in @st [::ana/namespaces nspace]) [:name :doc]))
-
-(defn find-doc
-  "Prints documentation for any var whose documentation or name
-   contains a match for re-string-or-pattern"
-  [re-string-or-pattern]
-  (let [re (re-pattern re-string-or-pattern)
-        ms (concat (mapcat #(sort-by :name
-                              (map (fn [[k v]]
-                                     (assoc (:meta v) :name (symbol % k)))
-                                (get-in @st [::ana/namespaces % :defs])))
-                     (all-ns))
-             (map namespace-doc (all-ns))
-             (map special-doc (keys special-doc-map)))]
-    (doseq [m ms
-            :when (and (:doc m)
-                    (or (re-find re (:doc m))
-                        (re-find re (str (:name m)))))]
-      (doc* (:name m)))))
-
 (defn- get-file-source
   [filepath]
   (if (symbol? filepath)
@@ -737,10 +716,45 @@
   (println (or (fetch-source (get-var (get-aenv) sym))
                "Source not found")))
 
+(defn- namespace-doc [nspace]
+  (select-keys (get-in @st [::ana/namespaces nspace]) [:name :doc]))
+
+(defn find-doc
+  "Prints documentation for any var whose documentation or name
+   contains a match for re-string-or-pattern"
+  [re-string-or-pattern]
+  (let [re (re-pattern re-string-or-pattern)
+        ms (concat (mapcat #(sort-by :name
+                              (map (fn [[k v]]
+                                     (assoc (:meta v) :name (symbol % k)))
+                                (get-in @st [::ana/namespaces % :defs])))
+                     (all-ns))
+             (map namespace-doc (all-ns))
+             (map special-doc (keys special-doc-map)))]
+    (doseq [m ms
+            :when (and (:doc m)
+                    (or (re-find re (:doc m))
+                        (re-find re (str (:name m)))))]
+      (doc* (:name m)))))
+
+(defn apropos
+  "Given a regular expression or stringable thing, return a seq of all
+  public definitions in all currently-loaded namespaces that match the
+  str-or-pattern."
+  [str-or-pattern]
+  (let [matches? (if (instance? js/RegExp str-or-pattern)
+                   #(re-find str-or-pattern (str %))
+                   #(.includes (str %) (str str-or-pattern)))]
+    (sort (mapcat (fn [ns]
+                    (let [ns-name (drop-macros-suffix (str ns))]
+                      (map #(symbol ns-name (str %))
+                           (filter matches? (public-syms ns)))))
+                  (all-ns)))))
+
 ;; --------------------
 ;; Code evaluation
 
-(defn make-eval-opts []
+(defn- make-eval-opts []
   (let [{:keys [verbose static-fns]} @app-opts]
     {:ns            @current-ns
      :verbose       verbose
@@ -787,7 +801,7 @@
               (keyword-identical? op :ns*))
       name)))
 
-(defn print-value [value]
+(defn- print-value [value]
   (if *pprint-results*
     (pprint/pprint value)
     (prn value)))
@@ -943,7 +957,7 @@
     (execute-path source-or-path opts)
     (execute-text source-or-path opts)))
 
-(defn ^:export execute
+(defn- ^:export execute
   [type source-or-path expression? print-nil-result? setNS session-id]
   (when setNS
     (vreset! current-ns (symbol setNS)))
@@ -952,7 +966,7 @@
                                   :print-nil-result? print-nil-result?
                                   :session-id session-id}))
 
-(defn ^:export is-readable?
+(defn- ^:export is-readable?
   [form]
   (try
     (second (repl-read-string form))
@@ -988,16 +1002,16 @@
                     (handle-error e)))))))))
     nil))
 
-(defn ^:export get-current-ns []
+(defn- ^:export get-current-ns []
   (str @current-ns))
 
-(defn ^:export set-ns [ns-str]
+(defn- ^:export set-ns [ns-str]
   (vreset! current-ns (symbol ns-str)))
 
 (defn- setup-assert! [elide-asserts]
   (set! *assert* (not elide-asserts)))
 
-(defn ^:export init [repl? verbose cache-path static-fns elide-asserts]
+(defn- ^:export init [repl? verbose cache-path static-fns elide-asserts]
   (vreset! app-opts {:repl? repl?
                      :verbose verbose
                      :cache-path cache-path
