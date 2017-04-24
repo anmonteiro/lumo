@@ -16,6 +16,7 @@ Array [
 ClojureScript clojurescript-version
 Node.js X.X.X
  Docs: (doc function-name-here)
+       (find-doc \\"part-of-name-here\\")
  Exit: Control+D or :cljs/quit or exit
 
 ",
@@ -34,6 +35,7 @@ Array [
 ClojureScript clojurescript-version
 Node.js X.X.X
  Docs: (doc function-name-here)
+       (find-doc \\"part-of-name-here\\")
  Exit: Control+D or :cljs/quit or exit
 
 ",

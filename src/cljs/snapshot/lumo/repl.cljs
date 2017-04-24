@@ -685,6 +685,27 @@
                                :arglists (seq sigs)}]))
                 (into {})))))))))
 
+(defn- namespace-doc [nspace]
+  (select-keys (get-in @st [::ana/namespaces nspace]) [:name :doc]))
+
+(defn find-doc
+  "Prints documentation for any var whose documentation or name
+   contains a match for re-string-or-pattern"
+  [re-string-or-pattern]
+  (let [re (re-pattern re-string-or-pattern)
+        ms (concat (mapcat #(sort-by :name
+                              (map (fn [[k v]]
+                                     (assoc (:meta v) :name (symbol % k)))
+                                (get-in @st [::ana/namespaces % :defs])))
+                     (all-ns))
+             (map namespace-doc (all-ns))
+             (map special-doc (keys special-doc-map)))]
+    (doseq [m ms
+            :when (and (:doc m)
+                    (or (re-find re (:doc m))
+                        (re-find re (str (:name m)))))]
+      (doc* (:name m)))))
+
 ;; --------------------
 ;; Code evaluation
 

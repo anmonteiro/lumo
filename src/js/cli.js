@@ -40,6 +40,7 @@ export function createBanner(): string {
 ClojureScript ${lumo.load('clojurescript-version')}
 Node.js ${process.version}
  Docs: (doc function-name-here)
+       (find-doc "part-of-name-here")
  Exit: Control+D or :cljs/quit or exit
 
 `;

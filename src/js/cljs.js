@@ -362,7 +362,7 @@ export default function startClojureScriptEngine(opts: CLIOptsType): void {
       setPrintFns(new DiscardingSender());
 
       execute(
-        "(require '[lumo.repl :refer-macros [doc dir]])",
+        "(require '[lumo.repl :refer [find-doc] :refer-macros [dir doc]])",
         'text',
         true,
         false,
