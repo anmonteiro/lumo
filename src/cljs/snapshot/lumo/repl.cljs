@@ -235,15 +235,17 @@
                    :file   filename
                    :source (.-source source-data)}]
           (if (or (string/ends-with? filename ".cljs")
-                (string/ends-with? filename ".cljc"))
+                  (string/ends-with? filename ".cljc"))
             (if-let [javascript-source (js/$$LUMO_GLOBALS.readSource (replace-extension filename JS_EXT))]
               (if-let [cache-edn (js/$$LUMO_GLOBALS.readSource (str filename ".cache.edn"))]
                 (cb {:lang   :js
+                     :file filename
                      :source (.-source javascript-source)
                      :cache  (parse-edn cache-edn)})
                 ;; one last attempt to read analysis cache
                 (if-let [cache-json (js/$$LUMO_GLOBALS.readSource (str filename CACHE_SUFFIX))]
                   (cb {:lang   :js
+                       :file filename
                        :source (.-source javascript-source)
                        :cache  (common/transit-json->cljs cache-json)})
                   (cb ret)))
@@ -706,6 +708,35 @@
                         (re-find re (str (:name m)))))]
       (doc* (:name m)))))
 
+(defn- get-file-source
+  [filepath]
+  (if (symbol? filepath)
+    (let [without-extension (string/replace
+                              (string/replace (name filepath) #"\." "/")
+                              #"-" "_")]
+      (or
+        (js/$$LUMO_GLOBALS.load (str without-extension ".clj"))
+        (js/$$LUMO_GLOBALS.load (str without-extension ".cljc"))
+        (js/$$LUMO_GLOBALS.load (str without-extension ".cljs"))))
+    (or
+      (js/$$LUMO_GLOBALS.load filepath)
+      (some-> (js/$$LUMO_GLOBALS.readSource filepath) .-source)
+      (js/$$LUMO_GLOBALS.load (string/replace filepath #"^/.*/main.out/" "")))))
+
+(defn- fetch-source
+  [var]
+  (or (::repl-entered-source var)
+      (when-let [filepath (or (:file var) (:file (:meta var)))]
+        (when-let [file-source (get-file-source filepath)]
+          (let [rdr (rt/source-logging-push-back-reader file-source)]
+            (dotimes [_ (dec (:line var))] (rt/read-line rdr))
+            (-> (r/read {:read-cond :allow :features #{:cljs}} rdr)
+              meta :source))))))
+
+(defn- source* [sym]
+  (println (or (fetch-source (get-var (get-aenv) sym))
+               "Source not found")))
+
 ;; --------------------
 ;; Code evaluation
 
@@ -824,6 +855,16 @@
     (set! *2 *1)
     (set! *1 value)))
 
+(defn- call-form?
+  [form allowed-operators]
+  (contains? allowed-operators (and (list? form)
+                                    (first form))))
+
+(defn- def-form?
+  "Determines if the expression is a def expression which returns a Var."
+  [form]
+  (call-form? form '#{def defn defn- defonce defmulti defmacro}))
+
 (declare execute-source)
 
 (defn- execute-path [file opts]
@@ -874,16 +915,19 @@
             source
             (cond
               expression? source
-              filename (or (ns-for-source source) 'cljs.user)
+              filename (or (ns-for-source source) filename)
               :else "source")
             eval-opts
             (fn [{:keys [ns value error] :as ret}]
               (if-not error
                 (when expression?
-                  (when (or print-nil-result?
+                  (when (or (true? print-nil-result?)
                             (not (nil? value)))
                     (js/$$LUMO_GLOBALS.doPrint print-value value))
                   (process-1-2-3 form value)
+                  (when (def-form? form)
+                    (let [{:keys [ns name]} (meta value)]
+                      (swap! st assoc-in [::ana/namespaces ns :defs name ::repl-entered-source] source)))
                   (vreset! current-ns ns))
                 (handle-error error)))))))
     (catch :default e
