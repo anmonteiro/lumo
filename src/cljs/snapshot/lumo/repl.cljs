@@ -706,6 +706,37 @@
                         (re-find re (str (:name m)))))]
       (doc* (:name m)))))
 
+(defn- get-file-source
+  [filepath]
+  (if (symbol? filepath)
+    (let [without-extension (string/replace
+                              (string/replace (name filepath) #"\." "/")
+                              #"-" "_")]
+      (or
+        (js/$$LUMO_GLOBALS.load (str without-extension ".clj"))
+        (js/$$LUMO_GLOBALS.load (str without-extension ".cljc"))
+        (js/$$LUMO_GLOBALS.load (str without-extension ".cljs"))))
+    (or
+      (js/$$LUMO_GLOBALS.load filepath)
+      (js/$$LUMO_GLOBALS.readSource filepath)
+      ;; (js/$$LUMO_GLOBALS.load (string/replace filepath #"^out/" ""))
+      ;; (js/$$LUMO_GLOBALS.load (string/replace filepath #"^src/" ""))
+      (js/$$LUMO_GLOBALS.load (string/replace filepath #"^/.*/main.out/" "")))))
+
+(defn- fetch-source
+  [var]
+  (or (::repl-entered-source var)
+      (when-let [filepath (or (:file var) (:file (:meta var)))]
+        (when-let [file-source (get-file-source filepath)]
+          (let [rdr (rt/source-logging-push-back-reader file-source)]
+            (dotimes [_ (dec (:line var))] (rt/read-line rdr))
+            (-> (r/read {:read-cond :allow :features #{:cljs}} rdr)
+              meta :source))))))
+
+(defn- source* [sym]
+  (println (or (fetch-source (get-var (get-aenv) sym))
+               "Source not found")))
+
 ;; --------------------
 ;; Code evaluation
 
