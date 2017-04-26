@@ -483,11 +483,16 @@
        #_(when-let [data (and print-ex-data? (ex-data error))]
          (print-value data {::as-code? false}))
        (when stacktrace?
-         (println (st/parse-stacktrace
-                    {}
-                    (.-stack error)
-                    {:ua-product :nodejs}
-                    {:output-dir "file://(/goog/..)?"})))
+         (let [canonical-stacktrace (st/parse-stacktrace
+                                      {}
+                                      (.-stack error)
+                                      {:ua-product :nodejs}
+                                      {:output-dir "file://(/goog/..)?"})]
+           (println
+             (st/mapped-stacktrace-str
+               canonical-stacktrace
+               {}
+               nil))))
        (when-let [cause (.-cause error)]
          (recur cause stacktrace? message))))))
 
