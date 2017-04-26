@@ -18,7 +18,7 @@ function embed(resourceFiles = [], resourceRoot = '') {
   }
 
   let buffer =
-    'lumo.internal={embedded: {}};lumo.internal.embedded.resources={\n';
+    '\nlumo.internal={embedded: {}};lumo.internal.embedded.resources={\n';
   for (let i = 0; i < resourceFiles.length; i++) {
     buffer +=
       JSON.stringify(path.relative(resourceRoot, resourceFiles[i])) + ':"';

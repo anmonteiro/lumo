@@ -122,9 +122,7 @@
        'org.clojure/google-closure-library #"^goog[\\\/].*(?<!_test)\.js$"
        'org.clojure/google-closure-library-third-party #"^goog[\\\/].*(?<!_test)\.js$"
        'org.clojure/tools.reader #"^cljs.*clj$"
-       'org.clojure/clojurescript #""
-       ;#"^cljs[\\\/](test\.cljc|core\.cljs\.cache\.aot\.edn|reader\.clj|spec(\.cljc|[\\\/]test\.clj[sc]|[\\\/]impl[\\\/]gen\.cljc))$"
-       }
+       'org.clojure/clojurescript #""}
       :move {#"^main.out[\\\/]((cljs|clojure|cognitect|lumo|lazy_map|fipp).*)" "$1"})
     (sift :include #{#"^main.js" #"^bundle.js" #"^cljs(?!\.js)" #"core\$macros"
                      #"^clojure" #"^cognitect" #"^goog" #"^lumo[\\\/]"
@@ -134,6 +132,7 @@
                      #"^cljs[\\\/](analyzer[\\\/]utils|build|closure)"
                      #"^cljs[\\\/](core[\\\/]macros|compiler[\\\/]api|repl([\\\/].*|(.cljc))|source_map.*clj$)"
                      #"^cljs[\\\/](externs\.clj|util|js_deps)"
+                     #"^cljs_deps.js$"
                      #"^goog[\\\/](test_module.*?|transpile).js"}
       :invert true)))
 
