@@ -258,7 +258,6 @@ function initClojureScriptEngine(opts: CLIOptsType): void {
       ClojureScriptContext.cljs.core.seq(args);
   }
 
-  // require('source-map-support').install();
   setRuntimeOpts(opts);
 }
 

@@ -814,8 +814,7 @@
   (let [{:keys [verbose static-fns]} @app-opts]
     {:ns            @current-ns
      :verbose       verbose
-     :static-fns    static-fns
-     :source-map    true}))
+     :static-fns    static-fns}))
 
 (defn- current-alias-map []
   (let [cur-ns @current-ns]
@@ -926,7 +925,6 @@
     (set! *2 *1)
     (set! *1 value)))
 
-
 (defn- call-form?
   [form allowed-operators]
   (contains? allowed-operators (and (list? form)
@@ -975,36 +973,6 @@
         ;; TODO: why does Planck set this to false?
         (handle-error (ex-info (str "Could not load file " file) {}) true)))))
 
-#_(defn- extract-namespace
-  [source]
-  (try
-    (let [first-form (first (repl-read-string source))]
-      (when (ns-form? first-form)
-        (second first-form)))
-    (catch :default _
-      nil)))
-
-#_(defn- extract-cache-metadata
-  [source]
-  (let [file-namespace (or (extract-namespace source)
-                           'cljs.user)
-        relpath (cljs/ns->relpath file-namespace)]
-    [file-namespace relpath]))
-
-#_(def ^:private extract-cache-metadata-mem (memoize extract-cache-metadata))
-
-#_(defn- cache-source-fn
-  [source-text]
-  (fn [x cb]
-    (println "wtf am I doing" source-text "\n" x)
-    (when (:source x)
-      (let [source (:source x)
-            [file-namespace relpath] (extract-cache-metadata-mem source-text)
-            cache (get-namespace file-namespace)]
-        (write-cache file-namespace relpath source cache (:cache-path @app-opts))))
-    (cb {:value nil})))
-
-;; TODO: if expression?, either disable source maps or put them under "Expression"
 (defn- execute-text
   [source {:keys [expression? print-nil-result? filename session-id] :as opts}]
   (try
@@ -1024,9 +992,7 @@
             eval-opts (merge (make-eval-opts)
                         (if expression?
                           {:context :expr
-                           :def-emits-var true}
-                          #_(when (:cache-path @app-opts)
-                            {:cache-source (cache-source-fn source)})))]
+                           :def-emits-var true}))]
         (if (repl-special? form)
           ((get repl-special-fns (first form)) form eval-opts)
           (cljs/eval-str
