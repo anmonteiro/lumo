@@ -105,33 +105,4 @@ mv lumo-cljs/out/macros-tmp/cljs_SLASH_spec\$macros.cache.json target/cljs/spec\
 mv lumo-cljs/out/macros-tmp/cljs_SLASH_spec_SLASH_impl_SLASH_gen\$macros.js target/cljs/spec/impl/gen\$macros.js
 mv lumo-cljs/out/macros-tmp/cljs_SLASH_spec_SLASH_impl_SLASH_gen\$macros.cache.json target/cljs/spec/impl/gen\$macros.cache.json
 
-mv lumo-cljs/out/macros-tmp/cljs_SLASH_analyzer_SLASH_api.js.map.json target/cljs/analyzer/api.js.map.json
-mv lumo-cljs/out/macros-tmp/cljs_SLASH_analyzer_SLASH_macros\$macros.js.map.json target/cljs/analyzer/macros\$macros.js.map.json
-mv lumo-cljs/out/macros-tmp/cljs_SLASH_compiler_SLASH_macros\$macros.js.map.json target/cljs/compiler/macros\$macros.js.map.json
-mv lumo-cljs/out/macros-tmp/cljs_SLASH_env_SLASH_macros\$macros.js.map.json target/cljs/env/macros\$macros.js.map.json
-mv lumo-cljs/out/macros-tmp/cljs_SLASH_nodejs.js.map.json target/cljs/nodejs.js.map.json
-mv lumo-cljs/out/macros-tmp/cljs_SLASH_pprint\$macros.js.map.json target/cljs/pprint\$macros.js.map.json
-mv lumo-cljs/out/macros-tmp/cljs_SLASH_pprint.js.map.json target/cljs/pprint.js.map.json
-mv lumo-cljs/out/macros-tmp/cljs_SLASH_reader\$macros.js.map.json target/cljs/reader\$macros.js.map.json
-mv lumo-cljs/out/macros-tmp/cljs_SLASH_spec\$macros.js.map.json target/cljs/spec\$macros.js.map.json
-mv lumo-cljs/out/macros-tmp/cljs_SLASH_spec_SLASH_impl_SLASH_gen\$macros.js.map.json target/cljs/spec/impl/gen\$macros.js.map.json
-mv lumo-cljs/out/macros-tmp/cljs_SLASH_support\$macros.js.map.json target/cljs/support\$macros.js.map.json
-mv lumo-cljs/out/macros-tmp/cljs_SLASH_test\$macros.js.map.json target/cljs/test\$macros.js.map.json
-mv lumo-cljs/out/macros-tmp/cljs_SLASH_test.js.map.json target/cljs/test.js.map.json
-mv lumo-cljs/out/macros-tmp/cljs_SLASH_tools_SLASH_reader_SLASH_reader_types\$macros.js.map.json target/cljs/tools/reader/reader_types\$macros.js.map.json
-mv lumo-cljs/out/macros-tmp/clojure_SLASH_core_SLASH_reducers.js.map.json target/clojure/core/reducers.js.map.json
-mv lumo-cljs/out/macros-tmp/clojure_SLASH_data.js.map.json target/clojure/data.js.map.json
-mv lumo-cljs/out/macros-tmp/clojure_SLASH_template\$macros.js.map.json target/clojure/template\$macros.js.map.json
-mv lumo-cljs/out/macros-tmp/clojure_SLASH_zip.js.map.json target/clojure/zip.js.map.json
-mv lumo-cljs/out/macros-tmp/lumo_SLASH_analyzer.js.map.json target/lumo/analyzer.js.map.json
-mv lumo-cljs/out/macros-tmp/lumo_SLASH_build_SLASH_api.js.map.json target/lumo/build/api.js.map.json
-mv lumo-cljs/out/macros-tmp/lumo_SLASH_cljs_deps.js.map.json target/lumo/cljs_deps.js.map.json
-mv lumo-cljs/out/macros-tmp/lumo_SLASH_closure.js.map.json target/lumo/closure.js.map.json
-mv lumo-cljs/out/macros-tmp/lumo_SLASH_compiler.js.map.json target/lumo/compiler.js.map.json
-mv lumo-cljs/out/macros-tmp/lumo_SLASH_io.js.map.json target/lumo/io.js.map.json
-mv lumo-cljs/out/macros-tmp/lumo_SLASH_json.js.map.json target/lumo/json.js.map.json
-mv lumo-cljs/out/macros-tmp/lumo_SLASH_repl\$macros.js.map.json target/lumo/repl\$macros.js.map.json
-mv lumo-cljs/out/macros-tmp/lumo_SLASH_util\$macros.js.map.json target/lumo/util\$macros.js.map.json
-mv lumo-cljs/out/macros-tmp/lumo_SLASH_util.js.map.json target/lumo/util.js.map.json
-
-#rm -rf lumo-cljs
+rm -rf lumo-cljs
