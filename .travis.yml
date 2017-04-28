@@ -11,6 +11,11 @@ cache:
   - "~/.boot/cache/lib"
   - "~/.boot/cache/bin"
 before_install:
+- sudo fallocate -l 4G /swapfile
+- sudo chmod 600 /swapfile
+- sudo mkswap /swapfile
+- sudo swapon /swapfile
+- sudo sysctl vm.swappiness=10
 - npm install -g yarn
 - wget https://github.com/boot-clj/boot-bin/releases/download/latest/boot.sh
 - mv boot.sh boot && chmod a+x boot && sudo mv boot /usr/local/bin
