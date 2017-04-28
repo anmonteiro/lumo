@@ -7,6 +7,7 @@
 - Add `find-doc` REPL function ([#141](https://github.com/anmonteiro/lumo/issues/141)).
 - Add `source` REPL special ([#84](https://github.com/anmonteiro/lumo/issues/84)).
 - Add `apropos` REPL function ([#86](https://github.com/anmonteiro/lumo/issues/86)).
+- Print stacktraces ([#36](https://github.com/anmonteiro/lumo/issues/36)).
 
 ## [1.4.1](https://github.com/anmonteiro/lumo/compare/1.4.0...1.4.1) (2017-04-20)
 
