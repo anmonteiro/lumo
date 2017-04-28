@@ -4,7 +4,6 @@ import fs from 'fs';
 import path from 'path';
 // $FlowIssue: it's there
 import { REPLServer } from 'repl';
-// $FlowIssue: this module exists.
 import v8 from 'v8';
 import zlib from 'zlib';
 import JSZip from 'jszip';

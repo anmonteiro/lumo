@@ -1,6 +1,5 @@
 /* @flow */
 
-// $FlowIssue: this module exists.
 import v8 from 'v8';
 import { BasicParser as GOParser } from 'posix-getopt';
 import startClojureScriptEngine from './cljs';

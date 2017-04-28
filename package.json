@@ -41,7 +41,7 @@
     "eslint-plugin-import": "^2.2.0",
     "eslint-plugin-jsx-a11y": "^4.0.0",
     "eslint-plugin-react": "^6.10.3",
-    "flow-bin": "^0.44.2",
+    "flow-bin": "^0.45.0",
     "jest-cli": "^19.0.2",
     "nexe": "github:anmonteiro/nexe#master",
     "prettier": "^1.2.2",
