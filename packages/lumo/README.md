@@ -9,7 +9,7 @@ Read the [announcement blog post](https://anmonteiro.com/2016/11/the-fastest-clo
 | Platform  | Status   |
 | --------- | ---------|
 | macOS     | [![CircleCI](https://circleci.com/gh/anmonteiro/lumo.svg?style=svg&circle-token=0fb81464fa32b1f2a08972b90ef33e3151fbe0dc)](https://circleci.com/gh/anmonteiro/lumo) |
-| Linux     | [![Codefresh build status](https://g.codefresh.io/api/badges/build?repoOwner=anmonteiro&repoName=lumo&branch=master&pipelineName=lumo&accountName=anmonteiro&type=cf-1)]( https://g.codefresh.io/repositories/anmonteiro/lumo/builds?filter=trigger:build;branch:master;service:58eaf070127cfd0100d55ef6~lumo) |
+| Linux     | [![Build Status](https://travis-ci.org/anmonteiro/lumo.svg?branch=master)](https://travis-ci.org/anmonteiro/lumo) |
 | Windows   | [![Build status](https://ci.appveyor.com/api/projects/status/oicv0857k05akins?svg=true)](https://ci.appveyor.com/project/anmonteiro/lumo) |
 
 ## Contents
