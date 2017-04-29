@@ -9,6 +9,11 @@
 - Add `apropos` REPL function ([#86](https://github.com/anmonteiro/lumo/issues/86)).
 - Print stacktraces ([#36](https://github.com/anmonteiro/lumo/issues/36)).
 
+### Bug fixes
+
+- Allow all asynchronous operations to finish before exiting when running scripts.
+The fix that landed in version 1.4.1 still exhibited some issues ([#148](https://github.com/anmonteiro/lumo/issues/148)).
+
 ## [1.4.1](https://github.com/anmonteiro/lumo/compare/1.4.0...1.4.1) (2017-04-20)
 
 ### Changes

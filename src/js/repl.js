@@ -64,7 +64,7 @@ function stopREPL(): void {
   const keys = Object.keys(sessions);
   keys.forEach((id: string) => deleteSession(sessions[parseInt(id, 10)]));
 
-  process.exit(process.exitValue);
+  process.exit();
 }
 
 export function processLine(replSession: REPLSession, line: string): void {

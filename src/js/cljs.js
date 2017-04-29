@@ -325,8 +325,8 @@ export function clearREPLSessionState(sessionID: number): void {
 function executeScripts(scripts: [string, string][]): void {
   scripts.forEach(([type, script]: [string, string]) => {
     executeScript(script, type);
-    if (process.exitValue != null) {
-      process.exit(process.exitValue);
+    if (process.exitCode != null) {
+      process.exit();
     }
   });
 }
@@ -347,13 +347,11 @@ export default function startClojureScriptEngine(opts: CLIOptsType): void {
   if (mainScript) {
     initClojureScriptEngine(opts);
     executeScript(mainScript, 'path');
-    setImmediate(process.exit, process.exitValue);
   }
 
   if (mainNsName) {
     initClojureScriptEngine(opts);
     runMain(mainNsName, args);
-    setImmediate(process.exit, process.exitValue);
   }
 
   if (repl) {

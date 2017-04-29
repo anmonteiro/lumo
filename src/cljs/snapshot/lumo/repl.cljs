@@ -499,7 +499,7 @@
 (defn- handle-error [error stacktrace?]
   (print-error error stacktrace?)
   (if-not (:repl? @app-opts)
-    (js/$$LUMO_GLOBALS.setExitValue 1)
+    (set! (. js/process -exitCode) 1)
     (set! *e (extract-cljs-js-error error))))
 
 ;; --------------------
