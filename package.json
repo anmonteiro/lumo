@@ -18,12 +18,14 @@
     "prettier": "prettier --print-width 80 --single-quote --trailing-comma all --parser flow --write \"./{src,scripts,lib,packages}/**/**.js\"",
     "test": "jest",
     "bundle": "node scripts/build.js --dev",
-    "dev": "node target/bundle.js -k lumo-cache -c target"
+    "dev": "node target/bundle.js -k lumo-cache -c target",
+    "postinstall": "opencollective postinstall"
   },
   "main": "./src/js/index.js",
   "dependencies": {
     "google-closure-compiler-js": "^20170409.0.0",
     "jszip": "2.6.1",
+    "opencollective": "^1.0.0",
     "parinfer": "2.0.0",
     "posix-getopt": "github:anmonteiro/node-getopt#master"
   },
@@ -68,5 +70,10 @@
     "roots": [
       "src/js"
     ]
+  },
+  "collective": {
+    "type": "opencollective",
+    "url": "https://opencollective.com/lumo",
+    "logo": "https://opencollective.com/opencollective/logo.txt"
   }
 }
