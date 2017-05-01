@@ -2,7 +2,7 @@
   "name": "lumo",
   "version": "1.4.1",
   "description": "Fast, cross-platform, standalone ClojureScript REPL",
-  "author": "anmonteiro",
+  "author": "António Nuno Monteiro <anmonteiro@gmail.com> (https://anmonteiro.com)",
   "license": "EPL-1.0",
   "repository": {
     "type": "git",
