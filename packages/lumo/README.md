@@ -15,7 +15,7 @@ and our [pledge](https://anmonteiro.com/2017/05/on-lumos-growth-and-sustainabili
 
 If you enjoy Lumo, consider backing or sponsoring the project on
 <a href="https://opencollective.com/lumo">
-  <img alt="Open Collective" width="140px" class="octicon" src="https://opencollective.com/public/images/opencollectivelogo.svg">
+  <img alt="Open Collective" width="140px" src="https://opencollective.com/public/images/opencollectivelogo.svg">
 </a>
 
 ## Build status
