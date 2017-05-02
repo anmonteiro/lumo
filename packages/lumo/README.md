@@ -13,12 +13,6 @@ of the [Google Closure Compiler](https://github.com/google/closure-compiler).
 Read the [announcement blog post](https://anmonteiro.com/2016/11/the-fastest-clojure-repl-in-the-world/)
 and our [pledge](https://anmonteiro.com/2017/05/on-lumos-growth-and-sustainability/)!
 
-<style>
-.oc-svg {
-  display: inline-block;
-  vertical-align: middle;
-}
-</style>
 <svg>
   <symbol viewBox="0 0 17 17" id="svg-isotype">
     <title>:: symbol</title>
@@ -38,10 +32,10 @@ and our [pledge](https://anmonteiro.com/2017/05/on-lumos-growth-and-sustainabili
 
 If you enjoy Lumo, consider backing or sponsoring the project on
 <a href="https://opencollective.com/lumo">
-  <svg width="14" height="14" class="oc-svg">
+  <svg width="14" height="14" style="display:inline-block;vertical-align:middle">
     <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="#svg-isotype" fill="#7FADF2"></use>
   </svg>
-  <svg width="138" height="20" class="oc-svg">
+  <svg width="138" height="20" style="display:inline-block;vertical-align:middle">
     <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="#svg-logotype" fill="#919699">
     </use>
   </svg>
