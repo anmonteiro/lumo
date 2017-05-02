@@ -10,7 +10,13 @@ it possible to
 thanks to the [experimental JavaScript version](https://github.com/google/closure-compiler-js)
 of the [Google Closure Compiler](https://github.com/google/closure-compiler).
 
-Read the [announcement blog post](https://anmonteiro.com/2016/11/the-fastest-clojure-repl-in-the-world/).
+Read the [announcement blog post](https://anmonteiro.com/2016/11/the-fastest-clojure-repl-in-the-world/)
+and our [pledge](https://anmonteiro.com/2017/05/on-lumos-growth-and-sustainability/)!
+
+If you enjoy Lumo, consider backing or sponsoring the project on
+<a href="https://opencollective.com/lumo">
+  <img alt="Open Collective" width="140px" src="https://opencollective.com/public/images/opencollectivelogo.svg">
+</a>
 
 ## Build status
 
@@ -25,6 +31,8 @@ Read the [announcement blog post](https://anmonteiro.com/2016/11/the-fastest-clo
 - [Installation](#installation)
 - [Using Lumo](#using-lumo)
 - [Building](#building)
+- [Backers](#backers)
+- [Sponsors](#sponsors)
 - [Copyright & License](#copyright--license)
 
 ## Installation
