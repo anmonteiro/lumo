@@ -2,7 +2,13 @@
 [![Backers on Open Collective](https://opencollective.com/lumo/backers/badge.svg)](#backers)
 [![Sponsors on Open Collective](https://opencollective.com/lumo/sponsors/badge.svg)](#sponsors)
 
-Standalone ClojureScript REPL on Node.js.
+Lumo is a standalone ClojureScript environment that runs on Node.js and the V8
+JavaScript engine. It starts up instantaneously and has out-of-the-box access to
+the entire Node.js ecosystem. It also provides a ClojureScript build API, making
+it possible to
+[compile ClojureScript projects entirely without the JVM](https://anmonteiro.com/2017/02/compiling-clojurescript-projects-without-the-jvm/),
+thanks to the [experimental JavaScript version](https://github.com/google/closure-compiler-js)
+of the [Google Closure Compiler](https://github.com/google/closure-compiler).
 
 Read the [announcement blog post](https://anmonteiro.com/2016/11/the-fastest-clojure-repl-in-the-world/).
 
@@ -137,4 +143,3 @@ Become a sponsor and get your logo on our README on Github with a link to your s
 Copyright © 2016-2017 António Nuno Monteiro
 
 Distributed under the Eclipse Public License (see [LICENSE](./LICENSE)).
-
