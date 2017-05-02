@@ -14,8 +14,8 @@ Read the [announcement blog post](https://anmonteiro.com/2016/11/the-fastest-clo
 and our [pledge](https://anmonteiro.com/2017/05/on-lumos-growth-and-sustainability/)!
 
 If you enjoy Lumo, consider backing or sponsoring the project on
-<a href="https://opencollective.com/lumo" style="display:inline-block;width:10rem;vertical-align:middle">
-  <img alt="Open Collective" src="https://opencollective.com/public/images/opencollectivelogo.svg">
+<a href="https://opencollective.com/lumo">
+  <img alt="Open Collective" width="140px" class="octicon" src="https://opencollective.com/public/images/opencollectivelogo.svg">
 </a>
 
 ## Build status
