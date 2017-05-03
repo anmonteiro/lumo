@@ -22,6 +22,6 @@
     "request": "2.81.0"
   },
   "bin": {
-    "lumo": "./bin/lumo"
+    "lumo": "./bin/lumo.js"
   }
 }

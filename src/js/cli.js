@@ -55,8 +55,7 @@ function printVersion(): void {
 }
 
 function printHelp(): void {
-  process.stdout.write(
-    `Lumo ${lumoVersion}
+  process.stdout.write(`Lumo ${lumoVersion}
 Usage:  lumo [init-opt*] [main-opt] [arg*]
 
   With no options or args, runs an interactive Read-Eval-Print Loop
@@ -88,8 +87,7 @@ Usage:  lumo [init-opt*] [main-opt] [arg*]
   any main option.
 
   Paths may be absolute or relative in the filesystem.
-`,
-  );
+`);
   // -                        Run a script from standard input
 }
 
@@ -295,9 +293,8 @@ export default function startCLI(): void {
 
     socketRepl.open(parseInt(port, 10), host);
     if (!quiet) {
-      process.stdout.write(
-        `Lumo socket REPL listening at ${host != null ? host : 'localhost'}:${port}.\n`,
-      );
+      process.stdout
+        .write(`Lumo socket REPL listening at ${host != null ? host : 'localhost'}:${port}.\n`);
     }
   }
 
