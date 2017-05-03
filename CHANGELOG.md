@@ -10,6 +10,10 @@
 - Print stacktraces ([#36](https://github.com/anmonteiro/lumo/issues/36)).
 - Add support for running Lumo in the Git Bash on Windows ([#142](https://github.com/anmonteiro/lumo/issues/142)).
 
+### Changes
+
+- Upgrade Node.js to version 7.10.0.
+
 ### Bug fixes
 
 - Allow all asynchronous operations to finish before exiting when running scripts.
