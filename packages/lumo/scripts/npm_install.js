@@ -77,10 +77,5 @@ req.on('end', function() {
     mode: zipped.options.unixPermissions,
   });
 
-  if (isWindows) {
-    fs.writeFileSync('./bin/lumo', '"$basedir/lumo.exe"');
-    fs.writeFileSync('./bin/lumo.cmd', '@"%~dp0\lumo.exe"   %*');
-  }
-
   fs.unlinkSync(platformZip);
 });
