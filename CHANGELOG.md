@@ -8,6 +8,7 @@
 - Add `source` REPL special ([#84](https://github.com/anmonteiro/lumo/issues/84)).
 - Add `apropos` REPL function ([#86](https://github.com/anmonteiro/lumo/issues/86)).
 - Print stacktraces ([#36](https://github.com/anmonteiro/lumo/issues/36)).
+- Add support for running Lumo in the Git Bash on Windows ([#142](https://github.com/anmonteiro/lumo/issues/142)).
 
 ### Bug fixes
 
