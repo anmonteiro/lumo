@@ -293,8 +293,9 @@ export default function startCLI(): void {
 
     socketRepl.open(parseInt(port, 10), host);
     if (!quiet) {
-      process.stdout
-        .write(`Lumo socket REPL listening at ${host != null ? host : 'localhost'}:${port}.\n`);
+      process.stdout.write(
+        `Lumo socket REPL listening at ${host != null ? host : 'localhost'}:${port}.\n`,
+      );
     }
   }
 
