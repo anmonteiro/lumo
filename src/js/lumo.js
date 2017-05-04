@@ -217,7 +217,7 @@ export function dumpSDK(outdir: string): void {
   }
 }
 
-// based on https://github.com/nodejs/node/blob/98971/lib/repl.js#L710
+// based on https://github.com/nodejs/node/blob/712596/lib/repl.js#L710
 export function getJSCompletions(
   line: string,
   match: string,
