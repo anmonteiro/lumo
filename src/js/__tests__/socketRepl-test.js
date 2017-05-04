@@ -51,7 +51,7 @@ describe('open', () => {
       return socketServer;
     });
     net.Server.prototype.listen = jest.fn(
-      (port: number, host: ?string) => undefined,
+      (port: number, host: ?string, cb: () => void) => cb(),
     );
     net.Server.prototype.close = jest.fn();
   });
@@ -67,7 +67,10 @@ describe('open', () => {
     socketRepl.open(serverPort, serverHost);
 
     expect(socketServer.listen).toHaveBeenCalledTimes(1);
-    expect(socketServer.listen).toHaveBeenCalledWith(serverPort, serverHost);
+    expect(socketServer.listen.mock.calls[0].slice(0, 2)).toEqual([
+      serverPort,
+      serverHost,
+    ]);
   });
 
   it('registers process handlers for SIGHUP & SIGTERM', () => {
@@ -83,7 +86,10 @@ describe('open', () => {
     socketRepl.open(serverPort);
 
     expect(socketServer.listen).toHaveBeenCalledTimes(1);
-    expect(socketServer.listen).toHaveBeenCalledWith(serverPort, 'localhost');
+    expect(socketServer.listen.mock.calls[0].slice(0, 2)).toEqual([
+      serverPort,
+      'localhost',
+    ]);
   });
 });
 

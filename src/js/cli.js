@@ -55,7 +55,8 @@ function printVersion(): void {
 }
 
 function printHelp(): void {
-  process.stdout.write(`Lumo ${lumoVersion}
+  process.stdout.write(
+    `Lumo ${lumoVersion}
 Usage:  lumo [init-opt*] [main-opt] [arg*]
 
   With no options or args, runs an interactive Read-Eval-Print Loop
@@ -87,7 +88,8 @@ Usage:  lumo [init-opt*] [main-opt] [arg*]
   any main option.
 
   Paths may be absolute or relative in the filesystem.
-`);
+`,
+  );
   // -                        Run a script from standard input
 }
 
@@ -218,7 +220,7 @@ function getCLIOpts(): CLIOptsType {
   return ret;
 }
 
-export default function startCLI(): void {
+export default (async function startCLI(): Promise<mixed> {
   const opts = getCLIOpts();
   const {
     args,
@@ -291,13 +293,20 @@ export default function startCLI(): void {
       [host, port] = [port, host];
     }
 
-    socketRepl.open(parseInt(port, 10), host);
-    if (!quiet) {
-      process.stdout.write(
-        `Lumo socket REPL listening at ${host != null ? host : 'localhost'}:${port}.\n`,
-      );
+    try {
+      await socketRepl.open(parseInt(port, 10), host);
+
+      if (!quiet) {
+        process.stdout.write(
+          `Lumo socket REPL listening at ${host != null ? host : 'localhost'}:${port}.\n`,
+        );
+      }
+    } catch (e) {
+      // I wanted to destructure with { message } but
+      // ran into https://github.com/facebook/flow/issues/3874
+      process.stderr.write(`Error: ${e.message}\n`);
     }
   }
 
   return startClojureScriptEngine(opts);
-}
+});

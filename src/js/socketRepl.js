@@ -54,12 +54,22 @@ export function close(): void {
   }
 }
 
-export function open(port: number, host?: string = 'localhost'): void {
-  socketServer = net.createServer((socket: net$Socket) =>
-    handleConnection(socket),
-  );
-  socketServer.listen(port, host);
+export function open(
+  port: number,
+  host?: string = 'localhost',
+): Promise<mixed> {
+  return new Promise((resolve: mixed => void, reject: Error => void) => {
+    socketServer = net.createServer((socket: net$Socket) =>
+      handleConnection(socket),
+    );
 
-  process.on('SIGTERM', close);
-  process.on('SIGHUP', close);
+    // $FlowIssue - wrong type definitions for `listen`
+    socketServer
+      .listen(port, host, () => {
+        resolve();
+        process.on('SIGTERM', close);
+        process.on('SIGHUP', close);
+      })
+      .on('error', reject);
+  });
 }

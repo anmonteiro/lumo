@@ -161,13 +161,13 @@ describe('getCliOpts', () => {
       socketRepl.open.mockClear();
     });
 
-    it('on localhost if only port given', () => {
+    it('on localhost if only port given', async () => {
       const args = '-n 5555';
       Object.defineProperty(process, 'argv', {
         value: ['', ''].concat(args.split(' ')),
       });
 
-      startCLI();
+      await startCLI();
       const [[parsedOpts]] = cljs.mock.calls;
 
       expect(parsedOpts['socket-repl']).toBe('5555');
@@ -176,13 +176,13 @@ describe('getCliOpts', () => {
       expect(socketRepl.open).toHaveBeenCalledWith(5555, undefined);
     });
 
-    it('on host and port if only both given', () => {
+    it('on host and port if only both given', async () => {
       const args = '-n 192.168.1.254:5555';
       Object.defineProperty(process, 'argv', {
         value: ['', ''].concat(args.split(' ')),
       });
 
-      startCLI();
+      await startCLI();
       const [[parsedOpts]] = cljs.mock.calls;
 
       expect(parsedOpts['socket-repl']).toBe('192.168.1.254:5555');
@@ -286,12 +286,12 @@ describe('print Functions', () => {
       expect(process.stdout.write.mock.calls).toMatchSnapshot();
     });
 
-    it('prints socket REPL info in addition to the banner if -n specified', () => {
+    it('prints socket REPL info in addition to the banner if -n specified', async () => {
       Object.defineProperty(process, 'argv', {
         value: ['', '', '-n', '5555'],
       });
 
-      startCLI();
+      await startCLI();
       expect(process.stdout.write.mock.calls).toMatchSnapshot();
     });
 
