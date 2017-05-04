@@ -21,7 +21,7 @@ before_install:
 - mv boot.sh boot && chmod a+x boot && sudo mv boot /usr/local/bin
 install:
 - boot
-- yarn install
+- yarn install --ignore-engines
 script:
 - yarn lint
 - yarn type:check

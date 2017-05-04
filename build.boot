@@ -60,11 +60,10 @@
 
 (deftask install-node-modules []
   (with-pass-thru _
-    (let [nm (io/file "node_modules")]
-      (util/info "Installing node dependencies with `yarn install`\n")
-      (if windows?
-        (dosh "cmd" "/c" "yarn" "install")
-        (dosh "yarn" "install")))))
+    (util/info "Installing node dependencies with `yarn install`\n")
+    (if windows?
+      (dosh "cmd" "/c" "yarn" "install" "--ignore-engines")
+      (dosh "yarn" "install" "--ignore-engines"))))
 
 (deftask bundle-js
   [d dev     bool  "Development build"]
@@ -166,7 +165,10 @@
 
 (deftask prepare-snapshot []
   (with-pass-thru _
-    (dosh "node" "scripts/prepare_snapshot.js")))
+    (dosh "node" "scripts/prepare_snapshot.js")
+    (if windows?
+      (dosh "cmd" "/c" "yarn" "prepack")
+      (dosh "yarn" "prepack"))))
 
 (deftask package-executable []
   (with-pass-thru _

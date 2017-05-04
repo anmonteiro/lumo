@@ -5,6 +5,7 @@
 <PROJECT_ROOT>/tmp/.*
 <PROJECT_ROOT>/scripts/.*
 <PROJECT_ROOT>/.*/__tests__/.*
+<PROJECT_ROOT>/prepack/.*
 
 [libs]
 lib/

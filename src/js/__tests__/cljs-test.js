@@ -222,7 +222,8 @@ describe('lumoEval', () => {
       Object.assign(
         global,
         {
-          initialize: jest.fn(),
+          initialize1: jest.fn(),
+          initialize2: jest.fn(),
           __DEV__: false,
         },
         ctx,
@@ -233,7 +234,7 @@ describe('lumoEval', () => {
 
     afterEach(() => {
       Object.keys(ctx)
-        .concat(['initialize'])
+        .concat(['initialize1', 'initialize2'])
         .forEach((key: string, idx: number) => {
           global[key] = undefined;
         });
