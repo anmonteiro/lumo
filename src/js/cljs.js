@@ -367,7 +367,6 @@ export function runAcceptFN(fn: string, socket?: net$Socket): void {
 export default function startClojureScriptEngine(opts: CLIOptsType): void {
   const { args, mainNsName, mainScript, repl, scripts, quiet } = opts;
   const socketReplArgs = opts['socket-repl'];
-  const acceptFN: ?string = opts['accept-fn'];
 
   // The Socket Repl needs a CLJS Context to resolve the functions a user may pass in
   // Instead of initializing in each if statement, we'll initialize once, then delete the
@@ -375,13 +374,52 @@ export default function startClojureScriptEngine(opts: CLIOptsType): void {
   initClojureScriptEngine(opts);
 
   if (socketReplArgs != null) {
-    let [host, port] = socketReplArgs.split(':');
+    // Possible socketrepl format
+    //  port OR host:port
+    //  port:host is no longer accepted (was it ever?)
+    // {"host": "localhost", ;; Defaults to localhost
+    //  "port": 12345, ;; Required
+    //  "accept": "some.namespaced/fn", ;; Defaults to opening a socket repl
+    //  "args": ["a list of args", 9999, {"foo": "bar"}]} ;; This has no default
 
-    if (host != null && !isNaN(host)) {
-      [host, port] = [port, host];
+    const hostAndPortRegex=/(?:(?:(^.*):)|^)(\d{1,5})$/;
+    const jsonRegex=/^{/; // We only accept JSON objects, ports, or host:port pairs
+
+    const hostPortMatch = socketReplArgs.match(hostAndPortRegex);
+
+    // TODO: I think I need to handle default cases for these variables differently
+    var host = undefined;
+    var port = undefined;
+    var acceptFn = undefined;
+    var acceptArgs = undefined;
+    var replOpts = undefined;
+
+    try {
+      if (jsonRegex.test(socketReplArgs)){
+        replOpts=JSON.parse(socketReplArgs); // This throws SyntaxError if we're passed invalid JSON
+      } else if (null != hostPortMatch){
+        // The leading comma is really important here, as the first result from match is the whole string,
+        // and we want the matched groups, which come afterwards
+        // XXX: host will be undefined if we only match a port, this is ok.
+        [, host, port] = hostPortMatch;
+      } else {
+        throw new SyntaxError("Got Socket REPL args, but they were unparsable. Args were: " + socketReplArgs);
+      }
+
+      if (replOpts){
+        var {host, port, acceptFn, acceptArgs} = replOpts;
+      }
+
+      if (isNaN(parseInt(port, 10))){
+        throw new SyntaxError("Specified port is not a number. Port is: " + port);
+      }
+
+    } catch (error) {
+      console.error(error);
+      process.exit(1);
     }
 
-    socketRepl.open(parseInt(port, 10), host, acceptFN);
+    socketRepl.open(parseInt(port, 10), host, acceptFn, acceptArgs);
     if (!quiet) {
       process.stdout.write(
         `Lumo socket REPL listening at ${host != null ? host : 'localhost'}:${port}.\n`);

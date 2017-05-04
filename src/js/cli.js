@@ -29,7 +29,6 @@ export type CLIOptsType = {
   cache?: string,
   classpath: string[],
   'socket-repl'?: string,
-  'accept-fn'?: string,
   mainNsName?: string,
   mainScript?: string,
   scripts: ScriptsType,
@@ -87,8 +86,13 @@ Usage:  lumo [init-opt*] [main-opt] [arg*]
     -f, --fn-invoke-direct             Do not not generate \`.call(null...)\` calls
                                        for unknown functions, but instead direct
                                        invokes via \`f(a0,a1...)\`.
-    -n addr, --socket-repl addr        Enable a socket REPL where x is port or IP:port
-    -A acceptFN, --accept-fn acceptFN  The function to run upon client connection
+    -n opts, --socket-repl opts        Enable a socket REPL where opts is a port, host:port, or JSON of
+                                       the following form, where port is required, and args without accept
+                                       is meaningless:
+                                       {"host":   "localhost",
+                                        "port":   12345,
+                                        "accept": "some.namespaced.clojure/fn",
+                                        "args":   ["a list of args", 1111, {"passed": "to the accept function"}]}
 
   main options:
     -m ns-name, --main=ns-name         Call the -main function from a namespace
@@ -120,7 +124,6 @@ function getCLIOpts(): CLIOptsType {
     'v(verbose)',
     'd(dumb-terminal)',
     'n:(socket-repl)',
-    'A:(accept-fn)',
     's(static-fns)',
     'f(fn-invoke-direct)',
     'a(elide-asserts)',
@@ -209,9 +212,6 @@ function getCLIOpts(): CLIOptsType {
         break;
       case 'n':
         ret['socket-repl'] = option.optarg;
-        break;
-      case 'A':
-        ret['accept-fn'] = option.optarg;
         break;
       case 's':
         ret['static-fns'] = true;
