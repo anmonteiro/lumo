@@ -280,10 +280,6 @@ export function execute(
   );
 }
 
-function executeScript(code: string, type: string): void {
-  return execute(code, type, type !== 'path', false);
-}
-
 export function getCurrentNamespace(): string {
   // $FlowIssue: context can have globals
   return ClojureScriptContext.lumo.repl.get_current_ns();
@@ -320,6 +316,28 @@ export function isPrintingNewline(): boolean {
 export function clearREPLSessionState(sessionID: number): void {
   // $FlowIssue: context can have globals
   return ClojureScriptContext.lumo.repl.clear_state_for_session(sessionID);
+}
+
+function executeScript(code: string, type: string): void {
+  if (type === 'text') {
+    let currentInput = code;
+    let extraForms = isReadable(currentInput);
+
+    while (currentInput) {
+      if (extraForms) {
+        currentInput = currentInput.substring(
+          0,
+          currentInput.length - extraForms.length,
+        );
+      }
+
+      execute(currentInput, 'text', true, false);
+      currentInput = extraForms;
+      extraForms = !!currentInput && isReadable(currentInput);
+    }
+  } else {
+    execute(code, 'path', false, false);
+  }
 }
 
 function executeScripts(scripts: [string, string][]): void {

@@ -31,7 +31,7 @@ const ctx = {
       init: () => {},
       set_ns: () => {},
       execute: () => {},
-      is_readable_QMARK_: () => true,
+      is_readable_QMARK_: () => '',
       get_current_ns: () => 'cljs.user',
       indent_space_count: (text: string) => 0,
       get_highlight_coordinates: (text: string) => 0,
@@ -167,7 +167,7 @@ describe('startClojureScriptEngine', () => {
 
 describe('isReadable', () => {
   it('calls into the CLJS context', () => {
-    expect(cljs.isReadable('()')).toBe(true);
+    expect(cljs.isReadable('()')).toBe('');
   });
 });
 
