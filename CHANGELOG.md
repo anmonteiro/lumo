@@ -21,6 +21,7 @@ The fix that landed in version 1.4.1 still exhibited some issues ([#148](https:/
 - Fix installation on Windows ([#149](https://github.com/anmonteiro/lumo/issues/149)).
 - Don't crash if socket server can't bind to port ([#159](https://github.com/anmonteiro/lumo/issues/159)).
 - Support multiple forms in `--eval` scripts ([#155](https://github.com/anmonteiro/lumo/issues/155)).
+- Fix a bug that would prevent loading files from absolute paths ([#161](https://github.com/anmonteiro/lumo/issues/161)).
 
 ## [1.4.1](https://github.com/anmonteiro/lumo/compare/1.4.0...1.4.1) (2017-04-20)
 

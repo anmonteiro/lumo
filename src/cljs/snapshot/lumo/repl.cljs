@@ -227,7 +227,8 @@
 ;; but no analysis cache
 (defn- load-external
   [path filename macros? cb]
-  (when-let [source-data (js/$$LUMO_GLOBALS.readSource filename)]
+  (when-let [source-data (or (js/$$LUMO_GLOBALS.readSource filename)
+                             (js/$$LUMO_GLOBALS.readFile filename))]
     (let [cache-dir (:cache-path @app-opts)
           cache-prefix (str cache-dir "/" (munge path) (when macros? MACROS_SUFFIX))]
       (if-let [cached-callback-data (cached-callback-data cache-dir cache-prefix source-data)]

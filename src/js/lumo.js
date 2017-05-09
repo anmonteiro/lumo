@@ -99,6 +99,17 @@ export function readSource(filename: string): ?SourceType {
   return null;
 }
 
+export function readFile(filename: string): ?SourceType {
+  try {
+    return {
+      source: fs.readFileSync(filename, 'utf8'),
+      modified: fs.statSync(filename).mtime.getTime(),
+    };
+  } catch (_) {} // eslint-disable-line no-empty
+
+  return null;
+}
+
 export function readCache(filename: string): ?SourceType {
   try {
     return {
