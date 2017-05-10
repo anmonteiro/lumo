@@ -1325,7 +1325,7 @@
                  opts
                  (fn [{:keys [ns value error] :as ret}]
                    (if error
-                     (handle-repl-error error)
+                     (handle-error error true)
                      (cljs/eval-str st
                                     (str "(var " fn-str ")")
                                     nil
@@ -1334,4 +1334,4 @@
                                       (try
                                         (value socket)
                                         (catch :default e
-                                          (handle-repl-error e)))))))))))
+                                          (handle-error e true)))))))))))
