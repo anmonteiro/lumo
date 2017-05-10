@@ -444,6 +444,7 @@ export default function startClojureScriptEngine(opts: CLIOptsType): void {
 
   if (repl) {
     process.nextTick(() => {
+      initClojureScriptEngine(opts); // XXX Why doesn't the previous call cover this?
       if (!__DEV__) {
         setPrintFns(new DiscardingSender());
       }
