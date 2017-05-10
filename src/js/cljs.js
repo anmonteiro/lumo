@@ -359,9 +359,9 @@ function processStdin(): void {
 
 // Runs the namespaced cljs function passed into it, which should accept a socket as it's only argument
 // TODO: Is this really the best generalization? Should it be?
-export function runAcceptFN(fn: string, socket?: net$Socket): void {
+export function runAcceptFN(fn: string, socket?: net$Socket, acceptArgs?: Array<mixed>): void {
   // $FlowIssue: context can have globals
-  ClojureScriptContext.lumo.repl.run_accept_fn.call(null, fn, socket);
+  ClojureScriptContext.lumo.repl.run_accept_fn.call(null, fn, socket, acceptArgs);
 }
 
 export default function startClojureScriptEngine(opts: CLIOptsType): void {
@@ -407,7 +407,10 @@ export default function startClojureScriptEngine(opts: CLIOptsType): void {
       }
 
       if (replOpts){
-        var {host, port, acceptFn, acceptArgs} = replOpts;
+        host = replOpts['host'];
+        port = replOpts['port'];
+        acceptFn = replOpts['accept'];
+        acceptArgs = replOpts['args'];
       }
 
       if (isNaN(parseInt(port, 10))){
@@ -418,6 +421,7 @@ export default function startClojureScriptEngine(opts: CLIOptsType): void {
       console.error(error);
       process.exit(1);
     }
+
 
     socketRepl.open(parseInt(port, 10), host, acceptFn, acceptArgs);
     if (!quiet) {

@@ -40,9 +40,11 @@ function openRepl(socket: net$Socket): void {
 }
 
 // Calls the `accept` function on the socket and handles the socket lifecycle
-function handleConnection(socket: net$Socket, accept: AcceptFn, userAccept?: boolean): number {
+function handleConnection(socket: net$Socket, accept: AcceptFn, acceptArgs): number {
+  console.log("JS: accept args: ", acceptArgs);
+  console.log(typeof(acceptArgs));
   if (typeof(accept)==='string') {
-    runAcceptFN(accept, socket);
+    runAcceptFN(accept, socket, acceptArgs);
   } else {
     accept(socket);
   }
@@ -76,10 +78,11 @@ export function open(
   port: number,
   host?: string = 'localhost',
   accept?: AcceptFn = openRepl,
+  acceptArgs?: Array<mixed>,
 ): Promise<mixed> {
   return new Promise((resolve: mixed => void, reject: Error => void) => {
     socketServer = net.createServer((socket: net$Socket) =>
-                                    handleConnection(socket, accept),
+                                    handleConnection(socket, accept, acceptArgs),
     );
 
     // $FlowIssue - wrong type definitions for `listen`

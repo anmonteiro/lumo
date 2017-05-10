@@ -1308,16 +1308,30 @@
 ;; --------------------
 ;; Socket Repl
 
+(defn ^:export js2clj [arg] (js->clj arg))
+
 (defn ns-symbol [function]
   (symbol (namespace (symbol function))))
 
 (defn fn-string [function]
   (-> function symbol name))
 
-(defn ^:export run-accept-fn [accept-fn socket]
+(defn ^:export run-accept-fn [accept-fn socket & args]
+  (println "println: " (js->clj args))
+  ;; (js/console.log "console.log: " (first args))
+  ;; (println (type (js->clj (first args))))
+  ;; (js/console.log "Stringified: " (js/JSON.stringify (first args)))
+  ;; (println "Stringified: " (js/JSON.stringify (first args)))
+  ;; (js/console.log "Parsed: " (js/JSON.parse (js/JSON.stringify (first args))))
+  ;; (println "Parsed: " (js/JSON.parse (js/JSON.stringify (first args))))
+  ;; (js/console.log "js->clj: " (js->clj (js/JSON.parse (js/JSON.stringify (first args)))))
+  ;; (println "js->clj: " (js->clj (js/JSON.parse (js/JSON.stringify (first args)))))
+  (println "mapped js->clj" (map js->clj args))
+  ;; (println (js->clj (js/JSON.parse (js/JSON.stringify args))))
   (let [ns-sym (ns-symbol accept-fn)
         fn-str (fn-string accept-fn)
-        opts (make-eval-opts)]
+        opts (make-eval-opts)
+        fn-args (js->clj args)]
     (binding [cljs/*load-fn* load
               cljs/*eval-fn* caching-node-eval]
       (cljs/eval st
@@ -1332,6 +1346,6 @@
                                     (merge opts {:ns (symbol ns-sym)})
                                     (fn [{:keys [ns value error] :as ret}]
                                       (try
-                                        (value socket)
+                                        (apply value socket fn-args)
                                         (catch :default e
                                           (handle-error e true)))))))))))
