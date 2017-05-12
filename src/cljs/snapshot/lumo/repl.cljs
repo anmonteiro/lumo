@@ -135,8 +135,8 @@
         cljs.source-map
         cljs.source-map.base64
         cljs.source-map.base64-vlq
-        cljs.spec
-        cljs.spec.impl.gen
+        cljs.spec.alpha
+        cljs.spec.gen.alpha
         cljs.tagged-literals
         cljs.tools.reader
         cljs.tools.reader.reader-types
@@ -1180,7 +1180,8 @@
 (def ^:private namespace-completion-additons
   (into #{} (map str)
     '[clojure.test
-      clojure.spec
+      clojure.spec.alpha
+      clojure.spec.gen.alpha
       clojure.pprint
       cljs.analyzer
       cljs.analyzer.api
@@ -1190,8 +1191,8 @@
       cljs.nodejs
       cljs.pprint
       cljs.reader
-      cljs.spec
-      cljs.spec.impl.gen
+      cljs.spec.alpha
+      cljs.spec.gen.alpha
       cljs.tagged-literals
       cljs.test
       cljs.tools.reader

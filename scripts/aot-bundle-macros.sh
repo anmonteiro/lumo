@@ -34,8 +34,8 @@ $(pwd)/build/lumo --quiet -c target -sdk lumo-cljs/out/macros-tmp <<REPL_INPUT
                 'lumo.util
                 'clojure.template
                 'cljs.pprint
-                'cljs.spec
-                'cljs.spec.impl.gen
+                'cljs.spec.alpha
+                'cljs.spec.gen.alpha
                 'cljs.support
                 'cljs.test
                 'cljs.reader
@@ -100,9 +100,9 @@ mv lumo-cljs/out/macros-tmp/cljs_SLASH_reader\$macros.js target/cljs/reader\$mac
 mv lumo-cljs/out/macros-tmp/cljs_SLASH_reader\$macros.cache.json target/cljs/reader\$macros.cache.json
 mv lumo-cljs/out/macros-tmp/cljs_SLASH_tools_SLASH_reader_SLASH_reader_types\$macros.cache.json target/cljs/tools/reader/reader_types\$macros.cache.json
 mv lumo-cljs/out/macros-tmp/cljs_SLASH_tools_SLASH_reader_SLASH_reader_types\$macros.js target/cljs/tools/reader/reader_types\$macros.js
-mv lumo-cljs/out/macros-tmp/cljs_SLASH_spec\$macros.js target/cljs/spec\$macros.js
-mv lumo-cljs/out/macros-tmp/cljs_SLASH_spec\$macros.cache.json target/cljs/spec\$macros.cache.json
-mv lumo-cljs/out/macros-tmp/cljs_SLASH_spec_SLASH_impl_SLASH_gen\$macros.js target/cljs/spec/impl/gen\$macros.js
-mv lumo-cljs/out/macros-tmp/cljs_SLASH_spec_SLASH_impl_SLASH_gen\$macros.cache.json target/cljs/spec/impl/gen\$macros.cache.json
+mv lumo-cljs/out/macros-tmp/cljs_SLASH_spec_SLASH_alpha\$macros.js target/cljs/spec/alpha\$macros.js
+mv lumo-cljs/out/macros-tmp/cljs_SLASH_spec_SLASH_alpha\$macros.cache.json target/cljs/spec/alpha\$macros.cache.json
+mv lumo-cljs/out/macros-tmp/cljs_SLASH_spec_SLASH_gen_SLASH_alpha\$macros.js target/cljs/spec/gen/alpha\$macros.js
+mv lumo-cljs/out/macros-tmp/cljs_SLASH_spec_SLASH_gen_SLASH_alpha\$macros.cache.json target/cljs/spec/gen/alpha\$macros.cache.json
 
 rm -rf lumo-cljs

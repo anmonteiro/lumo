@@ -13,6 +13,7 @@
 ### Changes
 
 - Upgrade Node.js to version 7.10.0.
+- Upgrade ClojureScript to version 1.9.542.
 
 ### Bug fixes
 
