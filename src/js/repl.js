@@ -175,6 +175,7 @@ function highlight(
       // keypress events while stdin is paused.
       // $FlowIssue
       const oldInput = rl.input;
+      // $FlowIssue: constructor accepts 2 args
       const readStream = new tty.ReadStream(null, {});
       readStream.setRawMode(true);
       readline.emitKeypressEvents(readStream, rl);
@@ -280,7 +281,7 @@ export default function startREPL(opts: CLIOptsType): void {
   prompt(rl, false, 'cljs.user');
 
   rl.on('line', (line: string) => processLine(session, line));
-  rl.on('SIGINT', () => handleSIGINT(session, rl));
+  rl.on('SIGINT', () => handleSIGINT(session));
   rl.on('close', () => stopREPL());
 
   lastKeypressTime = currentTimeMicros();

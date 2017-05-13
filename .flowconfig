@@ -12,6 +12,7 @@ lib/
 suppress_comment=\\(.\\|\n\\)*\\$FlowIssue
 suppress_comment=\\(.\\|\n\\)*\\$FlowFixMe
 suppress_comment=\\(.\\|\n\\)*\\$FlowExpectedError
+experimental.strict_call_arity=true
 
 [version]
-^0.45.0
+^0.46.0

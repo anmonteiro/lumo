@@ -29,7 +29,7 @@ function handleConnection(socket: net$Socket): REPLSession {
 
   rl.on('line', (line: string) => {
     if (!socket.destroyed) {
-      processLine(session, line, false);
+      processLine(session, line);
     }
   });
 
