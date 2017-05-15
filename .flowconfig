@@ -1,5 +1,6 @@
 [ignore]
 # <PROJECT_ROOT>/node_modules/.*
+<PROJECT_ROOT>/node_modules/eslint-plugin-jsx-a11y
 <PROJECT_ROOT>/target/.*
 <PROJECT_ROOT>/tmp/.*
 <PROJECT_ROOT>/scripts/.*
