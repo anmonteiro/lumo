@@ -2,6 +2,10 @@
 
 ## [master](https://github.com/anmonteiro/lumo/compare/1.5.0...HEAD) (unreleased)
 
+### Bug fixes
+
+- Fix regression that prevented requiring binary modules  ([#163](https://github.com/anmonteiro/lumo/issues/163)).
+
 ## [1.5.0](https://github.com/anmonteiro/lumo/compare/1.4.1...1.5.0) (2017-05-13)
 
 ### New features
