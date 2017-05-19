@@ -283,6 +283,7 @@ export default function startREPL(opts: CLIOptsType): void {
   rl.on('line', (line: string) => processLine(session, line));
   rl.on('SIGINT', () => handleSIGINT(session));
   rl.on('close', () => stopREPL());
+  rl.on('SIGCONT', () => rl.prompt());
 
   lastKeypressTime = currentTimeMicros();
   process.stdin.on('keypress', (c: string, key: KeyType) =>
