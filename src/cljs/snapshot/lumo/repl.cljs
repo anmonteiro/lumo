@@ -203,7 +203,8 @@
 (defn- load-foreign-lib
   [name cb]
   (let [files (deps/files-to-load name)
-        sources (map js/$$LUMO_GLOBALS.readSource files)]
+        sources (map (fn [file]
+                       (.-source (js/$$LUMO_GLOBALS.readSource file))) files)]
     (binding [*loading-foreign* true]
       (cb {:lang :js
            :source (string/join "\n" sources)})
