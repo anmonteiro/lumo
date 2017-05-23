@@ -272,25 +272,26 @@ export default function startREPL(opts: CLIOptsType): void {
   const dumbTerminal = opts['dumb-terminal'];
   const stdinMode    = opts.stdin;
 
-  const rl = replHistory({
-    path: path.join(os.homedir(), '.lumo_history'),
-    historySize: 200,
-    input: process.stdin,
-    output: process.stdout,
-    terminal: !dumbTerminal,
-    removeHistoryDuplicates: true,
-    completer,
-  });
-
-  const session = createSession(rl, true);
-
-  readline.emitKeypressEvents(process.stdin, rl);
-  if (process.stdin.isTTY && !dumbTerminal && !stdinMode) {
-    // $FlowIssue
-    process.stdin.setRawMode(true);
-  }
-
   if (!stdinMode) {
+    const rl = replHistory({
+      path: path.join(os.homedir(), '.lumo_history'),
+      historySize: 200,
+      input: process.stdin,
+      output: process.stdout,
+      terminal: !dumbTerminal,
+      removeHistoryDuplicates: true,
+      completer,
+    });
+
+    const session = createSession(rl, true);
+
+    readline.emitKeypressEvents(process.stdin, rl);
+    if (process.stdin.isTTY && !dumbTerminal) {
+      // $FlowIssue
+      process.stdin.setRawMode(true);
+    }
+
+  
     prompt(rl, false, 'cljs.user')
   
   rl.on('line', (line: string) => processLine(session, line));
