@@ -31,6 +31,7 @@ export type CLIOptsType = {
   mainScript?: string,
   scripts: ScriptsType,
   args: string[],
+  stdin: boolean,
 };
 
 export function createBanner(): string {
@@ -132,6 +133,7 @@ function getCLIOpts(): CLIOptsType {
     'elide-asserts': false,
     quiet: false,
     args: [],
+    stdin: false,
   };
   let foundMainOpt = false;
 
@@ -211,7 +213,13 @@ function getCLIOpts(): CLIOptsType {
 
   const optind = parser.optind();
   if (!foundMainOpt && optind < argc) {
-    ret.mainScript = argv[optind];
+    console.log('\n optind: ' + optind + ' argc: ' + argc +  'argv: ' + argv + '\n');
+    if (argv[optind] == '-') {
+      ret.stdin = true;
+    }
+    else {
+      ret.mainScript = argv[optind];
+    }
     ret.args = argv.slice(optind + 1);
   } else {
     ret.args = argv.slice(optind);
