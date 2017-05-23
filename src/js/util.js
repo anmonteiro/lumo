@@ -56,3 +56,11 @@ export function currentTimeMicros(): number {
   // eslint-disable-next-line no-mixed-operators
   return (secs * 1e9 + nanos) / 1e3;
 }
+
+export function clearArray(arr: object): void {
+  // Fastest array clearing according to
+  // https://stackoverflow.com/a/23647927/3714556
+  while (arr.length > 0) {
+    arr.pop();
+  }
+}

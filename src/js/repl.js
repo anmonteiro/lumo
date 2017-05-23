@@ -6,7 +6,7 @@ import readline from 'readline';
 import tty from 'tty';
 import * as cljs from './cljs';
 import replHistory from './replHistory';
-import { currentTimeMicros, isWhitespace } from './util';
+import { currentTimeMicros, isWhitespace, clearArray } from './util';
 import { close as socketServerClose } from './socketRepl';
 
 import type { CLIOptsType } from './cli';
@@ -131,6 +131,17 @@ export function processLine(replSession: REPLSession, line: string): void {
   }
 
   return undefined;
+}
+
+function processStdin(): void {
+  const chunks = [];
+  process.stdin.on('data', (chunk) => chunks.push(chunk))
+  process.stdin.on('end', () => {
+    cljs.execute(Buffer.concat(chunks).toString(), 'text', true, false);
+    // keep the instance alive?
+    // clearArray(chunks)
+    // processStdin();
+  }) 
 }
 
 function handleSIGINT(replSession: REPLSession): void {
@@ -259,6 +270,7 @@ function completer(
 
 export default function startREPL(opts: CLIOptsType): void {
   const dumbTerminal = opts['dumb-terminal'];
+  const stdinMode    = opts.stdin;
 
   const rl = replHistory({
     path: path.join(os.homedir(), '.lumo_history'),
@@ -273,13 +285,14 @@ export default function startREPL(opts: CLIOptsType): void {
   const session = createSession(rl, true);
 
   readline.emitKeypressEvents(process.stdin, rl);
-  if (process.stdin.isTTY && !dumbTerminal) {
+  if (process.stdin.isTTY && !dumbTerminal && !stdinMode) {
     // $FlowIssue
     process.stdin.setRawMode(true);
   }
 
-  prompt(rl, false, 'cljs.user');
-
+  if (!stdinMode) {
+    prompt(rl, false, 'cljs.user')
+  
   rl.on('line', (line: string) => processLine(session, line));
   rl.on('SIGINT', () => handleSIGINT(session));
   rl.on('close', () => stopREPL());
@@ -287,6 +300,8 @@ export default function startREPL(opts: CLIOptsType): void {
 
   lastKeypressTime = currentTimeMicros();
   process.stdin.on('keypress', (c: string, key: KeyType) =>
-    handleKeyPress(session, c, key),
-  );
+                    handleKeyPress(session, c, key));
+  } else {
+    processStdin();
+  }
 }
