@@ -135,7 +135,7 @@ export function processLine(replSession: REPLSession, line: string): void {
 
 function processStdin(): void {
   const chunks = [];
-  process.stdin.on('data', (chunk: Object) => {
+  process.stdin.on('data', (chunk: Buffer) => {
     chunks.push(chunk);
   });
   process.stdin.on('error', () => {
