@@ -6,7 +6,7 @@ import readline from 'readline';
 import tty from 'tty';
 import * as cljs from './cljs';
 import replHistory from './replHistory';
-import { currentTimeMicros, isWhitespace, clearArray } from './util';
+import { currentTimeMicros, isWhitespace } from './util';
 import { close as socketServerClose } from './socketRepl';
 
 import type { CLIOptsType } from './cli';
@@ -143,7 +143,6 @@ function processStdin(): void {
   process.stdin.on('end', () => {
     cljs.execute(Buffer.concat(chunks).toString(), 'text', true, false);
     // keep the instance alive?
-    // clearArray(chunks)
     // processStdin();
   }) 
 }
