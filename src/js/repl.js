@@ -136,6 +136,10 @@ export function processLine(replSession: REPLSession, line: string): void {
 function processStdin(): void {
   const chunks = [];
   process.stdin.on('data', (chunk) => chunks.push(chunk))
+  process.stdin.on('error', () => {
+    process.stderr.write(`Error processing stdin.\n`);
+    process.exit(1);
+  })
   process.stdin.on('end', () => {
     cljs.execute(Buffer.concat(chunks).toString(), 'text', true, false);
     // keep the instance alive?
