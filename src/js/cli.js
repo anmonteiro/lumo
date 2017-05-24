@@ -215,12 +215,10 @@ function getCLIOpts(): CLIOptsType {
 
   const optind = parser.optind();
   if (!foundMainOpt && optind < argc) {
-
-    if (argv[optind] == '-') {
+    if (argv[optind] === '-') {
       ret.stdin = true;
       ret.quiet = true;
-    }
-    else {
+    } else {
       ret.mainScript = argv[optind];
     }
     ret.args = argv.slice(optind + 1);
