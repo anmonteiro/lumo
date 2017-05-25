@@ -22,6 +22,8 @@ export type REPLSession = {
   id: number,
   rl: readline$Interface,
   isMain: boolean,
+  isReverseSearch: boolean,
+  reverseSearchBuffer: string,
   input: string,
 };
 
@@ -133,22 +135,31 @@ export function processLine(replSession: REPLSession, line: string): void {
   return undefined;
 }
 
+function stopReverseSearch(
+  replSession: REPLSession,
+  clear: boolean = true,
+): void {
+  const session = replSession;
+  session.isReverseSearch = false;
+  session.reverseSearchBuffer = '';
+
+  if (clear) {
+    session.rl.write(null, {
+      ctrl: true,
+      name: 'u',
+    });
+  }
+}
+
 function handleSIGINT(replSession: REPLSession): void {
   const session = replSession;
   session.input = '';
 
+  prompt(session.rl);
   // $FlowIssue: missing property in interface
   session.rl.output.write('\n\n');
 
-  readline.clearLine(process.stdout, 0);
-  readline.cursorTo(process.stdout, 0);
-
-  session.rl.write(null, {
-    ctrl: true,
-    name: 'u',
-  });
-
-  prompt(session.rl);
+  stopReverseSearch(replSession);
 }
 
 function highlight(
@@ -217,16 +228,100 @@ function highlight(
   }
 }
 
-function handleKeyPress(session: REPLSession, c: string, key: KeyType): void {
+// function performReverseISearch() {}
+
+function handleKeyPress(
+  replSession: REPLSession,
+  c: string,
+  { name, ctrl, meta, ...key }: KeyType,
+): void {
+  const session = replSession;
   const rl = session.rl;
+  const isReverseSearch = session.isReverseSearch;
+  const isReverseSearchKey = ctrl && name === 'r';
 
-  const now = currentTimeMicros();
-  isPasting = now - lastKeypressTime < 10000;
-  lastKeypressTime = now;
+  // TODO: factor this out into own function
+  if (isReverseSearch || isReverseSearchKey) {
+    if (isReverseSearchKey && !isReverseSearch) {
+      session.isReverseSearch = true;
+      session.searchPos = 0;
+      // eslint-disable-next-line no-underscore-dangle
+      session.previousPrompt = rl._prompt;
+    } else if (isReverseSearch) {
+      if (ctrl && !isReverseSearchKey) {
+        rl.setPrompt(session.previousPrompt);
+        stopReverseSearch(session, name === 'g');
+        rl.prompt(true);
+        return;
+      } else if ((!ctrl && !meta) || isReverseSearchKey) {
+        // not a special character
+        if (
+          name != null &&
+          name !== 'space' &&
+          name !== 'backspace' &&
+          name.length > 1
+        ) {
+          return;
+        }
 
-  if (!isPasting) {
-    // $FlowIssue: these properties exist
-    highlight(session, c, rl.line, rl.cursor);
+        if (name === 'backspace') {
+          const buf = session.reverseSearchBuffer;
+          session.reverseSearchBuffer = buf.substring(0, buf.length - 1);
+        } else if (isReverseSearchKey) {
+          if (
+            session.searchPos < rl.history.length &&
+            session.reverseSearchBuffer.length !== 0
+          ) {
+            session.searchPos += 1;
+          }
+        } else {
+          session.reverseSearchBuffer += c;
+        }
+
+        const buf = session.reverseSearchBuffer;
+
+        if (buf !== '') {
+          let match;
+          for (let i = session.searchPos; i < rl.history.length; i += 1) {
+            const entry = rl.history[i];
+            const idx = entry.indexOf(buf);
+            if (idx !== -1) {
+              match = [entry, idx];
+              break;
+            }
+          }
+          if (match != null) {
+            const [l, i] = match;
+            rl.line = l;
+            rl.cursor = i;
+            // no more results
+          } else if (!isReverseSearchKey) {
+            let prevLine = rl.line.split('');
+            prevLine.splice(rl.cursor - 1, 1);
+            prevLine = prevLine.join('');
+            rl.line = prevLine;
+            rl.cursor -= 1;
+          }
+          rl._refreshLine(); // eslint-disable-line no-underscore-dangle
+        } else {
+          session.rl.write(null, {
+            ctrl: true,
+            name: 'u',
+          });
+        }
+      }
+    }
+    rl.setPrompt(`(reverse-i-search)\`${session.reverseSearchBuffer}': `);
+    rl.prompt(true);
+  } else {
+    const now = currentTimeMicros();
+    isPasting = now - lastKeypressTime < 10000;
+    lastKeypressTime = now;
+
+    if (!isPasting) {
+      // $FlowIssue: these properties exist
+      highlight(session, c, rl.line, rl.cursor);
+    }
   }
 }
 
@@ -239,6 +334,8 @@ export function createSession(
     rl,
     input: '',
     isMain,
+    reverseSearchBuffer: '',
+    isReverseSearch: false,
   };
 
   sessionCount += 1;
