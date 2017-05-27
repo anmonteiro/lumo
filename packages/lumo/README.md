@@ -54,6 +54,13 @@ $ brew install lumo
 **Note:** If you want to install a binary built from master, run `brew install --HEAD lumo`
 (at your own responsibility).
 
+### Docker
+
+``` shell
+$ docker pull anmonteiro/lumo:latest
+$ docker run -it anmonteiro/lumo
+```
+
 ### Manual
 
 1. Download the [latest release](https://github.com/anmonteiro/lumo/releases/latest).
