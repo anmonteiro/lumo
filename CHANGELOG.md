@@ -2,6 +2,10 @@
 
 ## [master](https://github.com/anmonteiro/lumo/compare/1.5.0...HEAD) (unreleased)
 
+### Changes
+
+- Upgrade ClojureScript to version 1.9.562.
+
 ### Bug fixes
 
 - Fix regression that prevented requiring binary modules ([#163](https://github.com/anmonteiro/lumo/issues/163)).
