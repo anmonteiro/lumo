@@ -16,6 +16,7 @@ type KeyType = {
   ctrl?: boolean,
   shift?: boolean,
   meta?: boolean,
+  code?: string,
 };
 
 export type REPLSession = {
@@ -233,7 +234,7 @@ function highlight(
 function handleKeyPress(
   replSession: REPLSession,
   c: string,
-  { name, ctrl, meta, ...key }: KeyType,
+  { name, ctrl, meta, code, ...key }: KeyType,
 ): void {
   const session = replSession;
   const rl = session.rl;
@@ -242,13 +243,14 @@ function handleKeyPress(
 
   // TODO: factor this out into own function
   if (isReverseSearch || isReverseSearchKey) {
+    let failedSearch = false;
     if (isReverseSearchKey && !isReverseSearch) {
       session.isReverseSearch = true;
       session.searchPos = 0;
       // eslint-disable-next-line no-underscore-dangle
       session.previousPrompt = rl._prompt;
     } else if (isReverseSearch) {
-      if (ctrl && !isReverseSearchKey) {
+      if ((ctrl && !isReverseSearchKey) || code != null) {
         rl.setPrompt(session.previousPrompt);
         stopReverseSearch(session, name === 'g');
         rl.prompt(true);
@@ -264,18 +266,14 @@ function handleKeyPress(
           return;
         }
 
-        if (name === 'backspace') {
-          const buf = session.reverseSearchBuffer;
-          session.reverseSearchBuffer = buf.substring(0, buf.length - 1);
-        } else if (isReverseSearchKey) {
-          if (
-            session.searchPos < rl.history.length &&
-            session.reverseSearchBuffer.length !== 0
-          ) {
-            session.searchPos += 1;
+        if (!isReverseSearchKey) {
+          session.searchPos = 0;
+          if (name === 'backspace') {
+            const buf = session.reverseSearchBuffer;
+            session.reverseSearchBuffer = buf.substring(0, buf.length - 1);
+          } else {
+            session.reverseSearchBuffer += c;
           }
-        } else {
-          session.reverseSearchBuffer += c;
         }
 
         const buf = session.reverseSearchBuffer;
@@ -284,23 +282,27 @@ function handleKeyPress(
           let match;
           for (let i = session.searchPos; i < rl.history.length; i += 1) {
             const entry = rl.history[i];
-            const idx = entry.indexOf(buf);
-            if (idx !== -1) {
-              match = [entry, idx];
+            const idxOf = entry.indexOf(buf);
+            if (idxOf !== -1) {
+              match = [i, entry, idxOf];
               break;
             }
           }
           if (match != null) {
-            const [l, i] = match;
-            rl.line = l;
-            rl.cursor = i;
+            const [i, entry, idxOf] = match;
+            session.searchPos = i + 1;
+            rl.line = entry;
+            rl.cursor = idxOf;
             // no more results
-          } else if (!isReverseSearchKey) {
-            let prevLine = rl.line.split('');
-            prevLine.splice(rl.cursor - 1, 1);
-            prevLine = prevLine.join('');
-            rl.line = prevLine;
-            rl.cursor -= 1;
+          } else {
+            if (!isReverseSearchKey) {
+              let prevLine = rl.line.split('');
+              prevLine.splice(rl.cursor - 1, 1);
+              prevLine = prevLine.join('');
+              rl.line = prevLine;
+              rl.cursor -= 1;
+            }
+            failedSearch = true;
           }
           rl._refreshLine(); // eslint-disable-line no-underscore-dangle
         } else {
@@ -311,7 +313,9 @@ function handleKeyPress(
         }
       }
     }
-    rl.setPrompt(`(reverse-i-search)\`${session.reverseSearchBuffer}': `);
+    rl.setPrompt(
+      `(${failedSearch ? 'failed ' : ''}reverse-i-search)\`${session.reverseSearchBuffer}': `,
+    );
     rl.prompt(true);
   } else {
     const now = currentTimeMicros();
