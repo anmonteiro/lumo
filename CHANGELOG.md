@@ -2,6 +2,9 @@
 
 ## [master](https://github.com/anmonteiro/lumo/compare/1.5.0...HEAD) (unreleased)
 
+### New features
+- Add ability to execute a script from standard input ([#168](https://github.com/anmonteiro/lumo/pull/168))
+
 ### Bug fixes
 
 - Fix regression that prevented requiring binary modules ([#163](https://github.com/anmonteiro/lumo/issues/163)).

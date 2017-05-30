@@ -367,8 +367,6 @@ function processStdin(): void {
   });
   process.stdin.on('end', () => {
     execute(Buffer.concat(chunks).toString(), 'text', true, false);
-    // keep the instance alive?
-    // processStdin();
   });
 }
 
@@ -381,12 +379,11 @@ export default function startClojureScriptEngine(opts: CLIOptsType): void {
   }
 
   if (mainScript) {
-    if (mainScript !== '-') {
-      initClojureScriptEngine(opts);
-      executeScript(mainScript, 'path');
-    } else {
-      initClojureScriptEngine(opts);
+    initClojureScriptEngine(opts);
+    if (mainScript === '-') {
       processStdin();
+    } else {
+      executeScript(mainScript, 'path');
     }
   }
 
