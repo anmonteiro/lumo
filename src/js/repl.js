@@ -133,22 +133,6 @@ export function processLine(replSession: REPLSession, line: string): void {
   return undefined;
 }
 
-function processStdin(): void {
-  const chunks = [];
-  process.stdin.on('data', (chunk: Buffer) => {
-    chunks.push(chunk);
-  });
-  process.stdin.on('error', () => {
-    process.stderr.write('Error processing stdin.\n');
-    process.exit(1);
-  });
-  process.stdin.on('end', () => {
-    cljs.execute(Buffer.concat(chunks).toString(), 'text', true, false);
-    // keep the instance alive?
-    // processStdin();
-  });
-}
-
 function handleSIGINT(replSession: REPLSession): void {
   const session = replSession;
   session.input = '';
@@ -275,38 +259,34 @@ function completer(
 
 export default function startREPL(opts: CLIOptsType): void {
   const dumbTerminal = opts['dumb-terminal'];
-  const stdinMode = opts.stdin;
 
-  if (!stdinMode) {
-    const rl = replHistory({
-      path: path.join(os.homedir(), '.lumo_history'),
-      historySize: 200,
-      input: process.stdin,
-      output: process.stdout,
-      terminal: !dumbTerminal,
-      removeHistoryDuplicates: true,
-      completer,
-    });
+  const rl = replHistory({
+    path: path.join(os.homedir(), '.lumo_history'),
+    historySize: 200,
+    input: process.stdin,
+    output: process.stdout,
+    terminal: !dumbTerminal,
+    removeHistoryDuplicates: true,
+    completer,
+  });
 
-    const session = createSession(rl, true);
+  const session = createSession(rl, true);
 
-    readline.emitKeypressEvents(process.stdin, rl);
-    if (process.stdin.isTTY && !dumbTerminal) {
-      // $FlowIssue
-      process.stdin.setRawMode(true);
-    }
-
-    prompt(rl, false, 'cljs.user');
-
-    rl.on('line', (line: string) => processLine(session, line));
-    rl.on('SIGINT', () => handleSIGINT(session));
-    rl.on('close', () => stopREPL());
-    rl.on('SIGCONT', () => rl.prompt());
-
-    lastKeypressTime = currentTimeMicros();
-    process.stdin.on('keypress', (c: string, key: KeyType) =>
-                     handleKeyPress(session, c, key));
-  } else {
-    processStdin();
+  readline.emitKeypressEvents(process.stdin, rl);
+  if (process.stdin.isTTY && !dumbTerminal) {
+    // $FlowIssue
+    process.stdin.setRawMode(true);
   }
+
+  prompt(rl, false, 'cljs.user');
+
+  rl.on('line', (line: string) => processLine(session, line));
+  rl.on('SIGINT', () => handleSIGINT(session));
+  rl.on('close', () => stopREPL());
+  rl.on('SIGCONT', () => rl.prompt());
+
+  lastKeypressTime = currentTimeMicros();
+  process.stdin.on('keypress', (c: string, key: KeyType) =>
+    handleKeyPress(session, c, key),
+  );
 }

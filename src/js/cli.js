@@ -31,7 +31,6 @@ export type CLIOptsType = {
   mainScript?: string,
   scripts: ScriptsType,
   args: string[],
-  stdin: boolean,
 };
 
 export function createBanner(): string {
@@ -76,8 +75,7 @@ Usage:  lumo [init-opt*] [main-opt] [arg*]
                                  control
     -s, --static-fns             Generate static dispatch function calls
     -n x, --socket-repl x        Enable a socket REPL where x is port or IP:port
-    -                            Evaluate expressions from stdin; prints
-                                 only that which is sent to stdout.
+    -                            Run a script from standard input.
 
   main options:
     -m ns-name, --main=ns-name   Call the -main function from a namespace
@@ -135,7 +133,6 @@ function getCLIOpts(): CLIOptsType {
     'elide-asserts': false,
     quiet: false,
     args: [],
-    stdin: false,
   };
   let foundMainOpt = false;
 
@@ -215,12 +212,7 @@ function getCLIOpts(): CLIOptsType {
 
   const optind = parser.optind();
   if (!foundMainOpt && optind < argc) {
-    if (argv[optind] === '-') {
-      ret.stdin = true;
-      ret.quiet = true;
-    } else {
-      ret.mainScript = argv[optind];
-    }
+    ret.mainScript = argv[optind];
     ret.args = argv.slice(optind + 1);
   } else {
     ret.args = argv.slice(optind);
