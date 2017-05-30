@@ -16,27 +16,14 @@ type replHistory$Opts = {
 };
 
 const maxDiskSize = 0x1000000;
-let histStream;
-
-function getHistoryStream(path: string): stream$Writable {
-  if (histStream == null) {
-    histStream = fs.createWriteStream(path, {
-      flags: 'a+',
-      defaultEncoding: 'utf8',
-    });
-  }
-
-  return histStream;
-}
 
 function onLoad(
   path: string,
+  fd: number,
   maxLength: number,
   offset: number,
   cb: (ret: string[]) => void,
 ): void {
-  // $FlowIssue: it's there
-  const { fd } = getHistoryStream(path);
   const rs = fs.createReadStream(path, {
     encoding: 'utf-8',
     fd,
@@ -57,7 +44,7 @@ function onLoad(
 
     if (offset > 0 && tail.length < maxLength) {
       // eslint-disable-next-line no-mixed-operators
-      onLoad(path, maxLength, offset - 0x100 * maxLength, cb);
+      onLoad(path, fd, maxLength, offset - 0x100 * maxLength, cb);
     } else {
       tail = tail.slice(-maxLength);
       tail.reverse();
@@ -68,6 +55,7 @@ function onLoad(
 
 function loadHistory(
   path: string,
+  fd: number,
   maxLength: number,
   cb: (ret: string[]) => void,
 ): void {
@@ -77,14 +65,11 @@ function loadHistory(
       const rename = function rename(): void {
         fs.rename(path, `${path}.old`, () => {
           // $FlowIssue: mode is optional
-          fs.open(path, 'a+', (e: ?ErrnoError, fd: number) => {
-            loadHistory(path, maxLength, cb);
+          fs.open(path, 'a+', (e: ?ErrnoError, ffd: number) => {
+            loadHistory(path, ffd, maxLength, cb);
           });
         });
       };
-
-      // $FlowIssue: it's there
-      const { fd } = getHistoryStream(path);
 
       if (fd != null) {
         fs.close(fd, () => {
@@ -99,7 +84,7 @@ function loadHistory(
         });
       }
     } else {
-      onLoad(path, maxLength, totalSize, cb);
+      onLoad(path, fd, maxLength, totalSize, cb);
     }
   });
 }
@@ -112,7 +97,10 @@ export default function createInterface(
   const rl = readline.createInterface(options);
 
   if (terminal) {
-    const stream = getHistoryStream(path);
+    const stream = fs.createWriteStream(path, {
+      flags: 'a+',
+      defaultEncoding: 'utf8',
+    });
 
     // $FlowIssue: private property
     const oldAddHistory = rl._addHistory;
@@ -130,9 +118,11 @@ export default function createInterface(
     };
 
     if (path != null && historySize != null) {
-      loadHistory(path, historySize, (history: string[]) => {
-        // $FlowIssue: it's there
-        rl.history.push(...history);
+      stream.on('open', (fd: number) => {
+        loadHistory(path, fd, historySize, (history: string[]) => {
+          // $FlowIssue: it's there
+          rl.history.push(...history);
+        });
       });
     }
   }
