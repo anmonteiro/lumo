@@ -11,6 +11,8 @@
 - Fix regression that prevented requiring binary modules ([#163](https://github.com/anmonteiro/lumo/issues/163)).
 - Fix bug that prevented Lumo from continuing executing after being put in background ([#166](https://github.com/anmonteiro/lumo/issues/166)).
 - Fix regression that prevented requiring foreign libraries ([#167](https://github.com/anmonteiro/lumo/issues/167)).
+- Fix a race condition with the REPL history where Lumo could attempt to read a file's
+size before it was created.
 
 ## [1.5.0](https://github.com/anmonteiro/lumo/compare/1.4.1...1.5.0) (2017-05-13)
 

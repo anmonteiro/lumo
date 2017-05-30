@@ -26,8 +26,10 @@ fs.unlink = jest.fn((_: string, cb: () => void) => cb());
 const streamWrite = jest.fn();
 
 fs.createWriteStream = jest.fn(() => ({
+  on(_: string, cb: number => void): void {
+    cb(42);
+  },
   write: streamWrite,
-  fd: 42,
 }));
 
 fs.createReadStream = jest.fn(
