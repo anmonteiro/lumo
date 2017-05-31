@@ -176,7 +176,7 @@ function highlight(
       // $FlowIssue
       const oldInput = rl.input;
       // $FlowIssue: constructor accepts 2 args
-      const readStream = new tty.ReadStream(null, {});
+      const readStream = new tty.ReadStream(0, {});
       readStream.setRawMode(true);
       readline.emitKeypressEvents(readStream, rl);
 

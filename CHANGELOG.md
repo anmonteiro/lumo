@@ -5,6 +5,8 @@
 ### Changes
 
 - Upgrade ClojureScript to version 1.9.562.
+- Upgrade Node.js to version 8.0.0 ([#173](https://github.com/anmonteiro/lumo/pull/173)).
+- Upgrade Google Closure Compiler to v20170521 ([#173](https://github.com/anmonteiro/lumo/pull/173)).
 
 ### Bug fixes
 
