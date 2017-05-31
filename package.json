@@ -23,7 +23,7 @@
   },
   "main": "./src/js/index.js",
   "dependencies": {
-    "google-closure-compiler-js": "^20170409.0.0",
+    "google-closure-compiler-js": "^20170521.0.0",
     "jszip": "2.6.1",
     "opencollective": "^1.0.0",
     "parinfer": "2.0.0",
@@ -39,7 +39,7 @@
     "eslint-config-airbnb": "^15.0.1",
     "eslint-config-airbnb-base": "^11.2.0",
     "eslint-plugin-babel": "^4.1.1",
-    "eslint-plugin-flowtype": "^2.33.0",
+    "eslint-plugin-flowtype": "^2.34.0",
     "eslint-plugin-import": "^2.3.0",
     "eslint-plugin-jsx-a11y": "^5.0.3",
     "eslint-plugin-react": "^7.0.1",
