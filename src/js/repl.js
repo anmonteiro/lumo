@@ -238,15 +238,14 @@ function handleKeyPress(
       session.searchPos = 0;
       session.previousPrompt = rl._prompt;
     } else if (isReverseSearch) {
-      if (
-        (ctrl && !isReverseSearchKey) ||
-        code != null ||
-        name === 'return' ||
-        name === 'enter'
-      ) {
-        rl.setPrompt(session.previousPrompt);
+      const isNewline = name === 'return' || name === 'enter';
+      if ((ctrl && !isReverseSearchKey) || code != null || isNewline) {
         stopReverseSearch(session, name === 'g');
-        rl.prompt(true);
+        if (!isNewline) {
+          rl.setPrompt(session.previousPrompt);
+          rl.prompt(true);
+        }
+
         return;
       } else if ((!ctrl && !meta) || isReverseSearchKey) {
         // not a special character
