@@ -75,13 +75,13 @@ Usage:  lumo [init-opt*] [main-opt] [arg*]
                                  control
     -s, --static-fns             Generate static dispatch function calls
     -n x, --socket-repl x        Enable a socket REPL where x is port or IP:port
-    -                            Run a script from standard input
 
   main options:
     -m ns-name, --main=ns-name   Call the -main function from a namespace
                                  with args
     -r, --repl                   Run a repl
     path                         Run a script from a file or resource
+    -                            Run a script from standard input
     -h, -?, --help               Print this help message and exit
     -l, --legal                  Show legal info (licenses and copyrights)
 
