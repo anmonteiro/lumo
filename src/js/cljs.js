@@ -1,5 +1,4 @@
 /* @flow */
-/* eslint-disable no-underscore-dangle  */
 
 import crypto from 'crypto';
 import fs from 'fs';

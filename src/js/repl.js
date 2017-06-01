@@ -26,6 +26,8 @@ export type REPLSession = {
   isReverseSearch: boolean,
   reverseSearchBuffer: string,
   input: string,
+  searchPos: number,
+  previousPrompt: string,
 };
 
 const exitCommands = new Set([':cljs/quit', 'exit']);
@@ -98,7 +100,6 @@ export function processLine(replSession: REPLSession, line: string): void {
       );
 
       if (!isWhitespace(session.input)) {
-        // $FlowIssue: rl.output is there
         cljs.setPrintFns(rl.output);
         currentREPLInterface = rl;
 
@@ -110,7 +111,6 @@ export function processLine(replSession: REPLSession, line: string): void {
         // the prompt and line editing will overwrite any printed output on the
         // current line.
         if (!cljs.isPrintingNewline()) {
-          // $FlowIssue: rl.output is there
           rl.output.write('\n');
         }
       } else {
@@ -157,7 +157,6 @@ function handleSIGINT(replSession: REPLSession): void {
   session.input = '';
 
   prompt(session.rl);
-  // $FlowIssue: missing property in interface
   session.rl.output.write('\n\n');
 
   stopReverseSearch(replSession);
@@ -179,13 +178,11 @@ function highlight(
     const [cursorX, linesUp] = cljs.getHighlightCoordinates(lines, pos);
 
     if (linesUp !== -1) {
-      // $FlowIssue: rl.output is there
       readline.moveCursor(rl.output, -(cursor - cursorX), -linesUp);
       rl.pause();
 
       // set the readline input stream to a new one so that we can listen for
       // keypress events while stdin is paused.
-      // $FlowIssue
       const oldInput = rl.input;
       // $FlowIssue: constructor accepts 2 args
       const readStream = new tty.ReadStream(0, {});
@@ -195,18 +192,14 @@ function highlight(
       readStream.once('keypress', (c: string, key: KeyType) => {
         const [tid] = pendingHighlights.shift();
         clearTimeout(tid);
-        // $FlowIssue
         readline.moveCursor(rl.output, cursor - cursorX, linesUp);
-        // $FlowIssue
         rl.input = oldInput;
         rl.resume();
         readStream.destroy();
         rl.write(c, key);
-        // $FlowIssue
         highlight(session, c, rl.line, rl.cursor);
       });
 
-      // $FlowIssue
       rl.input = readStream;
 
       const now = currentTimeMicros();
@@ -215,9 +208,7 @@ function highlight(
 
         if (to != null && to[1] === now) {
           pendingHighlights.shift();
-          // $FlowIssue: rl.output is there
           readline.moveCursor(rl.output, cursor - cursorX, linesUp);
-          // $FlowIssue: rl.input is there
           rl.input = oldInput;
           rl.resume();
           readStream.destroy();
@@ -228,8 +219,6 @@ function highlight(
     }
   }
 }
-
-// function performReverseISearch() {}
 
 function handleKeyPress(
   replSession: REPLSession,
@@ -247,10 +236,14 @@ function handleKeyPress(
     if (isReverseSearchKey && !isReverseSearch) {
       session.isReverseSearch = true;
       session.searchPos = 0;
-      // eslint-disable-next-line no-underscore-dangle
       session.previousPrompt = rl._prompt;
     } else if (isReverseSearch) {
-      if ((ctrl && !isReverseSearchKey) || code != null) {
+      if (
+        (ctrl && !isReverseSearchKey) ||
+        code != null ||
+        name === 'return' ||
+        name === 'enter'
+      ) {
         rl.setPrompt(session.previousPrompt);
         stopReverseSearch(session, name === 'g');
         rl.prompt(true);
@@ -277,13 +270,12 @@ function handleKeyPress(
         }
 
         const buf = session.reverseSearchBuffer;
-
         if (buf !== '') {
           let match;
           for (let i = session.searchPos; i < rl.history.length; i += 1) {
             const entry = rl.history[i];
             const idxOf = entry.indexOf(buf);
-            if (idxOf !== -1) {
+            if (entry !== rl.line && idxOf !== -1) {
               match = [i, entry, idxOf];
               break;
             }
@@ -304,7 +296,7 @@ function handleKeyPress(
             }
             failedSearch = true;
           }
-          rl._refreshLine(); // eslint-disable-line no-underscore-dangle
+          rl._refreshLine();
         } else {
           session.rl.write(null, {
             ctrl: true,
@@ -323,7 +315,6 @@ function handleKeyPress(
     lastKeypressTime = now;
 
     if (!isPasting) {
-      // $FlowIssue: these properties exist
       highlight(session, c, rl.line, rl.cursor);
     }
   }
@@ -340,6 +331,8 @@ export function createSession(
     isMain,
     reverseSearchBuffer: '',
     isReverseSearch: false,
+    searchPos: 0,
+    previousPrompt: rl._prompt,
   };
 
   sessionCount += 1;
@@ -367,7 +360,6 @@ export default function startREPL(opts: CLIOptsType): void {
     input: process.stdin,
     output: process.stdout,
     terminal: !dumbTerminal,
-    removeHistoryDuplicates: true,
     completer,
   });
 

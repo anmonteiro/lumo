@@ -13,9 +13,17 @@ let startREPL = require('../repl').default;
 const processStdinOn = process.stdin.on;
 const processStdinSetRaw = process.stdin.setRawMode;
 
-process.stdin.on = jest.fn((type: string, cb: (key: string) => void) => {
-  cb('return');
-});
+process.stdin.on = jest.fn(
+  (
+    type: string,
+    cb: (
+      string,
+      { name: string, code?: string, ctrl: boolean, meta: boolean },
+    ) => void,
+  ) => {
+    cb('return', { name: 'return' });
+  },
+);
 
 process.stdin.setRawMode = jest.fn();
 
