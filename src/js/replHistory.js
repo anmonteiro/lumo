@@ -1,5 +1,4 @@
 /* @flow */
-/* eslint-disable no-underscore-dangle */
 
 import readline from 'readline';
 import fs from 'fs';
@@ -107,7 +106,6 @@ export default function createInterface(
 
     // $FlowIssue: private property
     rl._addHistory = function _addHistory(): string {
-      // $FlowIssue: it's there
       const [last] = rl.history;
       const line = oldAddHistory.call(rl);
 
@@ -120,7 +118,6 @@ export default function createInterface(
     if (path != null && historySize != null) {
       stream.on('open', (fd: number) => {
         loadHistory(path, fd, historySize, (history: string[]) => {
-          // $FlowIssue: it's there
           rl.history.push(...history);
         });
       });

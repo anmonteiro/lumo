@@ -35,7 +35,6 @@ function handleConnection(socket: net$Socket): REPLSession {
 
   rl.on('close', () => socket.destroy());
 
-  // $FlowIssue - output missing from readline$Interface
   rl.output.write(createBanner());
   prompt(rl, false, 'cljs.user');
 
