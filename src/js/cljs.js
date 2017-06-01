@@ -356,6 +356,20 @@ function runMain(mainNS: string, args: string[]): void {
   ClojureScriptContext.lumo.repl.run_main.apply(null, [mainNS, ...args]);
 }
 
+function processStdin(): void {
+  const chunks = [];
+  process.stdin.on('data', (chunk: Buffer) => {
+    chunks.push(chunk);
+  });
+  process.stdin.on('error', () => {
+    process.stderr.write('Error processing stdin.\n');
+    process.exit(1);
+  });
+  process.stdin.on('end', () => {
+    execute(Buffer.concat(chunks).toString(), 'text', true, false);
+  });
+}
+
 export default function startClojureScriptEngine(opts: CLIOptsType): void {
   const { args, mainNsName, mainScript, repl, scripts } = opts;
 
@@ -366,7 +380,11 @@ export default function startClojureScriptEngine(opts: CLIOptsType): void {
 
   if (mainScript) {
     initClojureScriptEngine(opts);
-    executeScript(mainScript, 'path');
+    if (mainScript === '-') {
+      processStdin();
+    } else {
+      executeScript(mainScript, 'path');
+    }
   }
 
   if (mainNsName) {

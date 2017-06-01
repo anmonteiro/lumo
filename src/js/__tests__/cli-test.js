@@ -312,6 +312,15 @@ describe('print Functions', () => {
       startCLI();
       expect(process.stdout.write).not.toHaveBeenCalled();
     });
+
+    it("doesn't print if evaluating from stdin.", () => {
+      Object.defineProperty(process, 'argv', {
+        value: ['', '', '-'],
+      });
+
+      startCLI();
+      expect(process.stdout.write).not.toHaveBeenCalled();
+    });
   });
 
   describe('printHelp', () => {
