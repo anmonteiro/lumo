@@ -1,5 +1,4 @@
 (ns hello.world)
 
 (defn hello [socket & args]
-  (println "Hello World Args: " args)
-  (.end socket "\nHello friend.\n\n"))
+  (.end socket (str "\nHello friend.\nYou gave me the following args: " args "\n\n")))
