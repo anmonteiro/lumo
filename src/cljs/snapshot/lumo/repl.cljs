@@ -1308,7 +1308,14 @@
 ;; --------------------
 ;; Socket Repl
 
-(defn ^:export js2clj [arg] (js->clj arg))
+(defn ^:export js2clj
+  "For some reason, when we pass a JSON object from the JS side into the CLJS side,
+  this js->clj doesn't work and we just get js objects. This is one workaround, as converting
+  to a string and back again seems to fix things.
+
+  TODO: Figure out what's actually going on here. Timestamp: June 2nd, 2017"
+  [json]
+  (js->clj (js/JSON.parse (js/JSON.stringify json))))
 
 (defn ns-symbol [function]
   (symbol (namespace (symbol function))))
@@ -1317,21 +1324,10 @@
   (-> function symbol name))
 
 (defn ^:export run-accept-fn [accept-fn socket & args]
-  (println "println: " (js->clj args))
-  ;; (js/console.log "console.log: " (first args))
-  ;; (println (type (js->clj (first args))))
-  ;; (js/console.log "Stringified: " (js/JSON.stringify (first args)))
-  ;; (println "Stringified: " (js/JSON.stringify (first args)))
-  ;; (js/console.log "Parsed: " (js/JSON.parse (js/JSON.stringify (first args))))
-  ;; (println "Parsed: " (js/JSON.parse (js/JSON.stringify (first args))))
-  ;; (js/console.log "js->clj: " (js->clj (js/JSON.parse (js/JSON.stringify (first args)))))
-  ;; (println "js->clj: " (js->clj (js/JSON.parse (js/JSON.stringify (first args)))))
-  (println "mapped js->clj" (map js->clj args))
-  ;; (println (js->clj (js/JSON.parse (js/JSON.stringify args))))
   (let [ns-sym (ns-symbol accept-fn)
         fn-str (fn-string accept-fn)
         opts (make-eval-opts)
-        fn-args (js->clj args)]
+        fn-args (map js2clj args)]
     (binding [cljs/*load-fn* load
               cljs/*eval-fn* caching-node-eval]
       (cljs/eval st
