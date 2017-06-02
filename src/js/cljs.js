@@ -388,11 +388,11 @@ export default function startClojureScriptEngine(opts: CLIOptsType): void {
     const hostPortMatch = socketReplArgs.match(hostAndPortRegex);
 
     // TODO: I think I need to handle default cases for these variables differently
-    var host = undefined;
-    var port = undefined;
-    var acceptFn = undefined;
-    var acceptArgs = undefined;
-    var replOpts = undefined;
+    var host = "";
+    var port = "";
+    var acceptFn: (socket: net$Socket) => void | string;
+    var acceptArgs: Array<mixed> = [];
+    var replOpts = {};
 
     try {
       if (jsonRegex.test(socketReplArgs)){
