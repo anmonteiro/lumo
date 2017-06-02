@@ -41,8 +41,6 @@ function openRepl(socket: net$Socket): void {
 
 // Calls the `accept` function on the socket and handles the socket lifecycle
 function handleConnection(socket: net$Socket, accept: AcceptFn, acceptArgs): number {
-  console.log("JS: accept args: ", acceptArgs);
-  console.log(typeof(acceptArgs));
   if (typeof(accept)==='string') {
     runAcceptFN(accept, socket, acceptArgs);
   } else {
