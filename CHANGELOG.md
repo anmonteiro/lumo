@@ -21,6 +21,7 @@
 - Fix regression that prevented requiring foreign libraries ([#167](https://github.com/anmonteiro/lumo/issues/167)).
 - Fix a race condition with the REPL history where Lumo could attempt to read a file's
 size before it was created.
+- Pretty print eductions ([#170](https://github.com/anmonteiro/lumo/issues/170)).
 
 ## [1.5.0](https://github.com/anmonteiro/lumo/compare/1.4.1...1.5.0) (2017-05-13)
 
