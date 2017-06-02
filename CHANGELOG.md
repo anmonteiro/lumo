@@ -22,6 +22,7 @@
 - Fix a race condition with the REPL history where Lumo could attempt to read a file's
 size before it was created.
 - Pretty print eductions ([#170](https://github.com/anmonteiro/lumo/issues/170)).
+- Auto-complete after arrow & other special characters ([#157](https://github.com/anmonteiro/lumo/issues/157)).
 
 ## [1.5.0](https://github.com/anmonteiro/lumo/compare/1.4.1...1.5.0) (2017-05-13)
 

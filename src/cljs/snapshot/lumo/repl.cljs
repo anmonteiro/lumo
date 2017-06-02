@@ -1133,7 +1133,8 @@
 
 (defn- is-completion?
   [match-suffix candidate]
-  (re-find (js/RegExp. (str "^" match-suffix)) candidate))
+  (let [escaped-suffix (string/replace match-suffix #"[-\/\\^$*+?.()|\[\]{}]" "\\$&")]
+    (re-find (js/RegExp. (str "^" escaped-suffix) "i") candidate)))
 
 (def ^:private keyword-completions
   (into #{} (map str)
@@ -1254,8 +1255,8 @@
   (if-some [js-matches (re-find #"js/(\S*)$" line)]
     (js/$$LUMO_GLOBALS.getJSCompletions line (second js-matches) cb)
     (let [top-level? (boolean (re-find #"^\s*\(\s*[^()\s]*$" line))
-          ns-alias (second (re-find #"\(*(\b[a-zA-Z-.]+)/[a-zA-Z-]*$" line))
-          line-match-suffix (re-find #":?[a-zA-Z-.]*$" line)
+          ns-alias (second (re-find #"\(*(\b[a-zA-Z-.<>*=&?]+)/[a-zA-Z-]*$" line))
+          line-match-suffix (first (re-find #":?([a-zA-Z-.<>*=&?]*|^\(/)$" line))
           line-prefix (subs line 0 (- (count line) (count line-match-suffix)))
           completions (reduce (fn [ret item]
                                 (doto ret

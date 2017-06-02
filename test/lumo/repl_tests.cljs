@@ -87,7 +87,21 @@
                                            '{string clojure.string})]
       (is-contains-completion "(string/" "(string/merge" not)))
   (testing "JS Completions"
-    (is-contains-completion "js/con" "js/console")))
+    (is-contains-completion "js/con" "js/console"))
+  (testing "LUMO-157"
+    (is-contains-completion "(-" "(->")
+    (is-contains-completion "(-" "(->>")
+    (is-contains-completion "(->" "(->>")
+    (is-contains-completion "(->" "(->merge" not)
+    (is-contains-completion "*" "*clojurescript-version*")
+    (is-contains-completion "*" "*merge" not)
+    (is-contains-completion "(<" "(<merge" not)
+    (is-contains-completion "(=" "(=merge" not)
+    (is-contains-completion "(&" "(&merge" not)
+    (is-contains-completion "(?" "(?merge" not)
+    (is-contains-completion "(/" "(/merge" not)
+    (is-contains-completion "(?" "(?merge" not)
+    (is-contains-completion "(MER" "(merge")))
 
 (deftest test-root-resource
   (is (= (lumo/root-resource 'foo-bar-baz) "/foo_bar_baz"))
