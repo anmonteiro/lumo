@@ -305,7 +305,9 @@ function handleKeyPress(
       }
     }
     rl.setPrompt(
-      `(${failedSearch ? 'failed ' : ''}reverse-i-search)\`${session.reverseSearchBuffer}': `,
+      `(${failedSearch
+        ? 'failed '
+        : ''}reverse-i-search)\`${session.reverseSearchBuffer}': `,
     );
     rl.prompt(true);
   } else {

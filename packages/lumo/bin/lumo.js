@@ -8,8 +8,8 @@ var bin = process.platform === 'darwin' ||
   (process.platform === 'linux' && process.arch === 'x64')
   ? path.join(__dirname, 'lumo')
   : process.platform === 'win32' && process.arch === 'x64'
-      ? path.join(__dirname, 'lumo.exe')
-      : null;
+    ? path.join(__dirname, 'lumo.exe')
+    : null;
 
 if (bin !== null) {
   spawn(bin, input, { stdio: 'inherit' }).on('exit', process.exit);

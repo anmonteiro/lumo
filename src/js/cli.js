@@ -299,7 +299,9 @@ export default (async function startCLI(): Promise<mixed> {
 
       if (!quiet) {
         process.stdout.write(
-          `Lumo socket REPL listening at ${host != null ? host : 'localhost'}:${port}.\n`,
+          `Lumo socket REPL listening at ${host != null
+            ? host
+            : 'localhost'}:${port}.\n`,
         );
       }
     } catch (e) {
