@@ -528,10 +528,6 @@
   []
   (keys (::ana/namespaces @st)))
 
-(defn- all-macros-ns []
-  (->> (all-ns)
-    (filter #(string/ends-with? (str %) MACROS_SUFFIX))))
-
 (defn- get-namespace
   "Gets the AST for a given namespace."
   [ns]
@@ -560,7 +556,8 @@
   [env sym]
   (binding [ana/*cljs-warning-handlers* nil]
     (let [var (or (env/with-compiler-env st (resolve-var env sym))
-                  (some #(get-macro-var env sym %) (all-macros-ns)))]
+                  (some #(get-macro-var env sym %)
+                    (vals (get-in @st [::ana/namespaces @current-ns :use-macros]))))]
       (when var
         (-> (cond-> var
               (not (:ns var))

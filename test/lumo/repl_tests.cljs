@@ -131,4 +131,5 @@ Special Form
   else is not supplied it defaults to nil.
 
   Please see http://clojure.org/special_forms#if
-")))
+"))
+  (is (empty? (with-out-str (lumo/doc every)))))
