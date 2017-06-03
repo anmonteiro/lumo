@@ -28,6 +28,8 @@ export type REPLSession = {
   input: string,
   searchPos: number,
   previousPrompt: string,
+  previousLine: string,
+  previousCursor: number,
 };
 
 const exitCommands = new Set([':cljs/quit', 'exit']);
@@ -237,10 +239,20 @@ function handleKeyPress(
       session.isReverseSearch = true;
       session.searchPos = 0;
       session.previousPrompt = rl._prompt;
+      session.previousLine = rl.line;
+      session.previousCursor = rl.cursor;
     } else if (isReverseSearch) {
       const isNewline = name === 'return' || name === 'enter';
       if ((ctrl && !isReverseSearchKey) || code != null || isNewline) {
-        stopReverseSearch(session, name === 'g');
+        const isCancelSearch = name === 'g';
+
+        stopReverseSearch(session, isCancelSearch);
+
+        if (isCancelSearch) {
+          rl.line = session.previousLine;
+          rl.cursor = session.previousCursor;
+        }
+
         if (!isNewline) {
           rl.setPrompt(session.previousPrompt);
           rl.prompt(true);
@@ -334,6 +346,8 @@ export function createSession(
     isReverseSearch: false,
     searchPos: 0,
     previousPrompt: rl._prompt,
+    previousLine: rl.line,
+    previousCursor: rl.cursor,
   };
 
   sessionCount += 1;
