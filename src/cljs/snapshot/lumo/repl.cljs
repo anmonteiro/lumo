@@ -812,19 +812,19 @@
 ;; emit function values into JavaScript as numeric
 ;; references that are looked up.
 
-(defonce ^:private fn-index (atom 0))
-(defonce ^:private fn-refs (atom {}))
+(defonce ^:private fn-index (volatile! 0))
+(defonce ^:private fn-refs (volatile! {}))
 
 (defn- clear-fns!
   "Clears saved functions."
   []
-  (reset! fn-refs {}))
+  (vreset! fn-refs {}))
 
 (defn- put-fn
   "Saves a function, returning a numeric representation."
   [f]
-  (let [n (swap! fn-index inc)]
-    (swap! fn-refs assoc n f)
+  (let [n (vswap! fn-index inc)]
+    (vswap! fn-refs assoc n f)
     n))
 
 (defn- get-fn
@@ -847,7 +847,7 @@
   ([form]
    (eval form (.-name *ns*)))
   ([form ns]
-   (let [result (atom nil)]
+   (let [result (volatile! nil)]
      (cljs/eval st form
        {:ns            ns
         :context       :expr
@@ -855,7 +855,7 @@
        (fn [{:keys [value error]}]
          (if error
            (handle-error error true)
-           (reset! result value))))
+           (vreset! result value))))
      @result)))
 
 ;; --------------------
