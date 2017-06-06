@@ -392,7 +392,7 @@ export default function startClojureScriptEngine(opts: CLIOptsType): void {
     var port = "";
     var acceptFn: (socket: net$Socket) => void | string;
     var acceptArgs: Array<mixed> = [];
-    var replOpts = {};
+    var replOpts;
 
     try {
       if (jsonRegex.test(socketReplArgs)){
@@ -406,7 +406,7 @@ export default function startClojureScriptEngine(opts: CLIOptsType): void {
         throw new SyntaxError("Got Socket REPL args, but they were unparsable. Args were: " + socketReplArgs);
       }
 
-      if (replOpts){
+      if ("undefined" != typeof(replOpts)){
         host = replOpts['host'];
         port = replOpts['port'];
         acceptFn = replOpts['accept'];
