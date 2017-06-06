@@ -7,6 +7,7 @@
 
 - Add ability to execute a script from standard input ([#168](https://github.com/anmonteiro/lumo/pull/168)).
 - Add support for `reverse-i-search` ([#169](https://github.com/anmonteiro/lumo/pull/169)).
+- Expose `eval` ([#177](https://github.com/anmonteiro/lumo/pull/177)).
 
 ### Changes
 
