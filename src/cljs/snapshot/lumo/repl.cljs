@@ -4,6 +4,7 @@
                    [cljs.analyzer.macros :refer [no-warn]]
                    [lumo.repl :refer [with-err-str]])
   (:require [cljs.analyzer :as ana]
+            [cljs.compiler :as comp]
             [cljs.env :as env]
             [cljs.js :as cljs]
             [cljs.reader :as reader]
@@ -806,6 +807,57 @@
                            (filter matches? (public-syms ns)))))
                   (all-ns)))))
 
+;; Taken from planck eval implementation
+;; The following atoms and fns set up a scheme to
+;; emit function values into JavaScript as numeric
+;; references that are looked up.
+
+(defonce ^:private fn-index (volatile! 0))
+(defonce ^:private fn-refs (volatile! {}))
+
+(defn- clear-fns!
+  "Clears saved functions."
+  []
+  (vreset! fn-refs {}))
+
+(defn- put-fn
+  "Saves a function, returning a numeric representation."
+  [f]
+  (let [n (vswap! fn-index inc)]
+    (vswap! fn-refs assoc n f)
+    n))
+
+(defn- get-fn
+  "Gets a function, given its numeric representation."
+  [n]
+  (get @fn-refs n))
+
+(defn- emit-fn [f]
+  (print "lumo.repl.get_fn(" (put-fn f) ")"))
+
+(defmethod comp/emit-constant js/Function
+  [f]
+  (emit-fn f))
+
+(defmethod comp/emit-constant cljs.core/Var
+  [f]
+  (emit-fn f))
+
+(defn eval
+  ([form]
+   (eval form (.-name *ns*)))
+  ([form ns]
+   (let [result (volatile! nil)]
+     (cljs/eval st form
+       {:ns            ns
+        :context       :expr
+        :def-emits-var true}
+       (fn [{:keys [value error]}]
+         (if error
+           (handle-error error true)
+           (vreset! result value))))
+     @result)))
+
 ;; --------------------
 ;; Code evaluation
 
@@ -1029,6 +1081,7 @@
 
 (defn- ^:export execute
   [type source-or-path expression? print-nil-result? setNS session-id]
+  (clear-fns!)
   (when setNS
     (vreset! current-ns (symbol setNS)))
   (execute-source source-or-path {:type type
