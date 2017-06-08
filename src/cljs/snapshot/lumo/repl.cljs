@@ -843,9 +843,9 @@
   [f]
   (emit-fn f))
 
-(defn eval
+(defn eval*
   ([form]
-   (eval form (.-name *ns*)))
+   (eval* form (.-name *ns*)))
   ([form ns]
    (let [result (volatile! nil)]
      (cljs/eval st form
@@ -857,6 +857,11 @@
            (handle-error error true)
            (vreset! result value))))
      @result)))
+
+(defn eval
+  "Evaluates the form data structure (not text!) and returns the result."
+  [form]
+  (eval* form))
 
 ;; --------------------
 ;; Code evaluation

@@ -399,7 +399,7 @@ export default function startClojureScriptEngine(opts: CLIOptsType): void {
       }
 
       execute(
-        "(require '[lumo.repl :refer [apropos find-doc] :refer-macros [dir doc source]])",
+        "(require '[lumo.repl :refer [apropos find-doc eval] :refer-macros [dir doc source]])",
         'text',
         true,
         false,
