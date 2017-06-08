@@ -14,15 +14,14 @@ module.exports = function(babel) {
 
   var SEEN_SYMBOL = Symbol();
 
-  // prettier-ignore
   var DEV_EXPRESSION = t.binaryExpression(
     '!==',
     t.memberExpression(
       t.memberExpression(t.identifier('process'), t.identifier('env'), false),
       t.identifier('NODE_ENV'),
-      false
+      false,
     ),
-    t.stringLiteral('production')
+    t.stringLiteral('production'),
   );
 
   return {
@@ -72,17 +71,15 @@ module.exports = function(babel) {
             // The generated code is longer than the original code but will dead
             // code removal in a minifier will strip that out.
             var condition = node.arguments[0];
-            // prettier-ignore
             var devInvariant = t.callExpression(
               node.callee,
-              [t.booleanLiteral(false)].concat(node.arguments.slice(1))
+              [t.booleanLiteral(false)].concat(node.arguments.slice(1)),
             );
             devInvariant[SEEN_SYMBOL] = true;
             var prodInvariant = t.callExpression(node.callee, [
               t.booleanLiteral(false),
             ]);
             prodInvariant[SEEN_SYMBOL] = true;
-            // prettier-ignore
             path.replaceWith(
               t.ifStatement(
                 t.unaryExpression('!', condition),
@@ -90,10 +87,10 @@ module.exports = function(babel) {
                   t.ifStatement(
                     DEV_EXPRESSION,
                     t.blockStatement([t.expressionStatement(devInvariant)]),
-                    t.blockStatement([t.expressionStatement(prodInvariant)])
+                    t.blockStatement([t.expressionStatement(prodInvariant)]),
                   ),
-                ])
-              )
+                ]),
+              ),
             );
           } else if (path.get('callee').isIdentifier({ name: 'warning' })) {
             // Turns this code:
@@ -111,12 +108,11 @@ module.exports = function(babel) {
             // invariant because we don't care about an extra call in __DEV__
 
             node[SEEN_SYMBOL] = true;
-            // prettier-ignore
             path.replaceWith(
               t.ifStatement(
                 DEV_EXPRESSION,
-                t.blockStatement([t.expressionStatement(node)])
-              )
+                t.blockStatement([t.expressionStatement(node)]),
+              ),
             );
           }
         },

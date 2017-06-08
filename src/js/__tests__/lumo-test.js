@@ -84,7 +84,7 @@ describe('lumo', () => {
     const statSync = fs.statSync;
     beforeEach(() => {
       fs.statSync = jest.fn((filename: string) => ({
-        mtime: new Date(),
+        mtimeMs: new Date().getTime(),
       }));
     });
 
