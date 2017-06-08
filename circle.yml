@@ -30,6 +30,7 @@ dependencies:
     - "/usr/local/lib/node_modules"
     - "/usr/local/Cellar"
   pre:
+    - brew install node
     - if [[ ! -e /usr/local/bin/yarn ]]; then npm install -g yarn; fi
     - if [[ ! -e /usr/local/bin/wget ]]; then brew install wget; fi
     - |
