@@ -19,8 +19,8 @@ machine:
       -Xverify:none
   # java:
   #   version: oraclejdk8
-  # node:
-  #   version: 7.0.0
+  node:
+    version: 8.1.0
 
 dependencies:
   cache_directories:

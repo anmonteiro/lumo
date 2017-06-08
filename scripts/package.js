@@ -5,27 +5,23 @@ const os = require('os');
 const zlib = require('zlib');
 const embed = require('./embed');
 
-const nodeVersion = '8.0.0';
+const nodeVersion = '8.1.0';
 
 function getDirContents(dir, accumPath = dir) {
   let filenames = fs.readdirSync(dir);
 
-  // prettier-ignore
-  return filenames.reduce(
-    (ret, filename) => {
-      const fname = path.resolve(accumPath, filename);
-      const fStat = fs.statSync(fname);
+  return filenames.reduce((ret, filename) => {
+    const fname = path.resolve(accumPath, filename);
+    const fStat = fs.statSync(fname);
 
-      if (fStat.isDirectory()) {
-        const newAccum = path.join(accumPath, filename);
-        return ret.concat(getDirContents(newAccum, newAccum));
-      }
+    if (fStat.isDirectory()) {
+      const newAccum = path.join(accumPath, filename);
+      return ret.concat(getDirContents(newAccum, newAccum));
+    }
 
-      ret.push(path.join(accumPath, filename));
-      return ret;
-    },
-    []
-  );
+    ret.push(path.join(accumPath, filename));
+    return ret;
+  }, []);
 }
 
 function deflate(fname) {
@@ -38,7 +34,6 @@ function deflate(fname) {
 }
 
 const outputPath = `build/${/^Windows/.test(os.type()) ? 'lumo.exe' : 'lumo'}`;
-// prettier-ignore
 const resources = getDirContents('target').filter(
   fname =>
     !fname.endsWith('main.js') &&
@@ -47,14 +42,13 @@ const resources = getDirContents('target').filter(
     !fname.endsWith('google-closure-compiler-js.js') &&
     !fname.endsWith('aot.edn') &&
     !/target[\\\/]cljs[\\/]core.js/.test(fname) &&
-    !fname.endsWith('.map')
+    !fname.endsWith('.map'),
 );
 
 function moveLibs(compiler, options, callback) {
-  // prettier-ignore
   fs.writeFileSync(
     `${compiler.dir}/google-closure-compiler-js.js`,
-    fs.readFileSync(`target/google-closure-compiler-js.js`)
+    fs.readFileSync(`target/google-closure-compiler-js.js`),
   );
 
   callback();
@@ -63,7 +57,6 @@ function moveLibs(compiler, options, callback) {
 Promise.all(resources.map(deflate)).then(() => {
   embed(resources, 'target');
 
-  // prettier-ignore
   nexe.compile(
     {
       input: 'target/bundle.min.js',
@@ -76,7 +69,8 @@ Promise.all(resources.map(deflate)).then(() => {
         '--without-inspector',
         '--without-etw',
         '--without-perfctr',
-        '--link-module', './google-closure-compiler-js.js',
+        '--link-module',
+        './google-closure-compiler-js.js',
       ].concat(os.type() === 'Linux' ? ['--fully-static'] : []),
       nodeMakeArgs: ['-j', '8'],
       nodeVCBuildArgs: ['nosign', 'x64', 'noetw', 'noperfctr'],
@@ -91,8 +85,8 @@ Promise.all(resources.map(deflate)).then(() => {
         throw err;
       }
       console.log(
-        `Finished bundling. Nexe binary can be found in ${outputPath}`
+        `Finished bundling. Nexe binary can be found in ${outputPath}`,
       );
-    }
+    },
   );
 });

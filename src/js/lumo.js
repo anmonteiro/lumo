@@ -92,7 +92,7 @@ export function readSource(filename: string): ?SourceType {
       const filePath = path.join(srcPath, filename);
       return {
         source: fs.readFileSync(filePath, 'utf8'),
-        modified: fs.statSync(filePath).mtime.getTime(),
+        modified: fs.statSync(filePath).mtimeMs,
       };
     } catch (_) {} // eslint-disable-line no-empty
   }
@@ -103,7 +103,7 @@ export function readFile(filename: string): ?SourceType {
   try {
     return {
       source: fs.readFileSync(filename, 'utf8'),
-      modified: fs.statSync(filename).mtime.getTime(),
+      modified: fs.statSync(filename).mtimeMs,
     };
   } catch (_) {} // eslint-disable-line no-empty
 
@@ -114,7 +114,7 @@ export function readCache(filename: string): ?SourceType {
   try {
     return {
       source: fs.readFileSync(filename, 'utf8'),
-      modified: fs.statSync(filename).mtime.getTime(),
+      modified: fs.statSync(filename).mtimeMs,
     };
   } catch (_) {
     return null;
