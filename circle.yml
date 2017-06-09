@@ -30,7 +30,7 @@ dependencies:
     - "/usr/local/lib/node_modules"
     - "/usr/local/Cellar"
   pre:
-    - brew upgrade node && brew link icu4c && brew install yarn
+    - brew upgrade node && brew link --force icu4c && brew install yarn
     - if [[ ! -e /usr/local/bin/wget ]]; then brew install wget; fi
     - |
       if [[ ! -e /usr/local/bin/boot ]];
