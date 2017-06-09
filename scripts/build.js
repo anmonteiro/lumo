@@ -74,13 +74,12 @@ const plugins = [
 ];
 
 if (!isDevBuild) {
-  // prettier-ignore
   plugins.push(
     babili({
       comments: false,
       removeConsole: true,
       removeDebugger: true,
-    })
+    }),
   );
 }
 
