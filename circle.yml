@@ -31,7 +31,7 @@ dependencies:
     - "/usr/local/Cellar"
   pre:
     - brew upgrade node
-    - if [[ ! -e /usr/local/bin/yarn ]]; then npm install -g yarn; fi
+    - brew install yarn
     - if [[ ! -e /usr/local/bin/wget ]]; then brew install wget; fi
     - |
       if [[ ! -e /usr/local/bin/boot ]];
