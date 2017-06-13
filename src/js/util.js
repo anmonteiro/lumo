@@ -3,6 +3,13 @@
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
+import { DOMParser } from 'xmldom';
+
+type POMDependency = {|
+  group: string,
+  artifact: string,
+  version: string,
+|};
 
 export function expandPath(somePath: string): string {
   const tildeExpandedPath = somePath.startsWith('~')
@@ -55,4 +62,12 @@ export function currentTimeMicros(): number {
   const [secs, nanos] = process.hrtime();
   // eslint-disable-next-line no-mixed-operators
   return (secs * 1e9 + nanos) / 1e3;
+}
+
+const parser = new DOMParser();
+
+export function getPomDependencies(pom: string): POMDependency[] {
+  // TODO: handle invalid XML?
+  const doc = parser.parseFromString(pom);
+  const dependencies = doc.getElementsByTagName('dependencies');
 }

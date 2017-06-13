@@ -5,6 +5,7 @@ import os from 'os';
 import path from 'path';
 import {
   ensureDir,
+  getPomDependencies,
   srcPathsFromClasspathStrings,
   isWhitespace,
   isWindows,
@@ -107,5 +108,29 @@ describe('isWhitespace', () => {
     expect(isWhitespace('a')).toBe(false);
     expect(isWhitespace('a b')).toBe(false);
     expect(isWhitespace('a\n')).toBe(false);
+  });
+});
+
+describe('getPomDependencies', () => {
+  const pom = fs.readFileSync(path.join(__dirname, 'fixtures/pom.xml'));
+
+  it('should retrieve the dependencies in a POM file', () => {
+    expect(getPomDependencies(pom)).toEqual([
+      {
+        group: 'com.google.javascript',
+        artifact: 'closure-compiler-unshaded',
+        version: 'v20170521',
+      },
+      {
+        group: 'org.clojure',
+        artifact: 'tools.reader',
+        version: '1.0.0-beta3',
+      },
+      {
+        group: 'com.cognitect',
+        artifact: 'transit-clj',
+        version: '0.8.300',
+      },
+    ]);
   });
 });
