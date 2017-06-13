@@ -87,6 +87,7 @@ rollup({
   entry: 'src/js/index.js',
   plugins,
   external,
+  pureExternalModules: true,
 })
   .then(bundle => {
     bundle.write({

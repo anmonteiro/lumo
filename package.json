@@ -41,21 +41,22 @@
     "eslint-plugin-flowtype": "^2.34.0",
     "eslint-plugin-import": "^2.3.0",
     "eslint-plugin-jsx-a11y": "^5.0.3",
-    "eslint-plugin-react": "^7.0.1",
-    "flow-bin": "^0.47.0",
+    "eslint-plugin-react": "^7.1.0",
+    "flow-bin": "^0.48.0",
     "jest-cli": "^20.0.4",
     "nexe": "github:anmonteiro/nexe#master",
     "opencollective": "^1.0.0",
     "prettier": "^1.4.4",
-    "rollup": "^0.42.0",
+    "rollup": "^0.43.0",
     "rollup-plugin-babel": "^2.7.1",
-    "rollup-plugin-babili": "^3.0.0",
+    "rollup-plugin-babili": "^3.1.0",
     "rollup-plugin-commonjs": "^8.0.2",
     "rollup-plugin-node-resolve": "^3.0.0",
     "rollup-plugin-replace": "^1.1.1"
   },
   "jest": {
     "verbose": true,
+    "testEnvironment": "node",
     "setupFiles": [
       "./scripts/jest/environment.js"
     ],
