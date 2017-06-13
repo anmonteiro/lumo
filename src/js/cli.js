@@ -17,6 +17,8 @@ export type CLIOptsType = {
   unrecognized: boolean,
   version: boolean,
   'dump-sdk'?: string,
+  'local-repo'?: string,
+  'dependencies': string[],
   repl: boolean,
   'auto-cache'?: boolean,
   quiet: boolean,
@@ -114,14 +116,17 @@ function getCLIOpts(): CLIOptsType {
     'k:(cache)',
     'K(auto-cache)',
     'V(version)',
+    'L:(local-repo)',
+    'D:(dependencies)',
     // undocumented
-    'D:(dump-sdk)',
+    'z:(dump-sdk)',
   ].join('');
 
   const parser = new GOParser(optstr, argv, 0);
   const ret: CLIOptsType = {
     scripts: [],
     classpath: [],
+    dependencies: [],
     unrecognized: false,
     help: false,
     version: false,
@@ -156,7 +161,7 @@ function getCLIOpts(): CLIOptsType {
         foundMainOpt = true;
         ret.version = true;
         break;
-      case 'D':
+      case 'z':
         foundMainOpt = true;
         ret['dump-sdk'] = option.optarg;
         break;
@@ -175,6 +180,12 @@ function getCLIOpts(): CLIOptsType {
         break;
       case 'c':
         ret.classpath.push(option.optarg);
+        break;
+      case 'D':
+        ret.dependencies.push(option.optarg);
+        break;
+      case 'L':
+        ret['local-repo'] = option.optarg;
         break;
       case 'v':
         ret.verbose = true;
@@ -227,6 +238,7 @@ export default (async function startCLI(): Promise<mixed> {
     args,
     cache,
     classpath,
+    dependencies,
     unrecognized,
     help,
     legal,
@@ -237,6 +249,7 @@ export default (async function startCLI(): Promise<mixed> {
     version,
   } = opts;
   const autoCache = opts['auto-cache'];
+  const localRepo = opts['local-repo'];
   const socketReplArgs = opts['socket-repl'];
   const dumpSDK = opts['dump-sdk'];
 
@@ -272,7 +285,7 @@ export default (async function startCLI(): Promise<mixed> {
   }
 
   // TODO: print classpath to stdout if `:verbose`
-  if (classpath != null) {
+  if (classpath.length !== 0) {
     // if (verbose) {
     //   console.log(`Classpath resolves to: `);
     // }
@@ -281,6 +294,15 @@ export default (async function startCLI(): Promise<mixed> {
 
     opts.classpath = srcPaths;
     lumo.addSourcePaths(srcPaths);
+  }
+
+  if (dependencies.length !== 0) {
+    const mvnPaths = util.srcPathsFromMavenDependencies(
+      dependencies,
+      localRepo,
+    );
+    opts.classpath.push(...mvnPaths);
+    lumo.addSourcePaths(mvnPaths);
   }
 
   if (opts.repl && !quiet) {

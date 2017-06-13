@@ -6,7 +6,7 @@ import path from 'path';
 
 export function expandPath(somePath: string): string {
   const tildeExpandedPath = somePath.startsWith('~')
-    ? somePath.replace(/^~/, os.homedir)
+    ? somePath.replace(/^~/, os.homedir())
     : somePath;
   return path.resolve(tildeExpandedPath);
 }
@@ -55,4 +55,33 @@ export function currentTimeMicros(): number {
   const [secs, nanos] = process.hrtime();
   // eslint-disable-next-line no-mixed-operators
   return (secs * 1e9 + nanos) / 1e3;
+}
+
+function mavenCoordinatesToPath(
+  dependency: string,
+  localRepo: string = path.join(os.homedir(), '.m2/repository'),
+): string {
+  const [group, artifact, version] = dependency.split(/\/|:/);
+
+  return path.join(
+    expandPath(localRepo),
+    ...group.split('.'),
+    artifact,
+    version,
+    `${artifact}-${version}.jar`,
+  );
+}
+
+export function srcPathsFromMavenDependencies(
+  dependencies: string[],
+  localRepo?: string,
+): string[] {
+  return dependencies.reduce((ret: string[], commaSeparatedDeps: string) => {
+    const paths = commaSeparatedDeps
+      .split(',')
+      .map((dep: string) => mavenCoordinatesToPath(dep, localRepo));
+
+    ret.push(...paths);
+    return ret;
+  }, []);
 }

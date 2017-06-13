@@ -5,6 +5,7 @@ import os from 'os';
 import path from 'path';
 import {
   ensureDir,
+  srcPathsFromMavenDependencies,
   srcPathsFromClasspathStrings,
   isWhitespace,
   isWindows,
@@ -107,5 +108,42 @@ describe('isWhitespace', () => {
     expect(isWhitespace('a')).toBe(false);
     expect(isWhitespace('a b')).toBe(false);
     expect(isWhitespace('a\n')).toBe(false);
+  });
+});
+
+describe('mavenCoordinatesToPath', () => {
+  const osHomedir = os.homedir;
+  beforeAll(() => {
+    os.homedir = jest.fn(() => '/Users/foo');
+  });
+
+  afterAll(() => {
+    os.homedir = osHomedir;
+  });
+
+  it('should decode a group/artifact:version encoded dep to its local path ', () => {
+    expect(
+      srcPathsFromMavenDependencies(['org.clojure/clojurescript:1.9.562']),
+    ).toEqual([
+      '/Users/foo/.m2/repository/org/clojure/clojurescript/1.9.562/clojurescript-1.9.562.jar',
+    ]);
+
+    expect(
+      srcPathsFromMavenDependencies([
+        'org.clojure/clojurescript:1.9.562,cljsjs/react:15.5.0-0',
+      ]),
+    ).toEqual([
+      '/Users/foo/.m2/repository/org/clojure/clojurescript/1.9.562/clojurescript-1.9.562.jar',
+      '/Users/foo/.m2/repository/cljsjs/react/15.5.0-0/react-15.5.0-0.jar',
+    ]);
+
+    expect(
+      srcPathsFromMavenDependencies(
+        ['org.clojure/clojurescript:1.9.562'],
+        '~/.m3',
+      ),
+    ).toEqual([
+      '/Users/foo/.m3/org/clojure/clojurescript/1.9.562/clojurescript-1.9.562.jar',
+    ]);
   });
 });
