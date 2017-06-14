@@ -16,7 +16,7 @@ repository (defaults to `~/.m2/repository`).
 ### Changes
 
 - Upgrade ClojureScript to version 1.9.562.
-- Upgrade Node.js to version 8.1.0 ([#181](https://github.com/anmonteiro/lumo/pull/181)).
+- Upgrade Node.js to version 8.1.1.
 - Upgrade Google Closure Compiler to v20170521 ([#173](https://github.com/anmonteiro/lumo/pull/173)).
 - Don't compile a fully static binary under Linux ([#163](https://github.com/anmonteiro/lumo/issues/163), [#176](https://github.com/anmonteiro/lumo/pull/176)). This fixes
 a problem where requiring Node packages would crash (different stdlib versions).
