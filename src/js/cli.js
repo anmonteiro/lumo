@@ -126,7 +126,7 @@ function getCLIOpts(): CLIOptsType {
     'L:(local-repo)',
     'D:(dependencies)',
     // undocumented
-    'z:(dump-sdk)',
+    'S:(dump-sdk)',
   ].join('');
 
   const parser = new GOParser(optstr, argv, 0);
@@ -168,7 +168,7 @@ function getCLIOpts(): CLIOptsType {
         foundMainOpt = true;
         ret.version = true;
         break;
-      case 'z':
+      case 'S':
         foundMainOpt = true;
         ret['dump-sdk'] = option.optarg;
         break;
