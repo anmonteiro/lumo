@@ -135,8 +135,8 @@ export function writeCache(filename: string, source: string): ?Error {
 export function loadUpstreamForeignLibs(): string[] {
   const ret = [];
   for (const srcPath of sourcePaths.values()) {
-    if (srcPath.endsWith('.jar')) {
-      try {
+    try {
+      if (srcPath.endsWith('.jar')) {
         const data = fs.readFileSync(srcPath);
         const zip = new JSZip().load(data);
         const source = zip.file('deps.cljs');
@@ -144,8 +144,11 @@ export function loadUpstreamForeignLibs(): string[] {
         if (source != null) {
           ret.push(source.asText());
         }
-      } catch (_) {} // eslint-disable-line no-empty
-    }
+      } else {
+        const source = fs.readFileSync(path.join(srcPath, 'deps.cljs'), 'utf8');
+        ret.push(source);
+      }
+    } catch (_) {} // eslint-disable-line no-empty
   }
   return ret;
 }
