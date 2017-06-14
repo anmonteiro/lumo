@@ -329,10 +329,26 @@ describe('getCliOpts', () => {
       const [[parsedOpts]] = cljs.mock.calls;
 
       expect(parsedOpts.classpath).toEqual([
-        '/Users/foo/some-location/cljsjs/react/15.5.0-0/react-15.5.0-0.jar',
+        path.join.apply(null, [
+          '/Users',
+          'foo',
+          'some-location',
+          'cljsjs',
+          'react',
+          '15.5.0-0',
+          'react-15.5.0-0.jar',
+        ]),
       ]);
       expect(lumo.addSourcePaths).toHaveBeenCalledWith([
-        '/Users/foo/some-location/cljsjs/react/15.5.0-0/react-15.5.0-0.jar',
+        path.join.apply(null, [
+          '/Users',
+          'foo',
+          'some-location',
+          'cljsjs',
+          'react',
+          '15.5.0-0',
+          'react-15.5.0-0.jar',
+        ]),
       ]);
     });
   });
