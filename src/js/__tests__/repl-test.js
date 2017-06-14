@@ -285,8 +285,11 @@ describe('startREPL', () => {
         net.createServer = jest.fn((callback: SocketCallback) => {
           handleConnection = callback;
           return {
-            listen: jest.fn(),
+            listen: jest.fn(function listen(): mixed {
+              return this;
+            }),
             close: jest.fn(),
+            on: jest.fn(),
           };
         });
         socketRepl.open(12345);

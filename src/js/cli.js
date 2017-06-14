@@ -17,6 +17,8 @@ export type CLIOptsType = {
   unrecognized: boolean,
   version: boolean,
   'dump-sdk'?: string,
+  'local-repo'?: string,
+  'dependencies': string[],
   repl: boolean,
   'auto-cache'?: boolean,
   quiet: boolean,
@@ -65,8 +67,15 @@ Usage:  lumo [init-opt*] [main-opt] [arg*]
     -i, --init path              Load a file or resource
     -e, --eval string            Evaluate expressions in string; print
                                  non-nil values
-    -c cp, --classpath cp        Use colon-delimited cp for source
-                                 directories and JARs
+    -c cp, --classpath cp        Use colon-delimited cp (semi-colon-delimited on
+                                 Windows) for source directories and JARs
+    -D dep, --dependencies dep   Use comma-separated list of dependencies to
+                                 look for in the local Maven repository.
+                                 Dependencies should be specified in the form
+                                 \`SYM:VERSION\` (e.g.: foo/bar:1.2.3).
+    -L path, --local-repo path   Path to the local Maven repository where Lumo
+                                 will look for dependencies. Defaults to
+                                 \`~/.m2/repository\`.
     -K, --auto-cache             Create and use .planck_cache dir for cache
     -k, --cache path             If dir exists at path, use it for cache
     -q, --quiet                  Quiet mode; doesn't print the banner
@@ -74,7 +83,8 @@ Usage:  lumo [init-opt*] [main-opt] [arg*]
     -d, --dumb-terminal          Disable line editing / VT100 terminal
                                  control
     -s, --static-fns             Generate static dispatch function calls
-    -n x, --socket-repl x        Enable a socket REPL where x is port or IP:port
+    -n x, --socket-repl x        Enable a socket REPL where x is port or
+                                 \`hostname:port\`
 
   main options:
     -m ns-name, --main=ns-name   Call the -main function from a namespace
@@ -91,7 +101,6 @@ Usage:  lumo [init-opt*] [main-opt] [arg*]
   Paths may be absolute or relative in the filesystem.
 `,
   );
-  // -                        Run a script from standard input
 }
 
 function getCLIOpts(): CLIOptsType {
@@ -114,14 +123,17 @@ function getCLIOpts(): CLIOptsType {
     'k:(cache)',
     'K(auto-cache)',
     'V(version)',
+    'L:(local-repo)',
+    'D:(dependencies)',
     // undocumented
-    'D:(dump-sdk)',
+    'S:(dump-sdk)',
   ].join('');
 
   const parser = new GOParser(optstr, argv, 0);
   const ret: CLIOptsType = {
     scripts: [],
     classpath: [],
+    dependencies: [],
     unrecognized: false,
     help: false,
     version: false,
@@ -156,7 +168,7 @@ function getCLIOpts(): CLIOptsType {
         foundMainOpt = true;
         ret.version = true;
         break;
-      case 'D':
+      case 'S':
         foundMainOpt = true;
         ret['dump-sdk'] = option.optarg;
         break;
@@ -175,6 +187,12 @@ function getCLIOpts(): CLIOptsType {
         break;
       case 'c':
         ret.classpath.push(option.optarg);
+        break;
+      case 'D':
+        ret.dependencies.push(option.optarg);
+        break;
+      case 'L':
+        ret['local-repo'] = option.optarg;
         break;
       case 'v':
         ret.verbose = true;
@@ -227,6 +245,7 @@ export default (async function startCLI(): Promise<mixed> {
     args,
     cache,
     classpath,
+    dependencies,
     unrecognized,
     help,
     legal,
@@ -237,6 +256,7 @@ export default (async function startCLI(): Promise<mixed> {
     version,
   } = opts;
   const autoCache = opts['auto-cache'];
+  const localRepo = opts['local-repo'];
   const socketReplArgs = opts['socket-repl'];
   const dumpSDK = opts['dump-sdk'];
 
@@ -272,7 +292,7 @@ export default (async function startCLI(): Promise<mixed> {
   }
 
   // TODO: print classpath to stdout if `:verbose`
-  if (classpath != null) {
+  if (classpath.length !== 0) {
     // if (verbose) {
     //   console.log(`Classpath resolves to: `);
     // }
@@ -281,6 +301,15 @@ export default (async function startCLI(): Promise<mixed> {
 
     opts.classpath = srcPaths;
     lumo.addSourcePaths(srcPaths);
+  }
+
+  if (dependencies.length !== 0) {
+    const mvnPaths = util.srcPathsFromMavenDependencies(
+      dependencies,
+      localRepo,
+    );
+    opts.classpath.push(...mvnPaths);
+    lumo.addSourcePaths(mvnPaths);
   }
 
   if (opts.repl && !quiet) {

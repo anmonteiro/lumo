@@ -8,6 +8,10 @@
 - Add ability to execute a script from standard input ([#168](https://github.com/anmonteiro/lumo/pull/168)).
 - Add support for `reverse-i-search` ([#169](https://github.com/anmonteiro/lumo/pull/169)).
 - Expose `eval`. There is now a `lumo.core/eval` function ([#146](https://github.com/anmonteiro/lumo/pull/146), [#177](https://github.com/anmonteiro/lumo/pull/177)).
+- Add support for passing Maven coordinates to add JARs to the classpath ([#156](https://github.com/anmonteiro/lumo/issues/156) and [#186](https://github.com/anmonteiro/lumo/pull/186)).
+The relevant CLI option is `-D / --dependencies` that supports a comma-separated
+list of Maven coordinates, and `-L / --local-repo` to override the local Maven
+repository (defaults to `~/.m2/repository`).
 
 ### Changes
 
