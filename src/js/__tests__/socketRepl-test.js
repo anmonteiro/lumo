@@ -50,9 +50,14 @@ describe('open', () => {
       socketServer = new net.Server();
       return socketServer;
     });
-    net.Server.prototype.listen = jest.fn(
-      (port: number, host: ?string, cb: () => void) => cb(),
-    );
+    net.Server.prototype.listen = jest.fn(function listen(
+      port: number,
+      host: ?string,
+      cb: () => void,
+    ): net$Server {
+      cb();
+      return this;
+    });
     net.Server.prototype.close = jest.fn();
   });
 
@@ -103,9 +108,12 @@ describe('close', () => {
       socketServer = new net.Server();
       return socketServer;
     });
-    net.Server.prototype.listen = jest.fn(
-      (port: number, host: ?string) => undefined,
-    );
+    net.Server.prototype.listen = jest.fn(function listen(
+      port: number,
+      host: ?string,
+    ): net$Server {
+      return this;
+    });
     net.Server.prototype.close = jest.fn(() => {
       socketServer = null;
     });
@@ -142,8 +150,14 @@ describe('handleConnection', () => {
     net.createServer = jest.fn((callback: SocketCallback) => {
       handleConnection = callback;
       return {
-        listen: jest.fn(),
+        listen: jest.fn(function listen(
+          port: number,
+          host: ?string,
+        ): net$Server {
+          return this;
+        }),
         close: jest.fn(),
+        on: jest.fn(),
       };
     });
     net.Socket.prototype.write = jest.fn((text: string) => undefined);

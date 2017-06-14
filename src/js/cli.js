@@ -67,8 +67,15 @@ Usage:  lumo [init-opt*] [main-opt] [arg*]
     -i, --init path              Load a file or resource
     -e, --eval string            Evaluate expressions in string; print
                                  non-nil values
-    -c cp, --classpath cp        Use colon-delimited cp for source
-                                 directories and JARs
+    -c cp, --classpath cp        Use colon-delimited cp (semi-colon-delimited on
+                                 Windows) for source directories and JARs
+    -D dep, --dependencies dep   Use comma-separated list of dependencies to
+                                 look for in the local Maven repository.
+                                 Dependencies should be specified in the form
+                                 \`SYM:VERSION\` (e.g.: foo/bar:1.2.3).
+    -L path, --local-repo path   Path to the local Maven repository where Lumo
+                                 will look for dependencies. Defaults to
+                                 \`~/.m2/repository\`.
     -K, --auto-cache             Create and use .planck_cache dir for cache
     -k, --cache path             If dir exists at path, use it for cache
     -q, --quiet                  Quiet mode; doesn't print the banner
@@ -76,7 +83,8 @@ Usage:  lumo [init-opt*] [main-opt] [arg*]
     -d, --dumb-terminal          Disable line editing / VT100 terminal
                                  control
     -s, --static-fns             Generate static dispatch function calls
-    -n x, --socket-repl x        Enable a socket REPL where x is port or IP:port
+    -n x, --socket-repl x        Enable a socket REPL where x is port or
+                                 \`hostname:port\`
 
   main options:
     -m ns-name, --main=ns-name   Call the -main function from a namespace
@@ -93,7 +101,6 @@ Usage:  lumo [init-opt*] [main-opt] [arg*]
   Paths may be absolute or relative in the filesystem.
 `,
   );
-  // -                        Run a script from standard input
 }
 
 function getCLIOpts(): CLIOptsType {
