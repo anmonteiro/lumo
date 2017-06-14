@@ -61,7 +61,10 @@ function mavenCoordinatesToPath(
   dependency: string,
   localRepo: string = path.join(os.homedir(), '.m2/repository'),
 ): string {
-  const [group, artifact, version] = dependency.split(/\/|:/);
+  const parsed = dependency.split(/\/|:/);
+  const [group, artifact, version] = parsed.length === 3
+    ? parsed
+    : [parsed[0], ...parsed];
 
   return path.join(
     expandPath(localRepo),

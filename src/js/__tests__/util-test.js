@@ -145,5 +145,9 @@ describe('mavenCoordinatesToPath', () => {
     ).toEqual([
       '/Users/foo/.m3/org/clojure/clojurescript/1.9.562/clojurescript-1.9.562.jar',
     ]);
+
+    expect(srcPathsFromMavenDependencies(['rewrite-clj:0.6.0'])).toEqual([
+      '/Users/foo/.m2/repository/rewrite-clj/rewrite-clj/0.6.0/rewrite-clj-0.6.0.jar',
+    ]);
   });
 });
