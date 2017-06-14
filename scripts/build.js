@@ -74,13 +74,12 @@ const plugins = [
 ];
 
 if (!isDevBuild) {
-  // prettier-ignore
   plugins.push(
     babili({
       comments: false,
       removeConsole: true,
       removeDebugger: true,
-    })
+    }),
   );
 }
 
@@ -88,6 +87,7 @@ rollup({
   entry: 'src/js/index.js',
   plugins,
   external,
+  pureExternalModules: true,
 })
   .then(bundle => {
     bundle.write({

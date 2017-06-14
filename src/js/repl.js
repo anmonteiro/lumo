@@ -16,13 +16,20 @@ type KeyType = {
   ctrl?: boolean,
   shift?: boolean,
   meta?: boolean,
+  code?: string,
 };
 
 export type REPLSession = {
   id: number,
   rl: readline$Interface,
   isMain: boolean,
+  isReverseSearch: boolean,
+  reverseSearchBuffer: string,
   input: string,
+  searchPos: number,
+  previousPrompt: string,
+  previousLine: string,
+  previousCursor: number,
 };
 
 const exitCommands = new Set([':cljs/quit', 'exit']);
@@ -95,7 +102,6 @@ export function processLine(replSession: REPLSession, line: string): void {
       );
 
       if (!isWhitespace(session.input)) {
-        // $FlowIssue: rl.output is there
         cljs.setPrintFns(rl.output);
         currentREPLInterface = rl;
 
@@ -107,7 +113,6 @@ export function processLine(replSession: REPLSession, line: string): void {
         // the prompt and line editing will overwrite any printed output on the
         // current line.
         if (!cljs.isPrintingNewline()) {
-          // $FlowIssue: rl.output is there
           rl.output.write('\n');
         }
       } else {
@@ -133,22 +138,30 @@ export function processLine(replSession: REPLSession, line: string): void {
   return undefined;
 }
 
+function stopReverseSearch(
+  replSession: REPLSession,
+  clear: boolean = true,
+): void {
+  const session = replSession;
+  session.isReverseSearch = false;
+  session.reverseSearchBuffer = '';
+
+  if (clear) {
+    session.rl.write(null, {
+      ctrl: true,
+      name: 'u',
+    });
+  }
+}
+
 function handleSIGINT(replSession: REPLSession): void {
   const session = replSession;
   session.input = '';
 
-  // $FlowIssue: missing property in interface
+  prompt(session.rl);
   session.rl.output.write('\n\n');
 
-  readline.clearLine(process.stdout, 0);
-  readline.cursorTo(process.stdout, 0);
-
-  session.rl.write(null, {
-    ctrl: true,
-    name: 'u',
-  });
-
-  prompt(session.rl);
+  stopReverseSearch(replSession);
 }
 
 function highlight(
@@ -167,13 +180,11 @@ function highlight(
     const [cursorX, linesUp] = cljs.getHighlightCoordinates(lines, pos);
 
     if (linesUp !== -1) {
-      // $FlowIssue: rl.output is there
       readline.moveCursor(rl.output, -(cursor - cursorX), -linesUp);
       rl.pause();
 
       // set the readline input stream to a new one so that we can listen for
       // keypress events while stdin is paused.
-      // $FlowIssue
       const oldInput = rl.input;
       // $FlowIssue: constructor accepts 2 args
       const readStream = new tty.ReadStream(0, {});
@@ -183,18 +194,14 @@ function highlight(
       readStream.once('keypress', (c: string, key: KeyType) => {
         const [tid] = pendingHighlights.shift();
         clearTimeout(tid);
-        // $FlowIssue
         readline.moveCursor(rl.output, cursor - cursorX, linesUp);
-        // $FlowIssue
         rl.input = oldInput;
         rl.resume();
         readStream.destroy();
         rl.write(c, key);
-        // $FlowIssue
         highlight(session, c, rl.line, rl.cursor);
       });
 
-      // $FlowIssue
       rl.input = readStream;
 
       const now = currentTimeMicros();
@@ -203,9 +210,7 @@ function highlight(
 
         if (to != null && to[1] === now) {
           pendingHighlights.shift();
-          // $FlowIssue: rl.output is there
           readline.moveCursor(rl.output, cursor - cursorX, linesUp);
-          // $FlowIssue: rl.input is there
           rl.input = oldInput;
           rl.resume();
           readStream.destroy();
@@ -217,16 +222,114 @@ function highlight(
   }
 }
 
-function handleKeyPress(session: REPLSession, c: string, key: KeyType): void {
+function handleKeyPress(
+  replSession: REPLSession,
+  c: string,
+  { name, ctrl, meta, code, ...key }: KeyType,
+): void {
+  const session = replSession;
   const rl = session.rl;
+  const isReverseSearch = session.isReverseSearch;
+  const isReverseSearchKey = ctrl && name === 'r';
 
-  const now = currentTimeMicros();
-  isPasting = now - lastKeypressTime < 10000;
-  lastKeypressTime = now;
+  // TODO: factor this out into own function
+  if (isReverseSearch || isReverseSearchKey) {
+    let failedSearch = false;
+    if (isReverseSearchKey && !isReverseSearch) {
+      session.isReverseSearch = true;
+      session.searchPos = 0;
+      session.previousPrompt = rl._prompt;
+      session.previousLine = rl.line;
+      session.previousCursor = rl.cursor;
+    } else if (isReverseSearch) {
+      const isNewline = name === 'return' || name === 'enter';
+      if ((ctrl && !isReverseSearchKey) || code != null || isNewline) {
+        const isCancelSearch = name === 'g';
 
-  if (!isPasting) {
-    // $FlowIssue: these properties exist
-    highlight(session, c, rl.line, rl.cursor);
+        stopReverseSearch(session, isCancelSearch);
+
+        if (isCancelSearch) {
+          rl.line = session.previousLine;
+          rl.cursor = session.previousCursor;
+        }
+
+        if (!isNewline) {
+          rl.setPrompt(session.previousPrompt);
+          rl.prompt(true);
+        }
+
+        return;
+      } else if ((!ctrl && !meta) || isReverseSearchKey) {
+        // not a special character
+        if (
+          name != null &&
+          name !== 'space' &&
+          name !== 'backspace' &&
+          name.length > 1
+        ) {
+          return;
+        }
+
+        if (!isReverseSearchKey) {
+          session.searchPos = 0;
+          if (name === 'backspace') {
+            const buf = session.reverseSearchBuffer;
+            session.reverseSearchBuffer = buf.substring(0, buf.length - 1);
+          } else {
+            session.reverseSearchBuffer += c;
+          }
+        }
+
+        const buf = session.reverseSearchBuffer;
+        if (buf !== '') {
+          let match;
+          for (let i = session.searchPos; i < rl.history.length; i += 1) {
+            const entry = rl.history[i];
+            const idxOf = entry.indexOf(buf);
+            if (entry !== rl.line && idxOf !== -1) {
+              match = [i, entry, idxOf];
+              break;
+            }
+          }
+          if (match != null) {
+            const [i, entry, idxOf] = match;
+            session.searchPos = i + 1;
+            rl.line = entry;
+            rl.cursor = idxOf;
+            // no more results
+          } else {
+            if (!isReverseSearchKey) {
+              let prevLine = rl.line.split('');
+              prevLine.splice(rl.cursor - 1, 1);
+              prevLine = prevLine.join('');
+              rl.line = prevLine;
+              rl.cursor -= 1;
+            }
+            failedSearch = true;
+          }
+          rl._refreshLine();
+        } else {
+          session.rl.write(null, {
+            ctrl: true,
+            name: 'u',
+          });
+        }
+      }
+    }
+    rl.setPrompt(
+      `(${failedSearch
+        ? 'failed '
+        : ''}reverse-i-search)\`${session.reverseSearchBuffer}': `,
+    );
+    rl.prompt(true);
+  } else {
+    const now = currentTimeMicros();
+    isPasting = now - lastKeypressTime < 10000;
+    lastKeypressTime = now;
+
+    if (!isPasting) {
+      highlight(session, c, rl.line, rl.cursor);
+    }
   }
 }
 
@@ -239,6 +342,12 @@ export function createSession(
     rl,
     input: '',
     isMain,
+    reverseSearchBuffer: '',
+    isReverseSearch: false,
+    searchPos: 0,
+    previousPrompt: rl._prompt,
+    previousLine: rl.line,
+    previousCursor: rl.cursor,
   };
 
   sessionCount += 1;
@@ -266,7 +375,6 @@ export default function startREPL(opts: CLIOptsType): void {
     input: process.stdin,
     output: process.stdout,
     terminal: !dumbTerminal,
-    removeHistoryDuplicates: true,
     completer,
   });
 

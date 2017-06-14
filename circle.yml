@@ -17,10 +17,6 @@ machine:
       -XX:+UseConcMarkSweepGC
       -XX:+CMSClassUnloadingEnabled
       -Xverify:none
-  # java:
-  #   version: oraclejdk8
-  # node:
-  #   version: 7.0.0
 
 dependencies:
   cache_directories:
@@ -34,7 +30,8 @@ dependencies:
     - "/usr/local/lib/node_modules"
     - "/usr/local/Cellar"
   pre:
-    - if [[ ! -e /usr/local/bin/yarn ]]; then npm install -g yarn; fi
+    - (brew uninstall node || true) && brew update && brew install node && brew link node && brew link --force icu4c
+    - if [[ ! -e /usr/local/bin/yarn ]]; then brew install yarn; fi
     - if [[ ! -e /usr/local/bin/wget ]]; then brew install wget; fi
     - |
       if [[ ! -e /usr/local/bin/boot ]];

@@ -21,7 +21,6 @@
                    [:span sep "..."])]
     [:group open [:align ys ellipsis] close]))
 
-
 (defn wrap-theme
   [kw theme text]
   [:span [:pass (kw theme)] [:text text] [:pass (:reset-font theme)]])
@@ -55,8 +54,9 @@
   fipp.visit/IVisitor
 
   (visit-unknown [this x]
-    [:text (pr-str x)])
-
+    (if (instance? Eduction x)
+      (visit this (sequence x))
+      [:text (pr-str x)]))
 
   (visit-nil [this]
     (wrap-theme :results-font theme "nil"))

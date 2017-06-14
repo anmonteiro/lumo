@@ -1,5 +1,4 @@
 /* @flow */
-/* eslint-disable no-underscore-dangle  */
 
 import crypto from 'crypto';
 import fs from 'fs';
@@ -31,21 +30,14 @@ function lumoEval(
   execPath: ?string,
 ): mixed {
   if (execPath != null && !__DEV__) {
-    const absoluteExecPath = path.resolve(execPath);
-    const module = new Module(execPath);
+    const filename = path.resolve(execPath);
+    const dirname = path.dirname(filename);
+    const module = new Module(filename);
 
-    module.filename = absoluteExecPath;
-    module.paths = Module._nodeModulePaths(path.dirname(absoluteExecPath));
+    module.filename = filename;
+    module.paths = Module._nodeModulePaths(dirname);
 
-    const script = `global.require = require;
-return require("vm")
-  .runInThisContext(
-    ${JSON.stringify(source)},
-    Object.assign(
-      { filename: ${JSON.stringify(absoluteExecPath)} },
-      ${JSON.stringify(scriptOptions)}));\n`;
-
-    return module._compile(script, `${execPath}-wrapper`);
+    return module._compile(source, filename);
   }
 
   // $FlowIssue: this exists

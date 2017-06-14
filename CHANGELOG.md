@@ -6,11 +6,13 @@
 ### New features
 
 - Add ability to execute a script from standard input ([#168](https://github.com/anmonteiro/lumo/pull/168)).
+- Add support for `reverse-i-search` ([#169](https://github.com/anmonteiro/lumo/pull/169)).
+- Expose `eval`. There is now a `lumo.core/eval` function ([#146](https://github.com/anmonteiro/lumo/pull/146), [#177](https://github.com/anmonteiro/lumo/pull/177)).
 
 ### Changes
 
 - Upgrade ClojureScript to version 1.9.562.
-- Upgrade Node.js to version 8.0.0 ([#173](https://github.com/anmonteiro/lumo/pull/173)).
+- Upgrade Node.js to version 8.1.0 ([#181](https://github.com/anmonteiro/lumo/pull/181)).
 - Upgrade Google Closure Compiler to v20170521 ([#173](https://github.com/anmonteiro/lumo/pull/173)).
 
 ### Bug fixes
@@ -20,6 +22,11 @@
 - Fix regression that prevented requiring foreign libraries ([#167](https://github.com/anmonteiro/lumo/issues/167)).
 - Fix a race condition with the REPL history where Lumo could attempt to read a file's
 size before it was created.
+- Pretty print eductions ([#170](https://github.com/anmonteiro/lumo/issues/170)).
+- Auto-complete after arrow & other special characters ([#157](https://github.com/anmonteiro/lumo/issues/157)).
+- Don't print `doc` for macros that are not referred ([#153](https://github.com/anmonteiro/lumo/issues/153)).
+- Correctly set __dirname and __filename when running script file ([#185](https://github.com/anmonteiro/lumo/issues/185)).
+- Also Crawl `deps.cljs` files in dirs ([#184](https://github.com/anmonteiro/lumo/issues/184)).
 
 ## [1.5.0](https://github.com/anmonteiro/lumo/compare/1.4.1...1.5.0) (2017-05-13)
 

@@ -124,7 +124,7 @@ describe('replHistory', () => {
         terminal: true,
       });
 
-      rl._addHistory(); // eslint-disable-line no-underscore-dangle
+      rl._addHistory();
       expect(streamWrite).toHaveBeenCalledTimes(1);
       expect(streamWrite).toHaveBeenCalledWith('qux\n', 'utf8');
     });

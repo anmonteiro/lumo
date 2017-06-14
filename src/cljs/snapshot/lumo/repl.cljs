@@ -4,6 +4,7 @@
                    [cljs.analyzer.macros :refer [no-warn]]
                    [lumo.repl :refer [with-err-str]])
   (:require [cljs.analyzer :as ana]
+            [cljs.compiler :as comp]
             [cljs.env :as env]
             [cljs.js :as cljs]
             [cljs.reader :as reader]
@@ -528,10 +529,6 @@
   []
   (keys (::ana/namespaces @st)))
 
-(defn- all-macros-ns []
-  (->> (all-ns)
-    (filter #(string/ends-with? (str %) MACROS_SUFFIX))))
-
 (defn- get-namespace
   "Gets the AST for a given namespace."
   [ns]
@@ -560,7 +557,8 @@
   [env sym]
   (binding [ana/*cljs-warning-handlers* nil]
     (let [var (or (env/with-compiler-env st (resolve-var env sym))
-                  (some #(get-macro-var env sym %) (all-macros-ns)))]
+                  (some #(get-macro-var env sym %)
+                    (vals (get-in @st [::ana/namespaces @current-ns :use-macros]))))]
       (when var
         (-> (cond-> var
               (not (:ns var))
@@ -809,6 +807,57 @@
                            (filter matches? (public-syms ns)))))
                   (all-ns)))))
 
+;; Taken from planck eval implementation
+;; The following atoms and fns set up a scheme to
+;; emit function values into JavaScript as numeric
+;; references that are looked up.
+
+(defonce ^:private fn-index (volatile! 0))
+(defonce ^:private fn-refs (volatile! {}))
+
+(defn- clear-fns!
+  "Clears saved functions."
+  []
+  (vreset! fn-refs {}))
+
+(defn- put-fn
+  "Saves a function, returning a numeric representation."
+  [f]
+  (let [n (vswap! fn-index inc)]
+    (vswap! fn-refs assoc n f)
+    n))
+
+(defn- get-fn
+  "Gets a function, given its numeric representation."
+  [n]
+  (get @fn-refs n))
+
+(defn- emit-fn [f]
+  (print "lumo.repl.get_fn(" (put-fn f) ")"))
+
+(defmethod comp/emit-constant js/Function
+  [f]
+  (emit-fn f))
+
+(defmethod comp/emit-constant cljs.core/Var
+  [f]
+  (emit-fn f))
+
+(defn eval
+  ([form]
+   (eval form (.-name *ns*)))
+  ([form ns]
+   (let [result (volatile! nil)]
+     (cljs/eval st form
+       {:ns            ns
+        :context       :expr
+        :def-emits-var true}
+       (fn [{:keys [value error]}]
+         (if error
+           (handle-error error true)
+           (vreset! result value))))
+     @result)))
+
 ;; --------------------
 ;; Code evaluation
 
@@ -1032,6 +1081,7 @@
 
 (defn- ^:export execute
   [type source-or-path expression? print-nil-result? setNS session-id]
+  (clear-fns!)
   (when setNS
     (vreset! current-ns (symbol setNS)))
   (execute-source source-or-path {:type type
@@ -1133,7 +1183,8 @@
 
 (defn- is-completion?
   [match-suffix candidate]
-  (re-find (js/RegExp. (str "^" match-suffix)) candidate))
+  (let [escaped-suffix (string/replace match-suffix #"[-\/\\^$*+?.()|\[\]{}]" "\\$&")]
+    (re-find (js/RegExp. (str "^" escaped-suffix) "i") candidate)))
 
 (def ^:private keyword-completions
   (into #{} (map str)
@@ -1254,8 +1305,8 @@
   (if-some [js-matches (re-find #"js/(\S*)$" line)]
     (js/$$LUMO_GLOBALS.getJSCompletions line (second js-matches) cb)
     (let [top-level? (boolean (re-find #"^\s*\(\s*[^()\s]*$" line))
-          ns-alias (second (re-find #"\(*(\b[a-zA-Z-.]+)/[a-zA-Z-]*$" line))
-          line-match-suffix (re-find #":?[a-zA-Z-.]*$" line)
+          ns-alias (second (re-find #"\(*(\b[a-zA-Z-.<>*=&?]+)/[a-zA-Z-]*$" line))
+          line-match-suffix (first (re-find #":?([a-zA-Z-.<>*=&?]*|^\(/)$" line))
           line-prefix (subs line 0 (- (count line) (count line-match-suffix)))
           completions (reduce (fn [ret item]
                                 (doto ret
