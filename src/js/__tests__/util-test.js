@@ -125,7 +125,18 @@ describe('mavenCoordinatesToPath', () => {
     expect(
       srcPathsFromMavenDependencies(['org.clojure/clojurescript:1.9.562']),
     ).toEqual([
-      '/Users/foo/.m2/repository/org/clojure/clojurescript/1.9.562/clojurescript-1.9.562.jar',
+      path.join.apply(null, [
+        ...(isWindows ? ['C:'] : ['/']),
+        'Users',
+        'foo',
+        '.m2',
+        'repository',
+        'org',
+        'clojure',
+        'clojurescript',
+        '1.9.562',
+        'clojurescript-1.9.562.jar',
+      ]),
     ]);
 
     expect(
@@ -133,8 +144,29 @@ describe('mavenCoordinatesToPath', () => {
         'org.clojure/clojurescript:1.9.562,cljsjs/react:15.5.0-0',
       ]),
     ).toEqual([
-      '/Users/foo/.m2/repository/org/clojure/clojurescript/1.9.562/clojurescript-1.9.562.jar',
-      '/Users/foo/.m2/repository/cljsjs/react/15.5.0-0/react-15.5.0-0.jar',
+      path.join.apply(null, [
+        ...(isWindows ? ['C:'] : ['/']),
+        'Users',
+        'foo',
+        '.m2',
+        'repository',
+        'org',
+        'clojure',
+        'clojurescript',
+        '1.9.562',
+        'clojurescript-1.9.562.jar',
+      ]),
+      path.join.apply(null, [
+        ...(isWindows ? ['C:'] : ['/']),
+        'Users',
+        'foo',
+        '.m2',
+        'repository',
+        'cljsjs',
+        'react',
+        '15.5.0-0',
+        'react-15.5.0-0.jar',
+      ]),
     ]);
 
     expect(
@@ -143,11 +175,31 @@ describe('mavenCoordinatesToPath', () => {
         '~/.m3',
       ),
     ).toEqual([
-      '/Users/foo/.m3/org/clojure/clojurescript/1.9.562/clojurescript-1.9.562.jar',
+      path.join.apply(null, [
+        ...(isWindows ? ['C:'] : ['/']),
+        'Users',
+        'foo',
+        '.m3',
+        'org',
+        'clojure',
+        'clojurescript',
+        '1.9.562',
+        'clojurescript-1.9.562.jar',
+      ]),
     ]);
 
     expect(srcPathsFromMavenDependencies(['rewrite-clj:0.6.0'])).toEqual([
-      '/Users/foo/.m2/repository/rewrite-clj/rewrite-clj/0.6.0/rewrite-clj-0.6.0.jar',
+      path.join.apply(null, [
+        ...(isWindows ? ['C:'] : ['/']),
+        'Users',
+        'foo',
+        '.m2',
+        'repository',
+        'rewrite-clj',
+        'rewrite-clj',
+        '0.6.0',
+        'rewrite-clj-0.6.0.jar',
+      ]),
     ]);
   });
 });
