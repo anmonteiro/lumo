@@ -76,7 +76,7 @@ Usage:  lumo [init-opt*] [main-opt] [arg*]
     -L path, --local-repo path   Path to the local Maven repository where Lumo
                                  will look for dependencies. Defaults to
                                  \`~/.m2/repository\`.
-    -K, --auto-cache             Create and use .planck_cache dir for cache
+    -K, --auto-cache             Create and use .lumo_cache dir for cache
     -k, --cache path             If dir exists at path, use it for cache
     -q, --quiet                  Quiet mode; doesn't print the banner
     -v, --verbose                Emit verbose diagnostic output
