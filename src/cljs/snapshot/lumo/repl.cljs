@@ -888,6 +888,35 @@
           (recur (rt/read-char reader)))
         (str sb)))))
 
+(defn get-data-readers*
+  "Returns the merged data reader mappings."
+  []
+  (reduce (fn [data-readers url+source]
+            (let [url      (aget url+source "url")
+                  source   (aget url+source "source")
+                  mappings (r/read-string source)]
+              (when-not (map? mappings)
+                (throw (ex-info (str "Not a valid data-reader map")
+                                {:url url})))
+              (reduce-kv (fn [data-readers tag fn-sym]
+                           (when-not (symbol? tag)
+                             (throw (ex-info (str "Invalid form in data-reader file")
+                                             {:url  url
+                                              :form tag})))
+                           (when (and (data-readers tag)
+                                      (not= (mappings tag) fn-sym))
+                                (throw (ex-info "Conflicting data-reader mapping"
+                                         {:url      url
+                                          :conflict tag
+                                          :mappings data-readers})))
+                           (assoc data-readers tag (eval fn-sym)))
+                         data-readers
+                         mappings)))
+          {}
+          (js/$$LUMO_GLOBALS.loadUpstreamDataReaders)))
+
+(def get-data-readers (memoize get-data-readers*))
+
 (defn- repl-read-string
   "Returns a vector of the first read form, and any balance text."
   [source]
@@ -896,7 +925,7 @@
     (binding [ana/*cljs-ns* cur-ns
               *ns* (create-ns cur-ns)
               env/*compiler* st
-              r/*data-readers* tags/*cljs-data-readers*
+              r/*data-readers* (merge tags/*cljs-data-readers* (get-data-readers))
               r/resolve-symbol ana/resolve-symbol
               r/*alias-map* (current-alias-map)]
       [(r/read {:read-cond :allow :features #{:cljs}} reader) (read-chars reader)])))
@@ -1037,7 +1066,7 @@
               *ns*             (create-ns @current-ns)
               env/*compiler*   st
               r/resolve-symbol ana/resolve-symbol
-              r/*data-readers* tags/*cljs-data-readers*
+              tags/*cljs-data-readers* (merge tags/*cljs-data-readers* (get-data-readers))
               r/*alias-map*    (current-alias-map)]
       (let [form (and expression? (first (repl-read-string source)))
             eval-opts (merge (make-eval-opts)
