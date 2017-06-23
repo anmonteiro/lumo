@@ -13,6 +13,22 @@ import * as socketRepl from './socketRepl';
 
 import type { CLIOptsType } from './cli';
 
+function isUndefined(obj:Any): Boolean{
+  return 'undefined' === typeof(obj);
+}
+
+function isNull(obj:Any): Boolean{
+  return obj === null;
+}
+
+function isDefined(obj:Any): Boolean{
+  return !isUndefined(obj) && !isNull(obj);
+}
+
+function isEmptyString(str:String): Boolean{
+  return 'string' === typeof(str) && !str.trim().length; // Is this too clever?
+}
+
 // $FlowIssue: process has a binding function
 const utilBinding = process.binding('util');
 
@@ -245,7 +261,7 @@ function initClojureScriptEngine(opts: CLIOptsType): void {
 
   setPrintFns();
 
-  if (args.length > 0) {
+  if (!isUndefined(args) && args.length > 0) {
     // $FlowIssue: context can have globals
     ClojureScriptContext.lumo.core._STAR_command_line_args_STAR_ =
       // $FlowIssue: context can have globals
@@ -394,34 +410,32 @@ export default function startClojureScriptEngine(opts: CLIOptsType): void {
     var acceptArgs: Array<mixed> = [];
     var replOpts;
 
-    try {
-      if (jsonRegex.test(socketReplArgs)){
-        replOpts=JSON.parse(socketReplArgs); // This throws SyntaxError if we're passed invalid JSON
-      } else if (null != hostPortMatch){
-        // The leading comma is really important here, as the first result from match is the whole string,
-        // and we want the matched groups, which come afterwards
-        // XXX: host will be undefined if we only match a port, this is ok.
-        [, host, port] = hostPortMatch;
-      } else {
-        throw new SyntaxError("Got Socket REPL args, but they were unparsable. Args were: " + socketReplArgs);
-      }
-
-      if ("undefined" != typeof(replOpts)){
-        host = replOpts['host'];
-        port = replOpts['port'];
-        acceptFn = replOpts['accept'];
-        acceptArgs = replOpts['args'];
-      }
-
-      if (isNaN(parseInt(port, 10))){
-        throw new SyntaxError("Specified port is not a number. Port is: " + port);
-      }
-
-    } catch (error) {
-      console.error(error);
-      process.exit(1);
+    if (jsonRegex.test(socketReplArgs)){
+      replOpts=JSON.parse(socketReplArgs); // This throws SyntaxError if we're passed invalid JSON
+    } else if (null != hostPortMatch){
+      // The leading comma is really important here, as the first result from match is the whole string,
+      // and we want the matched groups, which come afterwards
+      // XXX: host will be undefined if we only match a port, this is ok.
+      [, host, port] = hostPortMatch;
+    } else {
+      throw new SyntaxError("Got Socket REPL args, but they were unparsable. Args were: " + socketReplArgs);
     }
 
+    if (!isUndefined(replOpts)){
+      host = replOpts['host'];
+      port = replOpts['port'];
+      acceptFn = replOpts['accept'];
+      acceptArgs = replOpts['args'];
+    }
+
+    if (isNaN(parseInt(port, 10))){
+      throw new SyntaxError("Specified port is not a number. Port is: " + port);
+    }
+
+    if ((!isDefined(acceptFn) || isEmptyString(acceptFn))
+        && (isDefined(acceptArgs) && !isEmptyString(acceptArgs))){
+      throw new SyntaxError("You specified acceptArgs, but didn't give an acceptFn; please specify an acceptFn.");
+    }
 
     socketRepl.open(parseInt(port, 10), host, acceptFn, acceptArgs);
     if (!quiet) {
@@ -430,7 +444,7 @@ export default function startClojureScriptEngine(opts: CLIOptsType): void {
     }
   }
 
-  if (scripts.length > 0) {
+  if (!isUndefined(scripts) && scripts.length > 0) {
     executeScripts(scripts);
   }
 

@@ -69,6 +69,68 @@ describe('startClojureScriptEngine', () => {
     startREPL.mockClear();
   });
 
+  describe('Socket repl', () => {
+    describe('throws errors if you give it', () => {
+      // Socket REPL args are defined, but empty
+      const emptystr = '';
+      const emptyobj = JSON.stringify({});
+
+      // We define a host but no port
+      const hoststr = 'localhost';
+      const hostobj = JSON.stringify({ host: 'localhost' });
+
+      // Port isn't a number
+      const portNaNstr = 'foobar';
+      const portNaNobj = JSON.stringify({ port: 'foobar' });
+
+      // We define accept function args but no accept function
+      const argsButNoAccept = JSON.stringify({ port: 12345, args: 'foo' });
+
+      it('an empty string', () => {
+        expect(() => {
+          startCLJS({ 'socket-repl': emptystr });
+        }).toThrow(SyntaxError);
+      });
+
+      it('an empty object', () => {
+        expect(() => {
+          startCLJS({ 'socket-repl': emptyobj });
+        }).toThrow(SyntaxError);
+      });
+
+      it('just a host string', () => {
+        expect(() => {
+          startCLJS({ 'socket-repl': hoststr });
+        }).toThrow(SyntaxError);
+      });
+
+      it('just a host object', () => {
+        expect(() => {
+          startCLJS({ 'socket-repl': hostobj });
+        }).toThrow(SyntaxError);
+      });
+
+      it('a port string that isn\'t a number', () => {
+        expect(() => {
+          startCLJS({ 'socket-repl': portNaNstr });
+        }).toThrow(SyntaxError);
+      });
+
+      it('a port object that isn\'t a number', () => {
+        expect(() => {
+          startCLJS({ 'socket-repl': portNaNobj });
+        }).toThrow(SyntaxError);
+      });
+
+      it('args for the accept function, but no accept function itself', () => {
+        expect(() => {
+          startCLJS({ 'socket-repl': argsButNoAccept });
+        }).toThrow(SyntaxError);
+      });
+    });
+  });
+
+
   it('should start a REPL if opts.repl is true', () => {
     startCLJS({
       repl: true,
