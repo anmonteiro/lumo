@@ -2,6 +2,14 @@
 
 import startCLJS, * as cljs from '../cljs';
 import startREPL from '../repl';
+import * as socketRepl from '../socketRepl';
+
+jest.mock('../socketRepl', () => ({
+  open: jest.fn((port: string,
+                 host?: string,
+                 accept?: (socket: net$Socket) => void | string,
+                 acceptArgs?: Array<Mixed>) => ''),
+}));
 
 let vm = require('vm');
 
@@ -128,6 +136,11 @@ describe('startClojureScriptEngine', () => {
         }).toThrow(SyntaxError);
       });
     });
+
+    it('starts a socket server if only a port given', () => {
+      startCLJS({ 'socket-repl': '5555' });
+      expect(socketRepl.open).toHaveBeenCalled();
+    });
   });
 
 
@@ -172,6 +185,8 @@ describe('startClojureScriptEngine', () => {
     expect(startREPL).not.toHaveBeenCalled();
   });
 
+  // XXX: This is irrelevent since we start the cljs engine the moment we call startCLJS
+  // TODO: Remove?
   it("doesn't init the CLJS engine if it already started", () => {
     startCLJS({
       repl: true,

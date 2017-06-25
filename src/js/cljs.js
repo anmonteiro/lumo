@@ -29,6 +29,10 @@ function isEmptyString(str:String): Boolean{
   return 'string' === typeof(str) && !str.trim().length; // Is this too clever?
 }
 
+function isEmptyArray(arr:Array): Boolean{
+  return Array.isArray(arr) && !arr.length; // Is this too clever?
+}
+
 // $FlowIssue: process has a binding function
 const utilBinding = process.binding('util');
 
@@ -407,7 +411,7 @@ export default function startClojureScriptEngine(opts: CLIOptsType): void {
     var host = "";
     var port = "";
     var acceptFn: (socket: net$Socket) => void | string;
-    var acceptArgs: Array<mixed> = [];
+    var acceptArgs: Array<mixed>;
     var replOpts;
 
     if (jsonRegex.test(socketReplArgs)){
@@ -433,11 +437,12 @@ export default function startClojureScriptEngine(opts: CLIOptsType): void {
     }
 
     if ((!isDefined(acceptFn) || isEmptyString(acceptFn))
-        && (isDefined(acceptArgs) && !isEmptyString(acceptArgs))){
+        && isDefined(acceptArgs) && (!isEmptyString(acceptArgs) || !isEmptyArray(acceptArgs))){
       throw new SyntaxError("You specified acceptArgs, but didn't give an acceptFn; please specify an acceptFn.");
     }
 
     socketRepl.open(parseInt(port, 10), host, acceptFn, acceptArgs);
+
     if (!quiet) {
       process.stdout.write(
         `Lumo socket REPL listening at ${host != null ? host : 'localhost'}:${port}.\n`);
