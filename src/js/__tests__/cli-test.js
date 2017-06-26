@@ -7,12 +7,10 @@ import v8 from 'v8';
 import startCLI from '../cli';
 import cljs from '../cljs';
 import * as lumo from '../lumo';
-import * as socketRepl from '../socketRepl';
 
 jest.mock('net');
 jest.mock('v8');
 jest.mock('../cljs');
-jest.mock('../socketRepl');
 jest.mock('../version', () => 'X.X.X');
 jest.mock('../lumo', () => ({
   addSourcePaths: jest.fn((srcPaths: string[]) => undefined),
@@ -158,56 +156,6 @@ describe('getCliOpts', () => {
     expect(parsedOpts.repl).toBe(false);
   });
 
-  describe('starts a socket server if -n or --socket-repl specified', () => {
-    afterEach(() => {
-      socketRepl.open.mockClear();
-    });
-
-    it('on localhost if only port given', async () => {
-      const args = '-n 5555';
-      Object.defineProperty(process, 'argv', {
-        value: ['', ''].concat(args.split(' ')),
-      });
-
-      await startCLI();
-      const [[parsedOpts]] = cljs.mock.calls;
-
-      expect(parsedOpts['socket-repl']).toBe('5555');
-      expect(parsedOpts.repl).toBe(true);
-      expect(socketRepl.open).toHaveBeenCalledTimes(1);
-      expect(socketRepl.open).toHaveBeenCalledWith(5555, undefined);
-    });
-
-    it('on host and port if only both given', async () => {
-      const args = '-n 192.168.1.254:5555';
-      Object.defineProperty(process, 'argv', {
-        value: ['', ''].concat(args.split(' ')),
-      });
-
-      await startCLI();
-      const [[parsedOpts]] = cljs.mock.calls;
-
-      expect(parsedOpts['socket-repl']).toBe('192.168.1.254:5555');
-      expect(parsedOpts.repl).toBe(true);
-      expect(socketRepl.open).toHaveBeenCalledTimes(1);
-      expect(socketRepl.open).toHaveBeenCalledWith(5555, '192.168.1.254');
-    });
-  });
-
-  it("doesn't start a socket server if the options are earmuffed", async () => {
-    const args = '-r -n 192.168.1.254:5555';
-    Object.defineProperty(process, 'argv', {
-      value: ['', ''].concat(args.split(' ')),
-    });
-
-    await startCLI();
-    const [[parsedOpts]] = cljs.mock.calls;
-
-    expect(parsedOpts.repl).toBe(true);
-    expect(parsedOpts['socket-repl']).toBeUndefined();
-    expect(parsedOpts.repl).toBe(true);
-    expect(socketRepl.open).not.toHaveBeenCalled();
-  });
 
   it('adds cache paths to opts if -k specified', async () => {
     const args = '-k src';
