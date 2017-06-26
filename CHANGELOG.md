@@ -12,6 +12,9 @@
 The relevant CLI option is `-D / --dependencies` that supports a comma-separated
 list of Maven coordinates, and `-L / --local-repo` to override the local Maven
 repository (defaults to `~/.m2/repository`).
+- Bundle `cljs.spec.test.alpha` ([#179](https://github.com/anmonteiro/lumo/issues/179)).
+Note that while this namespace is now bundled with Lumo, it has a hard dependency
+on [`test.check`](https://github.com/clojure/test.check) (>= v0.10.0-alpha1).
 
 ### Changes
 

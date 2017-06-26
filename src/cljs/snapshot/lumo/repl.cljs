@@ -192,12 +192,16 @@
         com.cognitect.transit.impl.writer})
    name))
 
+(declare inject-lumo-eval)
+
 (defn- load-bundled [name path file-path source cb]
   (when-let [cache-json (or (js/$$LUMO_GLOBALS.load (str file-path ".cache.json"))
                             (js/$$LUMO_GLOBALS.load (str path ".cache.json")))]
     (cb {:source source
          :lang :js
          :cache (common/transit-json->cljs cache-json)})
+    (when (symbol-identical? name 'cljs.spec.test.alpha$macros)
+      (inject-lumo-eval 'cljs.spec.test.alpha$macros))
     :loaded))
 
 ;; TODO: we could be smarter and only load the libs that we haven't already loaded
@@ -858,6 +862,17 @@
            (vreset! result value))))
      @result)))
 
+(defn- intern
+  ([ns name]
+   (intern ns name nil))
+  ([ns name val]
+   (when-let [the-ns (find-ns (cond-> ns (instance? Namespace ns) ns-name))]
+     (eval `(def ~name ~val) (ns-name the-ns)))))
+
+(defn- inject-lumo-eval
+  [target-ns]
+  (intern target-ns 'eval eval))
+
 ;; --------------------
 ;; Code evaluation
 
@@ -1245,6 +1260,7 @@
       cljs.reader
       cljs.spec.alpha
       cljs.spec.gen.alpha
+      cljs.spec.test.alpha
       cljs.tagged-literals
       cljs.test
       cljs.tools.reader
