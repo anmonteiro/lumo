@@ -877,10 +877,9 @@
 ;; Code evaluation
 
 (defn- make-eval-opts []
-  (let [{:keys [verbose static-fns]} @app-opts]
-    {:ns            @current-ns
-     :verbose       verbose
-     :static-fns    static-fns}))
+  (merge
+    {:ns @current-ns}
+    (select-keys @app-opts [:verbose :static-fns :fn-invoke-direct])))
 
 (defn- current-alias-map []
   (let [cur-ns @current-ns]
@@ -1149,11 +1148,12 @@
 (defn- setup-assert! [elide-asserts]
   (set! *assert* (not elide-asserts)))
 
-(defn- ^:export init [repl? verbose cache-path static-fns elide-asserts]
+(defn- ^:export init [repl? verbose cache-path static-fns fn-invoke-direct elide-asserts]
   (vreset! app-opts {:repl? repl?
                      :verbose verbose
                      :cache-path cache-path
                      :static-fns static-fns
+                     :fn-invoke-direct fn-invoke-direct
                      :elide-asserts elide-asserts})
   (setup-assert! elide-asserts)
   (set! *print-namespace-maps* repl?)

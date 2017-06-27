@@ -188,6 +188,7 @@ function newClojureScriptContext(): { [key: string]: mixed } {
 function setRuntimeOpts(opts: CLIOptsType): void {
   const { cache, verbose, repl } = opts;
   const staticFns = opts['static-fns'];
+  const fnInvokeDirect = opts['fn-invoke-direct'];
   const elideAsserts = opts['elide-asserts'];
   // $FlowIssue: context can have globals
   ClojureScriptContext.lumo.repl.init(
@@ -195,6 +196,7 @@ function setRuntimeOpts(opts: CLIOptsType): void {
     verbose,
     cache,
     staticFns,
+    fnInvokeDirect,
     elideAsserts,
   );
 }

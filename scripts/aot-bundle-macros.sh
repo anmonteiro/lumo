@@ -13,7 +13,7 @@ echo "### Compiling Macro Namespaces"
 
 mkdir -p lumo-cljs/out/macros-tmp
 
-$(pwd)/build/lumo --quiet -c target -sdk lumo-cljs/out/macros-tmp <<REPL_INPUT
+$(pwd)/build/lumo --quiet -c target -sfdk lumo-cljs/out/macros-tmp <<REPL_INPUT
 (require 'lumo.build.api
          'lumo.analyzer
          'lumo.cljs-deps

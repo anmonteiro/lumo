@@ -73,6 +73,9 @@ Usage:  lumo [init-opt*] [main-opt] [arg*]
     -d, --dumb-terminal          Disable line editing / VT100 terminal
                                  control
     -s, --static-fns             Generate static dispatch function calls
+    -f, --fn-invoke-direct       Do not not generate \`.call(null...)\` calls
+                                 for unknown functions, but instead direct
+                                 invokes via \`f(a0,a1...)\`.
     -n x, --socket-repl x        Enable a socket REPL where x is port or
                                  \`hostname:port\`
 

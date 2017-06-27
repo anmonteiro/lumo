@@ -59,13 +59,14 @@ afterEach(() => {
 describe('getCliOpts', () => {
   it('parses single dash properties when they appear together', async () => {
     Object.defineProperty(process, 'argv', {
-      value: ['', '', '-vsqdK'],
+      value: ['', '', '-vsqdfK'],
     });
     await startCLI();
     const [[parsedOpts]] = cljs.mock.calls;
 
     expect(parsedOpts.verbose).toBe(true);
     expect(parsedOpts['static-fns']).toBe(true);
+    expect(parsedOpts['fn-invoke-direct']).toBe(true);
     expect(parsedOpts['dumb-terminal']).toBe(true);
     expect(parsedOpts['auto-cache']).toBe(true);
   });

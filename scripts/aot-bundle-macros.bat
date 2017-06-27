@@ -11,7 +11,7 @@ echo "### Compiling Macro Namespaces"
 
 mkdir lumo-cljs\out\macros-tmp || goto :error
 
-echo (require 'lumo.build.api 'lumo.analyzer 'lumo.cljs-deps 'lumo.classpath 'lumo.closure 'lumo.compiler 'lumo.io 'lumo.json 'lumo.util 'clojure.core.reducers 'clojure.zip 'clojure.data 'cljs.nodejs 'cljs.pprint 'cljs.test 'cljs.analyzer.api 'cljs.spec.test.alpha) (require-macros 'lumo.repl 'lumo.util 'clojure.template 'cljs.pprint 'cljs.support 'cljs.spec.alpha 'cljs.spec.gen.alpha 'cljs.spec.test.alpha 'cljs.test 'cljs.reader 'cljs.env.macros 'cljs.analyzer.macros 'cljs.compiler.macros) | build\lumo.exe --quiet -c target -sdk lumo-cljs/out/macros-tmp || goto :error
+echo (require 'lumo.build.api 'lumo.analyzer 'lumo.cljs-deps 'lumo.classpath 'lumo.closure 'lumo.compiler 'lumo.io 'lumo.json 'lumo.util 'clojure.core.reducers 'clojure.zip 'clojure.data 'cljs.nodejs 'cljs.pprint 'cljs.test 'cljs.analyzer.api 'cljs.spec.test.alpha) (require-macros 'lumo.repl 'lumo.util 'clojure.template 'cljs.pprint 'cljs.support 'cljs.spec.alpha 'cljs.spec.gen.alpha 'cljs.spec.test.alpha 'cljs.test 'cljs.reader 'cljs.env.macros 'cljs.analyzer.macros 'cljs.compiler.macros) | build\lumo.exe --quiet -c target -sfdk lumo-cljs/out/macros-tmp || goto :error
 
 move lumo-cljs\out\macros-tmp\clojure_SLASH_core_SLASH_reducers.js target\clojure\core\reducers.js || goto :error
 move lumo-cljs\out\macros-tmp\clojure_SLASH_core_SLASH_reducers.cache.json target\clojure\core\reducers.cache.json || goto :error
