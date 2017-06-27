@@ -2,7 +2,6 @@
 
 ## [master](https://github.com/anmonteiro/lumo/compare/1.5.0...HEAD) (unreleased)
 
-
 ### New features
 
 - Add ability to execute a script from standard input ([#168](https://github.com/anmonteiro/lumo/pull/168)).
@@ -18,7 +17,7 @@ on [`test.check`](https://github.com/clojure/test.check) (>= v0.10.0-alpha1).
 
 ### Changes
 
-- Upgrade ClojureScript to version 1.9.562.
+- Upgrade ClojureScript to version 1.9.655.
 - Upgrade Node.js to version 8.1.2.
 - Upgrade Google Closure Compiler to v20170521 ([#173](https://github.com/anmonteiro/lumo/pull/173)).
 - Don't compile a fully static binary under Linux ([#163](https://github.com/anmonteiro/lumo/issues/163), [#176](https://github.com/anmonteiro/lumo/pull/176)). This fixes
