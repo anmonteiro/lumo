@@ -384,14 +384,9 @@ export function runAcceptFN(fn: string, socket?: net$Socket, acceptArgs?: Array<
   ClojureScriptContext.lumo.repl.run_accept_fn.call(null, fn, socket, acceptArgs);
 }
 
-export default function startClojureScriptEngine(opts: CLIOptsType): void {
+export default (async function startClojureScriptEngine(opts: CLIOptsType): void {
   const { args, mainNsName, mainScript, repl, scripts, quiet } = opts;
   const socketReplArgs = opts['socket-repl'];
-
-  // The Socket Repl needs a CLJS Context to resolve the functions a user may pass in
-  // Instead of initializing in each if statement, we'll initialize once, then delete the
-  // context if it turns out we're not gonna use the context.
-  initClojureScriptEngine(opts);
 
   if (socketReplArgs != null) {
     // Possible socketrepl format
@@ -401,6 +396,7 @@ export default function startClojureScriptEngine(opts: CLIOptsType): void {
     //  "port": 12345, ;; Required
     //  "accept": "some.namespaced/fn", ;; Defaults to opening a socket repl
     //  "args": ["a list of args", 9999, {"foo": "bar"}]} ;; This has no default
+    initClojureScriptEngine(opts);
 
     const hostAndPortRegex=/(?:(?:(^.*):)|^)(\d{1,5})$/;
     const jsonRegex=/^{/; // We only accept JSON objects, ports, or host:port pairs
@@ -441,19 +437,28 @@ export default function startClojureScriptEngine(opts: CLIOptsType): void {
       throw new SyntaxError("You specified acceptArgs, but didn't give an acceptFn; please specify an acceptFn.");
     }
 
-    socketRepl.open(parseInt(port, 10), host, acceptFn, acceptArgs);
+    try {
+      await socketRepl.open(parseInt(port, 10), host, acceptFn, acceptArgs);
 
-    if (!quiet) {
-      process.stdout.write(
-        `Lumo socket REPL listening at ${host != null ? host : 'localhost'}:${port}.\n`);
+      if (!quiet) {
+        process.stdout.write(
+          `Lumo socket REPL listening at ${host != null ? host : 'localhost'}:${port}.\n`);
+      }
+    } catch (e) {
+      // I wanted to destructure with { message } but
+      // ran into https://github.com/facebook/flow/issues/3874
+      process.stderr.write(`Error: ${e.message}\n`);
     }
+
   }
 
   if (!isUndefined(scripts) && scripts.length > 0) {
+    initClojureScriptEngine(opts);
     executeScripts(scripts);
   }
 
   if (mainScript) {
+    initClojureScriptEngine(opts);
     if (mainScript === '-') {
       processStdin();
     } else {
@@ -462,6 +467,7 @@ export default function startClojureScriptEngine(opts: CLIOptsType): void {
   }
 
   if (mainNsName) {
+    initClojureScriptEngine(opts);
     runMain(mainNsName, args);
   }
 
@@ -489,4 +495,4 @@ export default function startClojureScriptEngine(opts: CLIOptsType): void {
 
   ClojureScriptContext = null;
   return undefined;
-}
+});
