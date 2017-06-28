@@ -175,21 +175,25 @@ function highlight(
 ): void {
   const session = replSession;
   const { rl, input } = session;
-  const pos = cursor - 1;
 
   if (char === ')' || char === ']' || char === '}') {
     // $FlowIssue: columns exists in stream$Writable
     const terminalColumns = rl.output.columns;
     const promptLength = rl._prompt.length;
+    const cursorAbsolutePos = cursor + promptLength;
     const lines = input === '' ? [] : input.split('\n');
     lines.push(line);
-    const [cursorX, linesUp] = cljs.getHighlightCoordinates(lines, pos);
+    const [cursorX, linesUp] = cljs.getHighlightCoordinates(lines, cursor - 1);
+
     let dx = cursor - cursorX;
     let dy = linesUp;
 
-    if (cursor + promptLength > terminalColumns) {
+    if (
+      cursorAbsolutePos > terminalColumns &&
+      dx > cursorAbsolutePos % terminalColumns
+    ) {
       dx = (dx - terminalColumns) % terminalColumns;
-      dy += Math.floor(cursor / (terminalColumns - promptLength));
+      dy += Math.floor(cursorAbsolutePos / terminalColumns);
     }
 
     if (linesUp !== -1) {
