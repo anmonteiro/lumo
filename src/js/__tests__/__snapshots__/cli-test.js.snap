@@ -81,13 +81,13 @@ Usage:  lumo [init-opt*] [main-opt] [arg*]
                                         \\"args\\":   [\\"a list of args\\", 1111, {\\"passed\\": \\"to the accept function\\"}]}
 
   main options:
-    -m ns-name, --main=ns-name   Call the -main function from a namespace
-                                 with args
-    -r, --repl                   Run a repl
-    path                         Run a script from a file or resource
-    -                            Run a script from standard input
-    -h, -?, --help               Print this help message and exit
-    -l, --legal                  Show legal info (licenses and copyrights)
+    -m ns-name, --main=ns-name         Call the -main function from a namespace
+                                       with args
+    -r, --repl                         Run a repl
+    path                               Run a script from a file or resource
+    -                                  Run a script from standard input
+    -h, -?, --help                     Print this help message and exit
+    -l, --legal                        Show legal info (licenses and copyrights)
 
   The init options may be repeated and mixed freely, but must appear before
   any main option.
