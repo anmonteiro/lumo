@@ -23,6 +23,19 @@ jest.mock('vm');
 
 jest.useFakeTimers();
 
+const originalStdoutWrite = process.stdout.write;
+const originalStderrWrite = process.stderr.write;
+
+beforeEach(() => {
+  process.stdout.write = jest.fn();
+  process.stderr.write = jest.fn();
+});
+
+afterEach(() => {
+  process.stdout.write = originalStdoutWrite;
+  process.stderr.write = originalStderrWrite;
+});
+
 const ctx = {
   cljs: {
     core: {
@@ -94,58 +107,71 @@ describe('startClojureScriptEngine', () => {
       // We define accept function args but no accept function
       const argsButNoAccept = JSON.stringify({ port: 12345, args: 'foo' });
 
-      it('an empty string', () => {
-        expect(() => {
-          startCLJS({ 'socket-repl': emptystr });
-        }).toThrow(SyntaxError);
+      it('an empty string', async () => {
+        expect.assertions(1);
+        await expect(
+          startCLJS({ 'socket-repl': emptystr })
+        ).rejects.toBeInstanceOf(SyntaxError);
       });
 
-      it('an empty object', () => {
-        expect(() => {
-          startCLJS({ 'socket-repl': emptyobj });
-        }).toThrow(SyntaxError);
+      it('an empty object', async () => {
+        expect.assertions(1);
+        await expect(
+          startCLJS({ 'socket-repl': emptyobj })
+        ).rejects.toBeInstanceOf(SyntaxError);
       });
 
-      it('just a host string', () => {
-        expect(() => {
-          startCLJS({ 'socket-repl': hoststr });
-        }).toThrow(SyntaxError);
+      it('just a host string', async () => {
+        expect.assertions(1);
+        await expect(
+          startCLJS({ 'socket-repl': hoststr })
+        ).rejects.toBeInstanceOf(SyntaxError);
       });
 
-      it('just a host object', () => {
-        expect(() => {
-          startCLJS({ 'socket-repl': hostobj });
-        }).toThrow(SyntaxError);
+      it('just a host object', async () => {
+        expect.assertions(1);
+        await expect(
+          startCLJS({ 'socket-repl': hostobj })
+        ).rejects.toBeInstanceOf(SyntaxError);
       });
 
-      it('a port string that isn\'t a number', () => {
-        expect(() => {
-          startCLJS({ 'socket-repl': portNaNstr });
-        }).toThrow(SyntaxError);
+      it('a port string that isn\'t a number', async () => {
+        expect.assertions(1);
+        await expect(
+          startCLJS({ 'socket-repl': portNaNstr })
+        ).rejects.toBeInstanceOf(SyntaxError);
       });
 
-      it('a port object that isn\'t a number', () => {
-        expect(() => {
-          startCLJS({ 'socket-repl': portNaNobj });
-        }).toThrow(SyntaxError);
+      it('a port object that isn\'t a number', async () => {
+        expect.assertions(1);
+        await expect(
+          startCLJS({ 'socket-repl': portNaNobj })
+        ).rejects.toBeInstanceOf(SyntaxError);
       });
 
-      it('args for the accept function, but no accept function itself', () => {
-        expect(() => {
-          startCLJS({ 'socket-repl': argsButNoAccept });
-        }).toThrow(SyntaxError);
+      it('args for the accept function, but no accept function itself', async () => {
+        expect.assertions(1);
+        await expect(
+          startCLJS({ 'socket-repl': argsButNoAccept })
+        ).rejects.toBeInstanceOf(SyntaxError);
       });
     });
 
-    it('starts a socket server if only a port given', () => {
-      startCLJS({ 'socket-repl': '5555' });
+    it('starts a socket server if only a port given', async () => {
+      await startCLJS({ 'socket-repl': '5555' });
       expect(socketRepl.open).toHaveBeenCalled();
     });
+
+    it('prints socket REPL info in addition to the banner if -n specified', async () => {
+      await startCLJS({ 'socket-repl': '5555' });
+      expect(process.stdout.write.mock.calls).toMatchSnapshot();
+    });
+
   });
 
 
-  it('should start a REPL if opts.repl is true', () => {
-    startCLJS({
+  it('should start a REPL if opts.repl is true', async () => {
+    await startCLJS({
       repl: true,
       scripts: [],
     });
@@ -153,8 +179,8 @@ describe('startClojureScriptEngine', () => {
     expect(startREPL).toHaveBeenCalled();
   });
 
-  it('returns undefined if opts.repl is false', () => {
-    const ret = startCLJS({
+  it('returns undefined if opts.repl is false', async () => {
+    const ret = await startCLJS({
       repl: false,
       scripts: [],
       args: [],
@@ -165,7 +191,7 @@ describe('startClojureScriptEngine', () => {
 
     startREPL.mockClear();
 
-    const ret2 = startCLJS({
+    const ret2 = await startCLJS({
       repl: false,
       scripts: [['text', ':foo'], ['path', 'foo.cljs']],
       args: [],
@@ -175,8 +201,8 @@ describe('startClojureScriptEngine', () => {
     expect(ret2).toBeUndefined();
   });
 
-  it("calls `executeScript` and bails if there's a main opt", () => {
-    startCLJS({
+  it("calls `executeScript` and bails if there's a main opt", async () => {
+    await startCLJS({
       repl: false,
       mainScript: 'foo.cljs',
       scripts: [],
@@ -187,8 +213,8 @@ describe('startClojureScriptEngine', () => {
 
   // XXX: This is irrelevent since we start the cljs engine the moment we call startCLJS
   // TODO: Remove?
-  it("doesn't init the CLJS engine if it already started", () => {
-    startCLJS({
+  it("doesn't init the CLJS engine if it already started", async () => {
+    await startCLJS({
       repl: true,
       // scripts will init the ClojureScript engine
       scripts: [['text', ':foo'], ['path', 'foo.cljs']],
@@ -227,8 +253,8 @@ describe('startClojureScriptEngine', () => {
       setupVmMocks();
     });
 
-    it('creates and returns a vm context', () => {
-      startClojureScriptEngine({
+    it('creates and returns a vm context', async () => {
+      await startClojureScriptEngine({
         repl: true,
         scripts: [],
         args: [],
@@ -271,8 +297,8 @@ describe('lumoEval', () => {
       vm.runInContext.mockClear();
     });
 
-    it('evals expressions in the ClojureScript context', () => {
-      startCLJS({
+    it('evals expressions in the ClojureScript context', async () => {
+      await startCLJS({
         repl: true,
         _: [],
         scripts: [],
@@ -310,8 +336,8 @@ describe('lumoEval', () => {
       __DEV__ = true;
     });
 
-    it('evals expressions in the ClojureScript context', () => {
-      startClojureScriptEngine({
+    it('evals expressions in the ClojureScript context', async () => {
+      await startClojureScriptEngine({
         repl: true,
         _: [],
         scripts: [],
