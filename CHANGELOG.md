@@ -37,6 +37,7 @@ size before it was created.
 - Correctly set __dirname and __filename when running script file ([#185](https://github.com/anmonteiro/lumo/issues/185)).
 - Also Crawl `deps.cljs` files in dirs ([#184](https://github.com/anmonteiro/lumo/issues/184)).
 - Suppress printing metadata for unknown types ([#189](https://github.com/anmonteiro/lumo/issues/189)).
+- Fix brace highlighting for forms that span more than the terminal width ([#187](https://github.com/anmonteiro/lumo/issues/187)).
 
 ## [1.5.0](https://github.com/anmonteiro/lumo/compare/1.4.1...1.5.0) (2017-05-13)
 

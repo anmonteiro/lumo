@@ -156,10 +156,13 @@ function stopReverseSearch(
 
 function handleSIGINT(replSession: REPLSession): void {
   const session = replSession;
+  const lineLength = session.rl.line.length + session.rl._prompt.length;
+  // $FlowIssue: columns exists in stream$Writable
+  const numberOfLines = Math.floor(lineLength / session.rl.output.columns);
   session.input = '';
 
   prompt(session.rl);
-  session.rl.output.write('\n\n');
+  session.rl.output.write('\n'.repeat(numberOfLines + 2));
 
   stopReverseSearch(replSession);
 }
@@ -175,12 +178,22 @@ function highlight(
   const pos = cursor - 1;
 
   if (char === ')' || char === ']' || char === '}') {
+    // $FlowIssue: columns exists in stream$Writable
+    const terminalColumns = rl.output.columns;
+    const promptLength = rl._prompt.length;
     const lines = input === '' ? [] : input.split('\n');
     lines.push(line);
     const [cursorX, linesUp] = cljs.getHighlightCoordinates(lines, pos);
+    let dx = cursor - cursorX;
+    let dy = linesUp;
+
+    if (cursor + promptLength > terminalColumns) {
+      dx = (dx - terminalColumns) % terminalColumns;
+      dy += Math.floor(cursor / (terminalColumns - promptLength));
+    }
 
     if (linesUp !== -1) {
-      readline.moveCursor(rl.output, -(cursor - cursorX), -linesUp);
+      readline.moveCursor(rl.output, -dx, -dy);
       rl.pause();
 
       // set the readline input stream to a new one so that we can listen for
@@ -194,7 +207,7 @@ function highlight(
       readStream.once('keypress', (c: string, key: KeyType) => {
         const [tid] = pendingHighlights.shift();
         clearTimeout(tid);
-        readline.moveCursor(rl.output, cursor - cursorX, linesUp);
+        readline.moveCursor(rl.output, dx, dy);
         rl.input = oldInput;
         rl.resume();
         readStream.destroy();
@@ -210,7 +223,7 @@ function highlight(
 
         if (to != null && to[1] === now) {
           pendingHighlights.shift();
-          readline.moveCursor(rl.output, cursor - cursorX, linesUp);
+          readline.moveCursor(rl.output, dx, dy);
           rl.input = oldInput;
           rl.resume();
           readStream.destroy();
