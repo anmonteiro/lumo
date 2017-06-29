@@ -18,7 +18,7 @@ on [`test.check`](https://github.com/clojure/test.check) (>= v0.10.0-alpha1).
 ### Changes
 
 - Upgrade ClojureScript to version 1.9.660.
-- Upgrade Node.js to version 8.1.2.
+- Upgrade Node.js to version 8.1.3.
 - Upgrade Google Closure Compiler to v20170521 ([#173](https://github.com/anmonteiro/lumo/pull/173)).
 - Don't compile a fully static binary under Linux ([#163](https://github.com/anmonteiro/lumo/issues/163), [#176](https://github.com/anmonteiro/lumo/pull/176)). This fixes
 a problem where requiring Node packages would crash (different stdlib versions).
