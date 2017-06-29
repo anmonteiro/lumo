@@ -6,8 +6,9 @@
 
 Lumo is a standalone ClojureScript environment that runs on Node.js and the V8
 JavaScript engine. It starts up instantaneously and has out-of-the-box access to
-the entire Node.js ecosystem. It also provides a ClojureScript build API, making
-it possible to
+the entire Node.js ecosystem.
+
+Lumo also provides a ClojureScript build API, making it possible to
 [compile ClojureScript projects entirely without the JVM](https://anmonteiro.com/2017/02/compiling-clojurescript-projects-without-the-jvm/),
 thanks to the [experimental JavaScript version](https://github.com/google/closure-compiler-js)
 of the [Google Closure Compiler](https://github.com/google/closure-compiler).
