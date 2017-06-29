@@ -1,3 +1,5 @@
+<img src="./logo/full.png" alt="lumo logo" title="lumo" align="right" width="150" height="150" />
+
 # Lumo
 [![Backers on Open Collective](https://opencollective.com/lumo/backers/badge.svg)](#backers)
 [![Sponsors on Open Collective](https://opencollective.com/lumo/sponsors/badge.svg)](#sponsors)
