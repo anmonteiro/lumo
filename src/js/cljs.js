@@ -13,26 +13,6 @@ import * as socketRepl from './socketRepl';
 
 import type { CLIOptsType } from './cli';
 
-function isUndefined(obj:Any): Boolean{
-  return 'undefined' === typeof(obj);
-}
-
-function isNull(obj:Any): Boolean{
-  return obj === null;
-}
-
-function isDefined(obj:Any): Boolean{
-  return !isUndefined(obj) && !isNull(obj);
-}
-
-function isEmptyString(str:String): Boolean{
-  return 'string' === typeof(str) && !str.trim().length; // Is this too clever?
-}
-
-function isEmptyArray(arr:Array): Boolean{
-  return Array.isArray(arr) && !arr.length; // Is this too clever?
-}
-
 // $FlowIssue: process has a binding function
 const utilBinding = process.binding('util');
 
@@ -265,7 +245,7 @@ function initClojureScriptEngine(opts: CLIOptsType): void {
 
   setPrintFns();
 
-  if (!isUndefined(args) && args.length > 0) {
+  if (args != null && args.length > 0) {
     // $FlowIssue: context can have globals
     ClojureScriptContext.lumo.core._STAR_command_line_args_STAR_ =
       // $FlowIssue: context can have globals
@@ -377,14 +357,26 @@ function processStdin(): void {
   });
 }
 
-// Runs the namespaced cljs function passed into it, which should accept a socket as it's only argument
+// Runs the namespaced cljs function passed into it, which should accept a
+// socket as its only argument
 // TODO: Is this really the best generalization? Should it be?
-export function runAcceptFN(fn: string, socket?: net$Socket, acceptArgs?: Array<mixed>): void {
+export function runAcceptFN(
+  fn: string,
+  socket?: net$Socket,
+  acceptArgs?: Array<mixed>,
+): void {
   // $FlowIssue: context can have globals
-  ClojureScriptContext.lumo.repl.run_accept_fn.call(null, fn, socket, acceptArgs);
+  ClojureScriptContext.lumo.repl.run_accept_fn.call(
+    null,
+    fn,
+    socket,
+    acceptArgs,
+  );
 }
 
-export default (async function startClojureScriptEngine(opts: CLIOptsType): void {
+export default (async function startClojureScriptEngine(
+  opts: CLIOptsType,
+): Promise<mixed> {
   const { args, mainNsName, mainScript, repl, scripts, quiet } = opts;
   const socketReplArgs = opts['socket-repl'];
 
@@ -398,43 +390,42 @@ export default (async function startClojureScriptEngine(opts: CLIOptsType): void
     //  "args": ["a list of args", 9999, {"foo": "bar"}]} ;; This has no default
     initClojureScriptEngine(opts);
 
-    const hostAndPortRegex=/(?:(?:(^.*):)|^)(\d{1,5})$/;
-    const jsonRegex=/^{/; // We only accept JSON objects, ports, or host:port pairs
+    const hostAndPortRegex = /(?:(?:(^.*):)|^)(\d{1,5})$/;
+    const jsonRegex = /^{/; // We only accept JSON objects, ports, or host:port pairs
 
     const hostPortMatch = socketReplArgs.match(hostAndPortRegex);
 
     // TODO: I think I need to handle default cases for these variables differently
-    var host = "";
-    var port = "";
-    var acceptFn: (socket: net$Socket) => void | string;
-    var acceptArgs: Array<mixed>;
-    var replOpts;
+    let host = '';
+    let port = '';
+    let acceptFn: (socket: net$Socket) => void | string;
+    let acceptArgs: Array<mixed>;
+    let replOpts;
 
-    if (jsonRegex.test(socketReplArgs)){
-      replOpts=JSON.parse(socketReplArgs); // This throws SyntaxError if we're passed invalid JSON
-    } else if (null != hostPortMatch){
-      // The leading comma is really important here, as the first result from match is the whole string,
-      // and we want the matched groups, which come afterwards
-      // XXX: host will be undefined if we only match a port, this is ok.
+    if (jsonRegex.test(socketReplArgs)) {
+      // This throws SyntaxError if we're passed invalid JSON
+      replOpts = JSON.parse(socketReplArgs);
+    } else if (hostPortMatch != null) {
+      // The leading comma is really important here, as the first result from
+      // match is the whole string, and we want the matched groups, which come
+      // afterwards.
+      // NOTE: host will be undefined if we only match a port, this is ok.
       [, host, port] = hostPortMatch;
     } else {
-      throw new SyntaxError("Got Socket REPL args, but they were unparsable. Args were: " + socketReplArgs);
+      throw new SyntaxError(
+        `Got Socket REPL args, but they were unparsable. Args were: ${socketReplArgs}`,
+      );
     }
 
-    if (!isUndefined(replOpts)){
-      host = replOpts['host'];
-      port = replOpts['port'];
-      acceptFn = replOpts['accept'];
-      acceptArgs = replOpts['args'];
+    if (replOpts != null) {
+      host = replOpts.host;
+      port = replOpts.port;
+      acceptFn = replOpts.accept;
+      acceptArgs = replOpts.args;
     }
 
-    if (isNaN(parseInt(port, 10))){
-      throw new SyntaxError("Specified port is not a number. Port is: " + port);
-    }
-
-    if ((!isDefined(acceptFn) || isEmptyString(acceptFn))
-        && isDefined(acceptArgs) && (!isEmptyString(acceptArgs) || !isEmptyArray(acceptArgs))){
-      throw new SyntaxError("You specified acceptArgs, but didn't give an acceptFn; please specify an acceptFn.");
+    if (isNaN(parseInt(port, 10))) {
+      throw new SyntaxError(`Specified port is not a number. Port is: ${port}`);
     }
 
     try {
@@ -442,17 +433,19 @@ export default (async function startClojureScriptEngine(opts: CLIOptsType): void
 
       if (!quiet) {
         process.stdout.write(
-          `Lumo socket REPL listening at ${host != null ? host : 'localhost'}:${port}.\n`);
+          `Lumo socket REPL listening at ${host != null
+            ? host
+            : 'localhost'}:${port}.\n`,
+        );
       }
     } catch (e) {
       // I wanted to destructure with { message } but
       // ran into https://github.com/facebook/flow/issues/3874
       process.stderr.write(`Error: ${e.message}\n`);
     }
-
   }
 
-  if (!isUndefined(scripts) && scripts.length > 0) {
+  if (scripts.length > 0) {
     initClojureScriptEngine(opts);
     executeScripts(scripts);
   }

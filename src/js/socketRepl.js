@@ -40,8 +40,12 @@ function openRepl(socket: net$Socket): void {
 }
 
 // Calls the `accept` function on the socket and handles the socket lifecycle
-function handleConnection(socket: net$Socket, accept: AcceptFn, acceptArgs): number {
-  if (typeof(accept)==='string') {
+function handleConnection(
+  socket: net$Socket,
+  accept: AcceptFn,
+  acceptArgs: Array<mixed>,
+): number {
+  if (typeof accept === 'string') {
     runAcceptFN(accept, socket, acceptArgs);
   } else {
     accept(socket);
@@ -80,7 +84,7 @@ export function open(
 ): Promise<mixed> {
   return new Promise((resolve: mixed => void, reject: Error => void) => {
     socketServer = net.createServer((socket: net$Socket) =>
-                                    handleConnection(socket, accept, acceptArgs),
+      handleConnection(socket, accept, acceptArgs || []),
     );
 
     // $FlowIssue - wrong type definitions for `listen`

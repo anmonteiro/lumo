@@ -1,24 +1,13 @@
 /* @flow */
 
+import vm from 'vm';
 import startCLJS, * as cljs from '../cljs';
 import startREPL from '../repl';
-import * as socketRepl from '../socketRepl';
-
-jest.mock('../socketRepl', () => ({
-  open: jest.fn((port: string,
-                 host?: string,
-                 accept?: (socket: net$Socket) => void | string,
-                 acceptArgs?: Array<Mixed>) => ''),
-}));
-
-let vm = require('vm');
 
 jest.mock('../repl');
-
 jest.mock('../lumo', () => ({
   load: () => '',
 }));
-
 jest.mock('vm');
 
 jest.useFakeTimers();
@@ -27,53 +16,14 @@ const originalStdoutWrite = process.stdout.write;
 const originalStderrWrite = process.stderr.write;
 
 beforeEach(() => {
-  process.stdout.write = jest.fn();
-  process.stderr.write = jest.fn();
+  // process.stdout.write = jest.fn();
+  // process.stderr.write = jest.fn();
 });
 
 afterEach(() => {
   process.stdout.write = originalStdoutWrite;
   process.stderr.write = originalStderrWrite;
 });
-
-const ctx = {
-  cljs: {
-    core: {
-      set_print_fn_BANG_: jest.fn(),
-      set_print_err_fn_BANG_: jest.fn(),
-      // eslint-disable-next-line prefer-arrow-callback
-      seq: jest.fn(function seq<T>(x: T[]): T[] {
-        return x;
-      }),
-    },
-  },
-  lumo: {
-    repl: {
-      init: () => {},
-      set_ns: () => {},
-      execute: () => {},
-      is_readable_QMARK_: () => '',
-      get_current_ns: () => 'cljs.user',
-      get_highlight_coordinates: (text: string) => 0,
-      get_completions: (text: string) => [],
-      run_main: (mainNS: string, args: string[]) => undefined,
-    },
-    core: {},
-  },
-};
-
-let cljsContext;
-
-function setupVmMocks(): void {
-  vm.createContext.mockImplementation((x: vm$Context) => x);
-
-  vm.Script.prototype.runInContext.mockImplementation((context: vm$Context) => {
-    cljsContext = Object.assign(context, ctx);
-    return cljsContext;
-  });
-}
-
-setupVmMocks();
 
 const exit = process.exit;
 
@@ -89,86 +39,6 @@ describe('startClojureScriptEngine', () => {
   beforeEach(() => {
     startREPL.mockClear();
   });
-
-  describe('Socket repl', () => {
-    describe('throws errors if you give it', () => {
-      // Socket REPL args are defined, but empty
-      const emptystr = '';
-      const emptyobj = JSON.stringify({});
-
-      // We define a host but no port
-      const hoststr = 'localhost';
-      const hostobj = JSON.stringify({ host: 'localhost' });
-
-      // Port isn't a number
-      const portNaNstr = 'foobar';
-      const portNaNobj = JSON.stringify({ port: 'foobar' });
-
-      // We define accept function args but no accept function
-      const argsButNoAccept = JSON.stringify({ port: 12345, args: 'foo' });
-
-      it('an empty string', async () => {
-        expect.assertions(1);
-        await expect(
-          startCLJS({ 'socket-repl': emptystr })
-        ).rejects.toBeInstanceOf(SyntaxError);
-      });
-
-      it('an empty object', async () => {
-        expect.assertions(1);
-        await expect(
-          startCLJS({ 'socket-repl': emptyobj })
-        ).rejects.toBeInstanceOf(SyntaxError);
-      });
-
-      it('just a host string', async () => {
-        expect.assertions(1);
-        await expect(
-          startCLJS({ 'socket-repl': hoststr })
-        ).rejects.toBeInstanceOf(SyntaxError);
-      });
-
-      it('just a host object', async () => {
-        expect.assertions(1);
-        await expect(
-          startCLJS({ 'socket-repl': hostobj })
-        ).rejects.toBeInstanceOf(SyntaxError);
-      });
-
-      it('a port string that isn\'t a number', async () => {
-        expect.assertions(1);
-        await expect(
-          startCLJS({ 'socket-repl': portNaNstr })
-        ).rejects.toBeInstanceOf(SyntaxError);
-      });
-
-      it('a port object that isn\'t a number', async () => {
-        expect.assertions(1);
-        await expect(
-          startCLJS({ 'socket-repl': portNaNobj })
-        ).rejects.toBeInstanceOf(SyntaxError);
-      });
-
-      it('args for the accept function, but no accept function itself', async () => {
-        expect.assertions(1);
-        await expect(
-          startCLJS({ 'socket-repl': argsButNoAccept })
-        ).rejects.toBeInstanceOf(SyntaxError);
-      });
-    });
-
-    it('starts a socket server if only a port given', async () => {
-      await startCLJS({ 'socket-repl': '5555' });
-      expect(socketRepl.open).toHaveBeenCalled();
-    });
-
-    it('prints socket REPL info in addition to the banner if -n specified', async () => {
-      await startCLJS({ 'socket-repl': '5555' });
-      expect(process.stdout.write.mock.calls).toMatchSnapshot();
-    });
-
-  });
-
 
   it('should start a REPL if opts.repl is true', async () => {
     await startCLJS({
@@ -225,12 +95,9 @@ describe('startClojureScriptEngine', () => {
   });
 
   it('sets args and calls runMainNS if mainNsName specified', () => {
-    jest.resetModules();
     /* eslint-disable global-require */
     const startClojureScriptEngine = require('../cljs').default;
-    vm = require('vm');
     /* eslint-enable global-require */
-    setupVmMocks();
 
     startClojureScriptEngine({
       mainNsName: 'foo.core',
@@ -238,19 +105,17 @@ describe('startClojureScriptEngine', () => {
       scripts: [],
     });
 
-    expect(ctx.cljs.core.seq).toHaveBeenCalled();
+    expect(vm.ctx.cljs.core.seq).toHaveBeenCalled();
   });
 
   describe('in development', () => {
     let startClojureScriptEngine;
 
     beforeAll(() => {
-      jest.resetModules();
+      jest.clearAllMocks();
       /* eslint-disable global-require */
       startClojureScriptEngine = require('../cljs').default;
-      vm = require('vm');
       /* eslint-enable global-require */
-      setupVmMocks();
     });
 
     it('creates and returns a vm context', async () => {
@@ -285,12 +150,6 @@ describe('getHighlightCoordinates', () => {
   });
 });
 
-describe('indentSpaceCount', () => {
-  it('calls into the CLJS context', () => {
-    expect(cljs.getCompletions('(de)')).toEqual([]);
-  });
-});
-
 describe('lumoEval', () => {
   describe('in development', () => {
     beforeEach(() => {
@@ -305,7 +164,7 @@ describe('lumoEval', () => {
       });
       jest.runAllTicks();
 
-      cljsContext.$$LUMO_GLOBALS.eval('source');
+      vm.ctx.$$LUMO_GLOBALS.eval('source');
       expect(vm.runInContext).toHaveBeenCalledTimes(1);
     });
   });
@@ -314,22 +173,22 @@ describe('lumoEval', () => {
     let startClojureScriptEngine;
 
     beforeEach(() => {
-      jest.resetModules();
       Object.assign(
         global,
         {
           initialize: jest.fn(),
           __DEV__: false,
         },
-        ctx,
+        vm.ctx,
       );
       // eslint-disable-next-line global-require
       startClojureScriptEngine = require('../cljs').default;
     });
 
     afterEach(() => {
-      Object.keys(ctx)
+      Object.keys(vm.ctx)
         .concat(['initialize'])
+        .filter((x: string) => !/console|process|module|exports/.test(x))
         .forEach((key: string, idx: number) => {
           global[key] = undefined;
         });
@@ -337,6 +196,8 @@ describe('lumoEval', () => {
     });
 
     it('evals expressions in the ClojureScript context', async () => {
+      expect.assertions(1);
+
       await startClojureScriptEngine({
         repl: true,
         _: [],
@@ -345,7 +206,7 @@ describe('lumoEval', () => {
       });
       jest.runAllTicks();
 
-      cljsContext.$$LUMO_GLOBALS.eval('source');
+      global.$$LUMO_GLOBALS.eval('source', false);
       expect(vm.runInThisContext).toHaveBeenCalledTimes(1);
     });
   });
