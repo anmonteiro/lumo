@@ -1319,24 +1319,21 @@
         fn-str (fn-string accept-fn)
         opts (make-eval-opts)
         fn-args (js->clj args)]
-    (println "haha" args fn-args)
-    (println (identical? (type (js/JSON.parse "{}")) js/Object)
-      (identical? (type (js/Object.assign #js {} (js/JSON.parse "{}"))) js/Object))
     (binding [cljs/*load-fn* load
               cljs/*eval-fn* caching-node-eval]
       (cljs/eval st
-                 `(~'require (quote ~ns-sym))
-                 opts
-                 (fn [{:keys [ns value error] :as ret}]
-                   (if error
-                     (handle-error error true)
-                     (cljs/eval-str st
-                                    (str "(var " fn-str ")")
-                                    nil
-                                    (merge opts {:ns (symbol ns-sym)})
-                                    (fn [{:keys [ns value error] :as ret}]
-                                      (try
-                                        ;; TODO: do we wanna splice args?
-                                        (value socket fn-args)
-                                        (catch :default e
-                                          (handle-error e true)))))))))))
+        `(~'require (quote ~ns-sym))
+        opts
+        (fn [{:keys [ns value error] :as ret}]
+          (if error
+            (handle-error error true)
+            (cljs/eval-str st
+              (str "(var " fn-str ")")
+              nil
+              (merge opts {:ns (symbol ns-sym)})
+              (fn [{:keys [ns value error] :as ret}]
+                (try
+                  ;; TODO: do we wanna splice args?
+                  (value socket fn-args)
+                  (catch :default e
+                    (handle-error e true)))))))))))

@@ -38,10 +38,12 @@ afterAll(() => {
 beforeEach(async () => {
   jest.clearAllMocks();
   jest.resetModules();
+  /* eslint-disable global-require */
   cljs = require('../cljs');
   startCLJS = cljs.default;
   startREPL = require('../repl').default;
   vm = require('vm');
+  /* eslint-enable global-require */
 });
 
 describe('startClojureScriptEngine', () => {
