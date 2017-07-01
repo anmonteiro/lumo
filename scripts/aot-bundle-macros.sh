@@ -13,7 +13,7 @@ echo "### Compiling Macro Namespaces"
 
 mkdir -p lumo-cljs/out/macros-tmp
 
-$(pwd)/build/lumo --quiet -c target -sdk lumo-cljs/out/macros-tmp <<REPL_INPUT
+$(pwd)/build/lumo --quiet -c target -sfdk lumo-cljs/out/macros-tmp <<REPL_INPUT
 (require 'lumo.build.api
          'lumo.analyzer
          'lumo.cljs-deps
@@ -29,13 +29,15 @@ $(pwd)/build/lumo --quiet -c target -sdk lumo-cljs/out/macros-tmp <<REPL_INPUT
          'clojure.data
          'cljs.nodejs
          'cljs.test
-         'cljs.analyzer.api)
+         'cljs.analyzer.api
+         'cljs.spec.test.alpha)
 (require-macros 'lumo.repl
                 'lumo.util
                 'clojure.template
                 'cljs.pprint
                 'cljs.spec.alpha
                 'cljs.spec.gen.alpha
+                'cljs.spec.test.alpha
                 'cljs.support
                 'cljs.test
                 'cljs.reader
@@ -77,6 +79,8 @@ mv lumo-cljs/out/macros-tmp/lumo_SLASH_json.js target/lumo/json.js
 mv lumo-cljs/out/macros-tmp/lumo_SLASH_json.cache.json target/lumo/json.cache.json
 mv lumo-cljs/out/macros-tmp/lumo_SLASH_util.js target/lumo/util.js
 mv lumo-cljs/out/macros-tmp/lumo_SLASH_util.cache.json target/lumo/util.cache.json
+mv lumo-cljs/out/macros-tmp/cljs_SLASH_spec_SLASH_test_SLASH_alpha.js target/cljs/spec/test/alpha.js
+mv lumo-cljs/out/macros-tmp/cljs_SLASH_spec_SLASH_test_SLASH_alpha.cache.json target/cljs/spec/test/alpha.cache.json
 
 mv lumo-cljs/out/macros-tmp/lumo_SLASH_repl\$macros.js target/lumo/repl\$macros.js
 mv lumo-cljs/out/macros-tmp/lumo_SLASH_repl\$macros.cache.json target/lumo/repl\$macros.cache.json
@@ -104,5 +108,7 @@ mv lumo-cljs/out/macros-tmp/cljs_SLASH_spec_SLASH_alpha\$macros.js target/cljs/s
 mv lumo-cljs/out/macros-tmp/cljs_SLASH_spec_SLASH_alpha\$macros.cache.json target/cljs/spec/alpha\$macros.cache.json
 mv lumo-cljs/out/macros-tmp/cljs_SLASH_spec_SLASH_gen_SLASH_alpha\$macros.js target/cljs/spec/gen/alpha\$macros.js
 mv lumo-cljs/out/macros-tmp/cljs_SLASH_spec_SLASH_gen_SLASH_alpha\$macros.cache.json target/cljs/spec/gen/alpha\$macros.cache.json
+mv lumo-cljs/out/macros-tmp/cljs_SLASH_spec_SLASH_test_SLASH_alpha\$macros.js target/cljs/spec/test/alpha\$macros.js
+mv lumo-cljs/out/macros-tmp/cljs_SLASH_spec_SLASH_test_SLASH_alpha\$macros.cache.json target/cljs/spec/test/alpha\$macros.cache.json
 
 rm -rf lumo-cljs

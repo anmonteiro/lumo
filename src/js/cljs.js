@@ -29,7 +29,7 @@ function lumoEval(
   isForeign: boolean,
   execPath: ?string,
 ): mixed {
-  if (execPath != null && !__DEV__) {
+  if (execPath != null) {
     const filename = path.resolve(execPath);
     const dirname = path.dirname(filename);
     const module = new Module(filename);
@@ -190,6 +190,7 @@ function newClojureScriptContext(): { [key: string]: mixed } {
 function setRuntimeOpts(opts: CLIOptsType): void {
   const { cache, verbose, repl } = opts;
   const staticFns = opts['static-fns'];
+  const fnInvokeDirect = opts['fn-invoke-direct'];
   const elideAsserts = opts['elide-asserts'];
   // $FlowIssue: context can have globals
   ClojureScriptContext.lumo.repl.init(
@@ -197,6 +198,7 @@ function setRuntimeOpts(opts: CLIOptsType): void {
     verbose,
     cache,
     staticFns,
+    fnInvokeDirect,
     elideAsserts,
   );
 }

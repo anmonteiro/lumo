@@ -192,12 +192,16 @@
         com.cognitect.transit.impl.writer})
    name))
 
+(declare inject-lumo-eval)
+
 (defn- load-bundled [name path file-path source cb]
   (when-let [cache-json (or (js/$$LUMO_GLOBALS.load (str file-path ".cache.json"))
                             (js/$$LUMO_GLOBALS.load (str path ".cache.json")))]
     (cb {:source source
          :lang :js
          :cache (common/transit-json->cljs cache-json)})
+    (when (symbol-identical? name 'cljs.spec.test.alpha$macros)
+      (inject-lumo-eval 'cljs.spec.test.alpha$macros))
     :loaded))
 
 ;; TODO: we could be smarter and only load the libs that we haven't already loaded
@@ -858,14 +862,24 @@
            (vreset! result value))))
      @result)))
 
+(defn- intern
+  ([ns name]
+   (intern ns name nil))
+  ([ns name val]
+   (when-let [the-ns (find-ns (cond-> ns (instance? Namespace ns) ns-name))]
+     (eval `(def ~name ~val) (ns-name the-ns)))))
+
+(defn- inject-lumo-eval
+  [target-ns]
+  (intern target-ns 'eval eval))
+
 ;; --------------------
 ;; Code evaluation
 
 (defn- make-eval-opts []
-  (let [{:keys [verbose static-fns]} @app-opts]
-    {:ns            @current-ns
-     :verbose       verbose
-     :static-fns    static-fns}))
+  (merge
+    {:ns @current-ns}
+    (select-keys @app-opts [:verbose :static-fns :fn-invoke-direct])))
 
 (defn- current-alias-map []
   (let [cur-ns @current-ns]
@@ -1163,11 +1177,12 @@
 (defn- setup-assert! [elide-asserts]
   (set! *assert* (not elide-asserts)))
 
-(defn- ^:export init [repl? verbose cache-path static-fns elide-asserts]
+(defn- ^:export init [repl? verbose cache-path static-fns fn-invoke-direct elide-asserts]
   (vreset! app-opts {:repl? repl?
                      :verbose verbose
                      :cache-path cache-path
                      :static-fns static-fns
+                     :fn-invoke-direct fn-invoke-direct
                      :elide-asserts elide-asserts})
   (setup-assert! elide-asserts)
   (set! *print-namespace-maps* repl?)
@@ -1274,6 +1289,7 @@
       cljs.reader
       cljs.spec.alpha
       cljs.spec.gen.alpha
+      cljs.spec.test.alpha
       cljs.tagged-literals
       cljs.test
       cljs.tools.reader

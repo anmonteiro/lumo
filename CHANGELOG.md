@@ -1,7 +1,8 @@
 # Changelog
 
-## [master](https://github.com/anmonteiro/lumo/compare/1.5.0...HEAD) (unreleased)
+## [master](https://github.com/anmonteiro/lumo/compare/1.6.0...HEAD) (unreleased)
 
+## [1.6.0](https://github.com/anmonteiro/lumo/compare/1.5.0...1.6.0) (2017-06-30)
 
 ### New features
 
@@ -12,11 +13,14 @@
 The relevant CLI option is `-D / --dependencies` that supports a comma-separated
 list of Maven coordinates, and `-L / --local-repo` to override the local Maven
 repository (defaults to `~/.m2/repository`).
+- Bundle `cljs.spec.test.alpha` ([#179](https://github.com/anmonteiro/lumo/issues/179)).
+Note that while this namespace is now bundled with Lumo, it has a hard dependency
+on [`test.check`](https://github.com/clojure/test.check) (>= v0.10.0-alpha1).
 
 ### Changes
 
-- Upgrade ClojureScript to version 1.9.562.
-- Upgrade Node.js to version 8.1.2.
+- Upgrade ClojureScript to version 1.9.671.
+- Upgrade Node.js to version 8.1.3.
 - Upgrade Google Closure Compiler to v20170521 ([#173](https://github.com/anmonteiro/lumo/pull/173)).
 - Don't compile a fully static binary under Linux ([#163](https://github.com/anmonteiro/lumo/issues/163), [#176](https://github.com/anmonteiro/lumo/pull/176)). This fixes
 a problem where requiring Node packages would crash (different stdlib versions).
@@ -34,6 +38,8 @@ size before it was created.
 - Don't print `doc` for macros that are not referred ([#153](https://github.com/anmonteiro/lumo/issues/153)).
 - Correctly set __dirname and __filename when running script file ([#185](https://github.com/anmonteiro/lumo/issues/185)).
 - Also Crawl `deps.cljs` files in dirs ([#184](https://github.com/anmonteiro/lumo/issues/184)).
+- Suppress printing metadata for unknown types ([#189](https://github.com/anmonteiro/lumo/issues/189)).
+- Fix brace highlighting for forms that span more than the terminal width ([#187](https://github.com/anmonteiro/lumo/issues/187)).
 
 ## [1.5.0](https://github.com/anmonteiro/lumo/compare/1.4.1...1.5.0) (2017-05-13)
 

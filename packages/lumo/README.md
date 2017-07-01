@@ -1,11 +1,14 @@
+<img src="./logo/full.png" alt="lumo logo" title="lumo" align="right" width="150" height="150" />
+
 # Lumo
 [![Backers on Open Collective](https://opencollective.com/lumo/backers/badge.svg)](#backers)
 [![Sponsors on Open Collective](https://opencollective.com/lumo/sponsors/badge.svg)](#sponsors)
 
 Lumo is a standalone ClojureScript environment that runs on Node.js and the V8
 JavaScript engine. It starts up instantaneously and has out-of-the-box access to
-the entire Node.js ecosystem. It also provides a ClojureScript build API, making
-it possible to
+the entire Node.js ecosystem.
+
+Lumo also provides a ClojureScript build API, making it possible to
 [compile ClojureScript projects entirely without the JVM](https://anmonteiro.com/2017/02/compiling-clojurescript-projects-without-the-jvm/),
 thanks to the [experimental JavaScript version](https://github.com/google/closure-compiler-js)
 of the [Google Closure Compiler](https://github.com/google/closure-compiler).
@@ -76,7 +79,7 @@ Check out `lumo -h` for usage instructions and supported command line options.
 
 To build Lumo from source:
 
-1. Make sure you have installed [Boot](http://boot-clj.com/) and [Yarn](https://yarnpkg.com/).
+1. Make sure you have installed [Boot](http://boot-clj.com/), [Yarn](https://yarnpkg.com/) and [Node.js](https://nodejs.org/en/download/current/) (version >= 8).
 2. At the root of the repository, run: `boot release`.
 3. The resulting binary can be found in `build/lumo` (or `build\lumo.exe` if you're
 on Windows).

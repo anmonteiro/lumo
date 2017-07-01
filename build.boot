@@ -2,11 +2,12 @@
  :source-paths #{"src/cljs/snapshot"}
  :asset-paths #{"src/js" "src/cljs/bundled"}
  :dependencies '[[org.clojure/clojure         "1.9.0-alpha17"]
-                 [org.clojure/clojurescript   "1.9.562"]
+                 [org.clojure/clojurescript   "1.9.671"]
                  [org.clojure/tools.reader    "1.0.0"]
                  [com.cognitect/transit-cljs  "0.8.239"]
                  [malabarba/lazy-map          "1.3"]
                  [fipp                        "0.6.9"]
+                 [org.clojure/test.check      "0.10.0-alpha1" :scope "test"]
                  [com.cognitect/transit-clj   "0.8.300" :scope "test"]
                  [com.cemerick/piggieback     "0.2.2"   :scope "test"]
                  [adzerk/boot-cljs            "2.0.0"   :scope "test"]
@@ -57,16 +58,13 @@
     (speak)
     (test :exit? false)))
 
-(deftask check-node-modules []
+(deftask install-node-modules []
   (with-pass-thru _
     (let [nm (io/file "node_modules")]
-      (if-not (and (.exists nm) (.isDirectory nm))
-        (do
-          (util/info "Installing node dependencies with `yarn install`\n")
-          (if windows?
-            (dosh "cmd" "/c" "yarn" "install")
-            (dosh "yarn" "install")))
-        (util/info "Node dependencies already installed, skipping `yarn install`\n")))))
+      (util/info "Installing node dependencies with `yarn install`\n")
+      (if windows?
+        (dosh "cmd" "/c" "yarn" "install")
+        (dosh "yarn" "install")))))
 
 (deftask bundle-js
   [d dev     bool  "Development build"]
@@ -122,7 +120,8 @@
        'org.clojure/google-closure-library #"^goog[\\\/].*(?<!_test)\.js$"
        'org.clojure/google-closure-library-third-party #"^goog[\\\/].*(?<!_test)\.js$"
        'org.clojure/tools.reader #"^cljs.*clj$"
-       'org.clojure/clojurescript #""}
+       'org.clojure/clojurescript #""
+       'org.clojure/test.check #""}
       :move {#"^main.out[\\\/]((cljs|clojure|cognitect|lumo|lazy_map|fipp).*)" "$1"})
     (sift :include #{#"^main.js" #"^bundle.js" #"^cljs(?!\.js)" #"core\$macros"
                      #"^clojure" #"^cognitect" #"^goog" #"^lumo[\\\/]"
@@ -155,7 +154,7 @@
 
 (deftask dev []
   (comp
-    (check-node-modules)
+    (install-node-modules)
     (watch)
     (speak)
     (compile-cljs)
@@ -190,7 +189,7 @@
 
 (deftask release-ci []
   (comp
-    (check-node-modules)
+    (install-node-modules)
     (compile-cljs)
     (sift-cljs-resources)
     (cache-edn->transit)

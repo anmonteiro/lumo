@@ -1,6 +1,6 @@
 {
   "name": "lumo",
-  "version": "1.5.0",
+  "version": "1.6.0",
   "description": "Fast, cross-platform, standalone ClojureScript REPL",
   "author": "António Nuno Monteiro <anmonteiro@gmail.com> (https://anmonteiro.com)",
   "license": "EPL-1.0",
@@ -15,7 +15,7 @@
   "scripts": {
     "type:check": "flow check",
     "lint": "eslint src/js",
-    "prettier": "prettier --print-width 80 --single-quote --trailing-comma all --parser flow --write \"./{src,scripts,lib,packages}/**/**.js\"",
+    "prettier": "prettier --print-width 80 --single-quote --trailing-comma all --parser flow --write \"./{src,scripts,lib,packages}/**/**.{js,json}\"",
     "test": "jest",
     "bundle": "node scripts/build.js --dev",
     "dev": "node target/bundle.js -k lumo-cache -c target",
@@ -25,7 +25,7 @@
   "dependencies": {
     "google-closure-compiler-js": "^20170521.0.0",
     "jszip": "2.6.1",
-    "parinfer": "2.0.0",
+    "parinfer": "2.2.1",
     "posix-getopt": "github:anmonteiro/node-getopt#master"
   },
   "devDependencies": {
@@ -42,11 +42,11 @@
     "eslint-plugin-import": "^2.3.0",
     "eslint-plugin-jsx-a11y": "^5.0.3",
     "eslint-plugin-react": "^7.1.0",
-    "flow-bin": "^0.48.0",
+    "flow-bin": "^0.49.1",
     "jest-cli": "^20.0.4",
     "nexe": "github:anmonteiro/nexe#master",
     "opencollective": "^1.0.0",
-    "prettier": "^1.4.4",
+    "prettier": "^1.5.2",
     "rollup": "^0.43.0",
     "rollup-plugin-babel": "^2.7.1",
     "rollup-plugin-babili": "^3.1.0",
@@ -57,20 +57,11 @@
   "jest": {
     "verbose": true,
     "testEnvironment": "node",
-    "setupFiles": [
-      "./scripts/jest/environment.js"
-    ],
-    "collectCoverageFrom": [
-      "src/js/**/*.js"
-    ],
+    "setupFiles": ["./scripts/jest/environment.js"],
+    "collectCoverageFrom": ["src/js/**/*.js"],
     "coverageDirectory": "./coverage/",
-    "coveragePathIgnorePatterns": [
-      "<rootDir>/lib",
-      "<rootDir>/node_modules"
-    ],
-    "roots": [
-      "src/js"
-    ]
+    "coveragePathIgnorePatterns": ["<rootDir>/lib", "<rootDir>/node_modules"],
+    "roots": ["src/js"]
   },
   "collective": {
     "type": "opencollective",

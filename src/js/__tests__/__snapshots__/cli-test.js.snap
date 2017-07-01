@@ -66,13 +66,16 @@ Usage:  lumo [init-opt*] [main-opt] [arg*]
     -L path, --local-repo path   Path to the local Maven repository where Lumo
                                  will look for dependencies. Defaults to
                                  \`~/.m2/repository\`.
-    -K, --auto-cache             Create and use .planck_cache dir for cache
+    -K, --auto-cache             Create and use .lumo_cache dir for cache
     -k, --cache path             If dir exists at path, use it for cache
     -q, --quiet                  Quiet mode; doesn't print the banner
     -v, --verbose                Emit verbose diagnostic output
     -d, --dumb-terminal          Disable line editing / VT100 terminal
                                  control
     -s, --static-fns             Generate static dispatch function calls
+    -f, --fn-invoke-direct       Do not not generate \`.call(null...)\` calls
+                                 for unknown functions, but instead direct
+                                 invokes via \`f(a0,a1...)\`.
     -n x, --socket-repl x        Enable a socket REPL where x is port or
                                  \`hostname:port\`
 

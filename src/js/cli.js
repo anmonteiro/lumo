@@ -24,6 +24,7 @@ export type CLIOptsType = {
   quiet: boolean,
   'dumb-terminal': boolean,
   'static-fns': boolean,
+  'fn-invoke-direct': boolean,
   legal: boolean,
   'elide-asserts': boolean,
   cache?: string,
@@ -76,13 +77,16 @@ Usage:  lumo [init-opt*] [main-opt] [arg*]
     -L path, --local-repo path   Path to the local Maven repository where Lumo
                                  will look for dependencies. Defaults to
                                  \`~/.m2/repository\`.
-    -K, --auto-cache             Create and use .planck_cache dir for cache
+    -K, --auto-cache             Create and use .lumo_cache dir for cache
     -k, --cache path             If dir exists at path, use it for cache
     -q, --quiet                  Quiet mode; doesn't print the banner
     -v, --verbose                Emit verbose diagnostic output
     -d, --dumb-terminal          Disable line editing / VT100 terminal
                                  control
     -s, --static-fns             Generate static dispatch function calls
+    -f, --fn-invoke-direct       Do not not generate \`.call(null...)\` calls
+                                 for unknown functions, but instead direct
+                                 invokes via \`f(a0,a1...)\`.
     -n x, --socket-repl x        Enable a socket REPL where x is port or
                                  \`hostname:port\`
 
@@ -117,6 +121,7 @@ function getCLIOpts(): CLIOptsType {
     'd(dumb-terminal)',
     'n:(socket-repl)',
     's(static-fns)',
+    'f(fn-invoke-direct)',
     'a(elide-asserts)',
     'm:(main)',
     'r(repl)',
@@ -142,6 +147,7 @@ function getCLIOpts(): CLIOptsType {
     verbose: false,
     'dumb-terminal': false,
     'static-fns': false,
+    'fn-invoke-direct': false,
     'elide-asserts': false,
     quiet: false,
     args: [],
@@ -205,6 +211,9 @@ function getCLIOpts(): CLIOptsType {
         break;
       case 's':
         ret['static-fns'] = true;
+        break;
+      case 'f':
+        ret['fn-invoke-direct'] = true;
         break;
       case 'a':
         ret['elide-asserts'] = true;
