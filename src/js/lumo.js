@@ -156,7 +156,7 @@ export function loadUpstreamForeignLibs(): string[] {
 export function loadUpstreamDataReaders(): {url: string, source: string}[] {
   const ret = [];
   for (const srcPath of sourcePaths.values()) {
-    for (const filename of ["data_readers.cljs", "data_readers.cljc"]) {
+    for (const filename of ['data_readers.cljs', 'data_readers.cljc']) {
       const url = path.join(srcPath, filename);
 
       try {
@@ -166,11 +166,17 @@ export function loadUpstreamDataReaders(): {url: string, source: string}[] {
           const source = zip.file(filename);
 
           if (source != null) {
-            ret.push({url: url, source: source.asText()});
+            ret.push({
+              url,
+              source: source.asText()
+            });
           }
         } else {
           const source = fs.readFileSync(url, 'utf8');
-          ret.push({url: url, source: source});
+          ret.push({
+            url,
+            source: source
+          });
         }
       } catch (_) {} // eslint-disable-line no-empty
     }
