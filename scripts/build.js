@@ -69,7 +69,7 @@ const plugins = [
     preferBuiltins: true,
   }),
   commonjs({
-    include: /posix-getopt|parinfer|jszip|pako/,
+    include: /posix-getopt|paredit\.js|jszip|pako/,
   }),
 ];
 
@@ -93,6 +93,11 @@ rollup({
     bundle.write({
       format: 'cjs',
       dest: `target/bundle${!isDevBuild ? '.min' : ''}.js`,
+      interop: false,
+      exports: 'none',
+      intro: `;(function(){
+"use strict";`,
+      outro: '})();',
     });
   })
   .catch(console.error);

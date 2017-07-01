@@ -5,6 +5,7 @@ import os from 'os';
 import path from 'path';
 import {
   ensureDir,
+  indentSpaceCount,
   srcPathsFromMavenDependencies,
   srcPathsFromClasspathStrings,
   isWhitespace,
@@ -201,5 +202,14 @@ describe('mavenCoordinatesToPath', () => {
         'rewrite-clj-0.6.0.jar',
       ]),
     ]);
+  });
+});
+
+describe('indentSpaceCount', () => {
+  it('should return appropriate indentation according to the current input', () => {
+    expect(indentSpaceCount('(let [')).toBe(6);
+    expect(indentSpaceCount('(do')).toBe(2);
+    expect(indentSpaceCount('(let [a 1')).toBe(6);
+    expect(indentSpaceCount('[[[[\n]')).toBe(3);
   });
 });

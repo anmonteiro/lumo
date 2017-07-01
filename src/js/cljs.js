@@ -6,7 +6,6 @@ import Module from 'module';
 import path from 'path';
 import vm from 'vm';
 import JSZip from 'jszip';
-import parinfer from 'parinfer';
 import DiscardingSender from './discarding-sender';
 import * as lumo from './lumo';
 import startREPL, { currentREPLInterface } from './repl';
@@ -132,7 +131,6 @@ function newDevelopmentContext(): vm$Context {
       path,
       getGoogleClosureCompiler: lumo.getGoogleClosureCompiler,
       getJSCompletions: lumo.getJSCompletions,
-      parinfer,
       doPrint,
       JSZip,
       load: lumo.load,
@@ -165,7 +163,6 @@ function newClojureScriptContext(): { [key: string]: mixed } {
     path,
     getGoogleClosureCompiler: lumo.getGoogleClosureCompiler,
     getJSCompletions: lumo.getJSCompletions,
-    parinfer,
     doPrint,
     JSZip,
     load: lumo.load,
@@ -284,11 +281,6 @@ export function getCurrentNamespace(): string {
 export function isReadable(form: string): string | false {
   // $FlowIssue: context can have globals
   return ClojureScriptContext.lumo.repl.is_readable_QMARK_(form);
-}
-
-export function indentSpaceCount(text: string): number {
-  // $FlowIssue: context can have globals
-  return ClojureScriptContext.lumo.repl.indent_space_count(text);
 }
 
 export function getHighlightCoordinates(
