@@ -6,7 +6,7 @@ import readline from 'readline';
 import tty from 'tty';
 import * as cljs from './cljs';
 import replHistory from './replHistory';
-import { currentTimeMicros, isWhitespace, indentSpaceCount } from './util';
+import { currentTimeMicros, isWhitespace, indentationSpaces } from './util';
 import { close as socketServerClose } from './socketRepl';
 
 import type { CLIOptsType } from './cli';
@@ -126,9 +126,9 @@ export function processLine(replSession: REPLSession, line: string): void {
       prompt(rl, true);
 
       if (!isPasting) {
-        const spaceCount = indentSpaceCount(currentInput);
-        if (spaceCount !== -1) {
-          rl.write(' '.repeat(spaceCount));
+        const indentation = indentationSpaces(currentInput);
+        if (indentation != null) {
+          rl.write(indentation);
         }
       }
       break;

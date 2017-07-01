@@ -89,11 +89,18 @@ export function srcPathsFromMavenDependencies(
   }, []);
 }
 
-export function indentSpaceCount(text: string): number {
+export function indentationSpaces(text: string): ?string {
   const source = `${text}\n`;
-  const ast = paredit.parse(source, { addSourceForLeafs: true });
   const count = source.length;
+  const ast = paredit.parse(source);
   const { changes } = paredit.editor.indentRange(ast, source, count, count);
+  const insertionChange = changes.find(
+    ([type]: [string, number, string]) => type === 'insert',
+  );
 
-  return changes.length !== 0 ? changes[0][2].length : -1;
+  if (insertionChange != null) {
+    return insertionChange[2];
+  }
+
+  return null;
 }

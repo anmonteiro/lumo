@@ -5,7 +5,7 @@ import os from 'os';
 import path from 'path';
 import {
   ensureDir,
-  indentSpaceCount,
+  indentationSpaces,
   srcPathsFromMavenDependencies,
   srcPathsFromClasspathStrings,
   isWhitespace,
@@ -205,11 +205,15 @@ describe('mavenCoordinatesToPath', () => {
   });
 });
 
-describe('indentSpaceCount', () => {
+describe('indentationSpaces', () => {
   it('should return appropriate indentation according to the current input', () => {
-    expect(indentSpaceCount('(let [')).toBe(6);
-    expect(indentSpaceCount('(do')).toBe(2);
-    expect(indentSpaceCount('(let [a 1')).toBe(6);
-    expect(indentSpaceCount('[[[[\n]')).toBe(3);
+    function nSpcs(n: number): string {
+      return ' '.repeat(n);
+    }
+
+    expect(indentationSpaces('(let [')).toBe(nSpcs(6));
+    expect(indentationSpaces('(do')).toBe(nSpcs(2));
+    expect(indentationSpaces('(let [a 1')).toBe(nSpcs(6));
+    expect(indentationSpaces('[[[[\n]')).toBe(nSpcs(3));
   });
 });
