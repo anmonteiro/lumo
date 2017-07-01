@@ -168,14 +168,14 @@ export function loadUpstreamDataReaders(): {url: string, source: string}[] {
           if (source != null) {
             ret.push({
               url,
-              source: source.asText()
+              source: source.asText(),
             });
           }
         } else {
           const source = fs.readFileSync(url, 'utf8');
           ret.push({
             url,
-            source: source
+            source,
           });
         }
       } catch (_) {} // eslint-disable-line no-empty
