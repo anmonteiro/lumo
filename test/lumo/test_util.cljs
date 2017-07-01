@@ -7,7 +7,8 @@
 (defn with-lumo-globals [f]
   (set! (. js/global -$$LUMO_GLOBALS)
     #js {:parinfer (node/require "parinfer")
-         :getJSCompletions (fn [_ _ cb] (cb #js ["js/console"]))})
+         :getJSCompletions (fn [_ _ cb] (cb #js ["js/console"]))
+         :loadUpstreamDataReaders (constantly {})})
   (f)
   (set! (. js/global -$$LUMO_GLOBALS) nil))
 
