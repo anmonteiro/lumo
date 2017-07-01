@@ -69,9 +69,11 @@
 (deftask bundle-js
   [d dev     bool  "Development build"]
   (with-pass-thru _
-    (dosh "node" "scripts/build.js" (when dev "--dev"))
-    (when-not dev
-      (dosh "node" "scripts/bundleForeign.js"))))
+    (if dev
+      (dosh "yarn" "bundle")
+      (do
+        (dosh "yarn" "build")
+        (dosh "node" "scripts/bundleForeign.js")))))
 
 (defn write-cache! [cache out-path]
   (let [out (ByteArrayOutputStream. 1000000)

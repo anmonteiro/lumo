@@ -1,8 +1,8 @@
 /* @flow */
 
-import vm from 'vm';
-import startCLJS, * as cljs from '../cljs';
-import startREPL from '../repl';
+let startREPL = require('../repl').default;
+let { default: startCLJS, ...cljs } = require('../cljs');
+let vm = require('vm');
 
 jest.mock('../repl');
 jest.mock('../lumo', () => ({
@@ -16,8 +16,8 @@ const originalStdoutWrite = process.stdout.write;
 const originalStderrWrite = process.stderr.write;
 
 beforeEach(() => {
-  // process.stdout.write = jest.fn();
-  // process.stderr.write = jest.fn();
+  process.stdout.write = jest.fn();
+  process.stderr.write = jest.fn();
 });
 
 afterEach(() => {
@@ -35,17 +35,23 @@ afterAll(() => {
   process.exit = exit;
 });
 
-describe('startClojureScriptEngine', () => {
-  beforeEach(() => {
-    startREPL.mockClear();
-  });
+beforeEach(async () => {
+  jest.clearAllMocks();
+  jest.resetModules();
+  cljs = require('../cljs');
+  startCLJS = cljs.default;
+  startREPL = require('../repl').default;
+  vm = require('vm');
+});
 
+describe('startClojureScriptEngine', () => {
   it('should start a REPL if opts.repl is true', async () => {
     await startCLJS({
       repl: true,
       scripts: [],
     });
 
+    jest.runAllTicks();
     expect(startREPL).toHaveBeenCalled();
   });
 
@@ -81,8 +87,6 @@ describe('startClojureScriptEngine', () => {
     expect(startREPL).not.toHaveBeenCalled();
   });
 
-  // XXX: This is irrelevent since we start the cljs engine the moment we call startCLJS
-  // TODO: Remove?
   it("doesn't init the CLJS engine if it already started", async () => {
     await startCLJS({
       repl: true,
@@ -91,35 +95,28 @@ describe('startClojureScriptEngine', () => {
       args: [],
     });
 
+    jest.runAllTicks();
     expect(startREPL).toHaveBeenCalled();
   });
 
-  it('sets args and calls runMainNS if mainNsName specified', () => {
-    /* eslint-disable global-require */
-    const startClojureScriptEngine = require('../cljs').default;
-    /* eslint-enable global-require */
-
-    startClojureScriptEngine({
+  it('sets args and calls runMainNS if mainNsName specified', async () => {
+    await startCLJS({
       mainNsName: 'foo.core',
       args: ['a', 'b', 'c'],
       scripts: [],
     });
 
+    jest.runAllTicks();
     expect(vm.ctx.cljs.core.seq).toHaveBeenCalled();
   });
 
   describe('in development', () => {
-    let startClojureScriptEngine;
-
     beforeAll(() => {
       jest.clearAllMocks();
-      /* eslint-disable global-require */
-      startClojureScriptEngine = require('../cljs').default;
-      /* eslint-enable global-require */
     });
 
     it('creates and returns a vm context', async () => {
-      await startClojureScriptEngine({
+      await startCLJS({
         repl: true,
         scripts: [],
         args: [],
@@ -132,21 +129,31 @@ describe('startClojureScriptEngine', () => {
   });
 });
 
-describe('isReadable', () => {
-  it('calls into the CLJS context', () => {
-    expect(cljs.isReadable('()')).toBe('');
+describe('misc fns', () => {
+  beforeEach(async () => {
+    await startCLJS({
+      repl: true,
+      scripts: [],
+    });
+    jest.runAllTicks();
   });
-});
 
-describe('getCurrentNamespace', () => {
-  it('calls into the CLJS context', () => {
-    expect(cljs.getCurrentNamespace()).toBe('cljs.user');
+  describe('isReadable', () => {
+    it('calls into the CLJS context', async () => {
+      expect(cljs.isReadable('()')).toBe('');
+    });
   });
-});
 
-describe('getHighlightCoordinates', () => {
-  it('calls into the CLJS context', () => {
-    expect(cljs.getHighlightCoordinates('(let [a 1)')).toBe(0);
+  describe('getCurrentNamespace', () => {
+    it('calls into the CLJS context', () => {
+      expect(cljs.getCurrentNamespace()).toBe('cljs.user');
+    });
+  });
+
+  describe('getHighlightCoordinates', () => {
+    it('calls into the CLJS context', () => {
+      expect(cljs.getHighlightCoordinates('(let [a 1)')).toBe(0);
+    });
   });
 });
 

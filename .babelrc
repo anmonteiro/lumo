@@ -3,7 +3,13 @@
   "env": {
     "test": {
       "presets": ["es2015", "stage-2"]
+    },
+    "development": {
+      "plugins": ["external-helpers"]
+    },
+    "production": {
+      "plugins": ["external-helpers"]
     }
   },
-  "plugins": ["transform-flow-strip-types", "./scripts/babel/strip-dev", "external-helpers"]
+  "plugins": ["transform-flow-strip-types", "./scripts/babel/strip-dev"]
 }

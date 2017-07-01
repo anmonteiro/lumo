@@ -1308,26 +1308,20 @@
 ;; --------------------
 ;; Socket Repl
 
-(defn ^:export js2clj
-  "For some reason, when we pass a JSON object from the JS side into the CLJS side,
-  this js->clj doesn't work and we just get js objects. This is one workaround, as converting
-  to a string and back again seems to fix things.
-
-  TODO: Figure out what's actually going on here. Timestamp: June 2nd, 2017"
-  [json]
-  (js->clj (js/JSON.parse (js/JSON.stringify json))))
-
 (defn ns-symbol [function]
   (symbol (namespace (symbol function))))
 
 (defn fn-string [function]
   (-> function symbol name))
 
-(defn ^:export run-accept-fn [accept-fn socket & args]
+(defn ^:export run-accept-fn [accept-fn socket args]
   (let [ns-sym (ns-symbol accept-fn)
         fn-str (fn-string accept-fn)
         opts (make-eval-opts)
-        fn-args (map js2clj args)]
+        fn-args (js->clj args)]
+    (println "haha" args fn-args)
+    (println (identical? (type (js/JSON.parse "{}")) js/Object)
+      (identical? (type (js/Object.assign #js {} (js/JSON.parse "{}"))) js/Object))
     (binding [cljs/*load-fn* load
               cljs/*eval-fn* caching-node-eval]
       (cljs/eval st
@@ -1342,6 +1336,7 @@
                                     (merge opts {:ns (symbol ns-sym)})
                                     (fn [{:keys [ns value error] :as ret}]
                                       (try
-                                        (apply value socket fn-args)
+                                        ;; TODO: do we wanna splice args?
+                                        (value socket fn-args)
                                         (catch :default e
                                           (handle-error e true)))))))))))

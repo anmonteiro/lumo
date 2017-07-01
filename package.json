@@ -18,6 +18,7 @@
     "prettier": "prettier --print-width 80 --single-quote --trailing-comma all --parser flow --write \"./{src,scripts,lib,packages}/**/**.{js,json}\"",
     "test": "jest",
     "bundle": "node scripts/build.js --dev",
+    "build": "NODE_ENV=production node scripts/build.js",
     "dev": "node target/bundle.js -k lumo-cache -c target",
     "postinstall": "opencollective postinstall"
   },
@@ -58,20 +59,11 @@
   "jest": {
     "verbose": true,
     "testEnvironment": "node",
-    "setupFiles": [
-      "./scripts/jest/environment.js"
-    ],
-    "collectCoverageFrom": [
-      "src/js/**/*.js"
-    ],
+    "setupFiles": ["./scripts/jest/environment.js"],
+    "collectCoverageFrom": ["src/js/**/*.js"],
     "coverageDirectory": "./coverage/",
-    "coveragePathIgnorePatterns": [
-      "<rootDir>/lib",
-      "<rootDir>/node_modules"
-    ],
-    "roots": [
-      "src/js"
-    ]
+    "coveragePathIgnorePatterns": ["<rootDir>/lib", "<rootDir>/node_modules"],
+    "roots": ["src/js"]
   },
   "collective": {
     "type": "opencollective",
