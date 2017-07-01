@@ -5,5 +5,5 @@
       "presets": ["es2015", "stage-2"]
     }
   },
-  "plugins": ["transform-flow-strip-types", "./scripts/babel/strip-dev"]
+  "plugins": ["transform-flow-strip-types", "./scripts/babel/strip-dev", "external-helpers"]
 }
