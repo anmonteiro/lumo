@@ -18,7 +18,7 @@
     "prettier": "prettier --print-width 80 --single-quote --trailing-comma all --parser flow --write \"./{src,scripts,lib,packages}/**/**.{js,json}\"",
     "test": "jest",
     "bundle": "node scripts/build.js --dev",
-    "build": "NODE_ENV=production node scripts/build.js",
+    "build": "cross-env NODE_ENV=production node scripts/build.js",
     "dev": "node target/bundle.js -k lumo-cache -c target",
     "postinstall": "opencollective postinstall"
   },
@@ -36,6 +36,7 @@
     "babel-plugin-transform-flow-strip-types": "^6.22.0",
     "babel-preset-es2015": "^6.24.0",
     "babel-preset-stage-2": "^6.22.0",
+    "cross-env": "^5.0.1",
     "eslint": "^3.19.0",
     "eslint-config-airbnb": "^15.0.1",
     "eslint-config-airbnb-base": "^11.2.0",
@@ -59,11 +60,20 @@
   "jest": {
     "verbose": true,
     "testEnvironment": "node",
-    "setupFiles": ["./scripts/jest/environment.js"],
-    "collectCoverageFrom": ["src/js/**/*.js"],
+    "setupFiles": [
+      "./scripts/jest/environment.js"
+    ],
+    "collectCoverageFrom": [
+      "src/js/**/*.js"
+    ],
     "coverageDirectory": "./coverage/",
-    "coveragePathIgnorePatterns": ["<rootDir>/lib", "<rootDir>/node_modules"],
-    "roots": ["src/js"]
+    "coveragePathIgnorePatterns": [
+      "<rootDir>/lib",
+      "<rootDir>/node_modules"
+    ],
+    "roots": [
+      "src/js"
+    ]
   },
   "collective": {
     "type": "opencollective",
