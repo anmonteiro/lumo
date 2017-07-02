@@ -60,18 +60,22 @@
 
 (deftask install-node-modules []
   (with-pass-thru _
-    (let [nm (io/file "node_modules")]
-      (util/info "Installing node dependencies with `yarn install`\n")
-      (if windows?
-        (dosh "cmd" "/c" "yarn" "install")
-        (dosh "yarn" "install")))))
+    (util/info "Installing node dependencies with `yarn install`\n")
+    (if windows?
+      (dosh "cmd" "/c" "yarn" "install")
+      (dosh "yarn" "install"))))
 
 (deftask bundle-js
   [d dev     bool  "Development build"]
   (with-pass-thru _
-    (dosh "node" "scripts/build.js" (when dev "--dev"))
-    (when-not dev
-      (dosh "node" "scripts/bundleForeign.js"))))
+    (if dev
+      (apply dosh
+        (cond->> ["yarn" "bundle"]
+          windows? (into ["cmd" "/c"])))
+      (do
+        (apply dosh (cond->> ["yarn" "build"]
+                      windows? (into ["cmd" "/c"])))
+        (dosh "node" "scripts/bundleForeign.js")))))
 
 (defn write-cache! [cache out-path]
   (let [out (ByteArrayOutputStream. 1000000)

@@ -1,58 +1,29 @@
 /* @flow */
 
-import startCLJS, * as cljs from '../cljs';
-import startREPL from '../repl';
-
+let startREPL = require('../repl').default;
+let { default: startCLJS, ...cljs } = require('../cljs');
 let vm = require('vm');
 
 jest.mock('../repl');
-
 jest.mock('../lumo', () => ({
   load: () => '',
 }));
-
 jest.mock('vm');
 
 jest.useFakeTimers();
 
-const ctx = {
-  cljs: {
-    core: {
-      set_print_fn_BANG_: jest.fn(),
-      set_print_err_fn_BANG_: jest.fn(),
-      // eslint-disable-next-line prefer-arrow-callback
-      seq: jest.fn(function seq<T>(x: T[]): T[] {
-        return x;
-      }),
-    },
-  },
-  lumo: {
-    repl: {
-      init: () => {},
-      set_ns: () => {},
-      execute: () => {},
-      is_readable_QMARK_: () => '',
-      get_current_ns: () => 'cljs.user',
-      get_highlight_coordinates: (text: string) => 0,
-      get_completions: (text: string) => [],
-      run_main: (mainNS: string, args: string[]) => undefined,
-    },
-    core: {},
-  },
-};
+const originalStdoutWrite = process.stdout.write;
+const originalStderrWrite = process.stderr.write;
 
-let cljsContext;
+beforeEach(() => {
+  process.stdout.write = jest.fn();
+  process.stderr.write = jest.fn();
+});
 
-function setupVmMocks(): void {
-  vm.createContext.mockImplementation((x: vm$Context) => x);
-
-  vm.Script.prototype.runInContext.mockImplementation((context: vm$Context) => {
-    cljsContext = Object.assign(context, ctx);
-    return cljsContext;
-  });
-}
-
-setupVmMocks();
+afterEach(() => {
+  process.stdout.write = originalStdoutWrite;
+  process.stderr.write = originalStderrWrite;
+});
 
 const exit = process.exit;
 
@@ -64,22 +35,30 @@ afterAll(() => {
   process.exit = exit;
 });
 
-describe('startClojureScriptEngine', () => {
-  beforeEach(() => {
-    startREPL.mockClear();
-  });
+beforeEach(async () => {
+  jest.clearAllMocks();
+  jest.resetModules();
+  /* eslint-disable global-require */
+  cljs = require('../cljs');
+  startCLJS = cljs.default;
+  startREPL = require('../repl').default;
+  vm = require('vm');
+  /* eslint-enable global-require */
+});
 
-  it('should start a REPL if opts.repl is true', () => {
-    startCLJS({
+describe('startClojureScriptEngine', () => {
+  it('should start a REPL if opts.repl is true', async () => {
+    await startCLJS({
       repl: true,
       scripts: [],
     });
 
+    jest.runAllTicks();
     expect(startREPL).toHaveBeenCalled();
   });
 
-  it('returns undefined if opts.repl is false', () => {
-    const ret = startCLJS({
+  it('returns undefined if opts.repl is false', async () => {
+    const ret = await startCLJS({
       repl: false,
       scripts: [],
       args: [],
@@ -90,7 +69,7 @@ describe('startClojureScriptEngine', () => {
 
     startREPL.mockClear();
 
-    const ret2 = startCLJS({
+    const ret2 = await startCLJS({
       repl: false,
       scripts: [['text', ':foo'], ['path', 'foo.cljs']],
       args: [],
@@ -100,8 +79,8 @@ describe('startClojureScriptEngine', () => {
     expect(ret2).toBeUndefined();
   });
 
-  it("calls `executeScript` and bails if there's a main opt", () => {
-    startCLJS({
+  it("calls `executeScript` and bails if there's a main opt", async () => {
+    await startCLJS({
       repl: false,
       mainScript: 'foo.cljs',
       scripts: [],
@@ -110,48 +89,36 @@ describe('startClojureScriptEngine', () => {
     expect(startREPL).not.toHaveBeenCalled();
   });
 
-  it("doesn't init the CLJS engine if it already started", () => {
-    startCLJS({
+  it("doesn't init the CLJS engine if it already started", async () => {
+    await startCLJS({
       repl: true,
       // scripts will init the ClojureScript engine
       scripts: [['text', ':foo'], ['path', 'foo.cljs']],
       args: [],
     });
 
+    jest.runAllTicks();
     expect(startREPL).toHaveBeenCalled();
   });
 
-  it('sets args and calls runMainNS if mainNsName specified', () => {
-    jest.resetModules();
-    /* eslint-disable global-require */
-    const startClojureScriptEngine = require('../cljs').default;
-    vm = require('vm');
-    /* eslint-enable global-require */
-    setupVmMocks();
-
-    startClojureScriptEngine({
+  it('sets args and calls runMainNS if mainNsName specified', async () => {
+    await startCLJS({
       mainNsName: 'foo.core',
       args: ['a', 'b', 'c'],
       scripts: [],
     });
 
-    expect(ctx.cljs.core.seq).toHaveBeenCalled();
+    jest.runAllTicks();
+    expect(vm.ctx.cljs.core.seq).toHaveBeenCalled();
   });
 
   describe('in development', () => {
-    let startClojureScriptEngine;
-
     beforeAll(() => {
-      jest.resetModules();
-      /* eslint-disable global-require */
-      startClojureScriptEngine = require('../cljs').default;
-      vm = require('vm');
-      /* eslint-enable global-require */
-      setupVmMocks();
+      jest.clearAllMocks();
     });
 
-    it('creates and returns a vm context', () => {
-      startClojureScriptEngine({
+    it('creates and returns a vm context', async () => {
+      await startCLJS({
         repl: true,
         scripts: [],
         args: [],
@@ -164,27 +131,31 @@ describe('startClojureScriptEngine', () => {
   });
 });
 
-describe('isReadable', () => {
-  it('calls into the CLJS context', () => {
-    expect(cljs.isReadable('()')).toBe('');
+describe('misc fns', () => {
+  beforeEach(async () => {
+    await startCLJS({
+      repl: true,
+      scripts: [],
+    });
+    jest.runAllTicks();
   });
-});
 
-describe('getCurrentNamespace', () => {
-  it('calls into the CLJS context', () => {
-    expect(cljs.getCurrentNamespace()).toBe('cljs.user');
+  describe('isReadable', () => {
+    it('calls into the CLJS context', async () => {
+      expect(cljs.isReadable('()')).toBe('');
+    });
   });
-});
 
-describe('getHighlightCoordinates', () => {
-  it('calls into the CLJS context', () => {
-    expect(cljs.getHighlightCoordinates('(let [a 1)')).toBe(0);
+  describe('getCurrentNamespace', () => {
+    it('calls into the CLJS context', () => {
+      expect(cljs.getCurrentNamespace()).toBe('cljs.user');
+    });
   });
-});
 
-describe('indentSpaceCount', () => {
-  it('calls into the CLJS context', () => {
-    expect(cljs.getCompletions('(de)')).toEqual([]);
+  describe('getHighlightCoordinates', () => {
+    it('calls into the CLJS context', () => {
+      expect(cljs.getHighlightCoordinates('(let [a 1)')).toBe(0);
+    });
   });
 });
 
@@ -194,15 +165,15 @@ describe('lumoEval', () => {
       vm.runInContext.mockClear();
     });
 
-    it('evals expressions in the ClojureScript context', () => {
-      startCLJS({
+    it('evals expressions in the ClojureScript context', async () => {
+      await startCLJS({
         repl: true,
         _: [],
         scripts: [],
       });
       jest.runAllTicks();
 
-      cljsContext.$$LUMO_GLOBALS.eval('source');
+      vm.ctx.$$LUMO_GLOBALS.eval('source');
       expect(vm.runInContext).toHaveBeenCalledTimes(1);
     });
   });
@@ -211,30 +182,32 @@ describe('lumoEval', () => {
     let startClojureScriptEngine;
 
     beforeEach(() => {
-      jest.resetModules();
       Object.assign(
         global,
         {
           initialize: jest.fn(),
           __DEV__: false,
         },
-        ctx,
+        vm.ctx,
       );
       // eslint-disable-next-line global-require
       startClojureScriptEngine = require('../cljs').default;
     });
 
     afterEach(() => {
-      Object.keys(ctx)
+      Object.keys(vm.ctx)
         .concat(['initialize'])
+        .filter((x: string) => !/console|process|module|exports/.test(x))
         .forEach((key: string, idx: number) => {
           global[key] = undefined;
         });
       __DEV__ = true;
     });
 
-    it('evals expressions in the ClojureScript context', () => {
-      startClojureScriptEngine({
+    it('evals expressions in the ClojureScript context', async () => {
+      expect.assertions(1);
+
+      await startClojureScriptEngine({
         repl: true,
         _: [],
         scripts: [],
@@ -242,7 +215,7 @@ describe('lumoEval', () => {
       });
       jest.runAllTicks();
 
-      cljsContext.$$LUMO_GLOBALS.eval('source');
+      global.$$LUMO_GLOBALS.eval('source', false);
       expect(vm.runInThisContext).toHaveBeenCalledTimes(1);
     });
   });

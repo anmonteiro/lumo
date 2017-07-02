@@ -1,6 +1,15 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`getCliOpts produces an error when an option is not given to -k / --cache 1`] = `
+exports[`getCliOpts Socket repl throws errors if you give it an empty string 1`] = `
+Array [
+  Array [
+    "option requires an argument -- n
+",
+  ],
+]
+`;
+
+exports[`getCliOpts with mocked CLJS produces an error when an option is not given to -k / --cache 1`] = `
 Array [
   Array [
     "option requires an argument -- k
@@ -76,8 +85,13 @@ Usage:  lumo [init-opt*] [main-opt] [arg*]
     -f, --fn-invoke-direct       Do not not generate \`.call(null...)\` calls
                                  for unknown functions, but instead direct
                                  invokes via \`f(a0,a1...)\`.
-    -n x, --socket-repl x        Enable a socket REPL where x is port or
-                                 \`hostname:port\`
+    -n opts, --socket-repl x     Enable a socket REPL where x is port, IP:port
+                                 or JSON of the following form, where port is
+                                 required:
+                                 {\\"host\\":   \\"localhost\\",
+                                  \\"port\\":   12345,
+                                  \\"accept\\": \\"some.namespaced.clojure/fn\\",
+                                  \\"args\\":   [\\"args\\", {\\"for\\": \\"the accept fn\\"}]}
 
   main options:
     -m ns-name, --main=ns-name   Call the -main function from a namespace

@@ -6,7 +6,6 @@ import startClojureScriptEngine from './cljs';
 import printLegal from './legal';
 import * as lumo from './lumo';
 import * as util from './util';
-import * as socketRepl from './socketRepl';
 import lumoVersion from './version';
 
 type ScriptsType = [string, string][];
@@ -87,8 +86,13 @@ Usage:  lumo [init-opt*] [main-opt] [arg*]
     -f, --fn-invoke-direct       Do not not generate \`.call(null...)\` calls
                                  for unknown functions, but instead direct
                                  invokes via \`f(a0,a1...)\`.
-    -n x, --socket-repl x        Enable a socket REPL where x is port or
-                                 \`hostname:port\`
+    -n opts, --socket-repl x     Enable a socket REPL where x is port, IP:port
+                                 or JSON of the following form, where port is
+                                 required:
+                                 {"host":   "localhost",
+                                  "port":   12345,
+                                  "accept": "some.namespaced.clojure/fn",
+                                  "args":   ["args", {"for": "the accept fn"}]}
 
   main options:
     -m ns-name, --main=ns-name   Call the -main function from a namespace
@@ -266,7 +270,6 @@ async function startCLI(): Promise<mixed> {
   } = opts;
   const autoCache = opts['auto-cache'];
   const localRepo = opts['local-repo'];
-  const socketReplArgs = opts['socket-repl'];
   const dumpSDK = opts['dump-sdk'];
 
   // if help, print help and bail
@@ -323,30 +326,6 @@ async function startCLI(): Promise<mixed> {
 
   if (opts.repl && !quiet) {
     printBanner();
-  }
-
-  if (socketReplArgs != null) {
-    let [host, port] = socketReplArgs.split(':');
-
-    if (host != null && !isNaN(host)) {
-      [host, port] = [port, host];
-    }
-
-    try {
-      await socketRepl.open(parseInt(port, 10), host);
-
-      if (!quiet) {
-        process.stdout.write(
-          `Lumo socket REPL listening at ${host != null
-            ? host
-            : 'localhost'}:${port}.\n`,
-        );
-      }
-    } catch (e) {
-      // I wanted to destructure with { message } but
-      // ran into https://github.com/facebook/flow/issues/3874
-      process.stderr.write(`Error: ${e.message}\n`);
-    }
   }
 
   return startClojureScriptEngine(opts);
