@@ -71,7 +71,7 @@
                   (not (js/$$LUMO_GLOBALS.fs.existsSync new-path))
                   js/$$LUMO_GLOBALS.fs.mkdirSync)
                 new-path))
-      "/" (rest (string/split target-dir #"/")))))
+      "/" (rest (string/split target-dir #"[/\\]")))))
 
 (defn bundled-resource? [x]
   (and (goog/isObject x) (= (.-type x) "bundled")))
