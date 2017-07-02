@@ -60,20 +60,12 @@
   "jest": {
     "verbose": true,
     "testEnvironment": "node",
-    "setupFiles": [
-      "./scripts/jest/environment.js"
-    ],
-    "collectCoverageFrom": [
-      "src/js/**/*.js"
-    ],
+    "setupFiles": ["./scripts/jest/environment.js"],
+    "collectCoverageFrom": ["src/js/**/*.js"],
     "coverageDirectory": "./coverage/",
-    "coveragePathIgnorePatterns": [
-      "<rootDir>/lib",
-      "<rootDir>/node_modules"
-    ],
-    "roots": [
-      "src/js"
-    ]
+    "coveragePathIgnorePatterns": ["<rootDir>/lib", "<rootDir>/node_modules"],
+    "roots": ["src/js"],
+    "resetModules": true
   },
   "collective": {
     "type": "opencollective",

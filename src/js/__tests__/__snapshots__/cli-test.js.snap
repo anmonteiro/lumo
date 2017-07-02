@@ -1,9 +1,63 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
+exports[`getCliOpts Socket repl throws errors if you give it a port object that isn't a number 1`] = `
+Array [
+  Array [
+    "Error: \\"port\\" argument must be >= 0 and < 65536
+",
+  ],
+]
+`;
+
+exports[`getCliOpts Socket repl throws errors if you give it a port string that isn't a number 1`] = `
+Array [
+  Array [
+    "Error: \\"port\\" argument must be >= 0 and < 65536
+",
+  ],
+]
+`;
+
+exports[`getCliOpts Socket repl throws errors if you give it an empty object 1`] = `
+Array [
+  Array [
+    "Error: \\"port\\" argument must be >= 0 and < 65536
+",
+  ],
+]
+`;
+
 exports[`getCliOpts Socket repl throws errors if you give it an empty string 1`] = `
 Array [
   Array [
     "option requires an argument -- n
+",
+  ],
+]
+`;
+
+exports[`getCliOpts Socket repl throws errors if you give it invalid JSON 1`] = `
+Array [
+  Array [
+    "Error: Unexpected token p in JSON at position 1
+",
+  ],
+]
+`;
+
+exports[`getCliOpts Socket repl throws errors if you give it just a host object 1`] = `
+Array [
+  Array [
+    "Error: \\"port\\" argument must be >= 0 and < 65536
+",
+  ],
+]
+`;
+
+exports[`getCliOpts Socket repl throws errors if you give it just a host string 1`] = `
+Array [
+  Array [
+    "Error: \\"port\\" argument must be >= 0 and < 65536
 ",
   ],
 ]

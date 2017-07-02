@@ -1,3 +1,5 @@
+/* @flow */
+
 import net from 'net';
 
 let socketRepl = require('../socketRepl');
@@ -62,14 +64,16 @@ describe('open', () => {
   });
 
   afterEach(() => {
+    socketServer = null;
     socketRepl.close();
     net.createServer = netCreateServer;
     net.Server.prototype.listen = netServerListen;
+    net.Server.prototype.close = netServerClose;
     process.on = processOn;
   });
 
   it('creates a server listening on a specified host and port', () => {
-    socketRepl.open(serverPort, serverHost);
+    socketRepl.open({ port: serverPort, host: serverHost });
 
     expect(socketServer.listen).toHaveBeenCalledTimes(1);
     expect(socketServer.listen.mock.calls[0].slice(0, 2)).toEqual([
@@ -79,7 +83,7 @@ describe('open', () => {
   });
 
   it('registers process handlers for SIGHUP & SIGTERM', () => {
-    socketRepl.open(serverPort, serverHost);
+    socketRepl.open({ port: serverPort, host: serverHost });
 
     expect(process.on).toHaveBeenCalledTimes(2);
     expect(
@@ -88,7 +92,7 @@ describe('open', () => {
   });
 
   it('defaults to localhost if no host specified', () => {
-    socketRepl.open(serverPort);
+    socketRepl.open({ port: serverPort });
 
     expect(socketServer.listen).toHaveBeenCalledTimes(1);
     expect(socketServer.listen.mock.calls[0].slice(0, 2)).toEqual([
@@ -102,7 +106,6 @@ describe('close', () => {
   let socketServer;
 
   beforeEach(() => {
-    jest.resetModules();
     socketRepl = require('../socketRepl'); // eslint-disable-line global-require
     net.createServer = jest.fn((callback: SocketCallback) => {
       socketServer = new net.Server();
@@ -135,7 +138,7 @@ describe('close', () => {
   });
 
   it('closes the server', () => {
-    socketRepl.open(serverPort, serverHost);
+    socketRepl.open({ port: serverPort, host: serverHost });
     socketRepl.close();
 
     expect(net.Server.prototype.close).toHaveBeenCalledTimes(1);
@@ -161,13 +164,14 @@ describe('handleConnection', () => {
       };
     });
     net.Socket.prototype.write = jest.fn((text: string) => undefined);
-    socketRepl.open(serverPort, serverHost);
+    socketRepl.open({ port: serverPort, host: serverHost });
     socket = new net.Socket();
     socket.on = jest.fn((type: string, f: () => void) => f());
   });
 
   afterEach(() => {
     socket.end();
+    net.createServer = netCreateServer;
     net.Socket.prototype.write = netSocketWrite;
     net.Socket.prototype.on = netSocketOn;
   });

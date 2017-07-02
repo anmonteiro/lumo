@@ -5,6 +5,10 @@
 ### New features
 
 - Add support for tagged literals ([#75](https://github.com/anmonteiro/lumo/issues/75)).
+- Add support for running custom accept functions in the Lumo socket server ([#105](https://github.com/anmonteiro/lumo/pull/105)).
+The `--socket-repl` option can now be a JSON object with `accept` and `args` keys
+(in addition to `port` and `host`) where `accept` is a namespace qualified string
+for a function that will run when accepting a new connection.
 
 ### Changes
 - Use Paredit.js to calculate indentation for multiline forms ([#193](https://github.com/anmonteiro/lumo/issues/193)).

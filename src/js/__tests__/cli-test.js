@@ -1,4 +1,5 @@
 /* @flow */
+/* eslint-disable global-require */
 
 import os from 'os';
 import path from 'path';
@@ -9,7 +10,6 @@ let socketRepl = require('../socketRepl');
 let cljs = require('../cljs').default;
 let v8 = require('v8');
 
-jest.mock('net');
 jest.mock('v8');
 jest.mock('../socketRepl');
 jest.mock('../repl');
@@ -20,6 +20,8 @@ jest.mock('../lumo', () => ({
   addSourcePaths: jest.fn((srcPaths: string[]) => undefined),
   load: jest.fn((x: string) => x),
 }));
+
+jest.useFakeTimers();
 
 const originalArgv = process.argv;
 const originalStdoutWrite = process.stdout.write;
@@ -55,14 +57,11 @@ afterEach(() => {
 
 describe('getCliOpts', () => {
   describe('with mocked CLJS', () => {
-    beforeAll(() => {
-      jest.resetModules();
-      /* eslint-disable global-require */
+    beforeEach(() => {
       cljs = require('../cljs').default;
       jest.mock('../cljs');
       lumo = require('../lumo');
       startCLI = require('../cli').default;
-      /* eslint-enable global-require */
     });
 
     beforeEach(() => {
@@ -318,21 +317,25 @@ describe('getCliOpts', () => {
   });
 
   describe('Socket repl', () => {
-    beforeAll(() => {
-      jest.resetModules();
-      jest.unmock('../cljs');
-      /* eslint-disable global-require */
-      startCLI = require('../cli').default;
-      cljs = require('../cljs').default;
-      socketRepl = require('../socketRepl');
-      /* eslint-enable global-require */
-    });
-
     beforeEach(() => {
       jest.clearAllMocks();
+      jest.unmock('../cljs');
+      startCLI = require('../cli').default;
+      cljs = require('../cljs').default;
+      jest.unmock('../socketRepl');
+      socketRepl = require('../socketRepl');
+    });
+
+    afterEach(() => {
+      socketRepl.close();
     });
 
     it('starts a socket server if only a port given', async () => {
+      jest.resetModules();
+      jest.mock('../socketRepl');
+      socketRepl = require('../socketRepl');
+      startCLI = require('../cli').default;
+
       const args = '-n 5555';
       Object.defineProperty(process, 'argv', {
         value: ['', ''].concat(args.split(' ')),
@@ -341,12 +344,10 @@ describe('getCliOpts', () => {
       await startCLI();
 
       expect(socketRepl.open).toHaveBeenCalledTimes(1);
-      expect(socketRepl.open).toHaveBeenCalledWith(
-        5555,
-        undefined,
-        undefined,
-        undefined,
-      );
+      expect(socketRepl.open).toHaveBeenCalledWith({
+        host: undefined,
+        port: 5555,
+      });
     });
 
     describe('throws errors if you give it', () => {
@@ -369,8 +370,22 @@ describe('getCliOpts', () => {
           value: ['', ''].concat(args.split(' ')),
         });
 
-        expect.assertions(1);
-        await expect(startCLI()).rejects.toBeInstanceOf(SyntaxError);
+        await startCLI();
+
+        expect(process.stderr.write).toHaveBeenCalled();
+        expect(process.stderr.write.mock.calls).toMatchSnapshot();
+      });
+
+      it('invalid JSON', async () => {
+        const args = '-n {port: 12345}';
+        Object.defineProperty(process, 'argv', {
+          value: ['', ''].concat(args.split(' ')),
+        });
+
+        await startCLI();
+
+        expect(process.stderr.write).toHaveBeenCalled();
+        expect(process.stderr.write.mock.calls).toMatchSnapshot();
       });
 
       it('just a host string', async () => {
@@ -379,8 +394,10 @@ describe('getCliOpts', () => {
           value: ['', ''].concat(args.split(' ')),
         });
 
-        expect.assertions(1);
-        await expect(startCLI()).rejects.toBeInstanceOf(SyntaxError);
+        await startCLI();
+
+        expect(process.stderr.write).toHaveBeenCalled();
+        expect(process.stderr.write.mock.calls).toMatchSnapshot();
       });
 
       it('just a host object', async () => {
@@ -389,8 +406,10 @@ describe('getCliOpts', () => {
           value: ['', ''].concat(args.split(' ')),
         });
 
-        expect.assertions(1);
-        await expect(startCLI()).rejects.toBeInstanceOf(SyntaxError);
+        await startCLI();
+
+        expect(process.stderr.write).toHaveBeenCalled();
+        expect(process.stderr.write.mock.calls).toMatchSnapshot();
       });
 
       it("a port string that isn't a number", async () => {
@@ -399,8 +418,10 @@ describe('getCliOpts', () => {
           value: ['', ''].concat(args.split(' ')),
         });
 
-        expect.assertions(1);
-        await expect(startCLI()).rejects.toBeInstanceOf(SyntaxError);
+        await startCLI();
+
+        expect(process.stderr.write).toHaveBeenCalled();
+        expect(process.stderr.write.mock.calls).toMatchSnapshot();
       });
 
       it("a port object that isn't a number", async () => {
@@ -409,8 +430,10 @@ describe('getCliOpts', () => {
           value: ['', ''].concat(args.split(' ')),
         });
 
-        expect.assertions(1);
-        await expect(startCLI()).rejects.toBeInstanceOf(SyntaxError);
+        await startCLI();
+
+        expect(process.stderr.write).toHaveBeenCalled();
+        expect(process.stderr.write.mock.calls).toMatchSnapshot();
       });
     });
   });
@@ -443,6 +466,7 @@ describe('print Functions', () => {
       });
 
       await startCLI();
+      socketRepl.close();
       expect(process.stdout.write.mock.calls).toMatchSnapshot();
     });
 
@@ -499,15 +523,16 @@ describe('print Functions', () => {
 
 describe('starting Lumo', () => {
   beforeAll(() => {
-    v8 = require('v8'); // eslint-disable-line global-require
+    v8 = require('v8');
+    startCLI = require('../cli').default;
   });
 
-  it("always sets use-strict in V8's options", () => {
+  it("always sets use-strict in V8's options", async () => {
     Object.defineProperty(process, 'argv', {
       value: ['', ''],
     });
 
-    startCLI();
+    await startCLI();
 
     expect(v8.setFlagsFromString).toHaveBeenCalledWith('--use_strict');
   });

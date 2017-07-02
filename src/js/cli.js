@@ -252,7 +252,7 @@ function getCLIOpts(): CLIOptsType {
   return ret;
 }
 
-async function startCLI(): Promise<mixed> {
+function startCLI(): mixed {
   const opts = getCLIOpts();
   const {
     args,

@@ -381,48 +381,24 @@ async function initSocketRepl(
   //  "port": 12345, ;; Required
   //  "accept": "some.namespaced/fn", ;; Defaults to opening a socket repl
   //  "args": ["a list of args", 9999, {"foo": "bar"}]} ;; This has no default
-
   const hostAndPortRegex = /(?:(?:(^.*?):)|^)(\d{1,5})$/;
-  const hostPortMatch = socketReplArgs.match(hostAndPortRegex);
-
-  // TODO: I think I need to handle default cases for these variables differently
-  let host = '';
-  let port = '';
-  let acceptFn: (socket: net$Socket) => void | string;
-  let acceptArgs: Array<mixed>;
-  let replOpts;
-
-  // We only accept JSON objects, ports, or host:port pairs
-  if (/^{/.test(socketReplArgs)) {
-    // This throws SyntaxError if we're passed invalid JSON
-    replOpts = JSON.parse(socketReplArgs);
-  } else if (hostPortMatch != null) {
-    [, host, port] = hostPortMatch;
-  } else {
-    throw new SyntaxError(
-      `Got Socket REPL args, but they were unparsable. Args were: ${socketReplArgs}`,
-    );
-  }
-
-  if (replOpts != null) {
-    host = replOpts.host;
-    port = replOpts.port;
-    acceptFn = replOpts.accept;
-    acceptArgs = replOpts.args;
-  }
-
-  if (isNaN(parseInt(port, 10))) {
-    throw new SyntaxError(`Specified port is not a number. Port is: ${port}`);
-  }
+  const [, host, port] = socketReplArgs.match(hostAndPortRegex) || [];
 
   try {
-    await socketRepl.open(parseInt(port, 10), host, acceptFn, acceptArgs);
+    const replOpts = /^{/.test(socketReplArgs)
+      ? JSON.parse(socketReplArgs)
+      : { host, port };
+
+    replOpts.port = parseInt(replOpts.port, 10);
+
+    // $FlowIssue: we have converted port to number
+    await socketRepl.open(replOpts);
 
     if (!quiet) {
       process.stdout.write(
-        `Lumo socket REPL listening at ${host != null
+        `Lumo socket REPL listening at ${replOpts.host != null
           ? host
-          : 'localhost'}:${port}.\n`,
+          : 'localhost'}:${replOpts.port}.\n`,
       );
     }
   } catch (e) {
@@ -432,9 +408,7 @@ async function initSocketRepl(
   }
 }
 
-export default (async function startClojureScriptEngine(
-  opts: CLIOptsType,
-): Promise<mixed> {
+async function startClojureScriptEngine(opts: CLIOptsType): Promise<mixed> {
   const { args, mainNsName, mainScript, repl, scripts, quiet } = opts;
   const socketReplArgs = opts['socket-repl'];
 
@@ -482,4 +456,6 @@ export default (async function startClojureScriptEngine(
 
     startREPL(opts);
   }
-});
+}
+
+export default startClojureScriptEngine;

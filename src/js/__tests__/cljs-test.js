@@ -1,4 +1,5 @@
 /* @flow */
+/* eslint-disable global-require */
 
 let startREPL = require('../repl').default;
 let { default: startCLJS, ...cljs } = require('../cljs');
@@ -37,13 +38,10 @@ afterAll(() => {
 
 beforeEach(async () => {
   jest.clearAllMocks();
-  jest.resetModules();
-  /* eslint-disable global-require */
   cljs = require('../cljs');
   startCLJS = cljs.default;
   startREPL = require('../repl').default;
   vm = require('vm');
-  /* eslint-enable global-require */
 });
 
 describe('startClojureScriptEngine', () => {
@@ -190,7 +188,6 @@ describe('lumoEval', () => {
         },
         vm.ctx,
       );
-      // eslint-disable-next-line global-require
       startClojureScriptEngine = require('../cljs').default;
     });
 
