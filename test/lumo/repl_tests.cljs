@@ -14,12 +14,6 @@
   (is (= (lumo/is-readable? "") ""))
   (is (= (lumo/is-readable? ")") "")))
 
-(deftest indent-space-count-test
-  (is (= (lumo/indent-space-count "(let [") 6))
-  (is (= (lumo/indent-space-count "(do") 1))
-  (is (= (lumo/indent-space-count "(let [a 1") 6))
-  (is (= (lumo/indent-space-count "[[[[\n]") 0)))
-
 (deftest test-form-start
   (is (= (lumo/form-start "( )" 2) 0))
   (is (= (lumo/form-start "(let [a 1\nb 2])" 13) 5))
