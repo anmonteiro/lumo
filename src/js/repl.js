@@ -30,12 +30,12 @@ export type REPLSession = {
   previousPrompt: string,
   previousLine: string,
   previousCursor: number,
+  isPasting: boolean,
+  lastKeypressTime: number,
 };
 
 const exitCommands = new Set([':cljs/quit', 'exit']);
 let sessionCount = 0;
-let lastKeypressTime: number;
-let isPasting: boolean;
 const pendingHighlights = [];
 
 const sessions: { [key: number]: REPLSession } = {};
@@ -72,6 +72,13 @@ function stopREPL(): void {
   keys.forEach((id: string) => deleteSession(sessions[parseInt(id, 10)]));
 
   process.exit();
+}
+
+function inferPastingBehavior(replSession: REPLSession): void {
+  const session = replSession;
+  const now = currentTimeMicros();
+  session.isPasting = now - session.lastKeypressTime < 10000;
+  session.lastKeypressTime = now;
 }
 
 export function processLine(replSession: REPLSession, line: string): void {
@@ -125,16 +132,18 @@ export function processLine(replSession: REPLSession, line: string): void {
       // partially entered form, prepare for processing the next line.
       prompt(rl, true);
 
-      if (!isPasting) {
+      if (!session.isPasting) {
         const indentation = indentationSpaces(currentInput);
+
         if (indentation != null) {
-          rl.write(indentation);
+          // write explicitly to the output stream when socket or non-TTY
+          const writeFn = isMain && rl.terminal ? rl.write : rl.output.write;
+          writeFn(indentation);
         }
       }
       break;
     }
   }
-
   return undefined;
 }
 
@@ -340,11 +349,9 @@ function handleKeyPress(
     );
     rl.prompt(true);
   } else {
-    const now = currentTimeMicros();
-    isPasting = now - lastKeypressTime < 10000;
-    lastKeypressTime = now;
+    inferPastingBehavior(session);
 
-    if (!isPasting) {
+    if (!session.isPasting) {
       highlight(session, c, rl.line, rl.cursor);
     }
   }
@@ -365,6 +372,8 @@ export function createSession(
     previousPrompt: rl._prompt,
     previousLine: rl.line,
     previousCursor: rl.cursor,
+    lastKeypressTime: currentTimeMicros(),
+    isPasting: false,
   };
 
   sessionCount += 1;
@@ -410,7 +419,6 @@ export default function startREPL(opts: CLIOptsType): void {
   rl.on('close', () => stopREPL());
   rl.on('SIGCONT', () => rl.prompt());
 
-  lastKeypressTime = currentTimeMicros();
   process.stdin.on('keypress', (c: string, key: KeyType) =>
     handleKeyPress(session, c, key),
   );

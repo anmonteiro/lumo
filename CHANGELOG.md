@@ -11,7 +11,12 @@ The `--socket-repl` option can now be a JSON object with `accept` and `args` key
 for a function that will run when accepting a new connection.
 
 ### Changes
+
 - Use Paredit.js to calculate indentation for multiline forms ([#193](https://github.com/anmonteiro/lumo/issues/193)).
+
+### Bug fixes
+
+- Isolate copy paste inference per readline session ([#197](https://github.com/anmonteiro/lumo/issues/197)).
 
 ## [1.6.0](https://github.com/anmonteiro/lumo/compare/1.5.0...1.6.0) (2017-06-30)
 
