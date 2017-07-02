@@ -906,8 +906,8 @@
   "Returns the merged data reader mappings."
   []
   (reduce (fn [data-readers url+source]
-            (let [url      (aget url+source "url")
-                  source   (aget url+source "source")
+            (let [url      (.-url url+source)
+                  source   (.-source url+source)
                   mappings (r/read-string source)]
               (when-not (map? mappings)
                 (throw (ex-info (str "Not a valid data-reader map")
@@ -917,8 +917,8 @@
                              (throw (ex-info (str "Invalid form in data-reader file")
                                              {:url  url
                                               :form tag})))
-                           (when (and (data-readers tag)
-                                      (not= (mappings tag) fn-sym))
+                           (when (and (get data-readers tag)
+                                      (not= (get mappings tag) fn-sym))
                                 (throw (ex-info "Conflicting data-reader mapping"
                                          {:url      url
                                           :conflict tag
