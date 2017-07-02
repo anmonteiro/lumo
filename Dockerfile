@@ -1,15 +1,13 @@
-FROM alpine:latest
+FROM jllopis/busybox
+
 MAINTAINER António Nuno Monteiro <anmonteiro@gmail.com>
 
-# install dependencies
-RUN apk update && apk upgrade && apk add openssl
+ADD https://github.com/anmonteiro/lumo/releases/download/1.6.0/lumo_linux64.zip /lumo.zip
 
-RUN mkdir -p /out
+RUN unzip lumo.zip \
+  && rm -rf lumo.zip \
+  && chmod a+x lumo
 
-RUN wget https://github.com/anmonteiro/lumo/releases/download/1.5.0/lumo_linux64.zip \
-  && unzip lumo_linux64.zip \
-  && mv lumo /out
+ADD ./shared-libs/libstdc++.so.6 /lib64
 
-WORKDIR /out
-
-ENTRYPOINT [ "/out/lumo" ]
+ENTRYPOINT [ "/lumo" ]
