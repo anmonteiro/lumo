@@ -83,11 +83,13 @@
   (and (goog/isObject x) (= (.-type x) "file")))
 
 (defn last-modified [path]
-  (cond
-    (bundled-resource? path) (.getTime (js/Date.))
-    (jar-resource? path) (.getTime (.-date path))
-    (resource? path) (.getTime (.-mtime (js/$$LUMO_GLOBALS.fs.statSync (.-src path))))
-    :else (.getTime (.-mtime (js/$$LUMO_GLOBALS.fs.statSync path)))))
+  (-> (cond
+        (bundled-resource? path) (js/Date.)
+        (jar-resource? path) (.-date path)
+        (resource? path) (.-mtime (js/$$LUMO_GLOBALS.fs.statSync (.-src path)))
+        :else (.-mtime (js/$$LUMO_GLOBALS.fs.statSync path)))
+      (.getTime)
+      (/ 1000)))
 
 (defn changed? [a b]
   (not (== (last-modified a) (last-modified b))))
