@@ -2,6 +2,10 @@
 
 ## [master](https://github.com/anmonteiro/lumo/compare/1.6.0...HEAD) (unreleased)
 
+### New features
+
+- Add support for tagged literals ([#75](https://github.com/anmonteiro/lumo/issues/75)).
+
 ### Changes
 - Use Paredit.js to calculate indentation for multiline forms ([#193](https://github.com/anmonteiro/lumo/issues/193)).
 
