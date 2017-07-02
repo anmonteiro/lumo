@@ -128,8 +128,8 @@
 
 (defn path-seq
   [file-str]
-  ;; TODO: need to quote path-sep?
   (->> (.-sep js/$$LUMO_GLOBALS.path)
+       gstring/regExpEscape
        re-pattern
        (string/split file-str)))
 
