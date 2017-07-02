@@ -154,7 +154,10 @@
                            :closure-defines {'cljs.core/*target* "nodejs"
                                              'lumo.core/*lumo-version* lumo-version}
                            :compiler-stats true
-                           :parallel-build true}))
+                           :fn-invoke-direct true
+                           ;; re-enable once https://dev.clojure.org/jira/browse/CLJS-2153
+                           ;; is fixed
+                           :parallel-build false}))
 
 (deftask dev []
   (comp
