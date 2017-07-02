@@ -2,6 +2,9 @@
 
 ## [master](https://github.com/anmonteiro/lumo/compare/1.6.0...HEAD) (unreleased)
 
+### Changes
+- Use Paredit.js to calculate indentation for multiline forms ([#193](https://github.com/anmonteiro/lumo/issues/193)).
+
 ## [1.6.0](https://github.com/anmonteiro/lumo/compare/1.5.0...1.6.0) (2017-06-30)
 
 ### New features

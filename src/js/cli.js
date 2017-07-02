@@ -248,7 +248,7 @@ function getCLIOpts(): CLIOptsType {
   return ret;
 }
 
-export default (async function startCLI(): Promise<mixed> {
+async function startCLI(): Promise<mixed> {
   const opts = getCLIOpts();
   const {
     args,
@@ -350,4 +350,6 @@ export default (async function startCLI(): Promise<mixed> {
   }
 
   return startClojureScriptEngine(opts);
-});
+}
+
+export default startCLI;

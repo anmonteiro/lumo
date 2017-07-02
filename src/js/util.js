@@ -3,6 +3,7 @@
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
+import paredit from 'paredit.js';
 
 export function expandPath(somePath: string): string {
   const tildeExpandedPath = somePath.startsWith('~')
@@ -86,4 +87,20 @@ export function srcPathsFromMavenDependencies(
     ret.push(...paths);
     return ret;
   }, []);
+}
+
+export function indentationSpaces(text: string): ?string {
+  const source = `${text}\n`;
+  const count = source.length;
+  const ast = paredit.parse(source);
+  const { changes } = paredit.editor.indentRange(ast, source, count, count);
+  const insertionChange = changes.find(
+    ([type]: [string, number, string]) => type === 'insert',
+  );
+
+  if (insertionChange != null) {
+    return insertionChange[2];
+  }
+
+  return null;
 }
