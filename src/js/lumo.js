@@ -153,6 +153,37 @@ export function loadUpstreamForeignLibs(): string[] {
   return ret;
 }
 
+export function loadUpstreamDataReaders(): {url: string, source: string}[] {
+  const ret = [];
+  for (const srcPath of sourcePaths.values()) {
+    for (const filename of ['data_readers.cljs', 'data_readers.cljc']) {
+      const url = path.join(srcPath, filename);
+
+      try {
+        if (srcPath.endsWith('.jar')) {
+          const data = fs.readFileSync(srcPath);
+          const zip = new JSZip().load(data);
+          const source = zip.file(filename);
+
+          if (source != null) {
+            ret.push({
+              url,
+              source: source.asText(),
+            });
+          }
+        } else {
+          const source = fs.readFileSync(url, 'utf8');
+          ret.push({
+            url,
+            source,
+          });
+        }
+      } catch (_) {} // eslint-disable-line no-empty
+    }
+  }
+  return ret;
+}
+
 export function resource(filename: string): ?ResourceType {
   if (isBundled(filename)) {
     return {

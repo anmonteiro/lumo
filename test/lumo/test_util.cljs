@@ -6,7 +6,8 @@
 
 (defn with-lumo-globals [f]
   (set! (. js/global -$$LUMO_GLOBALS)
-    #js {:getJSCompletions (fn [_ _ cb] (cb #js ["js/console"]))})
+    #js {:getJSCompletions (fn [_ _ cb] (cb #js ["js/console"]))
+         :loadUpstreamDataReaders (constantly {})})
   (f)
   (set! (. js/global -$$LUMO_GLOBALS) nil))
 
