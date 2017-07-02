@@ -137,8 +137,11 @@ export function processLine(replSession: REPLSession, line: string): void {
 
         if (indentation != null) {
           // write explicitly to the output stream when socket or non-TTY
-          const writeFn = isMain && rl.terminal ? rl.write : rl.output.write;
-          writeFn(indentation);
+          if (isMain && rl.terminal) {
+            rl.write(indentation);
+          } else {
+            rl.output.write(indentation);
+          }
         }
       }
       break;
