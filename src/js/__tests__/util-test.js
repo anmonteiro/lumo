@@ -215,5 +215,6 @@ describe('indentationSpaces', () => {
     expect(indentationSpaces('(do')).toBe(nSpcs(2));
     expect(indentationSpaces('(let [a 1')).toBe(nSpcs(6));
     expect(indentationSpaces('[[[[\n]')).toBe(nSpcs(3));
+    expect(indentationSpaces('(in-ns ;foo.bar)')).toBe(nSpcs(2));
   });
 });

@@ -41,9 +41,9 @@ const pendingHighlights = [];
 const sessions: { [key: number]: REPLSession } = {};
 
 export function prompt(
-  rl: readline$Interface,
+  { id, rl }: REPLSession,
   isSecondary: boolean = false,
-  p: string = cljs.getCurrentNamespace(),
+  p: string = cljs.getCurrentNamespace(id),
 ): void {
   let promptText;
 
@@ -123,14 +123,14 @@ export function processLine(replSession: REPLSession, line: string): void {
           rl.output.write('\n');
         }
       } else {
-        prompt(rl);
+        prompt(session);
         break;
       }
 
       session.input = extraForms;
     } else {
       // partially entered form, prepare for processing the next line.
-      prompt(rl, true);
+      prompt(session, true);
 
       if (!session.isPasting) {
         const indentation = indentationSpaces(currentInput);
@@ -175,7 +175,7 @@ function handleSIGINT(replSession: REPLSession): void {
   session.rl.output.write('\n'.repeat(numberOfLines + 2));
   session.input = '';
 
-  prompt(session.rl);
+  prompt(session);
   stopReverseSearch(replSession);
 }
 
@@ -415,7 +415,7 @@ export default function startREPL(opts: CLIOptsType): void {
     process.stdin.setRawMode(true);
   }
 
-  prompt(rl, false, 'cljs.user');
+  prompt(session, false, 'cljs.user');
 
   rl.on('line', (line: string) => processLine(session, line));
   rl.on('SIGINT', () => handleSIGINT(session));

@@ -276,9 +276,9 @@ export function execute(
   );
 }
 
-export function getCurrentNamespace(): string {
+export function getCurrentNamespace(sessionID: number): string {
   // $FlowIssue: context can have globals
-  return ClojureScriptContext.lumo.repl.get_current_ns();
+  return ClojureScriptContext.lumo.repl.get_current_ns(sessionID);
 }
 
 export function isReadable(form: string): string | false {

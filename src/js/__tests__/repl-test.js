@@ -307,7 +307,8 @@ describe('startREPL', () => {
       it('when establishing a socket connection', () => {
         const repl = require('../repl'); // eslint-disable-line global-require
         const replCreateSession = repl.createSession;
-        repl.createSession = jest.fn(() => ({
+        repl.createSession = jest.fn((rl: readline$Interface) => ({
+          rl,
           id: 0,
         }));
         startREPL({});

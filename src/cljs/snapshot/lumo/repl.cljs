@@ -940,9 +940,10 @@
    :*1 *1
    :*2 *2
    :*3 *3
-   :*e *e})
+   :*e *e
+   :ns @current-ns})
 
-(defn- set-session-state
+(defn- set-session-state!
   "Sets the session state given a sesssion state map."
   [session-state]
   (set! *print-meta* (:*print-meta* session-state))
@@ -954,14 +955,15 @@
   (set! *1 (:*1 session-state))
   (set! *2 (:*2 session-state))
   (set! *3 (:*3 session-state))
-  (set! *e (:*e session-state)))
+  (set! *e (:*e session-state))
+  (vreset! current-ns (:ns session-state)))
 
 (def ^{:private true
-       :doc     "The default state used to initialize a new REPL session."} default-session-state
+       :doc "The default state used to initialize a new REPL session."} default-session-state
   (atom (capture-session-state)))
 
 (defonce ^{:private true
-           :doc     "The state for each session, keyed by session ID."} session-states (atom {}))
+           :doc "The state for each session, keyed by session ID."} session-states (atom {}))
 
 (defn- ^:export clear-state-for-session
   "Clears the session state for a completed session."
@@ -971,7 +973,7 @@
 (defn- set-session-state-for-session-id!
   "Sets the session state for a given session."
   [session-id]
-  (set-session-state (get @session-states session-id @default-session-state)))
+  (set-session-state! (get @session-states session-id @default-session-state)))
 
 (defn- capture-session-state-for-session-id
   "Captures the session state for a given session."
@@ -1140,8 +1142,9 @@
                     (handle-error e true)))))))))
     nil))
 
-(defn- ^:export get-current-ns []
-  (str @current-ns))
+(defn- ^:export get-current-ns [session-id]
+  (let [{:keys [ns]} (get @session-states session-id @default-session-state)]
+    (str ns)))
 
 (defn- ^:export set-ns [ns-str]
   (vreset! current-ns (symbol ns-str)))

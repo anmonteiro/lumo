@@ -146,7 +146,7 @@ describe('misc fns', () => {
 
   describe('getCurrentNamespace', () => {
     it('calls into the CLJS context', () => {
-      expect(cljs.getCurrentNamespace()).toBe('cljs.user');
+      expect(cljs.getCurrentNamespace(0)).toBe('cljs.user');
     });
   });
 

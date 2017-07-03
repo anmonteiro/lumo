@@ -36,7 +36,7 @@ function openRepl(socket: net$Socket): void {
   rl.on('close', () => socket.destroy());
 
   rl.output.write(createBanner());
-  prompt(rl, false, 'cljs.user');
+  prompt(session, false, 'cljs.user');
 }
 
 // Calls the `accept` function on the socket and handles the socket lifecycle
