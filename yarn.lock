@@ -1635,8 +1635,8 @@ elliptic@^6.0.0:
     minimalistic-crypto-utils "^1.0.0"
 
 emoji-regex@^6.1.0:
-  version "6.4.2"
-  resolved "https://registry.yarnpkg.com/emoji-regex/-/emoji-regex-6.4.2.tgz#a30b6fee353d406d96cfb9fa765bdc82897eff6e"
+  version "6.4.3"
+  resolved "https://registry.yarnpkg.com/emoji-regex/-/emoji-regex-6.4.3.tgz#6ac2ac58d4b78def5e39b33fcbf395688af3076c"
 
 encoding@^0.1.11:
   version "0.1.12"
@@ -3380,9 +3380,9 @@ pako@~1.0.2:
   version "1.0.5"
   resolved "https://registry.yarnpkg.com/pako/-/pako-1.0.5.tgz#d2205dfe5b9da8af797e7c163db4d1f84e4600bc"
 
-"paredit.js@github:anmonteiro/paredit.js#paredit-13":
-  version "0.3.1"
-  resolved "https://codeload.github.com/anmonteiro/paredit.js/tar.gz/c825ba154a370e0267e2f15cf6ab2658c3a4457a"
+paredit.js@0.3.2:
+  version "0.3.2"
+  resolved "https://registry.yarnpkg.com/paredit.js/-/paredit.js-0.3.2.tgz#2f57489cf4feed5a80a6b07f6bd61006ff1c0f75"
   dependencies:
     ace.improved ">=0.1.4"
 
