@@ -34,7 +34,17 @@
 (def ^:private ^:dynamic *loading-foreign* false)
 (def ^:private ^:dynamic *executing-path* nil)
 
-(defonce ^:private st (cljs/empty-state))
+(defonce ^:private st
+  (let [st (cljs/empty-state)]
+    (swap! st assoc :opts {:target :nodejs})
+    st))
+
+(set! ana/node-module-dep? (fn node-module-dep? [module]
+                             (println "do i even get here :D" module)
+                             (try
+                               (boolean (js/require.resolve module))
+                               (catch js/Error _
+                                 false))))
 
 (defonce ^:private current-ns (volatile! 'cljs.user))
 
@@ -860,7 +870,8 @@
         (get-in @st [::ana/namespaces cur-ns :require-macros])))))
 
 (defn- reader-eof? [msg]
-  (or
+  (string/starts-with? msg "Unexpected EOF")
+  #_(or
     (identical? "EOF while reading" msg)
     (identical? "EOF while reading string" msg)))
 
@@ -1085,7 +1096,7 @@
                 (handle-error error true)))))))
     (catch :default e
       ;; `;;` and `#_`
-      (when-not (identical? (.-message e) "EOF")
+      (when-not (identical? (.-message e) "Unexpected EOF.")
         (handle-error e true)))
     (finally (capture-session-state-for-session-id session-id)))
   nil)
@@ -1113,11 +1124,9 @@
     (catch :default e
       (let [msg (.-message e)]
         (cond
-          (identical? "EOF" msg) ""
+          (identical? "Unexpected EOF." msg) ""
           (reader-eof? msg) false
-          :else (do
-                  ;(handle-error e)
-                  ""))))))
+          :else "")))))
 
 (defn- ^:export run-main
   [main-ns & args]
