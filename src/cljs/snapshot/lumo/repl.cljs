@@ -34,17 +34,7 @@
 (def ^:private ^:dynamic *loading-foreign* false)
 (def ^:private ^:dynamic *executing-path* nil)
 
-(defonce ^:private st
-  (let [st (cljs/empty-state)]
-    (swap! st assoc :opts {:target :nodejs})
-    st))
-
-(set! ana/node-module-dep? (fn node-module-dep? [module]
-                             (println "do i even get here :D" module)
-                             (try
-                               (boolean (js/require.resolve module))
-                               (catch js/Error _
-                                 false))))
+(defonce ^:private st (cljs/empty-state))
 
 (defonce ^:private current-ns (volatile! 'cljs.user))
 
@@ -860,7 +850,8 @@
 
 (defn- make-eval-opts []
   (merge
-    {:ns @current-ns}
+    {:ns @current-ns
+     :target :nodejs}
     (select-keys @app-opts [:verbose :static-fns :fn-invoke-direct])))
 
 (defn- current-alias-map []
