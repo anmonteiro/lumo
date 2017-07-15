@@ -2,7 +2,7 @@
  :source-paths #{"src/cljs/snapshot"}
  :asset-paths #{"src/js" "src/cljs/bundled"}
  :dependencies '[[org.clojure/clojure         "1.9.0-alpha17"]
-                 [org.clojure/clojurescript   "1.9.798"]
+                 [org.clojure/clojurescript   "1.9.806"]
                  [org.clojure/tools.reader    "1.0.2"]
                  [com.cognitect/transit-cljs  "0.8.239"]
                  [malabarba/lazy-map          "1.3"]

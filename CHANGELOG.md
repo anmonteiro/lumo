@@ -21,6 +21,8 @@ for a function that will run when accepting a new connection.
 - Use Paredit.js to calculate indentation for multiline forms ([#193](https://github.com/anmonteiro/lumo/issues/193)).
 - Upgrade Google Closure Compiler to v20170626.
 - Upgrade Node.js to version 8.2.1.
+- **BREAKING**: Remove `lumo.core/*command-line-args*` in favor of the new `cljs.core/*command-line-args*`
+introduced in ClojureScript 1.9.8XX.
 
 ### Bug fixes
 
