@@ -1172,9 +1172,10 @@
   (set! *print-namespace-maps* repl?)
   (common/load-core-analysis-caches st repl?)
   (deps/index-js-libs)
-  (swap! st assoc :js-dependency-index (reduce (fn [ret [k v]]
-                                                 (assoc ret (str k) k))
-                                         @deps/js-lib-index @deps/js-lib-index)))
+  (let [index @deps/js-lib-index]
+    (swap! st assoc :js-dependency-index (into index
+                                           (map (fn [[k v]] [(str k) v]))
+                                           index))))
 
 ;; --------------------
 ;; Introspection
