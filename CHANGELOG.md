@@ -13,6 +13,7 @@ for a function that will run when accepting a new connection.
 ### Changes
 
 - Use Paredit.js to calculate indentation for multiline forms ([#193](https://github.com/anmonteiro/lumo/issues/193)).
+- Upgrade Google Closure Compiler to v20170626.
 
 ### Bug fixes
 
