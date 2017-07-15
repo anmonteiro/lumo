@@ -190,6 +190,7 @@ function setRuntimeOpts(opts: CLIOptsType): void {
   const staticFns = opts['static-fns'];
   const fnInvokeDirect = opts['fn-invoke-direct'];
   const elideAsserts = opts['elide-asserts'];
+  const checkedArrays = opts['checked-arrays'];
   // $FlowIssue: context can have globals
   ClojureScriptContext.lumo.repl.init(
     repl,
@@ -198,6 +199,7 @@ function setRuntimeOpts(opts: CLIOptsType): void {
     staticFns,
     fnInvokeDirect,
     elideAsserts,
+    checkedArrays,
   );
 }
 

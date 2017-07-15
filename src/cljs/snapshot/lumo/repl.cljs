@@ -861,7 +861,7 @@
   (merge
     {:ns @current-ns
      :target :nodejs}
-    (select-keys @app-opts [:verbose :static-fns :fn-invoke-direct])))
+    (select-keys @app-opts [:verbose :static-fns :fn-invoke-direct :checked-arrays])))
 
 (defn- current-alias-map []
   (let [cur-ns @current-ns]
@@ -970,16 +970,19 @@
   (vreset! current-ns (:ns session-state)))
 
 (def ^{:private true
-       :doc "The default state used to initialize a new REPL session."} default-session-state
-  (atom (capture-session-state)))
+       :doc "The default state used to initialize a new REPL session."}
+  default-session-state
+  (volatile! (capture-session-state)))
 
 (defonce ^{:private true
-           :doc "The state for each session, keyed by session ID."} session-states (atom {}))
+           :doc "The state for each session, keyed by session ID."}
+  session-states
+  (volatile! {}))
 
 (defn- ^:export clear-state-for-session
   "Clears the session state for a completed session."
   [session-id]
-  (swap! session-states dissoc session-id))
+  (vswap! session-states dissoc session-id))
 
 (defn- set-session-state-for-session-id!
   "Sets the session state for a given session."
@@ -989,7 +992,7 @@
 (defn- capture-session-state-for-session-id
   "Captures the session state for a given session."
   [session-id]
-  (swap! session-states assoc session-id (capture-session-state)))
+  (vswap! session-states assoc session-id (capture-session-state)))
 
 (defn- ns-form?
   [form]
@@ -1159,17 +1162,24 @@
   (vreset! current-ns (symbol ns-str)))
 
 (defn- setup-assert! [elide-asserts]
-  (set! *assert* (not elide-asserts)))
+  (set! *assert* (not elide-asserts))
+  (vswap! default-session-state assoc :*assert* *assert*))
 
-(defn- ^:export init [repl? verbose cache-path static-fns fn-invoke-direct elide-asserts]
+(defn- setup-print-namespace-maps! [print-namespace-maps]
+  (set! *print-namespace-maps* print-namespace-maps)
+  (vswap! default-session-state assoc :*print-namespace-maps* *print-namespace-maps*))
+
+(defn- ^:export init
+  [repl? verbose cache-path static-fns fn-invoke-direct elide-asserts checked-arrays]
   (vreset! app-opts {:repl? repl?
                      :verbose verbose
                      :cache-path cache-path
                      :static-fns static-fns
                      :fn-invoke-direct fn-invoke-direct
-                     :elide-asserts elide-asserts})
+                     :elide-asserts elide-asserts
+                     :checked-arrays (keyword checked-arrays)})
   (setup-assert! elide-asserts)
-  (set! *print-namespace-maps* repl?)
+  (setup-print-namespace-maps! repl?)
   (common/load-core-analysis-caches st repl?)
   (deps/index-js-libs)
   (let [index @deps/js-lib-index]

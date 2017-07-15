@@ -26,6 +26,7 @@ export type CLIOptsType = {
   'fn-invoke-direct': boolean,
   legal: boolean,
   'elide-asserts': boolean,
+  'checked-arrays'?: string,
   cache?: string,
   classpath: string[],
   'socket-repl'?: string,
@@ -127,6 +128,7 @@ function getCLIOpts(): CLIOptsType {
     's(static-fns)',
     'f(fn-invoke-direct)',
     'a(elide-asserts)',
+    'A:(checked-arrays)',
     'm:(main)',
     'r(repl)',
     'k:(cache)',
@@ -221,6 +223,9 @@ function getCLIOpts(): CLIOptsType {
         break;
       case 'a':
         ret['elide-asserts'] = true;
+        break;
+      case 'A':
+        ret['checked-arrays'] = option.optarg;
         break;
       case 'm':
         foundMainOpt = true;
