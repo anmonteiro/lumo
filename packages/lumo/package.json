@@ -13,6 +13,9 @@
   },
   "homepage": "https://github.com/anmonteiro/lumo",
   "preferGlobal": true,
+  "config": {
+    "unsafe-perm": true
+  },
   "scripts": {
     "install": "node scripts/npm_install.js || nodejs scripts/npm_install.js"
   },
