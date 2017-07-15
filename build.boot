@@ -1,8 +1,8 @@
 (set-env!
- :source-paths #{"src/cljs/snapshot"}
- :asset-paths #{"src/js" "src/cljs/bundled"}
+ :source-paths #{"src/cljs/snapshot" "../clojurescript/src/main/cljs"}
+ :asset-paths #{"src/js" "src/cljs/bundled" "../clojurescript/src/main/clojure"}
  :dependencies '[[org.clojure/clojure         "1.9.0-alpha17"]
-                 [org.clojure/clojurescript   "1.9.780"]
+                 [org.clojure/clojurescript   "1.9.797"]
                  [org.clojure/tools.reader    "1.0.2"]
                  [com.cognitect/transit-cljs  "0.8.239"]
                  [malabarba/lazy-map          "1.3"]
@@ -164,6 +164,8 @@
     (install-node-modules)
     (watch)
     (speak)
+    (sift :include #{#"^clojure[\\\/]browser.*$"}
+       :invert true)
     (compile-cljs)
     (sift-cljs-resources)
     (cache-edn->transit)
