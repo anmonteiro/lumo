@@ -18,6 +18,7 @@ for a function that will run when accepting a new connection.
 
 - Isolate copy paste inference per readline session ([#197](https://github.com/anmonteiro/lumo/issues/197)).
 - Socket REPL fails to isolate NS ([#158](https://github.com/anmonteiro/lumo/issues/158)).
+- Fix NPM installation as root ([#206](https://github.com/anmonteiro/lumo/issues/206)).
 
 ## [1.6.0](https://github.com/anmonteiro/lumo/compare/1.5.0...1.6.0) (2017-06-30)
 
