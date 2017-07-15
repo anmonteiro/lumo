@@ -21,7 +21,8 @@
 (defn index-upstream-foreign-libs []
   (doseq [deps-cljs-str (js/$$LUMO_GLOBALS.loadUpstreamForeignLibs)]
     (let [{:keys [foreign-libs]} (r/read-string deps-cljs-str)]
-      (vswap! foreign-libs-index index-foreign-libs foreign-libs))))
+      (vswap! foreign-libs-index index-foreign-libs foreign-libs)))
+  (println "crlh" (some? cljs.env/*compiler*)))
 
 (defn topo-sort
   [index dep]

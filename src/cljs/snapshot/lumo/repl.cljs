@@ -1162,7 +1162,10 @@
   (setup-assert! elide-asserts)
   (set! *print-namespace-maps* repl?)
   (common/load-core-analysis-caches st repl?)
-  (deps/index-upstream-foreign-libs))
+  (deps/index-upstream-foreign-libs)
+  (swap! st assoc :js-dependency-index (reduce (fn [ret [k v]]
+                                                 (assoc ret (str k) k))
+                                         @deps/foreign-libs-index @deps/foreign-libs-index)))
 
 ;; --------------------
 ;; Introspection
