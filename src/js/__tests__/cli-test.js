@@ -2,7 +2,7 @@
 /* eslint-disable global-require */
 
 import os from 'os';
-import path from 'path';
+import path, { delimiter as delim } from 'path';
 
 let lumo = require('../lumo');
 let startCLI = require('../cli').default;
@@ -115,7 +115,7 @@ describe('getCliOpts', () => {
     });
 
     it('sets srcPaths if -c specified', async () => {
-      const args = '-c foo:bar';
+      const args = `-c foo${delim}bar`;
       Object.defineProperty(process, 'argv', {
         value: ['', ''].concat(args.split(' ')),
       });
