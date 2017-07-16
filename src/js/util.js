@@ -16,8 +16,7 @@ export const isWindows: boolean = /^Windows/.test(os.type());
 
 export function srcPathsFromClasspathStrings(cpStrs: string[]): string[] {
   return cpStrs.reduce((ret: string[], colonSepPaths: string) => {
-    const sep = !isWindows ? ':' : /;|:/;
-    const paths = colonSepPaths.split(sep);
+    const paths = colonSepPaths.split(path.delimiter);
 
     ret.push(...paths);
     return ret;

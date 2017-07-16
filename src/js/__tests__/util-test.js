@@ -2,7 +2,7 @@
 
 import fs from 'fs';
 import os from 'os';
-import path from 'path';
+import path, { delimiter as delim } from 'path';
 import {
   ensureDir,
   indentationSpaces,
@@ -26,28 +26,11 @@ describe('srcPathsFromClasspathStrings', () => {
     path.resolve = pathResolve;
   });
 
-  if (isWindows) {
-    it('splits multiple paths with both ; and : separators', () => {
-      expect(srcPathsFromClasspathStrings(['a;b', 'c:d', 'e'])).toEqual([
-        'a',
-        'b',
-        'c',
-        'd',
-        'e',
-      ]);
-    });
-  } else {
-    it("splits multiple paths on ':' ", () => {
-      expect(srcPathsFromClasspathStrings(['a:b', 'c:d', 'e', 'f;g'])).toEqual([
-        'a',
-        'b',
-        'c',
-        'd',
-        'e',
-        'f;g',
-      ]);
-    });
-  }
+  it('splits multiple paths on the path delimiter ', () => {
+    expect(
+      srcPathsFromClasspathStrings([`a${delim}b`, `c${delim}d`, 'e']),
+    ).toEqual(['a', 'b', 'c', 'd', 'e']);
+  });
 });
 
 describe('ensureDir', () => {
