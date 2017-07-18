@@ -132,7 +132,7 @@ export function writeCache(filename: string, source: string): ?Error {
   }
 }
 
-export function loadUpstreamForeignLibs(): string[] {
+export function loadUpstreamLibs(): string[] {
   const ret = [];
   for (const srcPath of sourcePaths.values()) {
     try {

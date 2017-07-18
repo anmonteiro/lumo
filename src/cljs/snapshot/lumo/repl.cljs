@@ -205,11 +205,14 @@
     :loaded))
 
 ;; TODO: we could be smarter and only load the libs that we haven't already loaded
-(defn- load-foreign-lib
+(defn- load-js-lib
   [name cb]
-  (let [files (deps/files-to-load name)
-        sources (map (fn [file]
-                       (.-source (js/$$LUMO_GLOBALS.readSource file))) files)]
+  (let [sources (mapcat (fn [{:keys [file requires]}]
+                          (concat (->> requires
+                                       (filter #(.startsWith % "goog."))
+                                       (map (comp goog-dep-source symbol)))
+                                  [(.-source (js/$$LUMO_GLOBALS.readSource file))]))
+                        (deps/js-libs-to-load name))]
     (binding [*loading-foreign* true]
       (cb {:lang :js
            :source (string/join "\n" sources)})
@@ -277,8 +280,8 @@
       ;; bundled source are AOTed macros which don't have the `.clj[sc]*` extension
       (load-bundled name bundled-src-prefix file-path bundled-source cb)
 
-      (deps/foreign-lib? name)
-      (load-foreign-lib name cb)
+      (deps/js-lib? name)
+      (load-js-lib name cb)
 
       :else
       (load-external path file-path macros? cb))))
@@ -1162,7 +1165,7 @@
   (setup-assert! elide-asserts)
   (set! *print-namespace-maps* repl?)
   (common/load-core-analysis-caches st repl?)
-  (deps/index-upstream-foreign-libs))
+  (deps/index-js-libs))
 
 ;; --------------------
 ;; Introspection
