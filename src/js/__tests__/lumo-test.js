@@ -183,7 +183,7 @@ describe('lumo', () => {
     });
   });
 
-  describe('loadUpstreamForeignLibs', () => {
+  describe('loadUpstreamJsLibs', () => {
     beforeEach(() => {
       jest.resetModules();
       lumo = require('../lumo'); // eslint-disable-line global-require
@@ -193,13 +193,13 @@ describe('lumo', () => {
       const srcPaths = ['foo.jar'];
       lumo.addSourcePaths(srcPaths);
 
-      const source = lumo.loadUpstreamForeignLibs('some/thing');
+      const source = lumo.loadUpstreamJsLibs('some/thing');
 
       expect(source).toEqual(['zipContents']);
     });
 
     it("should return an empty array when the JAR doesn't have deps.cljs", () => {
-      const source = lumo.loadUpstreamForeignLibs('some/thing');
+      const source = lumo.loadUpstreamJsLibs('some/thing');
 
       expect(source).toEqual([]);
     });
@@ -208,7 +208,7 @@ describe('lumo', () => {
       const srcPaths = ['bar.jar'];
       lumo.addSourcePaths(srcPaths);
 
-      const source = lumo.loadUpstreamForeignLibs('some/thing');
+      const source = lumo.loadUpstreamJsLibs('some/thing');
 
       expect(source).toEqual([]);
     });

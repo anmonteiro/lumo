@@ -52,7 +52,7 @@
                       (let [{:keys [libs foreign-libs]} (r/read-string deps-cljs-str)]
                         (add-js-libs index (concat foreign-libs (map parse-lib libs)))))
                     index
-                    (js/$$LUMO_GLOBALS.loadUpstreamLibs)))))
+                    (js/$$LUMO_GLOBALS.loadUpstreamJsLibs)))))
 
 (defn js-lib?
   "Returns true if the argument is a js lib."
