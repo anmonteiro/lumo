@@ -217,7 +217,7 @@
                path    (.-src res)
                cache   nil #_(when (:cache-analysis opts)
                          (cache-file res ns-info output-dir))]
-           (when-not (get-in @env/*compiler* [::namespaces (:ns ns-info) :defs])
+           (when-not (get-in @env/*compiler* [::ana/namespaces (:ns ns-info) :defs])
              (if (or skip-cache (not cache) (requires-analysis? res output-dir))
                (binding [ana/*cljs-ns* 'cljs.user
                          ana/*cljs-file* path
