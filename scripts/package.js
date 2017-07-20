@@ -5,7 +5,7 @@ const os = require('os');
 const zlib = require('zlib');
 const embed = require('./embed');
 
-const nodeVersion = '8.1.3';
+const nodeVersion = '8.2.0';
 
 function getDirContents(dir, accumPath = dir) {
   let filenames = fs.readdirSync(dir);
@@ -69,6 +69,7 @@ Promise.all(resources.map(deflate)).then(() => {
         '--without-inspector',
         '--without-etw',
         '--without-perfctr',
+        '--with-snapshot',
         '--link-module',
         './google-closure-compiler-js.js',
       ],
