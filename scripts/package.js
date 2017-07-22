@@ -108,7 +108,7 @@ Promise.all(resources.map(deflate)).then(() => {
       ],
       nodeMakeArgs: ['-j', '8'],
 
-      nodeVCBuildArgs: ['nosign', 'x64', 'noetw', 'noperfctr', 'with-snapshot'],
+      nodeVCBuildArgs: ['nosign', 'x64', 'noetw', 'noperfctr', 'withsnapshot'],
       flags: true,
       startupSnapshot: 'target/main.js',
       noBundle: true,
