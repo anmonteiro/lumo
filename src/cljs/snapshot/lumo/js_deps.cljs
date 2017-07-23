@@ -1,29 +1,66 @@
 (ns lumo.js-deps
-  (:require [cljs.tools.reader :as r]))
+  (:require [cljs.tools.reader :as r]
+            [clojure.string :as string]))
 
-(defonce ^:private foreign-libs-index (volatile! {}))
+(defonce ^:private js-lib-index (volatile! {}))
 
-(defn foreign-lib? [dep]
-  (contains? @foreign-libs-index dep))
+(defn add-js-lib
+  "Adds a js lib to the index."
+  [index {:keys [provides] :as js-lib}]
+  (reduce (fn [index provided-lib]
+            (assoc index (symbol provided-lib) js-lib))
+          index
+          provides))
 
-(defn- add-foreign-lib
-  [index {:keys [provides] :as foreign-lib}]
-  (reduce (fn [index lib]
-            (assoc index (symbol lib) foreign-lib))
-    index provides))
+(defn add-js-libs
+  "Adds multiple js libs to the index."
+  [index js-libs]
+  (reduce add-js-lib index js-libs))
 
-(defn- index-foreign-libs
-  [index libs]
-  (reduce (fn [index lib]
-            (add-foreign-lib index lib))
-    index libs))
+(defn parse-closure-ns
+  "Parses a js source file which uses the closure module system."
+  [source]
+  (->> source
+       (string/split-lines)
+       (mapcat #(string/split %  #";"))
+       (map string/trim)
+       (take-while #(not (re-matches #".*=[\s]*function\(.*\)[\s]*[{].*" %)))
+       (keep #(re-matches #".*goog\.(provide|require)\(['\"](.*)['\"]\)" %))
+       (map rest)
+       (reduce (fn [m ns]
+                 (let [munged-ns (string/replace (last ns) "_" "-")]
+                   (update m (if (= (first ns) "require")
+                               :requires
+                               :provides)
+                             conj munged-ns)))
+               {:requires [] :provides []})))
 
-(defn index-upstream-foreign-libs []
-  (doseq [deps-cljs-str (js/$$LUMO_GLOBALS.loadUpstreamForeignLibs)]
-    (let [{:keys [foreign-libs]} (r/read-string deps-cljs-str)]
-      (vswap! foreign-libs-index index-foreign-libs foreign-libs))))
+(defn parse-lib
+  "Converts a closure lib path into a structure which describes the module."
+  [lib]
+  (let [source (.-source (js/$$LUMO_GLOBALS.readSource lib))]
+    (when-not source
+      (throw (ex-info "The specified closure library does not exist" {:path lib})))
+    (assoc (parse-closure-ns source) :file lib)))
+
+(defn index-js-libs
+  "Indexes all js foreign and closure libs from each deps.cljs on the classpath."
+  []
+  (vswap! js-lib-index
+          (fn [index]
+            (reduce (fn [index deps-cljs-str]
+                      (let [{:keys [libs foreign-libs]} (r/read-string deps-cljs-str)]
+                        (add-js-libs index (concat foreign-libs (map parse-lib libs)))))
+                    index
+                    (js/$$LUMO_GLOBALS.loadUpstreamJsLibs)))))
+
+(defn js-lib?
+  "Returns true if the argument is a js lib."
+  [dep]
+  (contains? @js-lib-index dep))
 
 (defn topo-sort
+  "Returns a list of dependencies in the topological order."
   [index dep]
   (loop [ret '()
          s  #{dep}]
@@ -33,6 +70,8 @@
             requires (map symbol (:requires (get index dep)))]
         (recur (conj ret dep) (into (set (rest s)) requires))))))
 
-(defn files-to-load [dep]
-  (let [index @foreign-libs-index]
-    (map (comp :file index) (topo-sort index dep))))
+(defn js-libs-to-load
+  "Returns a list of dependencies to load for the given lib."
+  [lib]
+  (let [index @js-lib-index]
+    (map index (topo-sort index lib))))

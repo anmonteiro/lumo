@@ -1769,7 +1769,7 @@
   by libraries on the classpath."
   []
   (let [upstream-deps (map reader/read-string
-                        (js/$$LUMO_GLOBALS.loadUpstreamForeignLibs))]
+                        (js/$$LUMO_GLOBALS.loadUpstreamJsLibs))]
     (apply merge-with concat upstream-deps)))
 
 (def get-upstream-deps (memoize get-upstream-deps*))

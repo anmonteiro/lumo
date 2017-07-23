@@ -21,21 +21,21 @@
     (is (= (->> (deps/topo-sort index 'react))
            '[react]))))
 
-(deftest index-foreign-libs-test
-  (let [flibs [{:provides ["react"]}
-               {:provides ["react.dom"]
-                :requires ["react"]}
-               {:provides ["react.dom.server"]
-                :requires ["react" "react.dom"]}]]
-    (is (= (deps/index-foreign-libs {} flibs)
+(deftest add-js-libs-test
+  (let [js-libs [{:provides ["react"]}
+                 {:provides ["react.dom"]
+                  :requires ["react"]}
+                 {:provides ["react.dom.server"]
+                  :requires ["react" "react.dom"]}]]
+    (is (= (deps/add-js-libs {} js-libs)
           '{react            {:provides ["react"]}
             react.dom        {:provides ["react.dom"]
                               :requires ["react"]}
             react.dom.server {:provides ["react.dom.server"]
                               :requires ["react" "react.dom"]}}))))
 
-(deftest test-files-to-load
-  (with-redefs [deps/foreign-libs-index
+(deftest js-libs-to-load-test
+  (with-redefs [deps/js-lib-index
                 (volatile! '{react            {:provides ["react"]
                                                :file "react file"}
                              react.dom        {:provides ["react.dom"]
@@ -44,9 +44,9 @@
                              react.dom.server {:provides ["react.dom.server"]
                                                :requires ["react" "react.dom"]
                                                :file "react.dom.server file"}})]
-    (is (= (deps/files-to-load 'react.dom)
+    (is (= (map :file (deps/js-libs-to-load 'react.dom))
            ["react file" "react.dom file"]))
-    (is (= (deps/files-to-load 'react.dom.server)
+    (is (= (map :file (deps/js-libs-to-load 'react.dom.server))
            ["react file" "react.dom file" "react.dom.server file"]))
-    (is (= (deps/files-to-load 'react)
+    (is (= (map :file (deps/js-libs-to-load 'react))
            ["react file"]))))
