@@ -56,7 +56,6 @@ function moveLibs(compiler, options, callback) {
 }
 
 function patchVCBuild(compiler, options, callback) {
-  console.log('lol', compiler, options, callback);
   const vcbuildPath = path.join(compiler.dir, 'vcbuild.bat');
 
   monkeyPatch(
