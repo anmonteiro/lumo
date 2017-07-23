@@ -1,4 +1,5 @@
 const nexe = require('nexe');
+const monkeyPatch = require('nexe/lib/monkeypatch');
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
@@ -51,7 +52,38 @@ function moveLibs(compiler, options, callback) {
     fs.readFileSync(`target/google-closure-compiler-js.js`),
   );
 
-  callback();
+  callback(null, compiler, options);
+}
+
+function patchVCBuild(compiler, options, callback) {
+  const vcbuildPath = path.join(compiler.dir, 'vcbuild.bat');
+
+  monkeyPatch(
+    vcbuildPath,
+    function(content) {
+      return ~content.indexOf('withsnapshot');
+    },
+    function(content, next) {
+      const newContent = content
+        .replace(
+          'set nosnapshot=',
+          `set nosnapshot=
+set withsnapshot=`,
+        )
+        .replace(
+          'if /i "%1"=="nosnapshot"    set nosnapshot=1&goto arg-ok',
+          `if /i "%1"=="nosnapshot"    set nosnapshot=1&goto arg-ok
+if /i "%1"=="withsnapshot"    set withsnapshot=1&goto arg-ok`,
+        )
+        .replace(
+          'if defined nosnapshot set configure_flags=%configure_flags% --without-snapshot',
+          `if defined nosnapshot set configure_flags=%configure_flags% --without-snapshot
+if defined withsnapshot set configure_flags=%configure_flags% --with-snapshot`,
+        );
+      next(null, newContent);
+    },
+    callback,
+  );
 }
 
 Promise.all(resources.map(deflate)).then(() => {
@@ -62,7 +94,7 @@ Promise.all(resources.map(deflate)).then(() => {
       input: 'target/bundle.min.js',
       output: outputPath,
       nodeTempDir: 'tmp',
-      patchFns: moveLibs,
+      patchFns: [moveLibs, patchVCBuild],
       nodeConfigureArgs: [
         '--without-dtrace',
         '--without-npm',
@@ -74,7 +106,8 @@ Promise.all(resources.map(deflate)).then(() => {
         './google-closure-compiler-js.js',
       ],
       nodeMakeArgs: ['-j', '8'],
-      nodeVCBuildArgs: ['nosign', 'x64', 'noetw', 'noperfctr'],
+
+      nodeVCBuildArgs: ['nosign', 'x64', 'noetw', 'noperfctr', 'withsnapshot'],
       flags: true,
       startupSnapshot: 'target/main.js',
       noBundle: true,
