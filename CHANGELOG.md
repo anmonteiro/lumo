@@ -5,10 +5,13 @@
 ### New features
 
 - Add support for tagged literals ([#75](https://github.com/anmonteiro/lumo/issues/75)).
-- Add support for running custom accept functions in the Lumo socket server ([#105](https://github.com/anmonteiro/lumo/pull/105)).
+- Add support for running custom accept functions in the Lumo socket server
+([#105](https://github.com/anmonteiro/lumo/pull/105)).
 The `--socket-repl` option can now be a JSON object with `accept` and `args` keys
 (in addition to `port` and `host`) where `accept` is a namespace qualified string
 for a function that will run when accepting a new connection.
+- Add support for specifying Closure libraries in the `:libs` entry in `deps.cljs`
+([#210](https://github.com/anmonteiro/lumo/issues/210)).
 
 ### Changes
 
