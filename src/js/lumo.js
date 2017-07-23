@@ -2,7 +2,6 @@
 
 import fs from 'fs';
 import path from 'path';
-// $FlowIssue: it's there
 import { REPLServer } from 'repl';
 import v8 from 'v8';
 import zlib from 'zlib';
@@ -92,7 +91,6 @@ export function readSource(filename: string): ?SourceType {
       const filePath = path.join(srcPath, filename);
       return {
         source: fs.readFileSync(filePath, 'utf8'),
-        // $FlowIssue: https://github.com/facebook/flow/pull/4125 is merged
         modified: fs.statSync(filePath).mtimeMs,
       };
     } catch (_) {} // eslint-disable-line no-empty
@@ -104,7 +102,6 @@ export function readFile(filename: string): ?SourceType {
   try {
     return {
       source: fs.readFileSync(filename, 'utf8'),
-      // $FlowIssue: https://github.com/facebook/flow/pull/4125 is merged
       modified: fs.statSync(filename).mtimeMs,
     };
   } catch (_) {} // eslint-disable-line no-empty
@@ -116,7 +113,6 @@ export function readCache(filename: string): ?SourceType {
   try {
     return {
       source: fs.readFileSync(filename, 'utf8'),
-      // $FlowIssue: https://github.com/facebook/flow/pull/4125 is merged
       modified: fs.statSync(filename).mtimeMs,
     };
   } catch (_) {
@@ -153,7 +149,7 @@ export function loadUpstreamForeignLibs(): string[] {
   return ret;
 }
 
-export function loadUpstreamDataReaders(): {url: string, source: string}[] {
+export function loadUpstreamDataReaders(): { url: string, source: string }[] {
   const ret = [];
   for (const srcPath of sourcePaths.values()) {
     for (const filename of ['data_readers.cljs', 'data_readers.cljc']) {
@@ -272,9 +268,11 @@ export function getJSCompletions(
   cb: (string[]) => void,
 ): void {
   const flat = new ArrayStream();
+  // $FlowIssue: stream needs to be the 2nd arg
   const nodeReplServer = new REPLServer('', flat);
   const lineWithoutMatch = line.substring(0, line.length - match.length);
 
+  // $FlowIssue: it's there
   return nodeReplServer.completer(
     match,
     (err: ?Error, [jsCompletions]: [string[], string]) => {

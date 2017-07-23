@@ -45,7 +45,7 @@
     "eslint-plugin-import": "2.7.0",
     "eslint-plugin-jsx-a11y": "5.0.3",
     "eslint-plugin-react": "7.1.0",
-    "flow-bin": "0.50.0",
+    "flow-bin": "0.51.0",
     "jest-cli": "20.0.4",
     "nexe": "github:anmonteiro/nexe#master",
     "opencollective": "1.0.3",
