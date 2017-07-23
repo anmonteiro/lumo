@@ -2,6 +2,9 @@
   (:require [cljs.tools.reader :as r]
             [clojure.string :as string]))
 
+(def fs (js/require "fs"))
+(def path (js/require "path"))
+
 (defonce ^:private js-lib-index (volatile! {}))
 
 (defn add-js-lib
@@ -35,13 +38,27 @@
                              conj munged-ns)))
                {:requires [] :provides []})))
 
-(defn parse-lib
-  "Converts a closure lib path into a structure which describes the module."
+(defn all-files
+  "If the given file is not a directory, returns a single list containing the file,
+   otherwise returns a list of files within the directory, included all nested ones."
+  [file]
+  (if-not (.isDirectory (fs.statSync file))
+    [file]
+    (->> file
+         (fs.readdirSync)
+         (mapcat (comp all-files #(path.join file %))))))
+
+(defn parse-libs
+  "Converts a closure lib path into a list of module descriptors."
   [lib]
-  (let [source (.-source (js/$$LUMO_GLOBALS.readSource lib))]
-    (when-not source
-      (throw (ex-info "The specified closure library does not exist" {:path lib})))
-    (assoc (parse-closure-ns source) :file lib)))
+  (->> lib
+       (all-files)
+       (filter #(= ".js" (path.extname %)))
+       (map (fn [file]
+              (let [source (.-source (js/$$LUMO_GLOBALS.readSource file))]
+                (when-not source
+                  (throw (ex-info "The specified closure library does not exist" {:path file})))
+                (assoc (parse-closure-ns source) :file file))))))
 
 (defn index-js-libs
   "Indexes all js foreign and closure libs from each deps.cljs on the classpath."
@@ -50,7 +67,7 @@
           (fn [index]
             (reduce (fn [index deps-cljs-str]
                       (let [{:keys [libs foreign-libs]} (r/read-string deps-cljs-str)]
-                        (add-js-libs index (concat foreign-libs (map parse-lib libs)))))
+                        (add-js-libs index (concat foreign-libs (mapcat parse-libs libs)))))
                     index
                     (js/$$LUMO_GLOBALS.loadUpstreamJsLibs)))))
 
