@@ -45,3 +45,13 @@
 (defn- load-core-analysis-caches [state eager?]
   (load-core-analysis-cache state eager? 'cljs.core "cljs/core.cljs.cache.aot.")
   (load-core-analysis-cache state eager? 'cljs.core$macros "cljs/core$macros.cljc.cache."))
+
+;; Copied from bundled/lumo/util.cljs
+(defn file-seq
+  "If the given file is not a directory, returns a list containing the file,
+   otherwise returns a list of files within the directory, included all nested ones."
+  [file]
+  (tree-seq
+    (fn [f] (.isDirectory (js/$$LUMO_GLOBALS.fs.statSync f)))
+    (fn [d] (map #(js/$$LUMO_GLOBALS.path.join d %) (js/$$LUMO_GLOBALS.fs.readdirSync d)))
+    file))
