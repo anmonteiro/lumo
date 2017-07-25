@@ -1,6 +1,7 @@
 (ns lumo.js-deps
   (:require [cljs.tools.reader :as r]
-            [clojure.string :as string]))
+            [clojure.string :as string]
+            [lumo.common :as common]))
 
 (defonce ^:private js-lib-index (volatile! {}))
 
@@ -35,21 +36,11 @@
                              conj munged-ns)))
                {:requires [] :provides []})))
 
-(defn all-files
-  "If the given file is not a directory, returns a list containing the file,
-   otherwise returns a list of files within the directory, included all nested ones."
-  [file]
-  (if-not (.isDirectory (js/$$LUMO_GLOBALS.fs.statSync file))
-    [file]
-    (->> file
-         (js/$$LUMO_GLOBALS.fs.readdirSync)
-         (mapcat (comp all-files #(js/$$LUMO_GLOBALS.path.join file %))))))
-
 (defn parse-libs
   "Converts a closure lib path into a list of module descriptors."
   [lib]
   (->> lib
-       (all-files)
+       (common/file-seq)
        (filter #(= ".js" (js/$$LUMO_GLOBALS.path.extname %)))
        (map (fn [file]
               (let [source (.-source (js/$$LUMO_GLOBALS.readSource file))]
