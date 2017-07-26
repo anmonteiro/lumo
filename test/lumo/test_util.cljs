@@ -1,8 +1,11 @@
 (ns lumo.test-util
   (:require [cljs.nodejs :as node]
             [cljs.js :as cljs]
-            [lumo.common :as common])
+            [lumo.common :as common]
+            [lumo.repl])
   (:require-macros [cljs.env.macros :as env]))
+
+(def lumo-env? (exists? js/$$LUMO_GLOBALS))
 
 (defn with-lumo-globals [f]
   (set! (. js/global -$$LUMO_GLOBALS)

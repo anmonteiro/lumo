@@ -15,3 +15,12 @@
   "Evaluates the form data structure (not text!) and returns the result."
   [form]
   (repl/eval form))
+
+(defn exit
+  "Causes Lumo to exit with the supplied exit code. If no exit code is
+   provided, exits with 0."
+  ([] (exit nil))
+  ([code]
+   (when-not (nil? code)
+     (set! (. js/process -exitCode) code))
+   (js/process.exit)))
