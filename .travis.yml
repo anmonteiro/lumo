@@ -28,6 +28,7 @@ script:
 - yarn test
 - boot test
 - boot release-ci
+- ./scripts/lumo_test.sh
 after_success:
 - chmod a+x build/lumo
 - zip -j build/lumo.zip build/lumo
