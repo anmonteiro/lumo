@@ -1,4 +1,3 @@
-#!build/lumo --classpath=lib/test.check-0.10.0-alpha2.jar:test
 (require '[cljs.test]
          '[lumo.test-runner]
          '[lumo.core :as lumo])

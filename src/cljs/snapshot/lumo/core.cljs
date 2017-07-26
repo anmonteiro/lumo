@@ -21,6 +21,4 @@
    provided, exits with 0."
   ([] (exit nil))
   ([code]
-   (when-not (nil? code)
-     (set! (. js/process -exitCode) code))
-   (js/process.exit)))
+   (js/process.exit code)))
