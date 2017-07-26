@@ -780,11 +780,17 @@
   (let [matches? (if (instance? js/RegExp str-or-pattern)
                    #(re-find str-or-pattern (str %))
                    #(.includes (str %) (str str-or-pattern)))]
-    (sort (mapcat (fn [ns]
+    (sort
+      (into []
+        (comp
+          (mapcat (fn [ns]
                     (let [ns-name (drop-macros-suffix (str ns))]
                       (map #(symbol ns-name (str %))
-                           (filter matches? (public-syms ns)))))
-                  (all-ns)))))
+                        (filter matches? (public-syms ns))))))
+          ;; we need to call distinct here because in ClojureScript there
+          ;; can exist macros & functions with the same name
+          (distinct))
+        (all-ns)))))
 
 ;; Taken from planck eval implementation
 ;; The following atoms and fns set up a scheme to

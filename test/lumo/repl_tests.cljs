@@ -127,3 +127,11 @@ Special Form
   Please see http://clojure.org/special_forms#if
 "))
   (is (empty? (with-out-str (lumo/doc every)))))
+
+(deftest test-apropos
+  (is (= '(cljs.core/ffirst) (lumo/apropos "ffirst")))
+  (is (= '(cljs.core/ffirst) (lumo/apropos 'ffirst)))
+  ;; Clojure compat
+  (is (= () (lumo/apropos ffirst)))
+  (is (= '(cljs.core/ffirst cljs.core/nfirst) (lumo/apropos #"[a-z]+first")))
+  (is (= '(cljs.core/aget) (lumo/apropos "aget"))))
