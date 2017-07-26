@@ -12,6 +12,7 @@ The `--socket-repl` option can now be a JSON object with `accept` and `args` key
 for a function that will run when accepting a new connection.
 - Add support for specifying Closure libraries in the `:libs` entry in `deps.cljs`
 ([#210](https://github.com/anmonteiro/lumo/issues/210)).
+- Add `lumo.core/exit` function.
 
 ### Changes
 

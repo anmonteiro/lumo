@@ -32,6 +32,7 @@ test_script:
   - yarn test
   - cmd: boot test
   - cmd: boot release-ci
+  - cmd: build\lumo.exe --classpath test scripts\lumo_test.cljs
 
 artifacts:
   - path: build

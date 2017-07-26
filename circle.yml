@@ -51,6 +51,7 @@ test:
     - yarn test
     - boot test
     - boot release-ci
+    - ./build/lumo -c test scripts/lumo_test.cljs
   post:
     - chmod a+x build/lumo
     - zip -j build/lumo.zip build/lumo
