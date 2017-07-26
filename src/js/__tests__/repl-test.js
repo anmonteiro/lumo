@@ -348,7 +348,7 @@ describe('startREPL', () => {
     it('should emit the secondary prompt', () => {
       jest.resetModules();
       jest.mock('../cljs', () => ({
-        isReadable: jest.fn((input: string) => false),
+        isReadable: jest.fn((input: string) => null),
         execute: jest.fn(),
         getCurrentNamespace: jest.fn(() => 'cljs.user'),
         indentSpaceCount: jest.fn((text: string) => 0),

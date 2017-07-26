@@ -869,11 +869,9 @@
       (merge (get-in @st [::ana/namespaces cur-ns :requires])
         (get-in @st [::ana/namespaces cur-ns :require-macros])))))
 
-(defn- reader-eof? [msg]
-  (string/starts-with? msg "Unexpected EOF")
-  #_(or
-    (identical? "EOF while reading" msg)
-    (identical? "EOF while reading string" msg)))
+(defn- reader-eof? [e]
+  (let [{:keys [ex-kind]} (ex-data e)]
+    (keyword-identical? ex-kind :eof)))
 
 (defn- read-chars
   [reader]
@@ -1125,11 +1123,8 @@
   (try
     (second (repl-read-string form))
     (catch :default e
-      (let [msg (.-message e)]
-        (cond
-          (identical? "Unexpected EOF." msg) ""
-          (reader-eof? msg) false
-          :else "")))))
+      (when-not (reader-eof? e)
+        ""))))
 
 (defn- ^:export run-main
   [main-ns & args]

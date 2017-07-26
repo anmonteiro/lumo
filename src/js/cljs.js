@@ -283,7 +283,7 @@ export function getCurrentNamespace(sessionID: number): string {
   return ClojureScriptContext.lumo.repl.get_current_ns(sessionID);
 }
 
-export function isReadable(form: string): string | false {
+export function isReadable(form: string): ?string {
   // $FlowIssue: context can have globals
   return ClojureScriptContext.lumo.repl.is_readable_QMARK_(form);
 }
