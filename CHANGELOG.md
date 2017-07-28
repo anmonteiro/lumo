@@ -13,6 +13,7 @@ for a function that will run when accepting a new connection.
 - Add support for specifying Closure libraries in the `:libs` entry in `deps.cljs`
 ([#210](https://github.com/anmonteiro/lumo/issues/210)).
 - Add `lumo.core/exit` function.
+- Pretty print JavaScript objects & arrays.
 
 ### Changes
 
