@@ -64,7 +64,7 @@
       (object? x)
       (let [kvs (map (fn [k]
                        [(cond-> k
-                          (some? (re-matches #"[A-Za-z][\w\*\+\?!\-']*" k))
+                          (some? (re-matches #"[A-Za-z_\*\+\?!\-'][\w\*\+\?!\-']*" k))
                           keyword)
                         (gobj/get x k)])
                   (js-keys x))]
