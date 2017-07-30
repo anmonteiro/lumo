@@ -26,6 +26,7 @@ export type CLIOptsType = {
   'fn-invoke-direct': boolean,
   legal: boolean,
   'elide-asserts': boolean,
+  'checked-arrays'?: string,
   cache?: string,
   classpath: string[],
   'socket-repl'?: string,
@@ -86,6 +87,8 @@ Usage:  lumo [init-opt*] [main-opt] [arg*]
     -f, --fn-invoke-direct       Do not not generate \`.call(null...)\` calls
                                  for unknown functions, but instead direct
                                  invokes via \`f(a0,a1...)\`.
+    -A x, --checked-arrays x     Enables checked arrays where x is either warn
+                                 or error.
     -n opts, --socket-repl x     Enable a socket REPL where x is port, IP:port
                                  or JSON of the following form, where port is
                                  required:
@@ -127,6 +130,7 @@ function getCLIOpts(): CLIOptsType {
     's(static-fns)',
     'f(fn-invoke-direct)',
     'a(elide-asserts)',
+    'A:(checked-arrays)',
     'm:(main)',
     'r(repl)',
     'k:(cache)',
@@ -221,6 +225,9 @@ function getCLIOpts(): CLIOptsType {
         break;
       case 'a':
         ret['elide-asserts'] = true;
+        break;
+      case 'A':
+        ret['checked-arrays'] = option.optarg;
         break;
       case 'm':
         foundMainOpt = true;

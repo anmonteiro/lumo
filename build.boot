@@ -2,12 +2,12 @@
  :source-paths #{"src/cljs/snapshot"}
  :asset-paths #{"src/js" "src/cljs/bundled"}
  :dependencies '[[org.clojure/clojure         "1.9.0-alpha17"]
-                 [org.clojure/clojurescript   "1.9.671"]
-                 [org.clojure/tools.reader    "1.0.0"]
+                 [org.clojure/clojurescript   "1.9.854"]
+                 [org.clojure/tools.reader    "1.0.3"]
                  [com.cognitect/transit-cljs  "0.8.239"]
                  [malabarba/lazy-map          "1.3"]
                  [fipp                        "0.6.9"]
-                 [org.clojure/test.check      "0.10.0-alpha1" :scope "test"]
+                 [org.clojure/test.check      "0.10.0-alpha2" :scope "test"]
                  [com.cognitect/transit-clj   "0.8.300" :scope "test"]
                  [com.cemerick/piggieback     "0.2.2"   :scope "test"]
                  [adzerk/boot-cljs            "2.0.0"   :scope "test"]

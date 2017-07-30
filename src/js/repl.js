@@ -85,7 +85,7 @@ export function processLine(replSession: REPLSession, line: string): void {
   const session = replSession;
   const { input, rl, isMain } = session;
 
-  let extraForms = false;
+  let extraForms;
 
   if (exitCommands.has(line.trim())) {
     // $FlowIssue - use of rl.output
@@ -102,29 +102,29 @@ export function processLine(replSession: REPLSession, line: string): void {
     const currentInput = session.input;
     extraForms = cljs.isReadable(currentInput);
 
-    if (extraForms !== false) {
+    if (isWhitespace(currentInput)) {
+      prompt(session);
+      break;
+    }
+
+    if (extraForms != null) {
       session.input = currentInput.substring(
         0,
         currentInput.length - extraForms.length,
       );
 
-      if (!isWhitespace(session.input)) {
-        cljs.setPrintFns(rl.output);
-        currentREPLInterface = rl;
+      cljs.setPrintFns(rl.output);
+      currentREPLInterface = rl;
 
-        cljs.execute(session.input, 'text', true, true, session.id);
+      cljs.execute(session.input, 'text', true, true, session.id);
 
-        currentREPLInterface = null;
-        cljs.setPrintFns();
-        // If *print-newline* is off, we need to emit a newline now, otherwise
-        // the prompt and line editing will overwrite any printed output on the
-        // current line.
-        if (!cljs.isPrintingNewline()) {
-          rl.output.write('\n');
-        }
-      } else {
-        prompt(session);
-        break;
+      currentREPLInterface = null;
+      cljs.setPrintFns();
+      // If *print-newline* is off, we need to emit a newline now, otherwise
+      // the prompt and line editing will overwrite any printed output on the
+      // current line.
+      if (!cljs.isPrintingNewline()) {
+        rl.output.write('\n');
       }
 
       session.input = extraForms;

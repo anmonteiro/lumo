@@ -14,12 +14,15 @@ for a function that will run when accepting a new connection.
 ([#210](https://github.com/anmonteiro/lumo/issues/210)).
 - Add `lumo.core/exit` function.
 - Pretty print JavaScript objects & arrays.
+- Add a new `-A / --checked-arrays` command line option that can be `warn` or `error`.
 
 ### Changes
 
 - Use Paredit.js to calculate indentation for multiline forms ([#193](https://github.com/anmonteiro/lumo/issues/193)).
 - Upgrade Google Closure Compiler to v20170626.
 - Upgrade Node.js to version 8.2.1.
+- **BREAKING**: Remove `lumo.core/*command-line-args*` in favor of the new `cljs.core/*command-line-args*`
+introduced in ClojureScript 1.9.8XX.
 
 ### Bug fixes
 
@@ -27,6 +30,7 @@ for a function that will run when accepting a new connection.
 - Socket REPL fails to isolate NS ([#158](https://github.com/anmonteiro/lumo/issues/158)).
 - Fix NPM installation as root ([#206](https://github.com/anmonteiro/lumo/issues/206)).
 - Deduplicate the results of `lumo.repl/apropos`.
+- Fix issue that prevented `*print-namespace-maps*` to be `true` on REPL startup.
 
 ## [1.6.0](https://github.com/anmonteiro/lumo/compare/1.5.0...1.6.0) (2017-06-30)
 

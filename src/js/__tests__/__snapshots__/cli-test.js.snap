@@ -139,6 +139,8 @@ Usage:  lumo [init-opt*] [main-opt] [arg*]
     -f, --fn-invoke-direct       Do not not generate \`.call(null...)\` calls
                                  for unknown functions, but instead direct
                                  invokes via \`f(a0,a1...)\`.
+    -A x, --checked-arrays x     Enables checked arrays where x is either warn
+                                 or error.
     -n opts, --socket-repl x     Enable a socket REPL where x is port, IP:port
                                  or JSON of the following form, where port is
                                  required:

@@ -190,6 +190,7 @@ function setRuntimeOpts(opts: CLIOptsType): void {
   const staticFns = opts['static-fns'];
   const fnInvokeDirect = opts['fn-invoke-direct'];
   const elideAsserts = opts['elide-asserts'];
+  const checkedArrays = opts['checked-arrays'];
   // $FlowIssue: context can have globals
   ClojureScriptContext.lumo.repl.init(
     repl,
@@ -198,6 +199,7 @@ function setRuntimeOpts(opts: CLIOptsType): void {
     staticFns,
     fnInvokeDirect,
     elideAsserts,
+    checkedArrays,
   );
 }
 
@@ -281,7 +283,7 @@ export function getCurrentNamespace(sessionID: number): string {
   return ClojureScriptContext.lumo.repl.get_current_ns(sessionID);
 }
 
-export function isReadable(form: string): string | false {
+export function isReadable(form: string): ?string {
   // $FlowIssue: context can have globals
   return ClojureScriptContext.lumo.repl.is_readable_QMARK_(form);
 }

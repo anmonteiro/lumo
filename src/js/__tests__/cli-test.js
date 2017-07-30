@@ -237,6 +237,34 @@ describe('getCliOpts', () => {
       });
     });
 
+    describe('sets checked-arrays to in opts', () => {
+      it('if -A specified', async () => {
+        const args = '-A warn';
+        Object.defineProperty(process, 'argv', {
+          value: ['', ''].concat(args.split(' ')),
+        });
+
+        await startCLI();
+
+        const [[parsedOpts]] = cljs.mock.calls;
+
+        expect(parsedOpts['checked-arrays']).toBe('warn');
+      });
+
+      it('if --checked-arrays specified', async () => {
+        const args = '--checked-arrays error';
+        Object.defineProperty(process, 'argv', {
+          value: ['', ''].concat(args.split(' ')),
+        });
+
+        await startCLI();
+
+        const [[parsedOpts]] = cljs.mock.calls;
+
+        expect(parsedOpts['checked-arrays']).toBe('error');
+      });
+    });
+
     describe('sets srcPaths with local maven repo JARs when -D specified', () => {
       const osHomedir = os.homedir;
       beforeAll(() => {

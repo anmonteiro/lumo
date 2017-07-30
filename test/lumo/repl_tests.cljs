@@ -9,10 +9,10 @@
   (use-fixtures :once test-util/with-lumo-globals test-util/with-cache))
 
 (deftest test-is-readable?
-  (is (false? (lumo/is-readable? "(")))
+  (is (nil? (lumo/is-readable? "(")))
   (is (= (lumo/is-readable? "(+ 1 2)") ""))
   (is (= (lumo/is-readable? "(+ 1 2) :foo") " :foo"))
-  (is (= (lumo/is-readable? "") ""))
+  (is (nil? (lumo/is-readable? "")))
   (is (= (lumo/is-readable? ")") "")))
 
 (deftest test-form-start
