@@ -8,10 +8,11 @@
   },
   "globals" : {
     "__DEV__": true,
-    "lumo": true,
+    "lumo": true
   },
   "plugins" : ["flowtype", "import", "babel"],
   "rules" : {
+    "indent": 0,
     "keyword-spacing": [2, {"before": true, "after": true}],
     "linebreak-style": 0,
     "no-cond-assign": [2, "except-parens"],
