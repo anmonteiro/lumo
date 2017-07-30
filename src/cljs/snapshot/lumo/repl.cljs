@@ -1288,7 +1288,8 @@
       cognitect.transit
       lazy-map.core
       com.cognitect.transit
-      com.cognitect.transit]))
+      com.cognitect.transit
+      lumo.io]))
 
 (defn- namespace-completions []
   (transduce (comp
