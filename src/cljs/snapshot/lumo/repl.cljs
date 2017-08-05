@@ -1070,7 +1070,7 @@
               r/*alias-map*    (current-alias-map)]
       (let [form (and expression? (first (repl-read-string source)))
             eval-opts (merge (make-eval-opts)
-                        (if expression?
+                        (when expression?
                           {:context :expr
                            :def-emits-var true}))]
         (if (repl-special? form)
