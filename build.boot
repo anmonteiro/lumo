@@ -20,7 +20,6 @@
 (require
   '[adzerk.boot-cljs      :refer [cljs]]
   '[crisptrutski.boot-cljs-test :refer [test-cljs]]
-  '[boot.pod              :as pod]
   '[boot.util             :as util]
   '[clojure.edn           :as edn]
   '[clojure.string        :as str]
