@@ -192,14 +192,15 @@ export function resource(filename: string): ?ResourceType {
     if (srcPath.endsWith('.jar')) {
       const data = fs.readFileSync(srcPath);
       const zip = new JSZip().load(data);
-      const file = zip.file(filename);
+      const entries = zip.filter((pathInJar: string) => pathInJar === filename);
 
-      if (file != null) {
+      if (entries.length > 0) {
+        const entry = entries[0];
         return {
           type: 'jar',
           jarPath: path.resolve(srcPath),
           src: filename,
-          date: file.date,
+          date: entry.date,
         };
       }
     }
@@ -244,6 +245,13 @@ export function readSourceFromJar({
   const source = zip.file(src);
 
   return source.asText();
+}
+
+export function readDirFromJar(jarPath: string, dir: string): string[] {
+  const data = fs.readFileSync(jarPath);
+  const zip = new JSZip().load(data);
+
+  return zip.file(new RegExp(`^${dir}`)).map((x: { name: string }) => x.name);
 }
 
 export function dumpSDK(outdir: string): void {

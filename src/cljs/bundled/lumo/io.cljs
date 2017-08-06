@@ -19,6 +19,4 @@
     (and (goog/isObject file-or-resource) (= (.-type file-or-resource) "jar"))
     (js/$$LUMO_GLOBALS.readSourceFromJar file-or-resource)
 
-    :else (do
-            (js/console.log "omg it happened" file-or-resource (pr-str file-or-resource))
-            (throw (ex-info "should never happen!" {:x file-or-resource})))))
+    :else (throw (ex-info "should never happen!" {:file file-or-resource}))))

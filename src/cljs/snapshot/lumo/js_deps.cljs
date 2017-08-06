@@ -36,17 +36,34 @@
                              conj munged-ns)))
                {:requires [] :provides []})))
 
+
+(defn- cp-file-seq [file]
+  (tree-seq
+    (fn [f]
+      (let [path js/$$LUMO_GLOBALS.path
+            resource (js/$$LUMO_GLOBALS.resource (path.normalize (str f path.sep)))]
+        (and (some? resource)
+          (case (.-type resource)
+            "jar" true
+            "file" (.isDirectory (js/$$LUMO_GLOBALS.fs.statSync (.-src resource)))))))
+    (fn [d]
+      (let [path js/$$LUMO_GLOBALS.path
+            resource (js/$$LUMO_GLOBALS.resource (path.normalize (str d path.sep)))]
+        (case (.-type resource)
+          "jar" (js/$$LUMO_GLOBALS.readDirFromJar (.-jarPath resource) d)
+          "file" (map #(path.join d %) (js/$$LUMO_GLOBALS.fs.readdirSync (.-src resource))))))
+    file))
+
 (defn parse-libs
   "Converts a closure lib path into a list of module descriptors."
   [lib]
-  (->> lib
-       (common/file-seq)
-       (filter #(= ".js" (js/$$LUMO_GLOBALS.path.extname %)))
-       (map (fn [file]
-              (let [source (.-source (js/$$LUMO_GLOBALS.readSource file))]
-                (when-not source
-                  (throw (ex-info "The specified closure library does not exist" {:path file})))
-                (assoc (parse-closure-ns source) :file file))))))
+  (->> (cp-file-seq lib)
+    (filter #(= ".js" (js/$$LUMO_GLOBALS.path.extname %)))
+    (map (fn [file]
+           (let [source (.-source (js/$$LUMO_GLOBALS.readSource file))]
+             (when-not source
+               (throw (ex-info "The specified closure library does not exist" {:path file})))
+             (assoc (parse-closure-ns source) :file file))))))
 
 (defn index-js-libs
   "Indexes all js foreign and closure libs from each deps.cljs on the classpath."
