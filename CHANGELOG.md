@@ -15,6 +15,7 @@ for a function that will run when accepting a new connection.
 - Add `lumo.core/exit` function.
 - Pretty print JavaScript objects & arrays.
 - Add a new `-A / --checked-arrays` command line option that can be `warn` or `error`.
+- Miscellaneous improvements to pretty printing at the REPL.
 
 ### Changes
 
