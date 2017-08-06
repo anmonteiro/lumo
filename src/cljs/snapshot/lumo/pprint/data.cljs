@@ -140,7 +140,11 @@
     [:text (pr-str x)])
 
   (visit-record [this x]
-    [:text (pr-str x)]))
+    (pretty-coll this
+      (str "#" (string/replace (pr-str (type x)) #"/" ".") "{")
+      x [:span "," :line] "}"
+      (fn [printer [k v]]
+        [:span (visit printer k) " " (visit printer v)]))))
 
 (defn pprint
   ([x] (pprint x {}))
