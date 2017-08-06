@@ -156,9 +156,7 @@
                                              'lumo.core/*lumo-version* lumo-version}
                            :compiler-stats true
                            :fn-invoke-direct true
-                           ;; re-enable once https://dev.clojure.org/jira/browse/CLJS-2153
-                           ;; is fixed
-                           :parallel-build false}))
+                           :parallel-build true}))
 
 (deftask dev []
   (comp
