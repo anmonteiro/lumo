@@ -20,7 +20,6 @@
 (require
   '[adzerk.boot-cljs      :refer [cljs]]
   '[crisptrutski.boot-cljs-test :refer [test-cljs]]
-  '[boot.pod              :as pod]
   '[boot.util             :as util]
   '[clojure.edn           :as edn]
   '[clojure.string        :as str]
@@ -156,9 +155,7 @@
                                              'lumo.core/*lumo-version* lumo-version}
                            :compiler-stats true
                            :fn-invoke-direct true
-                           ;; re-enable once https://dev.clojure.org/jira/browse/CLJS-2153
-                           ;; is fixed
-                           :parallel-build false}))
+                           :parallel-build true}))
 
 (deftask dev []
   (comp
