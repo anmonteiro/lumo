@@ -52,7 +52,7 @@ function moveLibs(compiler, options, callback) {
     fs.readFileSync(`target/google-closure-compiler-js.js`),
   );
 
-  callback(null, compiler, options);
+  callback();
 }
 
 Promise.all(resources.map(deflate)).then(() => {
