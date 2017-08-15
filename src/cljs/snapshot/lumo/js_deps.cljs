@@ -57,13 +57,15 @@
 (defn parse-libs
   "Converts a closure lib path into a list of module descriptors."
   [lib]
-  (->> (cp-file-seq lib)
-    (filter #(= ".js" (js/$$LUMO_GLOBALS.path.extname %)))
-    (map (fn [file]
-           (let [source (.-source (js/$$LUMO_GLOBALS.readSource file))]
-             (when-not source
-               (throw (ex-info "The specified closure library does not exist" {:path file})))
-             (assoc (parse-closure-ns source) :file file))))))
+  (into []
+    (comp
+      (filter #(= ".js" (js/$$LUMO_GLOBALS.path.extname %)))
+      (map (fn [file]
+             (if-let [source (some-> (js/$$LUMO_GLOBALS.readSource file)
+                               .-source)]
+               (assoc (parse-closure-ns source) :file file)
+               (throw (ex-info (str "The specified Closure file does not exist: " file) {:path file}))))))
+    (cp-file-seq lib)))
 
 (defn index-js-libs
   "Indexes all js foreign and closure libs from each deps.cljs on the classpath."
@@ -72,7 +74,9 @@
           (fn [index]
             (reduce (fn [index deps-cljs-str]
                       (let [{:keys [libs foreign-libs]} (r/read-string deps-cljs-str)]
-                        (add-js-libs index (concat foreign-libs (mapcat parse-libs libs)))))
+                        (add-js-libs index (into (vec foreign-libs)
+                                             (mapcat parse-libs)
+                                             libs))))
                     index
                     (js/$$LUMO_GLOBALS.loadUpstreamJsLibs)))))
 
