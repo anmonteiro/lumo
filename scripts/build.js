@@ -4,7 +4,7 @@ const babel = require('rollup-plugin-babel');
 const replace = require('rollup-plugin-replace');
 const resolve = require('rollup-plugin-node-resolve');
 const commonjs = require('rollup-plugin-commonjs');
-const babili = require('rollup-plugin-babili');
+const babelMinify = require('rollup-plugin-babel-minify');
 
 const pkg = require('../package.json');
 const argv = process.argv.slice(2);
@@ -75,7 +75,7 @@ const plugins = [
 
 if (!isDevBuild) {
   plugins.push(
-    babili({
+    babelMinify({
       comments: false,
       removeConsole: true,
       removeDebugger: true,
