@@ -2,6 +2,8 @@
 
 ## [master](https://github.com/anmonteiro/lumo/compare/1.6.0...HEAD) (unreleased)
 
+## [1.7.0](https://github.com/anmonteiro/lumo/compare/1.6.0...1.7.0) (2017-08-16)
+
 ### New features
 
 - Add support for tagged literals ([#75](https://github.com/anmonteiro/lumo/issues/75)).
