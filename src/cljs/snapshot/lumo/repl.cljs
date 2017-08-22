@@ -1149,6 +1149,11 @@
                     (handle-error e true)))))))))
     nil))
 
+(defn- ^:export run-main-cli-fn
+  []
+  (when (fn? *main-cli-fn*)
+    (apply *main-cli-fn* *command-line-args*)))
+
 (defn- ^:export get-current-ns [session-id]
   (let [{:keys [ns]} (get @session-states session-id @default-session-state)]
     (str ns)))

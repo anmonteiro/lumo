@@ -460,6 +460,17 @@ async function startClojureScriptEngine(opts: CLIOptsType): Promise<mixed> {
 
     startREPL(opts);
   }
+
+  if (!mainNsName && !repl) {
+    initClojureScriptEngine(opts);
+    execute(
+      "(require 'lumo.repl) (lumo.repl/run-main-cli-fn)",
+      'text',
+      true,
+      false,
+      0,
+    );
+  }
 }
 
 export default startClojureScriptEngine;
