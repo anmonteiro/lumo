@@ -253,7 +253,7 @@ function initClojureScriptEngine(opts: CLIOptsType): void {
 
   if (args != null && args.length > 0) {
     // $FlowIssue: context can have globals
-    ClojureScriptContext.lumo.core._STAR_command_line_args_STAR_ =
+    ClojureScriptContext.cljs.core._STAR_command_line_args_STAR_ =
       // $FlowIssue: context can have globals
       ClojureScriptContext.cljs.core.seq(args);
   }
