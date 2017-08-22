@@ -2,6 +2,10 @@
 
 ## [master](https://github.com/anmonteiro/lumo/compare/1.6.0...HEAD) (unreleased)
 
+### Bug fixes
+
+- Fix `cljs.core/*command-line-args*` not getting populated ([#237](https://github.com/anmonteiro/lumo/pull/237)).
+
 ## [1.7.0](https://github.com/anmonteiro/lumo/compare/1.6.0...1.7.0) (2017-08-16)
 
 ### New features
