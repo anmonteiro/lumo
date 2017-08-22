@@ -136,3 +136,11 @@ Special Form
   (is (= () (lumo/apropos ffirst)))
   (is (= '(cljs.core/ffirst cljs.core/nfirst) (lumo/apropos #"[a-z]+first")))
   (is (= '(cljs.core/aget) (lumo/apropos "aget"))))
+
+(when test-util/lumo-env?
+  (deftest test-cli-args
+    ;; this requires to run:
+    ;;   ./build/lumo -c test scripts/lumo_test.cljs --test-cli-option true
+    (is (not-any? #(= (.-execPath js/process) %1) cljs.core/*command-line-args*) "It should not contain process.execPath")
+    (is (not-any? #(= "nexe.js" %1) cljs.core/*command-line-args*) "It should not contain the path to the JavaScript file being executed")
+    (is (= ["--test-cli-option" "true"] cljs.core/*command-line-args*) "It should contained the expected options (in order)")))
