@@ -17,7 +17,7 @@ export type CLIOptsType = {
   version: boolean,
   'dump-sdk'?: string,
   'local-repo'?: string,
-  'dependencies': string[],
+  dependencies: string[],
   repl: boolean,
   'auto-cache'?: boolean,
   quiet: boolean,

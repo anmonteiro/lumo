@@ -1,17 +1,17 @@
 (set-env!
  :source-paths #{"src/cljs/snapshot"}
  :asset-paths #{"src/js" "src/cljs/bundled"}
- :dependencies '[[org.clojure/clojure         "1.9.0-alpha17"]
+ :dependencies '[[org.clojure/clojure         "1.9.0-alpha19"]
                  [org.clojure/clojurescript   "1.9.908"]
                  [org.clojure/tools.reader    "1.0.5"]
                  [com.cognitect/transit-cljs  "0.8.239"]
                  [malabarba/lazy-map          "1.3"]
-                 [fipp                        "0.6.9"]
+                 [fipp                        "0.6.10"]
                  [org.clojure/test.check      "0.10.0-alpha2" :scope "test"]
                  [com.cognitect/transit-clj   "0.8.300" :scope "test"]
                  [com.cemerick/piggieback     "0.2.2"   :scope "test"]
-                 [adzerk/boot-cljs            "2.1.1"   :scope "test"]
-                 [crisptrutski/boot-cljs-test "0.3.2-SNAPSHOT"   :scope "test"]
+                 [adzerk/boot-cljs            "2.1.2"   :scope "test"]
+                 [crisptrutski/boot-cljs-test "0.3.3"   :scope "test"]
                  [org.clojure/tools.nrepl     "0.2.13"  :scope "test"]
                  [weasel                      "0.7.0"   :scope "test"]
                  [doo                         "0.1.7"   :scope "test"]]
