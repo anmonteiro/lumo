@@ -350,16 +350,16 @@ function runMain(mainNS: string, args: string[]): void {
 }
 
 function processStdin(): void {
-  let code = '';
-  process.stdin.on('data', (chunk: string) => {
-    code += chunk;
+  const chunks = [];
+  process.stdin.on('data', (chunk: Buffer) => {
+    chunks.push(chunk);
   });
   process.stdin.on('error', () => {
     process.stderr.write('Error processing stdin.\n');
     process.exit(1);
   });
   process.stdin.on('end', () => {
-    executeScript(code, 'text');
+    execute(Buffer.concat(chunks).toString(), 'text', true, false);
   });
 }
 
