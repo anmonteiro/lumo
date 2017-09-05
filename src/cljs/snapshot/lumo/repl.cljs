@@ -1073,7 +1073,7 @@
                           {:context :expr
                            :def-emits-var true}))]
         (if (repl-special? form)
-          ((get repl-special-fns (first form)) form eval-opts)
+          ((get repl-special-fns (first form)) form (merge opts eval-opts))
           (cljs/eval-str
             st
             source
