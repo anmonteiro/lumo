@@ -511,7 +511,6 @@
 (defn- get-namespace
   "Gets the AST for a given namespace."
   [ns]
-  {:pre [(symbol? ns)]}
   (get-in @st [::ana/namespaces ns]))
 
 (defn- resolve-var

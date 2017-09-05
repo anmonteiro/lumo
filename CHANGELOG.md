@@ -5,6 +5,7 @@
 ### Bug fixes
 
 - Fix `cljs.core/*command-line-args*` not getting populated ([#237](https://github.com/anmonteiro/lumo/pull/237)).
+- Crash when getting completions for a namespace that was required as string ([#246](https://github.com/anmonteiro/lumo/issues/246)).
 
 ## [1.7.0](https://github.com/anmonteiro/lumo/compare/1.6.0...1.7.0) (2017-08-16)
 
