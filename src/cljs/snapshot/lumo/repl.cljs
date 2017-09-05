@@ -232,7 +232,7 @@
            :filename cache-filename
            :cache (common/transit-json->cljs (.-source cache-json))})))))
 
-;; TODO: can be optimized e.g. to just analyze CLJ sourced if JS present
+;; TODO: can be optimized e.g. to just analyze CLJ sources if JS present
 ;; but no analysis cache
 (defn- load-external
   [path filename macros? cb]

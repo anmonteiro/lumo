@@ -84,7 +84,7 @@ if (!isDevBuild) {
 }
 
 rollup({
-  entry: 'src/js/index.js',
+  input: 'src/js/index.js',
   plugins,
   external,
   pureExternalModules: true,
@@ -92,7 +92,7 @@ rollup({
   .then(bundle => {
     bundle.write({
       format: 'cjs',
-      dest: `target/bundle${!isDevBuild ? '.min' : ''}.js`,
+      file: `target/bundle${!isDevBuild ? '.min' : ''}.js`,
       interop: false,
       exports: 'none',
       intro: `;(function(){
