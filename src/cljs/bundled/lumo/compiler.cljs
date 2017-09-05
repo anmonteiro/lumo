@@ -165,47 +165,41 @@
 (defn emit-source [src dest ext opts cb]
   (let [source (slurp src)]
     (cljs/compile-str
-      env/*compiler*
-      source
-      nil
-      (assoc opts :verbose false)
-      (fn [{:keys [value error] :as m}]
-        (if error
-          (cb {:error error})
-          (let [sm-data (when comp/*source-map-data* @comp/*source-map-data*)
-                ret     (merge
-                          (lana/parse-ns src)
-                          {:file dest
-                           ;; :requires (if (= ns-name 'cljs.core)
-                           ;;             (set (vals deps))
-                           ;;             (cond-> (conj (set (vals deps)) 'cljs.core)
-                           ;;               (get-in @env/*compiler* [:options :emit-constants])
-                           ;;               (conj ana/constants-ns-sym)))
-                           }
-                          #_{:ns         (or ns-name 'cljs.user)
-                           :macros-ns  (:macros-ns opts)
-                           :provides   [ns-name]
-                           :requires   (if (= ns-name 'cljs.core)
-                                         (set (vals deps))
-                                         (cond-> (conj (set (vals deps)) 'cljs.core)
-                                           (get-in @env/*compiler* [:options :emit-constants])
-                                           (conj ana/constants-ns-sym)))
-                           :file        dest
-                           :source-file src}
-                          (when sm-data
-                            {:source-map (:source-map sm-data)}))]
-            (when (and sm-data (= :none (:optimizations opts)))
-              (emit-source-map src dest sm-data
-                (merge opts {:ext ext :provides [ns-name]})))
-            (let [path (js/$$LUMO_GLOBALS.path.resolve dest)]
-              (swap! env/*compiler* assoc-in [::comp/compiled-cljs path] ret))
-            (let [{:keys [output-dir cache-analysis]} opts]
-              #_(when (and (true? cache-analysis) output-dir)
-                  (ana/write-analysis-cache ns-name
-                    (ana/cache-file src (lana/parse-ns src) output-dir :write)
-                    src))
-              (spit dest value)
-              (cb ret))))))))
+     env/*compiler*
+     source
+     nil
+     (assoc opts :verbose false)
+     (fn [{:keys [value error] :as m}]
+       (if error
+         (cb {:error error})
+         (let [sm-data (when comp/*source-map-data* @comp/*source-map-data*)
+               ret     (merge
+                        (lana/parse-ns src)
+                        {:ns         (or ns-name 'cljs.user)
+                         :macros-ns  (:macros-ns opts)
+                         :file dest
+                         :provides   [ns-name]
+                         :requires (if (= ns-name 'cljs.core)
+                                     (set (vals deps))
+                                     (conj (set (vals deps)) 'cljs.core)
+                                     #_(cond-> (conj (set (vals deps)) 'cljs.core)
+                                         (get-in @env/*compiler* [:options :emit-constants])
+                                         (conj ana/constants-ns-sym)))
+                         :source-file src}
+                        (when sm-data
+                          {:source-map (:source-map sm-data)}))]
+           (when (and sm-data (= :none (:optimizations opts)))
+             (emit-source-map src dest sm-data
+                              (merge opts {:ext ext :provides [ns-name]})))
+           (let [path (js/$$LUMO_GLOBALS.path.resolve dest)]
+             (swap! env/*compiler* assoc-in [::comp/compiled-cljs path] ret))
+           (let [{:keys [output-dir cache-analysis]} opts]
+             #_(when (and (true? cache-analysis) output-dir)
+                 (ana/write-analysis-cache ns-name
+                                           (ana/cache-file src (lana/parse-ns src) output-dir :write)
+                                           src))
+             (spit dest value)
+             (cb ret))))))))
 
 (defn compile-file*
      ([src dest cb]
