@@ -158,82 +158,6 @@
          :relpaths {(util/path src)
                     (util/ns->relpath (first (:provides opts)) (:ext opts))}}))))
 
-#_(defn emit-source [src dest ext opts]
-  (let [out dest
-        sb (StringBuffer.)]
-    (binding [ana/*cljs-ns*         'cljs.user
-              ana/*cljs-file*       src
-              reader/*alias-map*    (or reader/*alias-map* {})
-              ana/*cljs-static-fns* (or ana/*cljs-static-fns* (:static-fns opts))
-              comp/*source-map-data*     (when (:source-map opts)
-                                           (atom
-                                             {:source-map (sorted-map)
-                                              :gen-col 0
-                                              :gen-line 0}))]
-      (.append sb (with-out-str (comp/emitln (compiled-by-string opts))))
-      (let [rdr src
-            env (ana/empty-env)]
-        (loop [forms       (lana/forms-seq* rdr (util/path src))
-               ns-name     nil
-               deps        nil]
-          (if (seq forms)
-            (let [env (assoc env :ns (ana/get-namespace ana/*cljs-ns*))
-                  {:keys [op] :as ast} (ana/analyze env (first forms) nil opts)]
-              (cond
-                (= op :ns)
-                (let [ns-name (:name ast)
-                      ns-name (if (and (= 'cljs.core ns-name)
-                                    (= "cljc" ext))
-                                'cljs.core$macros
-                                ns-name)]
-                  (.append sb (with-out-str (comp/emit ast)))
-                  (recur (rest forms) ns-name (merge (:uses ast) (:requires ast))))
-
-                (= :ns* (:op ast))
-                (let [ns-emitted? (some? ns-name)
-                      ns-name (lana/gen-user-ns src)]
-                  (if-not ns-emitted?
-                    (.append sb (with-out-str (comp/emit (assoc ast :name ns-name :op :ns))))
-                    (.append sb (with-out-str (comp/emit ast))))
-                  (recur (rest forms) ns-name (merge deps (:uses ast) (:requires ast))))
-
-                :else
-                (let [ns-emitted? (some? ns-name)
-                      ns-name (if-not ns-emitted?
-                                (lana/gen-user-ns src)
-                                ns-name)]
-                  (when-not ns-emitted?
-                    (.append sb (with-out-str (comp/emit {:op :ns
-                                                          :name ns-name}))))
-                  (.append sb (with-out-str (comp/emit ast)))
-                  (recur (rest forms) ns-name deps))))
-            (let [sm-data (when comp/*source-map-data* @comp/*source-map-data*)
-                  ret     (merge
-                            {:ns         (or ns-name 'cljs.user)
-                             :macros-ns  (:macros-ns opts)
-                             :provides   [ns-name]
-                             :requires   (if (= ns-name 'cljs.core)
-                                           (set (vals deps))
-                                           (cond-> (conj (set (vals deps)) 'cljs.core)
-                                             (get-in @env/*compiler* [:options :emit-constants])
-                                             (conj ana/constants-ns-sym)))
-                             :file        dest
-                             :source-file src}
-                            (when sm-data
-                              {:source-map (:source-map sm-data)}))]
-              (when (and sm-data (= :none (:optimizations opts)))
-                (emit-source-map src dest sm-data
-                  (merge opts {:ext ext :provides [ns-name]})))
-              (let [path (js/$$LUMO_GLOBALS.path.resolve dest)]
-                (swap! env/*compiler* assoc-in [::comp/compiled-cljs path] ret))
-              (let [{:keys [output-dir cache-analysis]} opts]
-                #_(when (and (true? cache-analysis) output-dir)
-                  (ana/write-analysis-cache ns-name
-                    (ana/cache-file src (lana/parse-ns src) output-dir :write)
-                    src))
-                (spit out (str sb))
-                ret))))))))
-
 (defn emit-constants-table-to-file [table dest]
   (util/mkdirs dest)
   (spit dest (with-out-str (comp/emit-constants-table table))))
@@ -241,47 +165,41 @@
 (defn emit-source [src dest ext opts cb]
   (let [source (slurp src)]
     (cljs/compile-str
-      env/*compiler*
-      source
-      nil
-      (assoc opts :verbose false)
-      (fn [{:keys [value error] :as m}]
-        (if error
-          (throw error)
-          (let [sm-data (when comp/*source-map-data* @comp/*source-map-data*)
-                ret     (merge
-                          (lana/parse-ns src)
-                          {:file dest
-                           ;; :requires (if (= ns-name 'cljs.core)
-                           ;;             (set (vals deps))
-                           ;;             (cond-> (conj (set (vals deps)) 'cljs.core)
-                           ;;               (get-in @env/*compiler* [:options :emit-constants])
-                           ;;               (conj ana/constants-ns-sym)))
-                           }
-                          #_{:ns         (or ns-name 'cljs.user)
-                           :macros-ns  (:macros-ns opts)
-                           :provides   [ns-name]
-                           :requires   (if (= ns-name 'cljs.core)
-                                         (set (vals deps))
-                                         (cond-> (conj (set (vals deps)) 'cljs.core)
-                                           (get-in @env/*compiler* [:options :emit-constants])
-                                           (conj ana/constants-ns-sym)))
-                           :file        dest
-                           :source-file src}
-                          (when sm-data
-                            {:source-map (:source-map sm-data)}))]
-            (when (and sm-data (= :none (:optimizations opts)))
-              (emit-source-map src dest sm-data
-                (merge opts {:ext ext :provides [ns-name]})))
-            (let [path (js/$$LUMO_GLOBALS.path.resolve dest)]
-              (swap! env/*compiler* assoc-in [::comp/compiled-cljs path] ret))
-            (let [{:keys [output-dir cache-analysis]} opts]
-              #_(when (and (true? cache-analysis) output-dir)
-                  (ana/write-analysis-cache ns-name
-                    (ana/cache-file src (lana/parse-ns src) output-dir :write)
-                    src))
-              (spit dest value)
-              (cb ret))))))))
+     env/*compiler*
+     source
+     nil
+     (assoc opts :verbose false)
+     (fn [{:keys [value error] :as m}]
+       (if error
+         (cb {:error error})
+         (let [sm-data (when comp/*source-map-data* @comp/*source-map-data*)
+               ret     (merge
+                        (lana/parse-ns src)
+                        {:ns         (or ns-name 'cljs.user)
+                         :macros-ns  (:macros-ns opts)
+                         :file dest
+                         :provides   [ns-name]
+                         :requires (if (= ns-name 'cljs.core)
+                                     (set (vals deps))
+                                     (conj (set (vals deps)) 'cljs.core)
+                                     #_(cond-> (conj (set (vals deps)) 'cljs.core)
+                                         (get-in @env/*compiler* [:options :emit-constants])
+                                         (conj ana/constants-ns-sym)))
+                         :source-file src}
+                        (when sm-data
+                          {:source-map (:source-map sm-data)}))]
+           (when (and sm-data (= :none (:optimizations opts)))
+             (emit-source-map src dest sm-data
+                              (merge opts {:ext ext :provides [ns-name]})))
+           (let [path (js/$$LUMO_GLOBALS.path.resolve dest)]
+             (swap! env/*compiler* assoc-in [::comp/compiled-cljs path] ret))
+           (let [{:keys [output-dir cache-analysis]} opts]
+             #_(when (and (true? cache-analysis) output-dir)
+                 (ana/write-analysis-cache ns-name
+                                           (ana/cache-file src (lana/parse-ns src) output-dir :write)
+                                           src))
+             (spit dest value)
+             (cb ret))))))))
 
 (defn compile-file*
      ([src dest cb]
@@ -303,8 +221,11 @@
                              opts)]
                   (emit-source src dest ext opts
                     (fn [ret]
-                      (util/set-last-modified dest (util/last-modified src))
-                      (cb ret)))))))))))
+                      (if (:error ret)
+                        (cb {:error (:error ret)})
+                        (do
+                          (util/set-last-modified dest (util/last-modified src))
+                          (cb ret)))))))))))))
 
 (defn compile-file
    "Compiles src to a file of the same name, but with a .js extension,
