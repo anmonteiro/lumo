@@ -349,6 +349,10 @@ function runMain(mainNS: string, args: string[]): void {
   ClojureScriptContext.lumo.repl.run_main.apply(null, [mainNS, ...args]);
 }
 
+function runMainCliFn(): void {
+  ClojureScriptContext.lumo.repl.run_main_cli_fn();
+}
+
 function processStdin(): void {
   let code = '';
   process.stdin.on('data', (chunk: string) => {
@@ -463,13 +467,7 @@ async function startClojureScriptEngine(opts: CLIOptsType): Promise<mixed> {
 
   if (!mainNsName && !repl) {
     initClojureScriptEngine(opts);
-    execute(
-      "(require 'lumo.repl) (lumo.repl/run-main-cli-fn)",
-      'text',
-      true,
-      false,
-      0,
-    );
+    runMainCliFn();
   }
 }
 
