@@ -360,6 +360,7 @@ function runMain(mainNS: string, args: string[]): void {
 }
 
 function runMainCliFn(): void {
+  // $FlowIssue: context can have globals
   ClojureScriptContext.lumo.repl.run_main_cli_fn();
 }
 
