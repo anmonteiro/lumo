@@ -10,6 +10,7 @@ import DiscardingSender from './discarding-sender';
 import * as lumo from './lumo';
 import startREPL, { currentREPLInterface } from './repl';
 import * as socketRepl from './socketRepl';
+import { isWhitespace } from './util';
 
 import type { CLIOptsType } from './cli';
 
@@ -313,22 +314,31 @@ export function clearREPLSessionState(sessionID: number): void {
   return ClojureScriptContext.lumo.repl.clear_state_for_session(sessionID);
 }
 
-function executeScript(code: string, type: string): void {
+function executeScript(
+  code: string,
+  type: string,
+  expression?: boolean = true,
+): void {
   if (type === 'text') {
     let currentInput = code;
-    let extraForms = isReadable(currentInput);
+    let extraForms;
 
-    while (currentInput) {
-      if (extraForms) {
+    for (;;) {
+      extraForms = isReadable(currentInput);
+
+      if (isWhitespace(currentInput)) {
+        break;
+      }
+
+      if (extraForms != null) {
         currentInput = currentInput.substring(
           0,
           currentInput.length - extraForms.length,
         );
-      }
 
-      execute(currentInput, 'text', true, false);
-      currentInput = extraForms;
-      extraForms = !!currentInput && isReadable(currentInput);
+        execute(currentInput, 'text', expression, false);
+        currentInput = extraForms;
+      }
     }
   } else {
     execute(code, 'path', false, false);
@@ -359,7 +369,7 @@ function processStdin(): void {
     process.exit(1);
   });
   process.stdin.on('end', () => {
-    executeScript(code, 'text');
+    executeScript(code, 'text', false);
   });
 }
 
