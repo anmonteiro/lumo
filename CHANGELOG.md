@@ -2,6 +2,10 @@
 
 ## [master](https://github.com/anmonteiro/lumo/compare/1.6.0...HEAD) (unreleased)
 
+### Changes
+
+- Treat stdin as file (doesn't print results by default) ([#231](https://github.com/anmonteiro/lumo/issues/231)).
+
 ### Bug fixes
 
 - Fix `cljs.core/*command-line-args*` not getting populated ([#237](https://github.com/anmonteiro/lumo/pull/237)).

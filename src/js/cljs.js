@@ -314,7 +314,11 @@ export function clearREPLSessionState(sessionID: number): void {
   return ClojureScriptContext.lumo.repl.clear_state_for_session(sessionID);
 }
 
-function executeScript(code: string, type: string): void {
+function executeScript(
+  code: string,
+  type: string,
+  expression?: boolean = true,
+): void {
   if (type === 'text') {
     let currentInput = code;
     let extraForms;
@@ -332,7 +336,7 @@ function executeScript(code: string, type: string): void {
           currentInput.length - extraForms.length,
         );
 
-        execute(currentInput, 'text', true, false);
+        execute(currentInput, 'text', expression, false);
         currentInput = extraForms;
       }
     }
@@ -365,7 +369,7 @@ function processStdin(): void {
     process.exit(1);
   });
   process.stdin.on('end', () => {
-    executeScript(code, 'text');
+    executeScript(code, 'text', false);
   });
 }
 
