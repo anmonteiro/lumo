@@ -228,7 +228,7 @@
                   (emit-source src dest ext opts
                     (fn [ret]
                       (if (:error ret)
-                        (cb {:error (:error ret)})
+                        (cb ret)
                         (do
                           (util/set-last-modified dest (util/last-modified src))
                           (cb ret)))))))))))))
@@ -279,7 +279,7 @@
                     (swap! env/*compiler* update-in [::ana/namespaces] dissoc ns))
                   (compile-file* src-file dest-file opts
                     (fn [ret]
-                      (when comp/*recompiled*
+                      (when (and (not (:error ret)) comp/*recompiled*)
                         (swap! comp/*recompiled* conj ns))
                       (cb ret))))
                 (do
