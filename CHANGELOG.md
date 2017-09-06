@@ -5,6 +5,7 @@
 ### New features
 
 - Get arglists from the runtime environment ([#248](https://github.com/anmonteiro/lumo/issues/248)).
+- Honor `*main-cli-fn*` ([#238](https://github.com/anmonteiro/lumo/issues/238)).
 
 ### Changes
 
