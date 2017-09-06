@@ -45,7 +45,7 @@ function isBundled(filename: string): boolean {
 export function load(filename: string): ?string {
   if (__DEV__) {
     try {
-      return fs.readFileSync(`./target/${filename}`, 'utf8');
+      return fs.readFileSync(`${__dirname}/${filename}`, 'utf8');
     } catch (e) {
       return null;
     }
