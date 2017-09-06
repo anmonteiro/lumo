@@ -359,6 +359,11 @@ function runMain(mainNS: string, args: string[]): void {
   ClojureScriptContext.lumo.repl.run_main.apply(null, [mainNS, ...args]);
 }
 
+function runMainCliFn(): void {
+  // $FlowIssue: context can have globals
+  ClojureScriptContext.lumo.repl.run_main_cli_fn();
+}
+
 function processStdin(): void {
   let code = '';
   process.stdin.on('data', (chunk: string) => {
@@ -469,6 +474,11 @@ async function startClojureScriptEngine(opts: CLIOptsType): Promise<mixed> {
     });
 
     startREPL(opts);
+  }
+
+  if (!mainNsName && !repl) {
+    initClojureScriptEngine(opts);
+    runMainCliFn();
   }
 }
 

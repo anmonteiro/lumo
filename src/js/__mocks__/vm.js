@@ -21,6 +21,7 @@ vm.ctx = {
       get_highlight_coordinates: (text: string) => 0,
       get_completions: (text: string) => [],
       run_main: (mainNS: string, args: string[]) => undefined,
+      run_main_cli_fn: () => undefined,
     },
     core: {},
   },
