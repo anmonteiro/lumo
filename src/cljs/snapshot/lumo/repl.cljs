@@ -173,7 +173,8 @@
         cljs.repl
         lazy-map.core
         clojure.core.rrb-vector.macros}
-     '#{goog.object
+     '#{goog
+        goog.object
         goog.string
         goog.string.StringBuffer
         goog.array
