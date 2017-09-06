@@ -2,6 +2,10 @@
 
 ## [master](https://github.com/anmonteiro/lumo/compare/1.6.0...HEAD) (unreleased)
 
+### New features
+
+- Get arglists from the runtime environment ([#248](https://github.com/anmonteiro/lumo/issues/248)).
+
 ### Changes
 
 - Treat stdin as file (doesn't print results by default) ([#231](https://github.com/anmonteiro/lumo/issues/231)).

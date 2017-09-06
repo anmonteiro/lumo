@@ -1187,7 +1187,10 @@
 (defn ^:export get-arglists
   "Return the argument lists for the given symbol as string."
   [s]
-  (when-let [var (some->> s repl-read-string first (resolve-var @env/*compiler*))]
+  (when-let [var (some->> s
+                   repl-read-string
+                   first
+                   (resolve-var (assoc @env/*compiler* :ns (ana/get-namespace ana/*cljs-ns*))))]
     (let [arglists (if-not (:macro var)
                      (:arglists var)
                      (-> var :meta :arglists second))]
