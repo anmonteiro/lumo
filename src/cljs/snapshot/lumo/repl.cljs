@@ -232,7 +232,7 @@
            :filename cache-filename
            :cache (common/transit-json->cljs (.-source cache-json))})))))
 
-;; TODO: can be optimized e.g. to just analyze CLJ sourced if JS present
+;; TODO: can be optimized e.g. to just analyze CLJ sources if JS present
 ;; but no analysis cache
 (defn- load-external
   [path filename macros? cb]
@@ -511,7 +511,6 @@
 (defn- get-namespace
   "Gets the AST for a given namespace."
   [ns]
-  {:pre [(symbol? ns)]}
   (get-in @st [::ana/namespaces ns]))
 
 (defn- resolve-var
@@ -1074,7 +1073,7 @@
                           {:context :expr
                            :def-emits-var true}))]
         (if (repl-special? form)
-          ((get repl-special-fns (first form)) form eval-opts)
+          ((get repl-special-fns (first form)) form (merge opts eval-opts))
           (cljs/eval-str
             st
             source
@@ -1193,7 +1192,10 @@
 (defn ^:export get-arglists
   "Return the argument lists for the given symbol as string."
   [s]
-  (when-let [var (some->> s repl-read-string first (resolve-var @env/*compiler*))]
+  (when-let [var (some->> s
+                   repl-read-string
+                   first
+                   (resolve-var (assoc @env/*compiler* :ns (ana/get-namespace ana/*cljs-ns*))))]
     (let [arglists (if-not (:macro var)
                      (:arglists var)
                      (-> var :meta :arglists second))]
