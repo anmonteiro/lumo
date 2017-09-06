@@ -168,7 +168,8 @@
       env/*compiler*
       source
       nil
-      (assoc opts :verbose false)
+      (merge opts {:verbose false
+                   :analyze-deps false}) ;; fixes #245 and ^:const error in #239
       (fn [{:keys [value error] :as m}]
         (if error
           (cb {:error error})
