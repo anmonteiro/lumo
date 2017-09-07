@@ -19,6 +19,7 @@
 - Fix `load-file` switching back to default namespace ([#236](https://github.com/anmonteiro/lumo/issues/236)).
 - Can't require `goog` ([#227](https://github.com/anmonteiro/lumo/issues/227)).
 - Build API: namespaces compiled more than once ([#245](https://github.com/anmonteiro/lumo/issues/245)).
+- Error in build API when building with source maps on ([#132](https://github.com/anmonteiro/lumo/issues/132)).
 
 ## [1.7.0](https://github.com/anmonteiro/lumo/compare/1.6.0...1.7.0) (2017-08-16)
 
