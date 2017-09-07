@@ -1299,43 +1299,41 @@
       com.cognitect.transit.impl.writer]))
 
 (def ^:private namespace-completion-additons
-  (into #{}
-    (comp cat (map str))
-    ['[clojure.test
-       clojure.spec.alpha
-       clojure.spec.gen.alpha
-       clojure.pprint
-       cljs.analyzer
-       cljs.analyzer.api
-       cljs.compiler
-       cljs.env
-       cljs.js
-       cljs.nodejs
-       cljs.pprint
-       cljs.reader
-       cljs.spec.alpha
-       cljs.spec.gen.alpha
-       cljs.spec.test.alpha
-       cljs.tagged-literals
-       cljs.test
-       cljs.tools.reader
-       cljs.tools.reader.reader-types
-       clojure.core
-       clojure.core.reducers
-       clojure.data
-       clojure.string
-       clojure.set
-       clojure.zip
-       clojure.walk
-       cognitect.transit
-       lazy-map.core
-       com.cognitect.transit
-       com.cognitect.transit
-       lumo.io
-       lumo.core
-       lumo.classpath
-       lumo.build.api]
-     (keys (closure-index))]))
+  (into #{} (map str)
+    '[clojure.test
+      clojure.spec.alpha
+      clojure.spec.gen.alpha
+      clojure.pprint
+      cljs.analyzer
+      cljs.analyzer.api
+      cljs.compiler
+      cljs.env
+      cljs.js
+      cljs.nodejs
+      cljs.pprint
+      cljs.reader
+      cljs.spec.alpha
+      cljs.spec.gen.alpha
+      cljs.spec.test.alpha
+      cljs.tagged-literals
+      cljs.test
+      cljs.tools.reader
+      cljs.tools.reader.reader-types
+      clojure.core
+      clojure.core.reducers
+      clojure.data
+      clojure.string
+      clojure.set
+      clojure.zip
+      clojure.walk
+      cognitect.transit
+      lazy-map.core
+      com.cognitect.transit
+      com.cognitect.transit
+      lumo.io
+      lumo.core
+      lumo.classpath
+      lumo.build.api]))
 
 (defn- namespace-completions []
   (transduce (comp
@@ -1344,8 +1342,9 @@
                (remove namespace-completion-exclusions))
     conj
     (into namespace-completion-additons
-      (map str)
-      (keys @deps/js-lib-index))
+      (comp cat (map str))
+      [(keys @deps/js-lib-index)
+       (keys (closure-index))])
     (all-ns)))
 
 (defn- expand-ns-alias
