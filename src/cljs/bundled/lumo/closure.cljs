@@ -1963,75 +1963,83 @@
                (add-dependency-sources compile-opts)
                deps/dependency-order
                (compile-sources compiler-stats compile-opts
-                 (fn [sources]
-                   (let [node? (= :nodejs (:target all-opts))
-                         js-sources (-> (map add-core-macros-if-cljs-js sources)
-                                      (add-js-sources all-opts)
-                                      (as-> sources
-                                          ((if node? -compile identity-async)
-                                           (io/resource "cljs/nodejs.cljs") all-opts
-                                           (fn [res]
-                                             (let [js-sources (cond-> sources
-                                                                node? (concat [res]))]
-                                               (-> js-sources
-                                                 deps/dependency-order
-                                                 #_(add-preloads all-opts)
-                                                 add-goog-base
-                                                 (as-> sources
-                                                   ((if node? -compile identity-async)
-                                                    (io/resource "cljs/nodejscli.cljs") all-opts
-                                                    (fn [res]
-                                                      (let [js-sources (cond-> sources
-                                                                         node?
-                                                                         (concat [res]))
-                                                            _ (when (:emit-constants all-opts)
-                                                                (lcomp/emit-constants-table-to-file
-                                                                  (::ana/constant-table @env/*compiler*)
-                                                                  (constants-filename all-opts)))
-                                                            ;; TODO: enable this
-                                                            ;; _ (when (:infer-externs all-opts)
-                                                            ;;     (comp/emit-inferred-externs-to-file
-                                                            ;;       (reduce util/map-merge {}
-                                                            ;;         (map (comp :externs second)
-                                                            ;;           (get @compiler-env ::ana/namespaces)))
-                                                            ;;       (str (util/output-directory all-opts) "/inferred_externs.js")))
-                                                            optim (:optimizations all-opts)
-                                                            ret (if (and optim (not= optim :none))
-                                                                  (do
-                                                                    (when-let [fname (:source-map all-opts)]
-                                                                      (assert (or (nil? (:output-to all-opts)) (:modules opts) (string? fname))
-                                                                        (str ":source-map must name a file when using :whitespace, "
-                                                                             ":simple, or :advanced optimizations with :output-to"))
-                                                                      (doall (map #(source-on-disk all-opts %) js-sources)))
-                                                                    (if (:modules all-opts)
-                                                                      (do nil
-                                                                          #_(->>
-                                                                              (apply optimize-modules all-opts js-sources)
-                                                                              (output-modules all-opts js-sources)))
-                                                                      (let [fdeps-str (foreign-deps-str all-opts
-                                                                                        (filter foreign-source? js-sources))
-                                                                            all-opts  (assoc all-opts
-                                                                                        :foreign-deps-line-count
-                                                                                        (- (count (.split fdeps-str #"\r?\n")) 1))]
-                                                                        (->>
-                                                                          (util/measure compiler-stats
-                                                                            (str "Optimizing " (count js-sources) " sources")
-                                                                            (apply optimize all-opts
-                                                                              (remove foreign-source? js-sources)))
-                                                                          (add-wrapper all-opts)
-                                                                          (add-source-map-link all-opts)
-                                                                          (str fdeps-str)
-                                                                          (add-header all-opts)
-                                                                          (output-one-file all-opts)))))
-                                                                  (apply output-unoptimized all-opts js-sources))]
-                                                        ;; emit Node.js bootstrap script for :none & :whitespace optimizations
-                                                        (when (and (= (:target opts) :nodejs)
-                                                                (not= (:optimizations opts) :whitespace))
-                                                          (let [outfile (js/$$LUMO_GLOBALS.path.join (util/output-directory opts)
-                                                                          "goog" "bootstrap" "nodejs.js")]
-                                                            (util/mkdirs outfile)
-                                                            (spit outfile (slurp (io/resource "cljs/bootstrap_node.js")))))
-                                                        ret))))))))))]))))))))))
+                                (fn [sources]
+                                  (if (every? #(instance? JavaScriptFile %) sources)
+                                    (let [node? (= :nodejs (:target all-opts))
+                                          js-sources (-> (map add-core-macros-if-cljs-js sources)
+                                                         (add-js-sources all-opts)
+                                                         (as-> sources
+                                                             ((if node? -compile identity-async)
+                                                              (io/resource "cljs/nodejs.cljs") all-opts
+                                                              (fn [res]
+                                                                (let [js-sources (cond-> sources
+                                                                                   node? (concat [res]))]
+                                                                  (-> js-sources
+                                                                      deps/dependency-order
+                                                                      #_(add-preloads all-opts)
+                                                                      add-goog-base
+                                                                      (as-> sources
+                                                                          ((if node? -compile identity-async)
+                                                                           (io/resource "cljs/nodejscli.cljs") all-opts
+                                                                           (fn [res]
+                                                                             (let [js-sources (cond-> sources
+                                                                                                node?
+                                                                                                (concat [res]))
+                                                                                   _ (when (:emit-constants all-opts)
+                                                                                       (lcomp/emit-constants-table-to-file
+                                                                                        (::ana/constant-table @env/*compiler*)
+                                                                                        (constants-filename all-opts)))
+                                                                                   ;; TODO: enable this
+                                                                                   ;; _ (when (:infer-externs all-opts)
+                                                                                   ;;     (comp/emit-inferred-externs-to-file
+                                                                                   ;;       (reduce util/map-merge {}
+                                                                                   ;;         (map (comp :externs second)
+                                                                                   ;;           (get @compiler-env ::ana/namespaces)))
+                                                                                   ;;       (str (util/output-directory all-opts) "/inferred_externs.js")))
+                                                                                   optim (:optimizations all-opts)
+                                                                                   ret (if (and optim (not= optim :none))
+                                                                                         (do
+                                                                                           (when-let [fname (:source-map all-opts)]
+                                                                                             (assert (or (nil? (:output-to all-opts)) (:modules opts) (string? fname))
+                                                                                                     (str ":source-map must name a file when using :whitespace, "
+                                                                                                          ":simple, or :advanced optimizations with :output-to"))
+                                                                                             (doall (map #(source-on-disk all-opts %) js-sources)))
+                                                                                           (if (:modules all-opts)
+                                                                                             (do nil
+                                                                                                 #_(->>
+                                                                                                    (apply optimize-modules all-opts js-sources)
+                                                                                                    (output-modules all-opts js-sources)))
+                                                                                             (let [fdeps-str (foreign-deps-str all-opts
+                                                                                                                               (filter foreign-source? js-sources))
+                                                                                                   all-opts  (assoc all-opts
+                                                                                                                    :foreign-deps-line-count
+                                                                                                                    (- (count (.split fdeps-str #"\r?\n")) 1))]
+                                                                                               (->>
+                                                                                                (util/measure compiler-stats
+                                                                                                              (str "Optimizing " (count js-sources) " sources")
+                                                                                                              (apply optimize all-opts
+                                                                                                                     (remove foreign-source? js-sources)))
+                                                                                                (add-wrapper all-opts)
+                                                                                                (add-source-map-link all-opts)
+                                                                                                (str fdeps-str)
+                                                                                                (add-header all-opts)
+                                                                                                (output-one-file all-opts)))))
+                                                                                         (apply output-unoptimized all-opts js-sources))]
+                                                                               ;; emit Node.js bootstrap script for :none & :whitespace optimizations
+                                                                               (when (and (= (:target opts) :nodejs)
+                                                                                          (not= (:optimizations opts) :whitespace))
+                                                                                 (let [outfile (js/$$LUMO_GLOBALS.path.join (util/output-directory opts)
+                                                                                                                            "goog" "bootstrap" "nodejs.js")]
+                                                                                   (util/mkdirs outfile)
+                                                                                   (spit outfile (slurp (io/resource "cljs/bootstrap_node.js")))))
+                                                                               ret))))))))))])
+                                    (let [[_ errors] (split-with #(instance? JavaScriptFile %) sources)]
+                                      (util/debug-prn "\nFailed!" (->> errors
+                                                                       (map :error)
+                                                                       (remove nil?)
+                                                                       (map #(str (.-message %) (when-let [c (.-cause %)] (str ": " (.-stack c)))))
+                                                                       (interleave (repeat "\n    "))
+                                                                       (string/join))))))))))))))
 
 #_(defn ^File target-file-for-cljs-ns
   [ns-sym output-dir]
