@@ -176,23 +176,10 @@
           (let [sm-data (when comp/*source-map-data* @comp/*source-map-data*)
                 ret     (merge
                           (lana/parse-ns src)
-                          {:file dest
-                           ;; :requires (if (= ns-name 'cljs.core)
-                           ;;             (set (vals deps))
-                           ;;             (cond-> (conj (set (vals deps)) 'cljs.core)
-                           ;;               (get-in @env/*compiler* [:options :emit-constants])
-                           ;;               (conj ana/constants-ns-sym)))
-                           }
-                          #_{:ns         (or ns-name 'cljs.user)
-                           :macros-ns  (:macros-ns opts)
-                           :provides   [ns-name]
-                           :requires   (if (= ns-name 'cljs.core)
-                                         (set (vals deps))
-                                         (cond-> (conj (set (vals deps)) 'cljs.core)
-                                           (get-in @env/*compiler* [:options :emit-constants])
-                                           (conj ana/constants-ns-sym)))
-                           :file        dest
-                           :source-file src}
+                          ;; All the necessary keys like :requires, :provides,
+                          ;; etc... are already returned (as JavaScriptFile) by
+                          ;; the above lana/parse-ns
+                          {:file dest}
                           (when sm-data
                             {:source-map (:source-map sm-data)}))]
             (when (and sm-data (= :none (:optimizations opts)))
