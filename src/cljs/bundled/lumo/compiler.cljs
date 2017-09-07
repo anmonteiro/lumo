@@ -278,8 +278,8 @@
                     (with-core-cljs opts (fn [] (lana/analyze-file src-file opts))))
                   ns-info)))
             (catch :default e
-              (throw (ex-info (str "failed compiling file:" src) {:file src} e))))
-          (throw (ex-info (str "The file " src " does not exist.") {:file src})))))))
+              (cb {:error (ex-info (str "failed compiling file:" src) {:file src} e)})))
+          (cb {:error (ex-info (str "The file " src " does not exist.") {:file src})}))))))
 
 (defn compile-root
   "Looks recursively in src-dir for .cljs files and compiles them to
