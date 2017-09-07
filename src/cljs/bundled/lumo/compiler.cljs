@@ -168,30 +168,18 @@
       env/*compiler*
       source
       nil
-      (assoc opts :verbose false)
+      (merge opts {:verbose false
+                   :analyze-deps false}) ;; fixes #245 and ^:const error in #239
       (fn [{:keys [value error] :as m}]
         (if error
           (cb {:error error})
           (let [sm-data (when comp/*source-map-data* @comp/*source-map-data*)
                 ret     (merge
                           (lana/parse-ns src)
-                          {:file dest
-                           ;; :requires (if (= ns-name 'cljs.core)
-                           ;;             (set (vals deps))
-                           ;;             (cond-> (conj (set (vals deps)) 'cljs.core)
-                           ;;               (get-in @env/*compiler* [:options :emit-constants])
-                           ;;               (conj ana/constants-ns-sym)))
-                           }
-                          #_{:ns         (or ns-name 'cljs.user)
-                           :macros-ns  (:macros-ns opts)
-                           :provides   [ns-name]
-                           :requires   (if (= ns-name 'cljs.core)
-                                         (set (vals deps))
-                                         (cond-> (conj (set (vals deps)) 'cljs.core)
-                                           (get-in @env/*compiler* [:options :emit-constants])
-                                           (conj ana/constants-ns-sym)))
-                           :file        dest
-                           :source-file src}
+                          ;; All the necessary keys like :requires, :provides,
+                          ;; etc... are already returned (as JavaScriptFile) by
+                          ;; the above lana/parse-ns
+                          {:file dest}
                           (when sm-data
                             {:source-map (:source-map sm-data)}))]
             (when (and sm-data (= :none (:optimizations opts)))
@@ -228,7 +216,7 @@
                   (emit-source src dest ext opts
                     (fn [ret]
                       (if (:error ret)
-                        (cb {:error (:error ret)})
+                        (cb ret)
                         (do
                           (util/set-last-modified dest (util/last-modified src))
                           (cb ret)))))))))))))
@@ -279,7 +267,7 @@
                     (swap! env/*compiler* update-in [::ana/namespaces] dissoc ns))
                   (compile-file* src-file dest-file opts
                     (fn [ret]
-                      (when comp/*recompiled*
+                      (when (and (not (:error ret)) comp/*recompiled*)
                         (swap! comp/*recompiled* conj ns))
                       (cb ret))))
                 (do
@@ -290,8 +278,8 @@
                     (with-core-cljs opts (fn [] (lana/analyze-file src-file opts))))
                   ns-info)))
             (catch :default e
-              (throw (ex-info (str "failed compiling file:" src) {:file src} e))))
-          (throw (ex-info (str "The file " src " does not exist.") {:file src})))))))
+              (cb {:error (ex-info (str "failed compiling file:" src) {:file src} e)})))
+          (cb {:error (ex-info (str "The file " src " does not exist.") {:file src})}))))))
 
 (defn compile-root
   "Looks recursively in src-dir for .cljs files and compiles them to
