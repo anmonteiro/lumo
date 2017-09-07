@@ -1255,7 +1255,7 @@
   to the specified base file."
   [^File base input]
   (let [base-path  (util/path-seq (js/$$LUMO_GLOBALS.path.resolve base))
-        input-path (util/path-seq (js/$$LUMO_GLOBALS.path.resolve (deps/-url input)))
+        input-path (util/path-seq (js/$$LUMO_GLOBALS.path.resolve (util/path (deps/-url input))))
         count-base (count base-path)
         common     (count (take-while true? (map #(= %1 %2) base-path input-path)))
         prefix     (repeat (- count-base common 1) "..")]
