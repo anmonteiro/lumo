@@ -150,10 +150,16 @@
           (last (string/split f #"\.jar!/"))
           (strip-user-dir f))))))
 
-(defn content-sha [s]
-  (let [digest (crypto/createHash "sha1")]
-    (.update digest s)
-    (.toUpperCase (.digest digest "hex"))))
+(defn content-sha
+  ([s]
+   (content-sha s nil))
+  ([s n]
+   (let [digest (crypto/createHash "sha1")
+         _ (.update digest s)
+         sha (.toUpperCase (.digest digest "hex"))]
+     (if-not (nil? n)
+       (apply str (take n sha))
+       sha))))
 
 (defn line-seq [path]
   (string/split (io/slurp path) #"\n"))
