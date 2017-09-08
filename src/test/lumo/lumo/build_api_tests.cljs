@@ -14,9 +14,9 @@
 
 (deftest test-target-file-for-cljs-ns
   (is (= (build/target-file-for-cljs-ns 'example.core-lib nil)
-         "out/example/core_lib.js"))
+         (test/platform-path "out/example/core_lib.js")))
   (is (= (build/target-file-for-cljs-ns 'example.core-lib "output")
-         "output/example/core_lib.js")))
+         (test/platform-path "output/example/core_lib.js"))))
 
 (deftest test-cljs-dependents-for-macro-namespaces
   (env/with-compiler-env (env/default-compiler-env)

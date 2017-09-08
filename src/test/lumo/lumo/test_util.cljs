@@ -61,3 +61,6 @@
     (try
       (fs/rmdirSync dir)
       (catch :default _))))
+
+(defn platform-path [path]
+  (.replace path \/ (.charAt path/sep 0)))
