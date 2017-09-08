@@ -133,21 +133,6 @@
 
 (defn emit-source-map [src dest sm-data opts]
   (let [sm-file (js/$$LUMO_GLOBALS.path.join (str dest ".map"))]
-    (if-let [smap (:source-map-asset-path opts)]
-      (comp/emits "\n//# sourceMappingURL=" smap
-        (string/replace (util/path sm-file)
-          (str (util/path (:output-dir opts)))
-          "")
-        (if (true? (:source-map-timestamp opts))
-          (str
-            (if-not (string/index-of smap "?") "?" "&")
-            "rel=" (system-time))
-          ""))
-      (comp/emits "\n//# sourceMappingURL="
-        (or (:source-map-url opts) (js/$$LUMO_GLOBALS.path.basename sm-file))
-        (if (true? (:source-map-timestamp opts))
-          (str "?rel=" (system-time))
-          "")))
     (spit sm-file
       (sm/encode {(js/$$LUMO_GLOBALS.path.resolve src) (:source-map sm-data)}
         {:lines (+ (:gen-line sm-data) 2)
@@ -156,7 +141,23 @@
          :source-map-timestamp (:source-map-timestamp opts)
          :source-map-pretty-print (:source-map-pretty-print opts)
          :relpaths {(util/path src)
-                    (util/ns->relpath (first (:provides opts)) (:ext opts))}}))))
+                    (util/ns->relpath (first (:provides opts)) (:ext opts))}}))
+    (with-out-str
+      (if-let [smap (:source-map-asset-path opts)]
+        (comp/emits "\n//# sourceMappingURL=" smap
+          (string/replace (util/path sm-file)
+            (str (util/path (:output-dir opts)))
+            "")
+          (if (true? (:source-map-timestamp opts))
+            (str
+              (if-not (string/index-of smap "?") "?" "&")
+              "rel=" (system-time))
+            ""))
+        (comp/emits "\n//# sourceMappingURL="
+          (or (:source-map-url opts) (js/$$LUMO_GLOBALS.path.basename sm-file))
+          (if (true? (:source-map-timestamp opts))
+            (str "?rel=" (system-time))
+            ""))))))
 
 (defn emit-constants-table-to-file [table dest]
   (util/mkdirs dest)
@@ -168,8 +169,9 @@
       env/*compiler*
       source
       nil
+      ;; fixes #245 and ^:const error in #239
       (merge opts {:verbose false
-                   :analyze-deps false}) ;; fixes #245 and ^:const error in #239
+                   :analyze-deps false})
       (fn [{:keys [value error] :as m}]
         (if error
           (cb {:error error})
@@ -182,9 +184,11 @@
                           {:file dest}
                           (when sm-data
                             {:source-map (:source-map sm-data)}))]
-            (when (and sm-data (= :none (:optimizations opts)))
-              (emit-source-map src dest sm-data
-                (merge opts {:ext ext :provides [ns-name]})))
+            ;; don't need to call this because `cljs.js/compile-str` already
+            ;; generates inline source maps
+            ;; (when (and sm-data (= :none (:optimizations opts)))
+            ;;   (emit-source-map src dest sm-data
+            ;;     (merge opts {:ext ext :provides [ns-name]})))
             (let [path (js/$$LUMO_GLOBALS.path.resolve dest)]
               (swap! env/*compiler* assoc-in [::comp/compiled-cljs path] ret))
             (let [{:keys [output-dir cache-analysis]} opts]
