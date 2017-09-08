@@ -69,7 +69,7 @@ export function getGoogleClosureCompiler(): Function {
 
   // TODO: don't set use_strict back if it was never on in the first place
   v8.setFlagsFromString('--use_strict');
-  return googleClosureCompiler;
+  return __DEV__ ? googleClosureCompiler.compile : googleClosureCompiler;
 }
 
 // TODO: cache JARs that we know have a given file / path

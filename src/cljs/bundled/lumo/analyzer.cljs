@@ -5,13 +5,16 @@
                             disallowing-recur allowing-redef disallowing-ns*]])
   (:require [lumo.util :as util :refer [line-seq]]
             [lumo.io :as io :refer [slurp]]
+            [lumo.cljs-deps :as deps]
             [cljs.env :as env]
             [cljs.analyzer :as ana]
             [cljs.tools.reader :as reader]
             [cljs.js :as cljs]
             [cljs.tools.reader.reader-types :as readers]
             [cljs.tagged-literals :as tags]
-            [clojure.string :as string]))
+            [clojure.string :as string]
+            fs
+            path))
 
 (defn gen-user-ns [src]
   (let [full-name (str src)
@@ -19,15 +22,86 @@
                (inc (.lastIndexOf full-name "/"))
                (.lastIndexOf full-name "."))]
     (symbol
-      (apply str
-        "cljs.user." name
-        (take 7 (util/content-sha full-name))))))
+      (str "cljs.user." name (util/content-sha full-name 7)))))
 
 (defn- resolve-symbol
   [sym]
   (if (string/starts-with? (str sym) ".")
     sym
     (cljs/elide-macros-suffix (ana/resolve-symbol sym))))
+
+(defn locate-src
+  "Given a namespace return the corresponding ClojureScript (.cljs or .cljc)
+     resource on the classpath or file from the root of the build."
+  [ns]
+  (or (util/ns->source ns)
+    ;; Find sources available in inputs given to cljs.closure/build - Juho Teperi
+    (some (fn [source]
+            (if (= ns (:ns source))
+              (:source-file source)))
+      (:sources @env/*compiler*))
+    ;; Find sources in directory given to cljs.compiler/compile-root - Juho Teperi
+    (let [rootp (when-let [root (:root @env/*compiler*)]
+                  root)
+          cljsf (path/join rootp (util/ns->relpath ns :cljs))
+          cljcf (path/join rootp (util/ns->relpath ns :cljc))]
+      (if (and (fs/existsSync cljsf) (util/file? cljsf))
+        cljsf
+        (if (and (fs/existsSync cljcf) (util/file? cljcf))
+          cljcf)))))
+
+(declare analyze-file)
+
+(defn analyze-deps
+  "Given a lib, a namespace, deps, its dependencies, env, an analysis environment
+   and opts, compiler options - analyze all of the dependencies. Required to
+   correctly analyze usage of other namespaces."
+  ([lib deps env]
+   (analyze-deps lib deps env
+     (when env/*compiler*
+       (:options @env/*compiler*))))
+  ([lib deps env opts]
+   (let [compiler @env/*compiler*]
+     (binding [ana/*cljs-dep-set* (vary-meta (conj (set ana/*cljs-dep-set*) lib) update-in [:dep-path] conj lib)]
+       (assert (every? #(not (contains? ana/*cljs-dep-set* %)) deps)
+         (str "Circular dependency detected, "
+           (apply str
+             (interpose " -> "
+               (conj (-> ana/*cljs-dep-set* meta :dep-path)
+                 (some ana/*cljs-dep-set* deps))))))
+       (doseq [dep deps]
+         ;; we don't have the problem in the following commit because our macro
+         ;; namespaces have different names
+         ;; https://github.com/clojure/clojurescript/commit/0d0f5095
+         (when-not (or (not-empty (get-in compiler [::ana/namespaces dep]))
+                     (contains? (:js-dependency-index compiler) (name dep))
+                     (ana/node-module-dep? dep)
+                     (ana/js-module-exists? (name dep))
+                     (deps/find-classpath-lib dep))
+           (if-some [src (locate-src dep)]
+             (analyze-file src opts)
+             (throw
+               (ana/error env
+                 (ana/error-message :undeclared-ns {:ns-sym dep :js-provide (name dep)}))))))))))
+
+(defn ns-side-effects
+  [env {:keys [op] :as ast} opts]
+  (if (#{:ns :ns*} op)
+    (let [{:keys [name deps uses require-macros use-macros reload reloads]} ast]
+      (when (and ana/*analyze-deps*
+              (seq deps))
+        (analyze-deps name deps env (dissoc opts :macros-ns)))
+      (if ana/*load-macros*
+        (-> ast
+          (ana/check-use-macros-inferring-missing env)
+          (ana/check-rename-macros-inferring-missing env))
+        (do
+          (ana/check-uses
+            (when (and ana/*analyze-deps* (seq uses))
+              (ana/missing-uses uses env))
+            env)
+          ast)))
+    ast))
 
 (defn forms-seq*
   "Seq of Clojure/ClojureScript forms from rdr, a java.io.Reader. Optionally
@@ -56,6 +130,25 @@
                  nil
                  (cons form (forms-seq_))))))]
      (forms-seq_))))
+
+(defn aliasable-clj-ns?
+  "Predicate for testing if a symbol represents an aliasable Clojure namespace."
+  [sym]
+  (when-not (util/ns->source sym)
+    (let [[seg1 :as segs] (string/split (clojure.core/name sym) #"\.")]
+      (when (= "clojure" seg1)
+        (let [sym' (ana/clj-ns->cljs-ns sym)]
+          (util/ns->source sym'))))))
+
+(defn compute-clj->cljs-smap
+  [{:keys [uses requires]}]
+  (into {}
+    (comp
+      (map (fn [dep]
+             (when (aliasable-clj-ns? dep)
+               [dep (ana/clj-ns->cljs-ns dep)])))
+      (remove nil?))
+    (concat (vals uses) (vals requires))))
 
 (defn parse-ns
   "Helper for parsing only the essential namespace information from a
@@ -115,7 +208,8 @@
                            ast (no-warn (ana/analyze env (first forms) nil opts))]
                        (cond
                          (= :ns (:op ast))
-                         (let [ns-name (:name ast)
+                         (let [ast (cljs/rewrite-ns-ast ast (compute-clj->cljs-smap ast))
+                               ns-name (:name ast)
                                ns-name (if (and (= 'cljs.core ns-name)
                                              (= "cljc" (util/ext src)))
                                          'cljs.core$macros
@@ -152,7 +246,6 @@
                          :else ret))
                      ret)))))]
        ijs))))
-
 
 (defn requires-analysis?
   "Given a src, a resource, and output-dir, a compilation output directory
@@ -221,9 +314,10 @@
              (if (or skip-cache (not cache) (requires-analysis? res output-dir))
                (binding [ana/*cljs-ns* 'cljs.user
                          ana/*cljs-file* path
+                         ana/*passes* [ana/infer-type ana/check-invoke-arg-types ns-side-effects]
                          reader/*alias-map* (or reader/*alias-map* {})]
                  (when (or ana/*verbose* (:verbose opts))
-                   (util/debug-prn "Analyzing" (str res)))
+                   (util/debug-prn "Analyzing" (cond-> res (not (string? res)) .-src)))
                  (let [env (assoc (ana/empty-env) :build-options opts)
                        ns  (let [rdr res]
                              (loop [ns nil forms (seq (forms-seq* rdr (util/path res)))]

@@ -168,31 +168,33 @@
 
 (defn- skip-load?
   [name macros?]
-  ((if macros?
-     '#{cljs.core
+  (if macros?
+    ('#{cljs.core
         cljs.js
         cljs.repl
         lazy-map.core
-        clojure.core.rrb-vector.macros}
-     '#{goog
-        goog.object
-        goog.string
-        goog.string.StringBuffer
-        goog.array
-        goog.crypt.base64
-        goog.math.Long
-        cljs.core
-        com.cognitect.transit
-        com.cognitect.transit.delimiters
-        com.cognitect.transit.handlers
-        com.cognitect.transit.util
-        com.cognitect.transit.caching
-        com.cognitect.transit.types
-        com.cognitect.transit.eq
-        com.cognitect.transit.impl.decoder
-        com.cognitect.transit.impl.reader
-        com.cognitect.transit.impl.writer})
-   name))
+        clojure.core.rrb-vector.macros} name)
+    (or
+      ('#{goog
+          goog.object
+          goog.string
+          goog.string.StringBuffer
+          goog.array
+          goog.crypt.base64
+          goog.math.Long
+          cljs.core
+          com.cognitect.transit
+          com.cognitect.transit.delimiters
+          com.cognitect.transit.handlers
+          com.cognitect.transit.util
+          com.cognitect.transit.caching
+          com.cognitect.transit.types
+          com.cognitect.transit.eq
+          com.cognitect.transit.impl.decoder
+          com.cognitect.transit.impl.reader
+          com.cognitect.transit.impl.writer}
+       name)
+      (ana/node-module-dep? name))))
 
 (declare inject-lumo-eval)
 
@@ -835,8 +837,8 @@
   ([form ns]
    (let [result (volatile! nil)]
      (cljs/eval st form
-       {:ns            ns
-        :context       :expr
+       {:ns ns
+        :context :expr
         :def-emits-var true}
        (fn [{:keys [value error]}]
          (if error
@@ -888,7 +890,7 @@
           (recur (rt/read-char reader)))
         (str sb)))))
 
-(defn get-data-readers*
+(defn- get-data-readers*
   "Returns the merged data reader mappings."
   []
   (reduce (fn [data-readers url+source]
@@ -909,13 +911,28 @@
                                          {:url      url
                                           :conflict tag
                                           :mappings data-readers})))
-                           (assoc data-readers tag (eval fn-sym)))
+                           (assoc data-readers tag fn-sym))
                          data-readers
                          mappings)))
           {}
           (js/$$LUMO_GLOBALS.loadUpstreamDataReaders)))
 
-(def get-data-readers (memoize get-data-readers*))
+(def ^:private get-data-readers (memoize get-data-readers*))
+
+(defn- load-data-readers!* [compiler]
+  (let [data-readers (get-data-readers)
+        nses (map (comp symbol namespace) (vals data-readers))]
+    (doseq [ns nses]
+      (try
+        (eval `(require '~ns))
+        (catch js/Error _)))
+    (swap! compiler update-in [::ana/data-readers]
+      merge (into {} (map (fn [[k v]]
+                            [k (eval v)]))
+              data-readers))
+    (::ana/data-readers @compiler)))
+
+(def load-data-readers! (memoize load-data-readers!*))
 
 (defn- repl-read-string
   "Returns a vector of the first read form, and any balance text."
@@ -925,7 +942,7 @@
     (binding [ana/*cljs-ns* cur-ns
               *ns* (create-ns cur-ns)
               env/*compiler* st
-              r/*data-readers* (merge tags/*cljs-data-readers* (get-data-readers))
+              r/*data-readers* (merge tags/*cljs-data-readers* (load-data-readers! env/*compiler*))
               r/resolve-symbol ana/resolve-symbol
               r/*alias-map* (current-alias-map)]
       [(r/read {:read-cond :allow :features #{:cljs}} reader) (read-chars reader)])))
@@ -1071,7 +1088,7 @@
               *ns*             (create-ns @current-ns)
               env/*compiler*   st
               r/resolve-symbol ana/resolve-symbol
-              tags/*cljs-data-readers* (merge tags/*cljs-data-readers* (get-data-readers))
+              tags/*cljs-data-readers* (merge tags/*cljs-data-readers* (load-data-readers! env/*compiler*))
               r/*alias-map*    (current-alias-map)]
       (let [form (and expression? (first (repl-read-string source)))
             eval-opts (merge (make-eval-opts)

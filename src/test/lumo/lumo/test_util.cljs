@@ -2,7 +2,10 @@
   (:require [cljs.nodejs :as node]
             [cljs.js :as cljs]
             [lumo.common :as common]
-            [lumo.repl])
+            [lumo.repl]
+            fs
+            os
+            path)
   (:require-macros [cljs.env.macros :as env]))
 
 (def lumo-env? (exists? js/$$LUMO_GLOBALS))
@@ -14,11 +17,9 @@
   (f)
   (set! (. js/global -$$LUMO_GLOBALS) nil))
 
-(def fs (js/require "fs"))
-
 (defn read-file-sync [file-path & [encoding-or-opts]]
   (try
-    (.readFileSync fs file-path encoding-or-opts)
+    (fs/readFileSync file-path encoding-or-opts)
     (catch :default e nil)))
 
 ;; For the cache source folder, the test id needs to become:
@@ -39,3 +40,27 @@
     (reset! lumo.repl/st @st)
     (env/with-compiler-env st
       (f))))
+
+(defn tmp-dir []
+  (os/tmpdir))
+
+(defn delete-out-files
+  [dir]
+  (let [files (try
+                (fs/readdirSync dir)
+                (catch :default _))]
+    (doseq [file files]
+      (let [filename (path/join dir file)
+            stat (fs/lstatSync filename)]
+        (if (.isDirectory stat)
+          (delete-out-files filename)
+          (fs/unlinkSync filename))))
+    (try
+      (fs/rmdirSync dir)
+      (catch :default _))))
+
+(defn delete-node-modules []
+  (delete-out-files "node_modules"))
+
+(defn platform-path [path]
+  (.replace path (js/RegExp. "/" "g") (.charAt path/sep 0)))

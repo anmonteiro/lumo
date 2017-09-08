@@ -2,7 +2,7 @@
  :source-paths #{"src/cljs/snapshot"}
  :asset-paths #{"src/js" "src/cljs/bundled"}
  :dependencies '[[org.clojure/clojure         "1.9.0-alpha19"]
-                 [org.clojure/clojurescript   "1.9.908"]
+                 [org.clojure/clojurescript   "1.9.927"]
                  [org.clojure/tools.reader    "1.0.5"]
                  [com.cognitect/transit-cljs  "0.8.239"]
                  [malabarba/lazy-map          "1.3"]
@@ -10,12 +10,13 @@
                  [org.clojure/test.check      "0.10.0-alpha2" :scope "test"]
                  [com.cognitect/transit-clj   "0.8.300" :scope "test"]
                  [com.cemerick/piggieback     "0.2.2"   :scope "test"]
-                 [adzerk/boot-cljs            "2.1.3"   :scope "test"]
+                 [adzerk/boot-cljs            "2.1.4-SNAPSHOT"   :scope "test"]
                  [crisptrutski/boot-cljs-test "0.3.4" :scope "test"]
                  [org.clojure/tools.nrepl     "0.2.13"  :scope "test"]
                  [weasel                      "0.7.0"   :scope "test"]
                  [doo                         "0.1.7"   :scope "test"]]
- :exclusions '[org.clojure/clojure org.clojure/clojurescript])
+ :exclusions '[org.clojure/clojure org.clojure/clojurescript]
+ :local-repo "third_party")
 
 (require
   '[adzerk.boot-cljs      :refer [cljs]]
@@ -33,7 +34,7 @@
   (.startsWith (.toLowerCase (System/getProperty "os.name")) "windows"))
 
 (deftask testing []
-  (set-env! :source-paths #(conj % "test"))
+  (set-env! :source-paths #(conj % "src/test/lumo"))
   identity)
 
 (ns-unmap 'boot.user 'test)
@@ -48,6 +49,8 @@
         :js-env :node
         :namespaces #{'lumo.js-deps-tests 'lumo.repl-tests}
         :cljs-opts {:parallel-build true
+                    :target :nodejs
+                    :verbose true
                     :asset-path "test_suite.out"}
         :exit? exit?
         :ids #{"lumo_test/test_suite"}))))
@@ -154,6 +157,7 @@
                            :closure-defines {'cljs.core/*target* "nodejs"
                                              'lumo.core/*lumo-version* lumo-version}
                            :compiler-stats true
+                           :process-shim false
                            :fn-invoke-direct true
                            :parallel-build true}))
 
