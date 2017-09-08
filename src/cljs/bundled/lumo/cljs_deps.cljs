@@ -3,7 +3,9 @@
             [clojure.string :as string]
             [goog.object :as gobj]
             [lumo.util :as util :refer [file-seq distinct-by]]
-            [lumo.io :as io :refer [slurp]])
+            [lumo.io :as io :refer [slurp]]
+            fs
+            path)
   (:import [goog.string format]))
 
 ;; =====================
@@ -111,12 +113,22 @@ case."
   library (a js file that not have any goog.provide statement")
   (-closure-lib? [this] "Whether the Javascript represents a Closure style
   library")
-  (-url [this] "The URL where this JavaScript is located. Returns nil
+  (-url [this] [this opts] "The URL where this JavaScript is located. Returns nil
   when JavaScript exists in memory only.")
-  (-relative-path [this] "Relative path for this JavaScript.")
+  (-relative-path [this] [this opts] "Relative path for this JavaScript.")
   (-provides [this] "A list of namespaces that this JavaScript provides.")
   (-requires [this] "A list of namespaces that this JavaScript requires.")
-  (-source [this] "The JavaScript source string."))
+  (-source [this] [this opts] "The JavaScript source string."))
+
+(defn get-file [lib-spec index]
+  (or (:file lib-spec)
+      (some (fn [provide] (get-in index [provide :file]))
+        (:provides lib-spec))))
+
+(defn lib-spec-merge [a b]
+  (merge a
+    (cond-> b
+      (contains? a :provides) (dissoc :provides))))
 
 (defn build-index
   "Index a list of dependencies by namespace and file name. There can
@@ -131,14 +143,14 @@ case."
                        (reduce
                          (fn [index' provide]
                            (if (:foreign dep)
-                             (update-in index' [provide] merge dep)
+                             (update-in index' [provide] lib-spec-merge dep)
                              ;; when building the dependency index, we need to
                              ;; avoid overwriting a CLJS dep with a CLJC dep of
                              ;; the same namespace - António Monteiro
                              (let [file (when-let [f (or (:source-file dep) (:file dep))]
-                                          (.toString f))
+                                          (str f))
                                    ext (when file
-                                         (.substring file (inc (.lastIndexOf file "."))))]
+                                         (subs file (inc (string/last-index-of file "."))))]
                                (update-in index' [provide]
                                  (fn [d]
                                    (if (and (= ext "cljc") (some? d))
@@ -147,7 +159,11 @@ case."
                          index provides)
                        index)]
         (if (:foreign dep)
-          (update-in index' [(:file dep)] merge dep)
+          (if-let [file (get-file dep index')]
+            (update-in index' [file] lib-spec-merge dep)
+            (throw
+              (js/Error.
+                (str "No :file provided for :foreign-libs spec " (pr-str dep)))))
           (assoc index' (:file dep) dep))))
     {} deps))
 
@@ -203,7 +219,7 @@ case."
   ;; solution is to create a wrapper that we call to represent paths that distinguish
   ;; between inside classpath vs out
   (or (io/resource path-or-url)
-      (and (.existsSync path-or-url) (js/$$LUMO_GLOBALS.path.resolve path-or-url))))
+      (and (fs/existsSync path-or-url) (path/resolve path-or-url))))
 
 (defn load-foreign-library*
   "Given a library spec (a map containing the keys :file
@@ -212,10 +228,10 @@ case."
   ([lib-spec] (load-foreign-library* lib-spec false))
   ([lib-spec cp-only?]
     (let [find-func (if cp-only? io/resource find-url)]
-      (cond->
-        (merge lib-spec
-          {:foreign true
-           :url     (find-func (:file lib-spec))})
+      (cond-> (assoc lib-spec :foreign true)
+        (:file lib-spec)
+        (assoc :url (find-func (:file lib-spec)))
+
         (:file-min lib-spec)
         (assoc :url-min (find-func (:file-min lib-spec)))))))
 
@@ -323,18 +339,19 @@ JavaScript library containing provide/require 'declarations'."
   _must_ contain a `goog.provide` that matches [lib], or this fn will return nil
   and print a warning."
   [lib]
-  (when-let [lib-resource (and
-                            (not (.startsWith (name lib) "cljs."))
-                            (some-> (name lib)
-                              (.replace \. \/)
-                              (.replace \- \_)
-                              (str ".js")
-                              io/resource))]
-    (let [{:keys [provides] :as lib-info} (library-graph-node lib-resource)]
-      (if (some #{(name lib)} provides)
-        (assoc lib-info :closure-lib true)
-        (js/console.error
-          (format
-            (str "WARNING: JavaScript file found on classpath for library `%s`, "
-              "but does not contain a corresponding `goog.provide` declaration:")
-            lib) lib-resource)))))
+  (let [lib-resource (some-> (name lib)
+                       (.replace \. \/)
+                       (.replace \- \_)
+                       (str ".js")
+                       io/resource)]
+    (when (and (some? lib-resource)
+               (not (= (.-type lib-resource) "bundled")))
+      (let [{:keys [provides] :as lib-info} (library-graph-node lib-resource)]
+        (if (some #{(name lib)} provides)
+          (assoc lib-info :closure-lib true)
+          (binding [*print-fn* *print-err-fn*]
+            (println
+              (format
+                (str "WARNING: JavaScript file found on classpath for library `%s`, "
+                     "but does not contain a corresponding `goog.provide` declaration: %s")
+                lib lib-resource))))))))
