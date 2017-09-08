@@ -59,5 +59,8 @@
       (fs/rmdirSync dir)
       (catch :default _))))
 
+(defn delete-node-modules []
+  (delete-out-files "node_modules"))
+
 (defn platform-path [path]
   (.replace path \/ (.charAt path/sep 0)))

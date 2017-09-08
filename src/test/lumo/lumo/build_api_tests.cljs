@@ -6,6 +6,7 @@
             [cljs.env :as env]
             [cljs.analyzer :as ana]
             ;; [cljs.util :as util]
+            [lumo.io :refer [spit slurp]]
             [lumo.test-util :as test]
             [lumo.build.api :as build]
             [lumo.closure :as closure]
@@ -156,21 +157,23 @@
                (second))
             "goog.require('thirdparty.add');")))))
 
-;; (deftest cljs-1537-circular-deps
-;;   (let [out (.getPath (io/file (test/tmp-dir) "cljs-1537-test-out"))
-;;         out-file (io/file out "main.js")
-;;         root "src/test/cljs_build"]
-;;     (test/delete-out-files out)
-;;     (try
-;;       (build/build (build/inputs
-;;                      (io/file (str root "a.cljs"))
-;;                      (io/file (str root "b.cljs")))
-;;         {:main 'circular-deps.a
-;;          :optimizations :none
-;;          :output-to out})
-;;       (is false)
-;;       (catch Throwable e
-;;         (is true)))))
+;; TODO: done in the JVM via ns-side-effects
+#_(deftest cljs-1537-circular-deps
+  (let [out (path/join (test/tmp-dir) "cljs-1537-test-out")
+        out-file (path/join out "main.js")
+        root "src/test/cljs_build"]
+    (test/delete-out-files out)
+    (try
+      (build/build (build/inputs
+                     (path/join root "circular_deps" "a.cljs")
+                     (path/join root "circular_deps" "b.cljs"))
+        {:main 'circular-deps.a
+         :optimizations :none
+         :output-to out})
+      (is false)
+      (catch js/Error e
+        (is (re-find  #"Circular dependency detected, circular-deps.a -> circular-deps.b -> circular-deps.a"
+              e))))))
 
 ;; (defn loader-test-project [output-dir]
 ;;   {:inputs (str (io/file "src" "test" "cljs_build" "loader_test"))
@@ -216,48 +219,46 @@
 ;;         (build/build (build/inputs inputs) opts)
 ;;         (is (not (nil? (re-find #"foreignA[\s\S]+foreignB" (slurp (io/file out "foo.js"))))))))))
 
-;; (deftest test-npm-deps
-;;   (test/delete-node-modules)
-;;   (spit (io/file "package.json") "{}")
-;;   (testing "simplest case, require"
-;;     (let [out (.getPath (io/file (test/tmp-dir) "npm-deps-test-out"))
-;;           {:keys [inputs opts]} {:inputs (str (io/file "src" "test" "cljs_build"))
-;;                                  :opts {:main 'npm-deps-test.core
-;;                                         :output-dir out
-;;                                         :optimizations :none
-;;                                         :install-deps true
-;;                                         :npm-deps {:left-pad "1.1.3"}
-;;                                         :closure-warnings {:check-types :off}}}
-;;           cenv (env/default-compiler-env)]
-;;       (test/delete-out-files out)
-;;       (build/build (build/inputs (io/file inputs "npm_deps_test/core.cljs")) opts cenv)
-;;       (is (.exists (io/file out "node_modules/left-pad/index.js")))
-;;       (is (contains? (:js-module-index @cenv) "left-pad"))))
-;;   (let [cenv (env/default-compiler-env)
-;;         out (.getPath (io/file (test/tmp-dir) "npm-deps-test-out"))
-;;         {:keys [inputs opts]} {:inputs (str (io/file "src" "test" "cljs_build"))
-;;                                :opts {:main 'npm-deps-test.string-requires
-;;                                       :output-dir out
-;;                                       :optimizations :none
-;;                                       :install-deps true
-;;                                       :npm-deps {:react "15.6.1"
-;;                                                  :react-dom "15.6.1"
-;;                                                  :lodash "4.17.4"}
-;;                                       :closure-warnings {:check-types :off
-;;                                                          :non-standard-jsdoc :off}}}]
-;;     (testing "mix of symbol & string-based requires"
-;;       (test/delete-out-files out)
-;;       (test/delete-node-modules)
-;;       (build/build (build/inputs (io/file inputs "npm_deps_test/string_requires.cljs")) opts cenv)
-;;       (is (.exists (io/file out "node_modules/react/react.js")))
-;;       (is (contains? (:js-module-index @cenv) "react"))
-;;       (is (contains? (:js-module-index @cenv) "react-dom/server")))
-;;     (testing "builds with string requires are idempotent"
-;;       (build/build (build/inputs (io/file inputs "npm_deps_test/string_requires.cljs")) opts cenv)
-;;       (is (not (nil? (re-find #"\.\.[\\/]node_modules[\\/]react-dom[\\/]server\.js" (slurp (io/file out "cljs_deps.js"))))))
-;;       (test/delete-out-files out)))
-;;   (.delete (io/file "package.json"))
-;;   (test/delete-node-modules))
+#_(deftest test-npm-deps
+  ;; (test/delete-node-modules)
+  (testing "simplest case, require"
+    (let [out (path/join (test/tmp-dir) "npm-deps-test-out")
+          {:keys [inputs opts]} {:inputs (path/join "src" "test" "cljs_build")
+                                 :opts {:main 'npm-deps-test.core
+                                        :output-dir out
+                                        :optimizations :none
+                                        :install-deps true
+                                        :npm-deps {:left-pad "1.1.3"}
+                                        :closure-warnings {:check-types :off}}}
+          cenv (env/default-compiler-env)]
+      (test/delete-out-files out)
+      (build/build (build/inputs (path/join inputs "npm_deps_test/core.cljs")) opts cenv)
+      (is (fs/existsSync (path/join out "node_modules/left-pad/index.js")))
+      (is (contains? (:js-module-index @cenv) "left-pad"))))
+  (let [cenv (env/default-compiler-env)
+        out (path/join (test/tmp-dir) "npm-deps-test-out")
+        {:keys [inputs opts]} {:inputs (path/join "src" "test" "cljs_build")
+                               :opts {:main 'npm-deps-test.string-requires
+                                      :output-dir out
+                                      :optimizations :none
+                                      :install-deps true
+                                      :npm-deps {:react "15.6.1"
+                                                 :react-dom "15.6.1"
+                                                 :lodash "4.17.4"}
+                                      :closure-warnings {:check-types :off
+                                                         :non-standard-jsdoc :off}}}]
+    (testing "mix of symbol & string-based requires"
+      (test/delete-out-files out)
+      (test/delete-node-modules)
+      (build/build (build/inputs (path/join inputs "npm_deps_test/string_requires.cljs")) opts cenv)
+      (is (fs/existsSync (path/join out "node_modules/react/react.js")))
+      (is (contains? (:js-module-index @cenv) "react"))
+      (is (contains? (:js-module-index @cenv) "react-dom/server")))
+    (testing "builds with string requires are idempotent"
+      (build/build (build/inputs (path/join inputs "npm_deps_test/string_requires.cljs")) opts cenv)
+      (is (not (nil? (re-find #"\.\.[\\/]node_modules[\\/]react-dom[\\/]server\.js" (slurp (path/join out "cljs_deps.js"))))))
+      (test/delete-out-files out)))
+  (test/delete-node-modules))
 
 ;; (deftest test-preloads
 ;;   (let [out (.getPath (io/file (test/tmp-dir) "preloads-test-out"))

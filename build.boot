@@ -10,7 +10,7 @@
                  [org.clojure/test.check      "0.10.0-alpha2" :scope "test"]
                  [com.cognitect/transit-clj   "0.8.300" :scope "test"]
                  [com.cemerick/piggieback     "0.2.2"   :scope "test"]
-                 [adzerk/boot-cljs            "2.1.3"   :scope "test"]
+                 [adzerk/boot-cljs            "2.1.4-SNAPSHOT"   :scope "test"]
                  [crisptrutski/boot-cljs-test "0.3.4" :scope "test"]
                  [org.clojure/tools.nrepl     "0.2.13"  :scope "test"]
                  [weasel                      "0.7.0"   :scope "test"]
