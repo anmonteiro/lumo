@@ -3,7 +3,6 @@
             [cljs.js :as cljs]
             [lumo.common :as common]
             [lumo.repl]
-            [lumo.util :as util]
             fs
             os
             path)
@@ -18,11 +17,9 @@
   (f)
   (set! (. js/global -$$LUMO_GLOBALS) nil))
 
-(def fs (js/require "fs"))
-
 (defn read-file-sync [file-path & [encoding-or-opts]]
   (try
-    (.readFileSync fs file-path encoding-or-opts)
+    (fs/readFileSync file-path encoding-or-opts)
     (catch :default e nil)))
 
 ;; For the cache source folder, the test id needs to become:

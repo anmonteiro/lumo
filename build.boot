@@ -33,7 +33,7 @@
   (.startsWith (.toLowerCase (System/getProperty "os.name")) "windows"))
 
 (deftask testing []
-  (set-env! :source-paths #(conj % "test"))
+  (set-env! :source-paths #(conj % "src/test/lumo"))
   identity)
 
 (ns-unmap 'boot.user 'test)
@@ -48,6 +48,8 @@
         :js-env :node
         :namespaces #{'lumo.js-deps-tests 'lumo.repl-tests}
         :cljs-opts {:parallel-build true
+                    :target :nodejs
+                    :verbose true
                     :asset-path "test_suite.out"}
         :exit? exit?
         :ids #{"lumo_test/test_suite"}))))
