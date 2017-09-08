@@ -2041,7 +2041,7 @@
                                                                 (spit outfile (slurp (io/resource "cljs/bootstrap_node.js")))))
                                                             ret))))))))))])))))))))))
 
-#_(defn ^File target-file-for-cljs-ns
+(defn target-file-for-cljs-ns
   [ns-sym output-dir]
   (util/to-target-file
     (util/output-directory {:output-dir output-dir})

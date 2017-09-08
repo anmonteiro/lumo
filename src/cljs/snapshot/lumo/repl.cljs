@@ -168,31 +168,33 @@
 
 (defn- skip-load?
   [name macros?]
-  ((if macros?
-     '#{cljs.core
+  (if macros?
+    ('#{cljs.core
         cljs.js
         cljs.repl
         lazy-map.core
-        clojure.core.rrb-vector.macros}
-     '#{goog
-        goog.object
-        goog.string
-        goog.string.StringBuffer
-        goog.array
-        goog.crypt.base64
-        goog.math.Long
-        cljs.core
-        com.cognitect.transit
-        com.cognitect.transit.delimiters
-        com.cognitect.transit.handlers
-        com.cognitect.transit.util
-        com.cognitect.transit.caching
-        com.cognitect.transit.types
-        com.cognitect.transit.eq
-        com.cognitect.transit.impl.decoder
-        com.cognitect.transit.impl.reader
-        com.cognitect.transit.impl.writer})
-   name))
+        clojure.core.rrb-vector.macros} name)
+    (or
+      ('#{goog
+          goog.object
+          goog.string
+          goog.string.StringBuffer
+          goog.array
+          goog.crypt.base64
+          goog.math.Long
+          cljs.core
+          com.cognitect.transit
+          com.cognitect.transit.delimiters
+          com.cognitect.transit.handlers
+          com.cognitect.transit.util
+          com.cognitect.transit.caching
+          com.cognitect.transit.types
+          com.cognitect.transit.eq
+          com.cognitect.transit.impl.decoder
+          com.cognitect.transit.impl.reader
+          com.cognitect.transit.impl.writer}
+       name)
+      (ana/node-module-dep? name))))
 
 (declare inject-lumo-eval)
 

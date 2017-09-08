@@ -5,6 +5,16 @@
             [cljs.env :as env]
             [lumo.io :as io]))
 
+(defn target-file-for-cljs-ns
+  "Given an output directory and a clojurescript namespace return the
+  compilation target file for that namespace.
+  For example:
+  (target-file-from-cljs-ns \"resources/out\" 'example.core) ->
+  <File: \"resources/out/example/core.js\">"
+  ([ns-sym] (closure/target-file-for-cljs-ns ns-sym nil))
+  ([ns-sym output-dir] (closure/target-file-for-cljs-ns ns-sym output-dir)))
+
+
 (defn build
   "Given a source which can be compiled, produce runnable JavaScript."
   ([source opts]
