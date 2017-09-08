@@ -9,7 +9,8 @@
             [lumo.io :as io]
             crypto
             fs
-            path))
+            path
+            os))
 
 (defn clojurescript-version
   "Returns clojurescript version as a printable string."
@@ -21,6 +22,9 @@
     (let [match (->> reader line-seq first
                      (re-matches #".*ClojureScript (\d+\.\d+\.\d+).*$"))]
       (or (and match (second match)) "0.0.0000"))))
+
+(def windows?
+  (identical? (os/platform) "win32"))
 
 (defn distinct-by
   ([f coll]
@@ -98,6 +102,14 @@
   [ns]
   (or (io/resource (ns->relpath ns :cljs))
       (io/resource (ns->relpath ns :cljc))))
+
+;; on Windows, URLs end up having forward slashes like
+;; /C:/Users/... - Antonio
+(defn normalize-path [ x]
+  (-> (cond-> x
+        windows? (string/replace #"^[\\/]" ""))
+    (string/replace "\\" path/sep)
+    (string/replace "/" path/sep)))
 
 (defn path [x]
   (cond

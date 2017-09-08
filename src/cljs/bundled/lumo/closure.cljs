@@ -1402,11 +1402,9 @@
     (util/ns->relpath (first provides) "js")
     (if (.endsWith lib-path ".js")
       (util/get-name url)
-      (let [path (util/path url)]
-        (string/replace
-          path
-          (str (js/$$LUMO_GLOBALS.path.join (js/process.cwd) lib-path) (.-sep path))
-          "")))))
+      (let [path (util/path url)
+            lib-path (util/normalize-path lib-path)]
+        (subs path (+ (inc (.lastIndexOf path lib-path)) (.-length lib-path)))))))
 
 (defn rel-output-path
   "Given an IJavaScript which is either in memory, in a jar file,

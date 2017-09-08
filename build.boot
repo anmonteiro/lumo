@@ -156,6 +156,7 @@
                            :closure-defines {'cljs.core/*target* "nodejs"
                                              'lumo.core/*lumo-version* lumo-version}
                            :compiler-stats true
+                           :process-shim false
                            :fn-invoke-direct true
                            :parallel-build true}))
 

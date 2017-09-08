@@ -8,7 +8,8 @@
             [lumo.util :as util]
             [lumo.test-util :as test]
             ;; [clojure.java.io :as io]
-            [clojure.string :as string]))
+            [clojure.string :as string]
+            path))
 
 (deftest test-make-preamble
   (testing "no options"
@@ -70,15 +71,15 @@
 (deftest test-string-provides
   (is (= ["CB0BFFB"] (deps/-provides "var x = 42;"))))
 
-;; (deftest test-lib-rel-path-cljs-2152
-;;   (let [ijs {:provides ["tabby"]
-;;              :url "src/test/cljs/js_libs/tabby.js"
-;;              :lib-path "src/test/cljs/js_libs"}]
-;;     (is (= (closure/lib-rel-path ijs) "tabby.js")))
-;;   (let [ijs {:provides ["tabby"]
-;;              :url "src/test/cljs/js_libs/tabby.js"
-;;              :lib-path (path/resolve "src/test/cljs/js_libs/tabby.js")}]
-;;     (is (= (closure/lib-rel-path ijs) "tabby.js"))))
+(deftest test-lib-rel-path-cljs-2152
+  (let [ijs {:provides ["tabby"]
+             :url "src/test/cljs/js_libs/tabby.js"
+             :lib-path "src/test/cljs/js_libs"}]
+    (is (= (closure/lib-rel-path ijs) "tabby.js")))
+  (let [ijs {:provides ["tabby"]
+             :url "src/test/cljs/js_libs/tabby.js"
+             :lib-path (path/resolve "src/test/cljs/js_libs/tabby.js")}]
+    (is (= (closure/lib-rel-path ijs) "tabby.js"))))
 
 ;; (deftest test-index-node-modules
 ;;   (test/delete-node-modules)
