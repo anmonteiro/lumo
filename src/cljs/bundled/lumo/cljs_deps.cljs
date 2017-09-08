@@ -3,7 +3,9 @@
             [clojure.string :as string]
             [goog.object :as gobj]
             [lumo.util :as util :refer [file-seq distinct-by]]
-            [lumo.io :as io :refer [slurp]])
+            [lumo.io :as io :refer [slurp]]
+            fs
+            path)
   (:import [goog.string format]))
 
 ;; =====================
@@ -203,7 +205,7 @@ case."
   ;; solution is to create a wrapper that we call to represent paths that distinguish
   ;; between inside classpath vs out
   (or (io/resource path-or-url)
-      (and (.existsSync path-or-url) (js/$$LUMO_GLOBALS.path.resolve path-or-url))))
+      (and (fs/existsSync path-or-url) (path/resolve path-or-url))))
 
 (defn load-foreign-library*
   "Given a library spec (a map containing the keys :file

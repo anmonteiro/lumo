@@ -2053,7 +2053,7 @@
     (when (.exists s)
       (.setLastModified s 5000))))
 
-#_(defn cljs-dependents-for-macro-namespaces
+(defn cljs-dependents-for-macro-namespaces
   [state namespaces]
   (map :name
     (let [namespaces-set (set namespaces)]

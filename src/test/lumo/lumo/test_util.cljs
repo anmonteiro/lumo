@@ -2,7 +2,11 @@
   (:require [cljs.nodejs :as node]
             [cljs.js :as cljs]
             [lumo.common :as common]
-            [lumo.repl])
+            [lumo.repl]
+            [lumo.util :as util]
+            fs
+            os
+            path)
   (:require-macros [cljs.env.macros :as env]))
 
 (def lumo-env? (exists? js/$$LUMO_GLOBALS))
@@ -39,3 +43,21 @@
     (reset! lumo.repl/st @st)
     (env/with-compiler-env st
       (f))))
+
+(defn tmp-dir []
+  (os/tmpdir))
+
+(defn delete-out-files
+  [dir]
+  (let [files (try
+                (fs/readdirSync dir)
+                (catch :default _))]
+    (doseq [file files]
+      (let [filename (path/join dir file)
+            stat (fs/statSync filename)]
+        (if (.isDirectory stat)
+          (delete-out-files filename)
+          (fs/unlinkSync filename))))
+    (try
+      (fs/rmdirSync dir)
+      (catch :default _))))

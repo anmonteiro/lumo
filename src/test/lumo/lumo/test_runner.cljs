@@ -6,6 +6,6 @@
 
 (defn run-all-tests []
   (run-tests
-    'lumo.repl-tests
-    'lumo.js-deps-tests
+    ;; 'lumo.repl-tests
+    ;; 'lumo.js-deps-tests
     'lumo.build-api-tests))
