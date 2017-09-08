@@ -81,160 +81,148 @@
              :lib-path (path/resolve "src/test/cljs/js_libs/tabby.js")}]
     (is (= (closure/lib-rel-path ijs) "tabby.js"))))
 
-;; (deftest test-index-node-modules
-;;   (test/delete-node-modules)
-;;   (spit (io/file "package.json") "{}")
-;;   (closure/maybe-install-node-deps! {:npm-deps {:left-pad "1.1.3"}})
-;;   (let [modules (closure/index-node-modules-dir)]
-;;     (is (true? (some (fn [module]
-;;                        (= module {:module-type :es6
-;;                                   :file (.getAbsolutePath (io/file "node_modules/left-pad/index.js"))
-;;                                   :provides ["left-pad/index.js"
-;;                                              "left-pad/index"
-;;                                              "left-pad"]}))
-;;                  modules))))
-;;   (test/delete-node-modules)
-;;   (spit (io/file "package.json") "{}")
-;;   (closure/maybe-install-node-deps! {:npm-deps {:react "15.6.1"
-;;                                                 :react-dom "15.6.1"}})
-;;   (let [modules (closure/index-node-modules-dir)]
-;;     (is (true? (some (fn [module]
-;;                        (= module {:module-type :es6
-;;                                   :file (.getAbsolutePath (io/file "node_modules/react/react.js"))
-;;                                   :provides ["react/react.js"
-;;                                              "react/react"
-;;                                              "react"]}))
-;;                  modules)))
-;;     (is (true? (some (fn [module]
-;;                        (= module {:module-type :es6
-;;                                   :file (.getAbsolutePath (io/file "node_modules/react/lib/React.js"))
-;;                                   :provides ["react/lib/React.js" "react/lib/React"]}))
-;;                  modules)))
-;;     (is (true? (some (fn [module]
-;;                        (= module {:module-type :es6
-;;                                   :file (.getAbsolutePath (io/file "node_modules/react-dom/server.js"))
-;;                                   :provides ["react-dom/server.js" "react-dom/server"]}))
-;;                  modules))))
-;;   (test/delete-node-modules)
-;;   (spit (io/file "package.json") "{}")
-;;   (closure/maybe-install-node-deps! {:npm-deps {:node-fetch "1.7.1"}})
-;;   (let [modules (closure/index-node-modules-dir)]
-;;     (is (true? (some (fn [module]
-;;                        (= module {:module-type :es6
-;;                                   :file (.getAbsolutePath (io/file "node_modules/node-fetch/lib/index.js"))
-;;                                   :provides ["node-fetch/lib/index.js"
-;;                                              "node-fetch/lib/index"
-;;                                              "node-fetch/lib"]}))
-;;                  modules))))
-;;   (test/delete-node-modules)
-;;   (spit (io/file "package.json") "{}")
-;;   (closure/maybe-install-node-deps! {:npm-deps {"@comandeer/css-filter" "1.0.1"}})
-;;   (let [modules (closure/index-node-modules-dir)]
-;;     (is (true? (some (fn [module]
-;;                        (= module
-;;                           {:file (.getAbsolutePath (io/file "node_modules/@comandeer/css-filter/dist/css-filter.umd.js"))
-;;                            :module-type :es6
-;;                            :provides ["@comandeer/css-filter/dist/css-filter.umd.js"
-;;                                       "@comandeer/css-filter/dist/css-filter.umd"
-;;                                       "@comandeer/css-filter"]}))
-;;                  modules))))
-;;   (test/delete-node-modules)
-;;   (spit (io/file "package.json") "{}")
-;;   (closure/maybe-install-node-deps! {:npm-deps {"jss-extend" "5.0.0"}})
-;;   (let [modules (closure/index-node-modules-dir)]
-;;     (is (true? (some (fn [module]
-;;                        (= module
-;;                          {:file (.getAbsolutePath (io/file "node_modules/jss-extend/lib/index.js"))
-;;                           :module-type :es6
-;;                           :provides ["jss-extend/lib/index.js"
-;;                                      "jss-extend/lib/index"
-;;                                      "jss-extend"
-;;                                      "jss-extend/lib"]}))
-;;                  modules))))
-;;   (.delete (io/file "package.json"))
-;;   (test/delete-node-modules))
+(deftest test-index-node-modules
+  (test/delete-node-modules)
+  (closure/maybe-install-node-deps! {:npm-deps {:left-pad "1.1.3"}})
+  (let [modules (closure/index-node-modules-dir)]
+    (is (true? (some (fn [module]
+                       (= module {:module-type :es6
+                                  :file (path/resolve "node_modules/left-pad/index.js")
+                                  :provides ["left-pad/index.js"
+                                             "left-pad/index"
+                                             "left-pad"]}))
+                 modules))))
+  (test/delete-node-modules)
+  (closure/maybe-install-node-deps! {:npm-deps {:react "15.6.1"
+                                                :react-dom "15.6.1"}})
+  (let [modules (closure/index-node-modules-dir)]
+    (is (true? (some (fn [module]
+                       (= module {:module-type :es6
+                                  :file (path/resolve "node_modules/react/react.js")
+                                  :provides ["react/react.js"
+                                             "react/react"
+                                             "react"]}))
+                 modules)))
+    (is (true? (some (fn [module]
+                       (= module {:module-type :es6
+                                  :file (path/resolve "node_modules/react/lib/React.js")
+                                  :provides ["react/lib/React.js" "react/lib/React"]}))
+                 modules)))
+    (is (true? (some (fn [module]
+                       (= module {:module-type :es6
+                                  :file (path/resolve "node_modules/react-dom/server.js")
+                                  :provides ["react-dom/server.js" "react-dom/server"]}))
+                 modules))))
+  (test/delete-node-modules)
+  (closure/maybe-install-node-deps! {:npm-deps {:node-fetch "1.7.1"}})
+  (let [modules (closure/index-node-modules-dir)]
+    (is (true? (some (fn [module]
+                       (= module {:module-type :es6
+                                  :file (path/resolve "node_modules/node-fetch/lib/index.js")
+                                  :provides ["node-fetch/lib/index.js"
+                                             "node-fetch/lib/index"
+                                             "node-fetch/lib"]}))
+                 modules))))
+  (test/delete-node-modules)
+  (closure/maybe-install-node-deps! {:npm-deps {"@comandeer/css-filter" "1.0.1"}})
+  (let [modules (closure/index-node-modules-dir)]
+    (is (true? (some (fn [module]
+                       (= module
+                          {:file (path/resolve "node_modules/@comandeer/css-filter/dist/css-filter.umd.js")
+                           :module-type :es6
+                           :provides ["@comandeer/css-filter/dist/css-filter.umd.js"
+                                      "@comandeer/css-filter/dist/css-filter.umd"
+                                      "@comandeer/css-filter"]}))
+                 modules))))
+  (test/delete-node-modules)
+  (closure/maybe-install-node-deps! {:npm-deps {"jss-extend" "5.0.0"}})
+  (let [modules (closure/index-node-modules-dir)]
+    (is (true? (some (fn [module]
+                       (= module
+                         {:file (path/resolve "node_modules/jss-extend/lib/index.js")
+                          :module-type :es6
+                          :provides ["jss-extend/lib/index.js"
+                                     "jss-extend/lib/index"
+                                     "jss-extend"
+                                     "jss-extend/lib"]}))
+                 modules))))
+  (test/delete-node-modules))
 
-;; (deftest test-index-node-modules-module-deps-js
-;;   (spit (io/file "package.json") "{}")
-;;   (let [opts {:npm-deps {:left-pad "1.1.3"}}
-;;         out (util/output-directory opts)]
-;;     (test/delete-node-modules)
-;;     (test/delete-out-files out)
-;;     (closure/maybe-install-node-deps! opts)
-;;     (is (true? (some (fn [module]
-;;                        (= module {:module-type :es6
-;;                                   :file (.getAbsolutePath (io/file "node_modules/left-pad/index.js"))
-;;                                   :provides ["left-pad"
-;;                                              "left-pad/index.js"
-;;                                              "left-pad/index"]}))
-;;                  (closure/index-node-modules ["left-pad"] opts))))
-;;     (test/delete-node-modules)
-;;     (spit (io/file "package.json") "{}")
-;;     (test/delete-out-files out)
-;;     (let [opts {:npm-deps {:react "15.6.1"
-;;                            :react-dom "15.6.1"}}
-;;           _ (closure/maybe-install-node-deps! opts)
-;;           modules (closure/index-node-modules ["react" "react-dom" "react-dom/server"] opts)]
-;;       (is (true? (some (fn [module]
-;;                          (= module {:module-type :es6
-;;                                     :file (.getAbsolutePath (io/file "node_modules/react/react.js"))
-;;                                     :provides ["react"
-;;                                                "react/react.js"
-;;                                                "react/react"]}))
-;;                    modules)))
-;;       (is (true? (some (fn [module]
-;;                          (= module {:module-type :es6
-;;                                     :file (.getAbsolutePath (io/file "node_modules/react/lib/React.js"))
-;;                                     :provides ["react/lib/React.js" "react/lib/React"]}))
-;;                    modules)))
-;;       (is (true? (some (fn [module]
-;;                          (= module {:module-type :es6
-;;                                     :file (.getAbsolutePath (io/file "node_modules/react-dom/server.js"))
-;;                                     :provides ["react-dom/server.js" "react-dom/server"]}))
-;;                    modules))))
-;;     (test/delete-node-modules)
-;;     (spit (io/file "package.json") "{}")
-;;     (test/delete-out-files out)
-;;     (let [opts {:npm-deps {:node-fetch "1.7.1"}
-;;                 :target :nodejs}]
-;;       (closure/maybe-install-node-deps! opts)
-;;       (is (true? (some (fn [module]
-;;                          (= module {:module-type :es6
-;;                                     :file (.getAbsolutePath (io/file "node_modules/node-fetch/lib/index.js"))
-;;                                     :provides ["node-fetch/lib/index.js"
-;;                                                "node-fetch/lib/index"
-;;                                                "node-fetch/lib"]}))
-;;                    (closure/index-node-modules ["node-fetch/lib"] opts)))))
-;;     (test/delete-node-modules)
-;;     (spit (io/file "package.json") "{}")
-;;     (test/delete-out-files out)
-;;     (let [opts {:npm-deps {"@comandeer/css-filter" "1.0.1"}}]
-;;       (closure/maybe-install-node-deps! opts)
-;;       (is (true? (some (fn [module]
-;;                          (= module
-;;                            {:file (.getAbsolutePath (io/file "node_modules/@comandeer/css-filter/dist/css-filter.umd.js"))
-;;                             :module-type :es6
-;;                             :provides ["@comandeer/css-filter"
-;;                                        "@comandeer/css-filter/dist/css-filter.umd.js"
-;;                                        "@comandeer/css-filter/dist/css-filter.umd"]}))
-;;                    (closure/index-node-modules ["@comandeer/css-filter"] opts)))))
-;;     (test/delete-node-modules)
-;;     (spit (io/file "package.json") "{}")
-;;     (test/delete-out-files out)
-;;     (let [opts {:npm-deps {"jss-extend" "5.0.0"}}]
-;;       (closure/maybe-install-node-deps! opts)
-;;       (is (true? (some (fn [module]
-;;                          (= module
-;;                            {:file (.getAbsolutePath (io/file "node_modules/jss-extend/lib/index.js"))
-;;                             :module-type :es6
-;;                             :provides ["jss-extend"
-;;                                        "jss-extend/lib/index.js"
-;;                                        "jss-extend/lib/index"
-;;                                        "jss-extend/lib"]}))
-;;                    (closure/index-node-modules ["jss-extend"] opts)))))
-;;     (.delete (io/file "package.json"))
-;;     (test/delete-node-modules)
-;;     (test/delete-out-files out)))
+(deftest test-index-node-modules-module-deps-js
+  (let [opts {:npm-deps {:left-pad "1.1.3"}}
+        out (util/output-directory opts)]
+    (test/delete-node-modules)
+    (test/delete-out-files out)
+    (closure/maybe-install-node-deps! opts)
+    (is (true? (some (fn [module]
+                       (= module {:module-type :es6
+                                  :file (path/resolve "node_modules/left-pad/index.js")
+                                  :provides ["left-pad"
+                                             "left-pad/index.js"
+                                             "left-pad/index"]}))
+                 (closure/index-node-modules ["left-pad"] opts))))
+    (test/delete-node-modules)
+    (test/delete-out-files out)
+    (let [opts {:npm-deps {:react "15.6.1"
+                           :react-dom "15.6.1"}}
+          _ (closure/maybe-install-node-deps! opts)
+          modules (closure/index-node-modules ["react" "react-dom" "react-dom/server"] opts)]
+      (is (true? (some (fn [module]
+                         (= module {:module-type :es6
+                                    :file (path/resolve "node_modules/react/react.js")
+                                    :provides ["react"
+                                               "react/react.js"
+                                               "react/react"]}))
+                   modules)))
+      (is (true? (some (fn [module]
+                         (= module {:module-type :es6
+                                    :file (path/resolve "node_modules/react/lib/React.js")
+                                    :provides ["react/lib/React.js" "react/lib/React"]}))
+                   modules)))
+      (is (true? (some (fn [module]
+                         (= module {:module-type :es6
+                                    :file (path/resolve "node_modules/react-dom/server.js")
+                                    :provides ["react-dom/server.js" "react-dom/server"]}))
+                   modules))))
+    (test/delete-node-modules)
+    (test/delete-out-files out)
+    (let [opts {:npm-deps {:node-fetch "1.7.1"}
+                :target :nodejs}]
+      (closure/maybe-install-node-deps! opts)
+      (is (true? (some (fn [module]
+                         (= module {:module-type :es6
+                                    :file (path/resolve "node_modules/node-fetch/lib/index.js")
+                                    :provides ["node-fetch/lib/index.js"
+                                               "node-fetch/lib/index"
+                                               "node-fetch/lib"]}))
+                   (closure/index-node-modules ["node-fetch/lib"] opts)))))
+    (test/delete-node-modules)
+    (test/delete-out-files out)
+    (let [opts {:npm-deps {"@comandeer/css-filter" "1.0.1"}}]
+      (closure/maybe-install-node-deps! opts)
+      (is (true? (some (fn [module]
+                         (= module
+                           {:file (path/resolve "node_modules/@comandeer/css-filter/dist/css-filter.umd.js")
+                            :module-type :es6
+                            :provides ["@comandeer/css-filter"
+                                       "@comandeer/css-filter/dist/css-filter.umd.js"
+                                       "@comandeer/css-filter/dist/css-filter.umd"]}))
+                   (closure/index-node-modules ["@comandeer/css-filter"] opts)))))
+    (test/delete-node-modules)
+    (test/delete-out-files out)
+    (let [opts {:npm-deps {"jss-extend" "5.0.0"}}]
+      (closure/maybe-install-node-deps! opts)
+      (is (true? (some (fn [module]
+                         (= module
+                           {:file (path/resolve "node_modules/jss-extend/lib/index.js")
+                            :module-type :es6
+                            :provides ["jss-extend"
+                                       "jss-extend/lib/index.js"
+                                       "jss-extend/lib/index"
+                                       "jss-extend/lib"]}))
+                   (closure/index-node-modules ["jss-extend"] opts)))))
+    (test/delete-node-modules)
+    (test/delete-out-files out)))
 
 ;; (deftest test-cljs-2315
 ;;   (spit (io/file "package.json") (json/json-str {:devDependencies {"@cljs-oss/module-deps" "*"}}))

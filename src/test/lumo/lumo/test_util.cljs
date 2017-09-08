@@ -51,7 +51,7 @@
                 (catch :default _))]
     (doseq [file files]
       (let [filename (path/join dir file)
-            stat (fs/statSync filename)]
+            stat (fs/lstatSync filename)]
         (if (.isDirectory stat)
           (delete-out-files filename)
           (fs/unlinkSync filename))))

@@ -18,7 +18,10 @@
             [lumo.json :as json]
             [cljs.tools.reader :as reader]
             [cljs.tools.reader.reader-types :as readers]
-            [goog.math :as math])
+            [goog.math :as math]
+            child_process
+            fs
+            path)
   (:import [goog.string format StringBuffer]))
 
 (defmethod cljs.compiler/emit-constant Keyword [x]
@@ -1756,6 +1759,162 @@
                   (file-seq dir))
                 [lib])))]
     (into [] (mapcat expand-lib* libs))))
+
+(defn compute-upstream-npm-deps
+  ([]
+   (compute-upstream-npm-deps
+     (when env/*compiler*
+       (:options @env/*compiler*))))
+  ([{:keys [npm-deps]}]
+   (let [{ups-npm-deps :npm-deps} (get-upstream-deps)]
+     (reduce
+       (fn [m [dep v]]
+         (cond-> m
+           (not (contains? npm-deps dep))
+           (assoc dep (if (coll? v)
+                        (last (sort v))
+                        v))))
+       {} ups-npm-deps))))
+
+(defn maybe-install-node-deps!
+  [{:keys [npm-deps verbose] :as opts}]
+  (let [npm-deps (merge npm-deps (compute-upstream-npm-deps opts))]
+    (if-not (empty? npm-deps)
+      (let [pkg-json "package.json"]
+        (when (or ana/*verbose* verbose)
+          (util/debug-prn "Installing Node.js dependencies"))
+        (when-not (fs/existsSync pkg-json)
+          (spit pkg-json "{}"))
+        (let [proc (try
+                     (->> (into (cond->> ["npm" "install" "@cljs-oss/module-deps"]
+                                  util/windows? (into ["cmd" "/c"]))
+                            (map (fn [[dep version]] (str (name dep) "@" version)))
+                            npm-deps)
+                       (string/join " ")
+                       child_process/execSync)
+                     (catch js/Error e
+                       (util/debug-prn (.toString (.-stderr e) "utf8"))))]
+          opts))
+      opts)))
+
+(defn node-module-deps
+  "EXPERIMENTAL: return the foreign libs entries as computed by running
+   the module-deps package on the supplied JavaScript entry point. Assumes
+   that the `@cljs-oss/module-deps` NPM package is either locally or globally
+   installed."
+  ([entry]
+   (node-module-deps entry
+     (when env/*compiler*
+       (:options @env/*compiler*))))
+  ([{:keys [file]} {:keys [target] :as opts}]
+   (let [code (-> (slurp (io/resource "cljs/module_deps.js"))
+                (string/replace "JS_FILE" (string/replace file "\\" "\\\\"))
+                (string/replace "CLJS_TARGET" (str "" (when target (name target)))))
+         proc (child_process/spawnSync "node" #js ["--eval" code])]
+     (if (zero? (.-status proc))
+       (into []
+         (map (fn [{:strs [file provides]}] file
+                (merge
+                  {:file file
+                   :module-type :es6}
+                  (when provides
+                    {:provides provides}))))
+         (next (json/read-str (.toString (.-stdout proc) "utf8"))))
+       (do
+         (util/debug-prn (.toString (.-stderr proc) "utf8"))
+         [])))))
+
+(defn node-inputs
+  "EXPERIMENTAL: return the foreign libs entries as computed by running
+   the module-deps package on the supplied JavaScript entry points. Assumes
+   that the `@cljs-oss/module-deps` NPM package is either locally or globally
+   installed."
+  ([entries]
+   (node-inputs entries
+     (when env/*compiler*
+       (:options @env/*compiler*))))
+  ([entries opts]
+   (into [] (distinct (mapcat #(node-module-deps % opts) entries)))))
+
+(defn index-node-modules
+  ([modules]
+   (index-node-modules
+     modules
+     (when env/*compiler*
+       (:options @env/*compiler*))))
+  ([modules opts]
+   (let [node-modules "node_modules"
+         stats (fs/statSync node-modules)]
+     (if (and (not (empty? modules)) (fs/existsSync node-modules) (.isDirectory stats))
+       (let [modules (into #{} (map name) modules)
+             deps-file (path/join (util/output-directory opts) "cljs$node_modules.js")]
+         (util/mkdirs deps-file)
+         (spit deps-file
+           (string/join "\n" (map #(str "require('" % "');\n") modules)))
+         (node-inputs [{:file (path/resolve deps-file)}] opts))
+       []))))
+
+(defn- node-file-seq->libs-spec*
+  [module-fseq]
+  (letfn [(package-json? [path]
+            (boolean (re-find #"node_modules[/\\](@[^/\\]+?[/\\])?[^/\\]+?[/\\]package\.json$" path)))]
+    (let [pkg-jsons (into {}
+                      (comp
+                        (map path/resolve)
+                        (filter package-json?)
+                        (map (fn [path]
+                               [path (json/read-str (slurp path))])))
+                      module-fseq)]
+      (into []
+        (comp
+          (map path/resolve)
+          (map (fn [path]
+                 (merge
+                   {:file path
+                    :module-type :es6}
+                   (when-not (package-json? path)
+                     (let [pkg-json-main (some
+                                           (fn [[pkg-json-path {:strs [main name]}]]
+                                             (when-not (nil? main)
+                                               ;; should be the only edge case in
+                                               ;; the package.json main field - Antonio
+                                               (let [main (cond-> main
+                                                            (.startsWith main "./")
+                                                            (subs 2))
+                                                     main-path (-> pkg-json-path
+                                                                 (string/replace #"\\" "/")
+                                                                 (string/replace #"package\.json$" "")
+                                                                 (str main))]
+                                                 (some (fn [candidate]
+                                                         (when (= candidate (string/replace path #"\\" "/"))
+                                                           name))
+                                                   (cond-> [main-path]
+                                                     (nil? (re-find #"\.js(on)?$" main-path))
+                                                     (into [(str main-path ".js") (str main-path ".json")]))))))
+                                           pkg-jsons)]
+                       {:provides (let [module-rel-name (-> (subs path (.lastIndexOf path "node_modules"))
+                                                            (string/replace #"\\" "/")
+                                                            (string/replace #"node_modules[\\\/]" ""))
+                                        provides (cond-> [module-rel-name (string/replace module-rel-name #"\.js(on)?$" "")]
+                                                   (some? pkg-json-main)
+                                                   (conj pkg-json-main))
+                                        index-replaced (string/replace module-rel-name #"[\\\/]index\.js(on)?$" "")]
+                                    (cond-> provides
+                                      (and (boolean (re-find #"[\\\/]index\.js(on)?$" module-rel-name))
+                                           (not (some #{index-replaced} provides)))
+                                      (conj index-replaced)))}))))))
+        module-fseq))))
+
+(def node-file-seq->libs-spec (memoize node-file-seq->libs-spec*))
+
+(defn index-node-modules-dir
+  ([]
+   (index-node-modules-dir
+     (when env/*compiler*
+       (:options @env/*compiler*))))
+  ([opts]
+   (let [module-fseq (util/module-file-seq)]
+     (node-file-seq->libs-spec module-fseq))))
 
 (defn add-implicit-options
   [{:keys [optimizations output-dir]

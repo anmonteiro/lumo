@@ -277,3 +277,18 @@
     [unknown (some-> (suggestion 3 (str unknown) (map str knowns))
                (subs 1)
                keyword)]))
+
+(defn module-file-seq
+  ([] (module-file-seq "node_modules"))
+  ([dir]
+   (let [fseq (tree-seq
+                (fn [f]
+                  (and (.isDirectory (fs/statSync f))
+                    (not (boolean
+                           (re-find #"node_modules[\\\/].*[\\\/]node_modules" f)))))
+                (fn [d] (map #(path/join d %) (fs/readdirSync d)))
+                dir)]
+     (filter (fn [path]
+               (or (string/ends-with? path ".json")
+                   (string/ends-with? path ".js")))
+       fseq))))
