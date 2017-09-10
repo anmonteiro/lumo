@@ -1302,7 +1302,7 @@
       com.cognitect.transit.impl.reader
       com.cognitect.transit.impl.writer]))
 
-(def ^:private namespace-completion-additons
+(def ^:private namespace-completion-additions
   (into #{} (map str)
     '[clojure.test
       clojure.spec.alpha
@@ -1345,7 +1345,7 @@
                (map drop-macros-suffix)
                (remove namespace-completion-exclusions))
     conj
-    (into namespace-completion-additons
+    (into namespace-completion-additions
       (comp cat (map str))
       [(keys @deps/js-lib-index)
        (keys (closure-index))])
