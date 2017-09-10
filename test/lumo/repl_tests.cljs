@@ -61,7 +61,10 @@
                                              '{string clojure.string})]
         (is-contains-completion "str" "string/")
         (is-contains-completion "(str" "(string/")
-        (is-contains-completion "(set" "(set/" not))
+        (is-contains-completion "(set" "(set/" not)
+        (testing "LUMO-258"
+          (is-contains-completion "(string/ends" "(string/ends-with?")
+          (is-contains-completion "(string/ends" "(string/ends_with_QMARK_" not)))
       (with-redefs [lumo/all-ns (fn [] '(clojure.set clojure.string))]
         (is-contains-completion "(clojure.s" "(clojure.set")))
     (testing "cljs.core function completions"
