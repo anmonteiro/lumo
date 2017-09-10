@@ -870,6 +870,10 @@
       (merge (get-in @st [::ana/namespaces cur-ns :requires])
         (get-in @st [::ana/namespaces cur-ns :require-macros])))))
 
+(defn- current-alias?
+  [ns]
+  (contains? (set (vals (current-alias-map))) ns))
+
 (defn- reader-eof? [e]
   (let [{:keys [ex-kind]} (ex-data e)]
     (keyword-identical? ex-kind :eof)))
@@ -1229,7 +1233,7 @@
 
 (defn- completion-candidates-for-closure-js
   [ns]
-  (if (or (contains? (set (vals (current-alias-map))) ns)
+  (if (or (current-alias? ns)
           (symbol-identical? 'goog ns))
     (into [] (some-> js/global
                (gobj/getValueByKeys (.split (str ns) "."))
@@ -1240,7 +1244,7 @@
   [ns]
   (let [module (str ns)]
     (if (and (ana/node-module-dep? module)
-             (contains? (set (vals (current-alias-map))) ns))
+             (current-alias? ns))
       ;; require is cheap because it's cached (was required in the current namespace)
       (into [] (js/Object.keys (js/require module)))
       [])))
