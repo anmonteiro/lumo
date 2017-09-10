@@ -170,8 +170,8 @@
          :output-to out})
       (is false)
       (catch js/Error e
-        (is (re-find  #"Circular dependency detected, circular-deps.a -> circular-deps.b -> circular-deps.a"
-              e))))))
+        (is (re-find  #"Circular dependency detected, cljs.user -> circular-deps.b -> circular-deps.a -> circular-deps.b"
+              (.. e -cause -cause -cause -message)))))))
 
 ;; (defn loader-test-project [output-dir]
 ;;   {:inputs (str (io/file "src" "test" "cljs_build" "loader_test"))
@@ -258,7 +258,6 @@
       (build/build (build/inputs (path/join inputs "npm_deps_test/string_requires.cljs")) opts cenv)
       (is (not (nil? (re-find #"\.\.[\\/]node_modules[\\/]react-dom[\\/]server\.js" (slurp (path/join out "cljs_deps.js"))))))
       (test/delete-out-files out)))
-  (fs/unlinkSync "package.json")
   (test/delete-node-modules))
 
 ;; (deftest test-preloads
@@ -293,60 +292,58 @@
       opts cenv)
     (is (fs/existsSync (path/join out "tabby.js")))))
 
-;; (defn collecting-warning-handler [state]
-;;   (fn [warning-type env extra]
-;;     (when (warning-type ana/*cljs-warnings*)
-;;       (when-let [s (ana/error-message warning-type extra)]
-;;         (swap! state conj s)))))
+(defn collecting-warning-handler [state]
+  (fn [warning-type env extra]
+    (when (warning-type ana/*cljs-warnings*)
+      (when-let [s (ana/error-message warning-type extra)]
+        (swap! state conj s)))))
 
-;; (deftest test-emit-node-requires-cljs-2213
-;;   (test/delete-node-modules)
-;;   (spit (io/file "package.json") "{}")
-;;   (testing "simplest case, require"
-;;     (let [ws (atom [])
-;;           out (.getPath (io/file (test/tmp-dir) "emit-node-requires-test-out"))
-;;           {:keys [inputs opts]} {:inputs (str (io/file "src" "test" "cljs_build"))
-;;                                  :opts {:main 'emit-node-requires-test.core
-;;                                         :output-dir out
-;;                                         :optimizations :none
-;;                                         :target :nodejs
-;;                                         :install-deps true
-;;                                         :npm-deps {:react "15.6.1"
-;;                                                    :react-dom "15.6.1"}
-;;                                         :closure-warnings {:check-types :off
-;;                                                            :non-standard-jsdoc :off}}}
-;;           cenv (env/default-compiler-env opts)]
-;;       (test/delete-out-files out)
-;;       (ana/with-warning-handlers [(collecting-warning-handler ws)]
-;;         (build/build (build/inputs (io/file inputs "emit_node_requires_test/core.cljs")) opts cenv))
-;;       ;; wasn't processed by Closure
-;;       (is (not (.exists (io/file out "node_modules/react/react.js"))))
-;;       (is (.exists (io/file out "emit_node_requires_test/core.js")))
-;;       (is (true? (boolean (re-find #"emit_node_requires_test\.core\.node\$module\$react_dom\$server = require\('react-dom/server'\);"
-;;                             (slurp (io/file out "emit_node_requires_test/core.js"))))))
-;;       (is (true? (boolean (re-find #"emit_node_requires_test\.core\.node\$module\$react_dom\$server\.renderToString"
-;;                             (slurp (io/file out "emit_node_requires_test/core.js"))))))
-;;       (is (empty? @ws))))
-;;   (testing "Node native modules, CLJS-2218"
-;;     (let [ws (atom [])
-;;           out (.getPath (io/file (test/tmp-dir) "emit-node-requires-test-out"))
-;;           {:keys [inputs opts]} {:inputs (str (io/file "src" "test" "cljs_build"))
-;;                                  :opts {:main 'emit-node-requires-test.native-modules
-;;                                         :output-dir out
-;;                                         :optimizations :none
-;;                                         :target :nodejs
-;;                                         :closure-warnings {:check-types :off}}}
-;;           cenv (env/default-compiler-env opts)]
-;;       (test/delete-out-files out)
-;;       (test/delete-node-modules)
-;;       (ana/with-warning-handlers [(collecting-warning-handler ws)]
-;;         (build/build (build/inputs (io/file inputs "emit_node_requires_test/native_modules.cljs")) opts cenv))
-;;       (is (.exists (io/file out "emit_node_requires_test/native_modules.js")))
-;;       (is (true? (boolean (re-find #"emit_node_requires_test\.native_modules\.node\$module\$path\.isAbsolute"
-;;                             (slurp (io/file out "emit_node_requires_test/native_modules.js"))))))
-;;       (is (empty? @ws))))
-;;   (.delete (io/file "package.json"))
-;;   (test/delete-node-modules))
+(deftest test-emit-node-requires-cljs-2213
+  (test/delete-node-modules)
+  (testing "simplest case, require"
+    (let [ws (atom [])
+          out (path/join (test/tmp-dir) "emit-node-requires-test-out")
+          {:keys [inputs opts]} {:inputs (path/join "src" "test" "cljs_build")
+                                 :opts {:main 'emit-node-requires-test.core
+                                        :output-dir out
+                                        :optimizations :none
+                                        :target :nodejs
+                                        :install-deps true
+                                        :npm-deps {:react "15.6.1"
+                                                   :react-dom "15.6.1"}
+                                        :closure-warnings {:check-types :off
+                                                           :non-standard-jsdoc :off}}}
+          cenv (env/default-compiler-env opts)]
+      (test/delete-out-files out)
+      (ana/with-warning-handlers [(collecting-warning-handler ws)]
+        (build/build (build/inputs (path/join inputs "emit_node_requires_test/core.cljs")) opts cenv))
+      ;; wasn't processed by Closure
+      (is (not (fs/existsSync (path/join out "node_modules/react/react.js"))))
+      (is (fs/existsSync (path/join out "emit_node_requires_test/core.js")))
+      (is (true? (boolean (re-find #"emit_node_requires_test\.core\.node\$module\$react_dom_BSLASH_\$server = require\('react-dom/server'\);"
+                            (slurp (path/join out "emit_node_requires_test/core.js"))))))
+      (is (true? (boolean (re-find #"emit_node_requires_test\.core\.node\$module\$react_dom_BSLASH_\$server\.renderToString"
+                            (slurp (path/join out "emit_node_requires_test/core.js"))))))
+      (is (empty? @ws))))
+  (testing "Node native modules, CLJS-2218"
+    (let [ws (atom [])
+          out (path/join (test/tmp-dir) "emit-node-requires-test-out")
+          {:keys [inputs opts]} {:inputs (path/join "src" "test" "cljs_build")
+                                 :opts {:main 'emit-node-requires-test.native-modules
+                                        :output-dir out
+                                        :optimizations :none
+                                        :target :nodejs
+                                        :closure-warnings {:check-types :off}}}
+          cenv (env/default-compiler-env opts)]
+      (test/delete-out-files out)
+      (test/delete-node-modules)
+      (ana/with-warning-handlers [(collecting-warning-handler ws)]
+        (build/build (build/inputs (path/join inputs "emit_node_requires_test/native_modules.cljs")) opts cenv))
+      (is (fs/existsSync (path/join out "emit_node_requires_test/native_modules.js")))
+      (is (true? (boolean (re-find #"emit_node_requires_test\.native_modules\.node\$module\$path\.isAbsolute"
+                            (slurp (path/join out "emit_node_requires_test/native_modules.js"))))))
+      (is (empty? @ws))))
+  (test/delete-node-modules))
 
 ;; (deftest test-emit-global-requires-cljs-2214
 ;;   (testing "simplest case, require"

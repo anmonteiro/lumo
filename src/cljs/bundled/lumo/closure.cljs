@@ -2303,10 +2303,7 @@
              (compile-sources compiler-stats compile-opts
                (fn [sources]
                  (if-let [error (:error sources)]
-                   (util/debug-prn "\nFailed!"
-                     (str (.-message error)
-                       (when-let [c (.-cause error)]
-                         (str ": " (.-stack c)))))
+                   (throw error)
                    (let [node? (= :nodejs (:target all-opts))
                          js-sources (-> (map add-core-macros-if-cljs-js sources)
                                       (add-js-sources all-opts)

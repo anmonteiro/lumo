@@ -186,22 +186,25 @@
                           (when sm-data
                             {:source-map (:source-map sm-data)}))
                 cenv @env/*compiler*]
-            (when (seq (:deps ast))
-              (lana/analyze-deps ns (:deps ast) (:env ast) (dissoc opts :macros-ns)))
-            ;; don't need to call this because `cljs.js/compile-str` already
-            ;; generates inline source maps
-            ;; (when (and sm-data (= :none (:optimizations opts)))
-            ;;   (emit-source-map src dest sm-data
-            ;;     (merge opts {:ext ext :provides [ns-name]})))
-            (let [path (js/$$LUMO_GLOBALS.path.resolve dest)]
-              (swap! env/*compiler* assoc-in [::comp/compiled-cljs path] ret))
-            (let [{:keys [output-dir cache-analysis]} opts]
-              #_(when (and (true? cache-analysis) output-dir)
-                  (ana/write-analysis-cache ns-name
-                    (ana/cache-file src (lana/parse-ns src) output-dir :write)
-                    src))
-              (spit dest value)
-              (cb ret))))))))
+            (try
+              (when (seq (:deps ast))
+                (lana/analyze-deps ns (:deps ast) (:env ast) (dissoc opts :macros-ns)))
+              ;; don't need to call this because `cljs.js/compile-str` already
+              ;; generates inline source maps
+              ;; (when (and sm-data (= :none (:optimizations opts)))
+              ;;   (emit-source-map src dest sm-data
+              ;;     (merge opts {:ext ext :provides [ns-name]})))
+              (let [path (js/$$LUMO_GLOBALS.path.resolve dest)]
+                (swap! env/*compiler* assoc-in [::comp/compiled-cljs path] ret))
+              (let [{:keys [output-dir cache-analysis]} opts]
+                #_(when (and (true? cache-analysis) output-dir)
+                    (ana/write-analysis-cache ns-name
+                      (ana/cache-file src (lana/parse-ns src) output-dir :write)
+                      src))
+                (spit dest value)
+                (cb ret))
+              (catch js/Error e
+                (cb {:error e})))))))))
 
 (defn compile-file*
      ([src dest cb]
