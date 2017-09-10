@@ -63,4 +63,4 @@
   (delete-out-files "node_modules"))
 
 (defn platform-path [path]
-  (.replace path \/ (.charAt path/sep 0)))
+  (.replace path (js/RegExp. "/" "g") (.charAt path/sep 0)))
