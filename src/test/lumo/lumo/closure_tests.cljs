@@ -1,14 +1,14 @@
 (ns lumo.closure-tests
   (:require [clojure.test :refer [deftest is testing]]
             [lumo.build.api :as build]
-            ;; [clojure.data.json :as json]
-            ;; [clojure.java.shell :as sh]
             [lumo.closure :as closure]
             [lumo.cljs-deps :as deps]
             [lumo.util :as util]
             [lumo.test-util :as test]
-            ;; [clojure.java.io :as io]
+            [lumo.io :refer [spit slurp]]
             [clojure.string :as string]
+            child_process
+            fs
             path))
 
 (deftest test-make-preamble
@@ -224,44 +224,46 @@
     (test/delete-node-modules)
     (test/delete-out-files out)))
 
-;; (deftest test-cljs-2315
-;;   (spit (io/file "package.json") (json/json-str {:devDependencies {"@cljs-oss/module-deps" "*"}}))
-;;   (apply sh/sh (cond->> ["npm" "install"]
-;;                  util/windows? (into ["cmd" "/c"])))
-;;   (let [file (io/file (test/tmp-dir) "cljs-2315-inputs.js")
-;;         _ (spit file "require('./src/test/cljs_build/json_modules_test/a.js');")
-;;         node-inputs (closure/node-inputs [{:file (str file)}])]
-;;     (is (= node-inputs
-;;           [{:file (.getAbsolutePath (io/file "src/test/cljs_build/json_modules_test/a.js"))
-;;             :module-type :es6}
-;;            {:file (.getAbsolutePath (io/file "src/test/cljs_build/json_modules_test/b.json"))
-;;             :module-type :es6}])))
-;;   (.delete (io/file "package.json"))
-;;   (test/delete-node-modules))
+(deftest test-cljs-2315
+  (spit "package.json" (js/JSON.stringify (clj->js {:devDependencies {"@cljs-oss/module-deps" "*"}})))
+  (child_process/execSync (string/join " "
+                            (cond->> ["npm" "install"]
+                              util/windows? (into ["cmd" "/c"]))))
+  (let [file (path/join (test/tmp-dir) "cljs-2315-inputs.js")
+        _ (spit file "require('./src/test/cljs_build/json_modules_test/a.js');")
+        node-inputs (closure/node-inputs [{:file (str file)}])]
+    (is (= node-inputs
+          [{:file (path/resolve "src/test/cljs_build/json_modules_test/a.js")
+            :module-type :es6}
+           {:file (path/resolve "src/test/cljs_build/json_modules_test/b.json")
+            :module-type :es6}])))
+  (test/delete-node-modules))
 
-;; (deftest test-cljs-2318
-;;   (spit (io/file "package.json") "{}")
-;;   (let [opts {:npm-deps {:react     "15.6.1"
-;;                          :react-dom "15.6.1"
-;;                          :react-addons-css-transition-group "15.5.1"
-;;                          "@blueprintjs/core" "1.24.0"}}
-;;         out (util/output-directory opts)]
-;;     (test/delete-node-modules)
-;;     (test/delete-out-files out)
-;;     (closure/maybe-install-node-deps! opts)
-;;     (is (true? (some (fn [module]
-;;                        (= module {:module-type :es6
-;;                                   :file (.getAbsolutePath (io/file "node_modules/tslib/tslib.es6.js"))
-;;                                   :provides ["tslib"
-;;                                              "tslib/tslib.es6.js"
-;;                                              "tslib/tslib.es6"]}))
-;;                  (closure/index-node-modules ["tslib"] opts))))
-;;     (.delete (io/file "package.json"))
-;;     (test/delete-node-modules)
-;;     (test/delete-out-files out)))
+(deftest test-cljs-2318
+  (spit "package.json" "{}")
+  (let [opts {:npm-deps {:react     "15.6.1"
+                         :react-dom "15.6.1"
+                         :react-addons-css-transition-group "15.5.1"
+                         "@blueprintjs/core" "1.24.0"}}
+        out (util/output-directory opts)]
+    (test/delete-node-modules)
+    (test/delete-out-files out)
+    (closure/maybe-install-node-deps! opts)
+    (is (true? (some (fn [module]
+                       (= module {:module-type :es6
+                                  :file (path/resolve "node_modules/tslib/tslib.es6.js")
+                                  :provides ["tslib"
+                                             "tslib/tslib.es6.js"
+                                             "tslib/tslib.es6"]}))
+                 (closure/index-node-modules ["tslib"] opts))))
+    (fs/unlinkSync "package.json")
+    (test/delete-node-modules)
+    (test/delete-out-files out)))
+
+;; TODO: fix these tests once the next version is released
 
 ;; (deftest test-cljs-2327
-;;   (spit (io/file "package.json") "{}")
+;;   (spit "package.json" "{}")
 ;;   (let [opts {:npm-deps {:react "16.0.0-beta.5"
 ;;                          :react-dom "16.0.0-beta.5"}}
 ;;         out (util/output-directory opts)]
@@ -271,21 +273,21 @@
 ;;     (let [modules (closure/index-node-modules ["react" "react-dom" "react-dom/server"] opts)]
 ;;       (is (true? (some (fn [module]
 ;;                          (= module {:module-type :es6
-;;                                     :file (.getAbsolutePath (io/file "node_modules/react/index.js"))
+;;                                     :file (path/resolve "node_modules/react/index.js")
 ;;                                     :provides ["react"
 ;;                                                "react/index.js"
 ;;                                                "react/index"]}))
 ;;                    modules)))
 ;;       (is (true? (some (fn [module]
 ;;                          (= module {:module-type :es6
-;;                                     :file (.getAbsolutePath (io/file "node_modules/react-dom/index.js"))
+;;                                     :file (path/resolve "node_modules/react-dom/index.js")
 ;;                                     :provides ["react-dom"
 ;;                                                "react-dom/index.js"
 ;;                                                "react-dom/index"]}))
 ;;                    modules)))
 ;;       (is (true? (some (fn [module]
 ;;                          (= module {:module-type :es6
-;;                                     :file (.getAbsolutePath (io/file "node_modules/react-dom/server.browser.js"))
+;;                                     :file (path/resolve "node_modules/react-dom/server.browser.js")
 ;;                                     :provides ["react-dom/server.js"
 ;;                                                "react-dom/server"
 ;;                                                "react-dom/server.browser.js"
@@ -293,20 +295,20 @@
 ;;                    modules))))
 ;;     (test/delete-node-modules)
 ;;     (test/delete-out-files out)
-;;     (spit (io/file "package.json") "{}")
+;;     (spit "package.json" "{}")
 ;;     (let [opts {:npm-deps {:warning "3.0.0"}}
 ;;           _ (closure/maybe-install-node-deps! opts)
 ;;           modules (closure/index-node-modules ["warning"] opts)]
 ;;       (is (true? (some (fn [module]
 ;;                          (= module {:module-type :es6
-;;                                     :file (.getAbsolutePath (io/file "node_modules/warning/browser.js"))
+;;                                     :file (path/resolve "node_modules/warning/browser.js")
 ;;                                     :provides ["warning"
 ;;                                                "warning/browser.js"
 ;;                                                "warning/browser"]}))
 ;;                    modules))))
 ;;     (test/delete-node-modules)
 ;;     (test/delete-out-files out)
-;;     (spit (io/file "package.json") "{}")
+;;     (spit "package.json" "{}")
 ;;     (let [opts {:npm-deps {:react-dom "16.0.0-beta.5"
 ;;                            :react "16.0.0-beta.5"}
 ;;                 :target :nodejs}
@@ -314,11 +316,11 @@
 ;;           modules (closure/index-node-modules ["react-dom/server"] opts)]
 ;;       (is (true? (some (fn [module]
 ;;                          (= module {:module-type :es6
-;;                                     :file (.getAbsolutePath (io/file "node_modules/react-dom/server.js"))
+;;                                     :file (path/resolve "node_modules/react-dom/server.js")
 ;;                                     :provides ["react-dom/server.js"
 ;;                                                "react-dom/server"]}))
 ;;                    modules))))
-;;     (.delete (io/file "package.json"))
+;;     (fs/unlinkSync "package.json")
 ;;     (test/delete-node-modules)
 ;;     (test/delete-out-files out)))
 

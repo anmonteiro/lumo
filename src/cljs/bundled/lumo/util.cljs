@@ -56,6 +56,12 @@
     (catch :default _
       false)))
 
+(defn file? [path]
+  (try
+    (.isFile (fs/lstatSync path))
+    (catch :default _
+      false)))
+
 (defn mkdirs [p]
   (let [target-dir (-> p path/resolve (path/resolve ".."))]
     (reduce (fn [acc d]
@@ -152,12 +158,13 @@
    URL return the JAR relative path of the resource."
   [x]
   (letfn [(strip-user-dir [s]
-            (string/replace s
-              (str (js/process.cwd) path/sep) ""))]
-    ;; TODO: distinguish between JAR / normal file
-    #_(if (file? x)
-      (strip-user-dir (.getAbsolutePath x))
-      (let [f (.getFile x)]
+            (let [user-dir (path/join (js/process.cwd) path/sep)
+                  s (normalize-path s)]
+              (string/replace s user-dir "")))]
+    (if (string? x)
+      (strip-user-dir (path/resolve x))
+      (throw (js/Error. "What to do with JARs in lumo.util/relative-name?"))
+      #_(let [f (URLDecoder/decode (.getFile x))]
         (if (string/includes? f ".jar!/")
           (last (string/split f #"\.jar!/"))
           (strip-user-dir f))))))
@@ -278,6 +285,13 @@
                (subs 1)
                keyword)]))
 
+(defn conjunction-str [xs]
+  (let [xs (vec xs)]
+    (case (count xs)
+      1 (first xs)
+      2 (str (first xs) " and " (second xs))
+      (str (string/join ", " (pop xs)) " and " (peek xs)))))
+
 (defn module-file-seq
   ([] (module-file-seq "node_modules"))
   ([dir]
@@ -290,5 +304,28 @@
                 dir)]
      (filter (fn [path]
                (or (string/ends-with? path ".json")
-                   (string/ends-with? path ".js")))
+                 (string/ends-with? path ".js")))
        fseq))))
+
+(defn path->module-identifier
+  ([relpath]
+   (path->module-identifier relpath true))
+  ([relpath code?]
+   (letfn [(strip-js-extension [path]
+             (if (string/ends-with? path ".js")
+               (subs path 0 (.lastIndexOf path "."))
+               path))]
+     (let [dirname (as-> (path/resolve relpath) $
+                     (strip-js-extension $)
+                     (string/replace $ "/" "$")
+                     (string/replace $ "@" "$")
+                     (string/replace $ "+" "$")
+                     (string/replace $ "." "_")
+                     (string/replace $ " " "_")
+                     (string/replace $ "-" "_")
+                     ;; Windows
+                     (string/replace $ "\\" "$")
+                     (if code?
+                       (string/replace $ ":" "_")
+                       (string/replace $ ":" "-")))]
+       (str "module" (when-not (.startsWith dirname "$") "$") dirname)))))

@@ -157,10 +157,8 @@
                (second))
             "goog.require('thirdparty.add');")))))
 
-;; TODO: done in the JVM via ns-side-effects
-#_(deftest cljs-1537-circular-deps
+(deftest cljs-1537-circular-deps
   (let [out (path/join (test/tmp-dir) "cljs-1537-test-out")
-        out-file (path/join out "main.js")
         root "src/test/cljs_build"]
     (test/delete-out-files out)
     (try
@@ -219,16 +217,17 @@
 ;;         (build/build (build/inputs inputs) opts)
 ;;         (is (not (nil? (re-find #"foreignA[\s\S]+foreignB" (slurp (io/file out "foo.js"))))))))))
 
-#_(deftest test-npm-deps
-  ;; (test/delete-node-modules)
+(deftest test-npm-deps
   (testing "simplest case, require"
+    (test/delete-node-modules)
     (let [out (path/join (test/tmp-dir) "npm-deps-test-out")
           {:keys [inputs opts]} {:inputs (path/join "src" "test" "cljs_build")
                                  :opts {:main 'npm-deps-test.core
                                         :output-dir out
                                         :optimizations :none
                                         :install-deps true
-                                        :npm-deps {:left-pad "1.1.3"}
+                                        :npm-deps {:left-pad "1.1.3"
+                                                   :google-closure-compiler-js "*"}
                                         :closure-warnings {:check-types :off}}}
           cenv (env/default-compiler-env)]
       (test/delete-out-files out)
@@ -244,7 +243,8 @@
                                       :install-deps true
                                       :npm-deps {:react "15.6.1"
                                                  :react-dom "15.6.1"
-                                                 :lodash "4.17.4"}
+                                                 :lodash "4.17.4"
+                                                 :google-closure-compiler-js "*"}
                                       :closure-warnings {:check-types :off
                                                          :non-standard-jsdoc :off}}}]
     (testing "mix of symbol & string-based requires"
@@ -258,6 +258,7 @@
       (build/build (build/inputs (path/join inputs "npm_deps_test/string_requires.cljs")) opts cenv)
       (is (not (nil? (re-find #"\.\.[\\/]node_modules[\\/]react-dom[\\/]server\.js" (slurp (path/join out "cljs_deps.js"))))))
       (test/delete-out-files out)))
+  (fs/unlinkSync "package.json")
   (test/delete-node-modules))
 
 ;; (deftest test-preloads
@@ -287,8 +288,6 @@
         cenv (env/default-compiler-env)]
     (test/delete-out-files out)
     (build/build (build/inputs
-                   "src/test/cljs_build/libs_test/core.cljs"
-                   "src/test/cljs/js_libs"
                    (path/join inputs "libs_test/core.cljs")
                    "src/test/cljs/js_libs")
       opts cenv)

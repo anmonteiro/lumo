@@ -176,14 +176,18 @@
         (if error
           (cb {:error error})
           (let [sm-data (when comp/*source-map-data* @comp/*source-map-data*)
+                {:keys [ns ast] :as ns-info} (lana/parse-ns src)
                 ret     (merge
-                          (lana/parse-ns src)
+                          ns-info
                           ;; All the necessary keys like :requires, :provides,
                           ;; etc... are already returned (as JavaScriptFile) by
                           ;; the above lana/parse-ns
                           {:file dest}
                           (when sm-data
-                            {:source-map (:source-map sm-data)}))]
+                            {:source-map (:source-map sm-data)}))
+                cenv @env/*compiler*]
+            (when (seq (:deps ast))
+              (lana/analyze-deps ns (:deps ast) (:env ast) (dissoc opts :macros-ns)))
             ;; don't need to call this because `cljs.js/compile-str` already
             ;; generates inline source maps
             ;; (when (and sm-data (= :none (:optimizations opts)))
