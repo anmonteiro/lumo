@@ -462,7 +462,8 @@ async function startClojureScriptEngine(opts: CLIOptsType): Promise<mixed> {
       }
 
       execute(
-        "(require '[lumo.repl :refer [apropos find-doc] :refer-macros [dir doc source]])",
+        `(require '[lumo.repl :refer [apropos find-doc] :refer-macros [dir doc source]])
+         (require '[clojure.pprint :refer [pprint pp]])`,
         'text',
         true,
         false,
