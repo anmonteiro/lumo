@@ -13,7 +13,9 @@
             [cljs.compiler :as comp]
             [cljs.analyzer :as ana]
             [clojure.string :as string]
-            [cljs.tools.reader :as reader])
+            [cljs.tools.reader :as reader]
+            fs
+            path)
   (:import [goog.string StringBuffer]))
 
 (defn rename-to-js
@@ -53,7 +55,7 @@
    ([src dest opts]
     (let [{:keys [ns requires]} (lana/parse-ns src)]
       (ensure
-        (or (not (js/$$LUMO_GLOBALS.fs.existsSync dest))
+        (or (not (fs/existsSync dest))
           (util/changed? src dest)
           (let [version' (util/compiled-by-version dest)
                 version (util/clojurescript-version)]
@@ -64,8 +66,8 @@
               (comp/build-affecting-options (util/build-options dest))))
           (and opts (:source-map opts)
             (if (= (:optimizations opts) :none)
-              (not (js/$$LUMO_GLOBALS.fs.existsSync (str dest ".map")))
-              (not (get-in @env/*compiler* [::comp/compiled-cljs (js/$$LUMO_GLOBALS.path.resolve dest)]))))
+              (not (fs/existsSync (str dest ".map")))
+              (not (get-in @env/*compiler* [::comp/compiled-cljs (path/resolve dest)]))))
           (when-let [recompiled' (and comp/*recompiled* @comp/*recompiled*)]
             (some requires recompiled')))))))
 
@@ -128,15 +130,15 @@
         (assoc
           (json/read-str (slurp (io/resource "cljs/core.aot.js.map")))
           "file"
-          (js/$$LUMO_GLOBALS.path.join (util/output-directory opts) "cljs" "core.js")))))
+          (path/join (util/output-directory opts) "cljs" "core.js")))))
   (lana/parse-ns src dest nil))
 
 (defn emit-source-map [src dest sm-data opts]
-  (let [sm-file (js/$$LUMO_GLOBALS.path.join (str dest ".map"))]
+  (let [sm-file (path/join (str dest ".map"))]
     (spit sm-file
-      (sm/encode {(js/$$LUMO_GLOBALS.path.resolve src) (:source-map sm-data)}
+      (sm/encode {(path/resolve src) (:source-map sm-data)}
         {:lines (+ (:gen-line sm-data) 2)
-         :file (js/$$LUMO_GLOBALS.path.resolve dest)
+         :file (path/resolve dest)
          :source-map-path (:source-map-path opts)
          :source-map-timestamp (:source-map-timestamp opts)
          :source-map-pretty-print (:source-map-pretty-print opts)
@@ -154,7 +156,7 @@
               "rel=" (system-time))
             ""))
         (comp/emits "\n//# sourceMappingURL="
-          (or (:source-map-url opts) (js/$$LUMO_GLOBALS.path.basename sm-file))
+          (or (:source-map-url opts) (path/basename sm-file))
           (if (true? (:source-map-timestamp opts))
             (str "?rel=" (system-time))
             ""))))))
@@ -226,11 +228,9 @@
                              opts)]
                   (emit-source src dest ext opts
                     (fn [ret]
-                      (if (:error ret)
-                        (cb ret)
-                        (do
-                          (util/set-last-modified dest (util/last-modified src))
-                          (cb ret)))))))))))))
+                      (when-not (:error ret)
+                        (util/set-last-modified dest (util/last-modified src)))
+                      (cb ret)))))))))))
 
 (defn compile-file
    "Compiles src to a file of the same name, but with a .js extension,
@@ -260,7 +260,7 @@
             src-file  src
             dest-file dest
             opts      (merge {:optimizations :none} opts)]
-        (if (js/$$LUMO_GLOBALS.fs.existsSync src-file)
+        (if (fs/existsSync src-file)
           (try
             (let [{ns :ns :as ns-info} (lana/parse-ns src-file dest-file opts)
                   opts (if (and (not= (util/ext src) "clj") ;; skip cljs.core macro-ns

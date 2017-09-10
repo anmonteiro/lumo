@@ -491,7 +491,7 @@
   IJavaScript."
   [file {:keys [output-file] :as opts} cb]
   (if output-file
-    (let [out-file (js/$$LUMO_GLOBALS.path.join (util/output-directory opts) output-file)]
+    (let [out-file (path/join (util/output-directory opts) output-file)]
       (lcomp/compile-file file out-file opts
         (fn [res]
           (if (:error res)
@@ -864,8 +864,8 @@
   ([proc coll accum cb]
    (if (seq coll)
      (proc (first coll)
-       (fn [{:keys [error] :as res}]
-         (if error
+       (fn [res]
+         (if (:error res)
            (cb res)
            (map-async proc (rest coll) (conj accum res) cb))))
      (cb accum))))
@@ -876,8 +876,8 @@
   ([proc coll accum cb]
    (if (seq coll)
      (proc (first coll)
-       (fn [{:keys [error] :as res}]
-         (if error
+       (fn [res]
+         (if (:error res)
            (cb res)
            (mapcat-async proc (rest coll) (conj accum res) cb))))
      (cb (mapcat identity accum)))))
@@ -900,8 +900,8 @@
              (util/measure (and compiler-stats (:verbose opts))
                (str "Compile " (:ns ns-info))
                (-compile (or (:source-file ns-info)
-                           (:source-forms ns-info))
-                                        ; - ns-info -> ns -> cljs file relpath -> js relpath
+                             (:source-forms ns-info))
+                 ;; - ns-info -> ns -> cljs file relpath -> js relpath
                  (merge opts {:output-file (lcomp/rename-to-js (util/ns->relpath (:ns ns-info)))})
                  cb)))
            inputs cb))))))
