@@ -1250,9 +1250,11 @@
       [])))
 
 (defn- completion-candidates-for-js-sources
+  "Return JS completions iff the namespace is not in the compiler state."
   [ns]
-  (into (completion-candidates-for-closure-js ns)
-    (completion-candidates-for-node-modules ns)))
+  (when-not (get-namespace ns)
+    (into (completion-candidates-for-closure-js ns)
+          (completion-candidates-for-node-modules ns))))
 
 (defn- is-completion?
   [match-suffix candidate]
