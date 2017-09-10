@@ -527,7 +527,7 @@
          content  (let [reader url]
                     (slurp reader))]
      (when (and url (or ana/*verbose* (:verbose opts)))
-       (util/debug-prn "Copying" (str "jar:file:" (.-jarPath url) "!/" (.-src url)) "to" (str out-file)))
+       (util/debug-prn "Copying" (util/path url) "to" (str out-file)))
      (util/mkdirs out-file)
      (spit out-file content)
      (util/set-last-modified out-file (util/last-modified url))
@@ -712,15 +712,16 @@
                  (conj js-deps js)))
         (disj js-deps nil)))))
 
+;; TODO: dedupe sources (set logic doesn't work because :source-file is a JS object)
 (defn find-cljs-dependencies
   "Given set of cljs namespace symbols, find IJavaScript objects for the namespaces."
   [requires]
   (letfn [(cljs-deps [namespaces]
             (->> namespaces
               (remove #(or ((@env/*compiler* :js-dependency-index) %)
-                           (deps/find-classpath-lib %)))
-                 (map cljs-source-for-namespace)
-                 (remove (comp nil? :uri))))]
+                         (deps/find-classpath-lib %)))
+              (map cljs-source-for-namespace)
+              (remove (comp nil? :uri))))]
     (loop [required-files (cljs-deps requires)
            visited (set required-files)
            cljs-namespaces #{}]
@@ -1577,10 +1578,7 @@
             (or (not (js/$$LUMO_GLOBALS.fs.existsSync out-file))
               (and res (util/changed? out-file res))))
       (when (and res (or ana/*verbose* (:verbose opts)))
-        (let [path (cond-> res
-                     (not (string? res))
-                     .-src)]
-          (util/debug-prn "Copying" (str "file:" path) "to" (str out-file))))
+        (util/debug-prn "Copying" (util/path res) "to" (str out-file)))
       (util/mkdirs out-file)
       (spit out-file (deps/-source js))
       (when res
@@ -2303,7 +2301,10 @@
              (compile-sources compiler-stats compile-opts
                (fn [sources]
                  (if-let [error (:error sources)]
-                   (throw error)
+                   (util/debug-prn "\nFailed!"
+                     (str (.-message error)
+                       (when-let [c (.-cause error)]
+                         (str ": " (.-stack c)))))
                    (let [node? (= :nodejs (:target all-opts))
                          js-sources (-> (map add-core-macros-if-cljs-js sources)
                                       (add-js-sources all-opts)

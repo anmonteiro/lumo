@@ -120,8 +120,12 @@
 (defn path [x]
   (cond
     (string? x) (path/resolve x)
-    (or (resource? x) (bundled-resource? x)) (.-src x)
-    (jar-resource? x) (str "file:" (.-jarPath x) "!/" (.-src x))))
+
+    (resource? x) (str "file:" (.-src x))
+
+    (or (bundled-resource? x)
+        (jar-resource? x))
+    (str "jar:file:" (.-jarPath x) "!/" (.-src x))))
 
 (defn ext
   "Given a file, url or string return the file extension."

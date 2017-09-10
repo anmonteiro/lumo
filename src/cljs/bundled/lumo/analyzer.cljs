@@ -62,7 +62,7 @@
        (:options @env/*compiler*))))
   ([lib deps env opts]
    (let [compiler @env/*compiler*]
-     (binding [ana/*cljs-dep-set* (vary-meta (conj ana/*cljs-dep-set* lib) update-in [:dep-path] conj lib)]
+     (binding [ana/*cljs-dep-set* (vary-meta (conj (set ana/*cljs-dep-set*) lib) update-in [:dep-path] conj lib)]
        (assert (every? #(not (contains? ana/*cljs-dep-set* %)) deps)
          (str "Circular dependency detected, "
            (apply str
@@ -88,35 +88,13 @@
   [env {:keys [op] :as ast} opts]
   (if (#{:ns :ns*} op)
     (let [{:keys [name deps uses require-macros use-macros reload reloads]} ast]
-      (when (and ;ana/*analyze-deps*
+      (when (and ana/*analyze-deps*
               (seq deps))
         (analyze-deps name deps env (dissoc opts :macros-ns)))
       (if ana/*load-macros*
-        (do
-          ;; (load-core)
-          ;; (doseq [nsym (vals use-macros)]
-          ;;   (let [k (or (:use-macros reload)
-          ;;             (get-in reloads [:use-macros nsym])
-          ;;             (and (= nsym name) *reload-macros* :reload))]
-          ;;     (if k
-          ;;       (locking load-mutex
-          ;;         (clojure.core/require nsym k))
-          ;;       (locking load-mutex
-          ;;         (clojure.core/require nsym)))
-          ;;     (intern-macros nsym k)))
-          ;; (doseq [nsym (vals require-macros)]
-          ;;   (let [k (or (:require-macros reload)
-          ;;             (get-in reloads [:require-macros nsym])
-          ;;             (and (= nsym name) *reload-macros* :reload))]
-          ;;     (if k
-          ;;       (locking load-mutex
-          ;;         (clojure.core/require nsym k))
-          ;;       (locking load-mutex
-          ;;         (clojure.core/require nsym)))
-          ;;     (intern-macros nsym k)))
-          (-> ast
-            (ana/check-use-macros-inferring-missing env)
-            (ana/check-rename-macros-inferring-missing env)))
+        (-> ast
+          (ana/check-use-macros-inferring-missing env)
+          (ana/check-rename-macros-inferring-missing env))
         (do
           (ana/check-uses
             (when (and ana/*analyze-deps* (seq uses))
@@ -152,6 +130,25 @@
                  nil
                  (cons form (forms-seq_))))))]
      (forms-seq_))))
+
+(defn aliasable-clj-ns?
+  "Predicate for testing if a symbol represents an aliasable Clojure namespace."
+  [sym]
+  (when-not (util/ns->source sym)
+    (let [[seg1 :as segs] (string/split (clojure.core/name sym) #"\.")]
+      (when (= "clojure" seg1)
+        (let [sym' (ana/clj-ns->cljs-ns sym)]
+          (util/ns->source sym'))))))
+
+(defn compute-clj->cljs-smap
+  [{:keys [uses requires]}]
+  (into {}
+    (comp
+      (map (fn [dep]
+             (when (aliasable-clj-ns? dep)
+               [dep (ana/clj-ns->cljs-ns dep)])))
+      (remove nil?))
+    (concat (vals uses) (vals requires))))
 
 (defn parse-ns
   "Helper for parsing only the essential namespace information from a
@@ -211,7 +208,8 @@
                            ast (no-warn (ana/analyze env (first forms) nil opts))]
                        (cond
                          (= :ns (:op ast))
-                         (let [ns-name (:name ast)
+                         (let [ast (cljs/rewrite-ns-ast ast (compute-clj->cljs-smap ast))
+                               ns-name (:name ast)
                                ns-name (if (and (= 'cljs.core ns-name)
                                              (= "cljc" (util/ext src)))
                                          'cljs.core$macros
