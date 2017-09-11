@@ -2233,7 +2233,8 @@
      (when (:install-deps opts)
        (check-npm-deps opts)
        (maybe-install-node-deps! opts))
-     (let [compiler-stats (:compiler-stats opts)
+     (let [runtime-loaded @cljs/*loaded*
+           compiler-stats (:compiler-stats opts)
            checked-arrays (or (:checked-arrays opts)
                             ana/*checked-arrays*)
            static-fns? (or (and (= (:optimizations opts) :advanced)
@@ -2242,6 +2243,7 @@
                          ana/*cljs-static-fns*)
            sources (-find-sources source opts)
            all-opts (add-implicit-options opts)]
+       (reset! cljs/*loaded* #{})
        (check-output-to opts)
        (check-output-dir opts)
        (check-source-map opts)
@@ -2308,6 +2310,7 @@
                        (str (.-message error)
                          (when-let [c (.-cause error)]
                            (str ": " (.-stack c)))))
+                     (reset! cljs/*loaded* runtime-loaded)
                      (cb sources))
                    (let [node? (= :nodejs (:target all-opts))
                          js-sources (-> (map add-core-macros-if-cljs-js sources)
@@ -2376,6 +2379,7 @@
                                                                             "goog" "bootstrap" "nodejs.js")]
                                                               (util/mkdirs outfile)
                                                               (spit outfile (slurp (io/resource "cljs/bootstrap_node.js")))))
+                                                          (reset! cljs/*loaded* runtime-loaded)
                                                           ret))))))))))])))))))))))
 
 (defn target-file-for-cljs-ns
