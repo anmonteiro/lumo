@@ -111,7 +111,7 @@
 
 ;; on Windows, URLs end up having forward slashes like
 ;; /C:/Users/... - Antonio
-(defn normalize-path [ x]
+(defn normalize-path [x]
   (-> (cond-> x
         windows? (string/replace #"^[\\/]" ""))
     (string/replace "\\" path/sep)
@@ -121,11 +121,16 @@
   (cond
     (string? x) (path/resolve x)
 
-    (resource? x) (str "file:" (.-src x))
+    (or (resource? x)
+        (bundled-resource? x))
+    (let [path (.-src x)]
+      (cond-> path
+        windows? normalize-path))
 
-    (or (bundled-resource? x)
-        (jar-resource? x))
-    (str "jar:file:" (.-jarPath x) "!/" (.-src x))))
+    (jar-resource? x)
+    (str "jar:file:" (.-jarPath x) "!/" (.-src x))
+
+    :else (throw (js/Error. (str "Expected file, url, or string. Got " (pr-str x))))))
 
 (defn ext
   "Given a file, url or string return the file extension."

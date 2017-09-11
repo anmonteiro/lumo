@@ -2226,6 +2226,8 @@
           ;; - David
           (add-externs-sources (dissoc opts :foreign-libs))))))
   ([source opts compiler-env]
+   (build source opts compiler-env (fn [& args] args)))
+  ([source opts compiler-env cb]
    (env/with-compiler-env compiler-env
      ;; we want to warn about NPM dep conflicts before installing the modules
      (when (:install-deps opts)
@@ -2301,10 +2303,12 @@
              (compile-sources compiler-stats compile-opts
                (fn [sources]
                  (if-let [error (:error sources)]
-                   (util/debug-prn "\nFailed!"
-                     (str (.-message error)
-                       (when-let [c (.-cause error)]
-                         (str ": " (.-stack c)))))
+                   (do
+                     (util/debug-prn "\nFailed!"
+                       (str (.-message error)
+                         (when-let [c (.-cause error)]
+                           (str ": " (.-stack c)))))
+                     (cb sources))
                    (let [node? (= :nodejs (:target all-opts))
                          js-sources (-> (map add-core-macros-if-cljs-js sources)
                                       (add-js-sources all-opts)

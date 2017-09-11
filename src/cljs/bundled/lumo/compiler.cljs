@@ -169,46 +169,54 @@
   (let [source (slurp src)
         cenv @env/*compiler*
         original-load cljs/*load-fn*]
-    (cljs/compile-str
-      env/*compiler*
-      source
-      nil
-      (merge opts {:verbose false
-                   :load (fn [{dep :name :as m} cb]
-                           (if (or (not-empty (get-in cenv [::ana/namespaces dep :defs]))
-                                 (contains? (:js-dependency-index cenv) (name dep))
-                                 (ana/node-module-dep? dep)
-                                 (ana/js-module-exists? (name dep))
-                                 (deps/find-classpath-lib dep))
-                             (cb {:lang :js})
-                             (original-load m cb)))})
-      (fn [{:keys [value error] :as m}]
-        (if error
-          (cb {:error error})
-          (let [sm-data (when comp/*source-map-data* @comp/*source-map-data*)
-                {:keys [ns ast] :as ns-info} (lana/parse-ns src)
-                ret     (merge
-                          ns-info
-                          ;; All the necessary keys like :requires, :provides,
-                          ;; etc... are already returned (as JavaScriptFile) by
-                          ;; the above lana/parse-ns
-                          {:file dest}
-                          (when sm-data
-                            {:source-map (:source-map sm-data)}))]
-            ;; don't need to call this because `cljs.js/compile-str` already
-            ;; generates inline source maps
-            ;; (when (and sm-data (= :none (:optimizations opts)))
-            ;;   (emit-source-map src dest sm-data
-            ;;     (merge opts {:ext ext :provides [ns-name]})))
-            (let [path (path/resolve dest)]
-              (swap! env/*compiler* assoc-in [::comp/compiled-cljs path] ret))
-            (let [{:keys [output-dir cache-analysis]} opts]
-              #_(when (and (true? cache-analysis) output-dir)
-                  (ana/write-analysis-cache ns-name
-                    (ana/cache-file src (lana/parse-ns src) output-dir :write)
-                    src))
-              (spit dest value)
-              (cb ret))))))))
+    (binding [ana/*cljs-dep-set* (with-meta #{} {:dep-path []})]
+      (cljs/compile-str
+        env/*compiler*
+        source
+        nil
+        (merge opts {:verbose false
+                     :load (fn [{dep :name :as m} cb]
+                             (if (or (not-empty (get-in cenv [::ana/namespaces dep :defs]))
+                                   (contains? (:js-dependency-index cenv) (name dep))
+                                   (ana/node-module-dep? dep)
+                                   (ana/js-module-exists? (name dep))
+                                   (deps/find-classpath-lib dep))
+                               (cb {:lang :js})
+                               (if-let [{:keys [source-file]} (first
+                                                                (filter
+                                                                  #(symbol-identical? dep (:ns %))
+                                                                  (:sources cenv)))]
+                                 (cb {:lang :clj
+                                      :file (util/path source-file)
+                                      :source (slurp source-file)})
+                                 (original-load m cb))))})
+        (fn [{:keys [value error] :as m}]
+          (if error
+            (cb {:error error})
+            (let [sm-data (when comp/*source-map-data* @comp/*source-map-data*)
+                  {:keys [ns ast] :as ns-info} (lana/parse-ns src)
+                  ret     (merge
+                            ns-info
+                            ;; All the necessary keys like :requires, :provides,
+                            ;; etc... are already returned (as JavaScriptFile) by
+                            ;; the above lana/parse-ns
+                            {:file dest}
+                            (when sm-data
+                              {:source-map (:source-map sm-data)}))]
+              ;; don't need to call this because `cljs.js/compile-str` already
+              ;; generates inline source maps
+              ;; (when (and sm-data (= :none (:optimizations opts)))
+              ;;   (emit-source-map src dest sm-data
+              ;;     (merge opts {:ext ext :provides [ns-name]})))
+              (let [path (path/resolve dest)]
+                (swap! env/*compiler* assoc-in [::comp/compiled-cljs path] ret))
+              (let [{:keys [output-dir cache-analysis]} opts]
+                #_(when (and (true? cache-analysis) output-dir)
+                    (ana/write-analysis-cache ns-name
+                      (ana/cache-file src (lana/parse-ns src) output-dir :write)
+                      src))
+                (spit dest value)
+                (cb ret)))))))))
 
 (defn compile-file*
      ([src dest cb]

@@ -1,11 +1,9 @@
 (ns lumo.build-api-tests
   (:require-macros [cljs.env.macros :as env]
                    [cljs.analyzer.macros :as ana])
-  (:require [clojure.test :refer [deftest is testing]]
-            ;; [clojure.data.json :as json]
+  (:require [clojure.test :refer [deftest is testing async]]
             [cljs.env :as env]
             [cljs.analyzer :as ana]
-            ;; [cljs.util :as util]
             [lumo.io :refer [spit slurp]]
             [lumo.test-util :as test]
             [lumo.build.api :as build]
@@ -158,20 +156,23 @@
             "goog.require('thirdparty.add');")))))
 
 (deftest cljs-1537-circular-deps
-  (let [out (path/join (test/tmp-dir) "cljs-1537-test-out")
-        root "src/test/cljs_build"]
-    (test/delete-out-files out)
-    (try
-      (build/build (build/inputs
-                     (path/join root "circular_deps" "a.cljs")
-                     (path/join root "circular_deps" "b.cljs"))
+  (async done
+    (let [out (path/join (test/tmp-dir) "cljs-1537-test-out")
+          root "src/test/cljs_build"]
+      (test/delete-out-files out)
+      (closure/build
+        (build/inputs
+          (path/join root "circular_deps" "a.cljs")
+          (path/join root "circular_deps" "b.cljs"))
         {:main 'circular-deps.a
          :optimizations :none
-         :output-to out})
-      (is false)
-      (catch js/Error e
-        (is (re-find  #"Circular dependency detected, cljs.user -> circular-deps.b -> circular-deps.a -> circular-deps.b"
-              (.. e -cause -cause -cause -message)))))))
+         :output-to out}
+        (env/default-compiler-env)
+        (fn [{:keys [error]}]
+          (is (some? error))
+          (is (re-find  #"Circular dependency detected circular-deps.b -> circular-deps.a -> circular-deps.b"
+                (.-message error)))
+          (done))))))
 
 ;; (defn loader-test-project [output-dir]
 ;;   {:inputs (str (io/file "src" "test" "cljs_build" "loader_test"))
@@ -226,8 +227,7 @@
                                         :output-dir out
                                         :optimizations :none
                                         :install-deps true
-                                        :npm-deps {:left-pad "1.1.3"
-                                                   :google-closure-compiler-js "*"}
+                                        :npm-deps {:left-pad "1.1.3"}
                                         :closure-warnings {:check-types :off}}}
           cenv (env/default-compiler-env)]
       (test/delete-out-files out)
@@ -243,8 +243,7 @@
                                       :install-deps true
                                       :npm-deps {:react "15.6.1"
                                                  :react-dom "15.6.1"
-                                                 :lodash "4.17.4"
-                                                 :google-closure-compiler-js "*"}
+                                                 :lodash "4.17.4"}
                                       :closure-warnings {:check-types :off
                                                          :non-standard-jsdoc :off}}}]
     (testing "mix of symbol & string-based requires"
