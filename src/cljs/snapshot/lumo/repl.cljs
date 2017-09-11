@@ -870,6 +870,10 @@
       (merge (get-in @st [::ana/namespaces cur-ns :requires])
         (get-in @st [::ana/namespaces cur-ns :require-macros])))))
 
+(defn- current-alias?
+  [ns]
+  (contains? (set (vals (current-alias-map))) ns))
+
 (defn- reader-eof? [e]
   (let [{:keys [ex-kind]} (ex-data e)]
     (keyword-identical? ex-kind :eof)))
@@ -1229,7 +1233,7 @@
 
 (defn- completion-candidates-for-closure-js
   [ns]
-  (if (or (contains? (set (vals (current-alias-map))) ns)
+  (if (or (current-alias? ns)
           (symbol-identical? 'goog ns))
     (into [] (some-> js/global
                (gobj/getValueByKeys (.split (str ns) "."))
@@ -1240,15 +1244,17 @@
   [ns]
   (let [module (str ns)]
     (if (and (ana/node-module-dep? module)
-             (contains? (set (vals (current-alias-map))) ns))
+             (current-alias? ns))
       ;; require is cheap because it's cached (was required in the current namespace)
       (into [] (js/Object.keys (js/require module)))
       [])))
 
 (defn- completion-candidates-for-js-sources
+  "Return JS completions iff the namespace is not in the compiler state."
   [ns]
-  (into (completion-candidates-for-closure-js ns)
-    (completion-candidates-for-node-modules ns)))
+  (when-not (get-namespace ns)
+    (into (completion-candidates-for-closure-js ns)
+          (completion-candidates-for-node-modules ns))))
 
 (defn- is-completion?
   [match-suffix candidate]
@@ -1298,7 +1304,7 @@
       com.cognitect.transit.impl.reader
       com.cognitect.transit.impl.writer]))
 
-(def ^:private namespace-completion-additons
+(def ^:private namespace-completion-additions
   (into #{} (map str)
     '[clojure.test
       clojure.spec.alpha
@@ -1341,7 +1347,7 @@
                (map drop-macros-suffix)
                (remove namespace-completion-exclusions))
     conj
-    (into namespace-completion-additons
+    (into namespace-completion-additions
       (comp cat (map str))
       [(keys @deps/js-lib-index)
        (keys (closure-index))])
