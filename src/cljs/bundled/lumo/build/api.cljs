@@ -37,15 +37,21 @@
 (defn build
   "Given a source which can be compiled, produce runnable JavaScript."
   ([source opts]
-   (build source opts
-     (env/default-compiler-env
-       (closure/add-externs-sources opts))))
-  ([source opts compiler-env]
+   (build source opts nil (fn [& args] args)))
+  ([source opts compiler-env-or-cb]
+   (if (goog/isFunction compiler-env-or-cb)
+     (build source opts nil compiler-env-or-cb)
+     (build source opts compiler-env-or-cb (fn [& args] args))))
+  ([source opts compiler-env cb]
    (doseq [[unknown-opt suggested-opt] (util/unknown-opts (set (keys opts)) closure/known-opts)]
      (when suggested-opt
        (println (str "WARNING: Unknown compiler option '" unknown-opt "'. Did you mean '" suggested-opt "'?"))))
    (binding [ana/*cljs-warning-handlers* (:warning-handlers opts ana/*cljs-warning-handlers*)]
-     (closure/build source opts compiler-env))))
+     (closure/build source opts
+                    (if (some? compiler-env)
+                      compiler-env
+                      (env/default-compiler-env
+                       (closure/add-externs-sources opts))) cb))))
 
 (defn inputs
   "Given a list of directories and files, return a compilable object that may
