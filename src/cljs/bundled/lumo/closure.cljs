@@ -1516,8 +1516,7 @@
   (let [processed-file (if-let [min (and (#{:advanced :simple} (:optimizations opts))
                                       file-min)]
                          min
-                         file)
-        processed-file (string/replace processed-file "\\" "/")]
+                         file)]
     (assoc ijs :source (get result-nodes processed-file))))
 
 (defn convert-js-modules

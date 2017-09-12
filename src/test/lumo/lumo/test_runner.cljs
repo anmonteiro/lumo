@@ -9,5 +9,5 @@
   (run-tests
     'lumo.repl-tests
     'lumo.js-deps-tests
-    'lumo.build-api-tests))
     'lumo.closure-tests
+    'lumo.build-api-tests))
