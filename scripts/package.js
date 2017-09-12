@@ -72,7 +72,7 @@ Promise.all(resources.map(deflate)).then(() => {
         '--without-perfctr',
         '--with-snapshot',
         '--link-module',
-        './google-closure-compiler-js.js',
+        'google-closure-compiler-js.js',
       ],
       nodeMakeArgs: ['-j', '8'],
       nodeVCBuildArgs: ['nosign', 'x64', 'noetw', 'noperfctr'],
