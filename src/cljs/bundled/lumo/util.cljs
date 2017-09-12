@@ -160,7 +160,7 @@
 (defn get-name
   "Given a file or url return the last component of the path."
   [x]
-  (last (string/split (path x) #"/")))
+  (last (string/split (path x) #"[\\\/]")))
 
 (defn relative-name
   "Given a file return a path relative to the working directory. Given a
