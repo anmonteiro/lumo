@@ -81,73 +81,6 @@
              :lib-path (path/resolve "src/test/cljs/js_libs/tabby.js")}]
     (is (= (closure/lib-rel-path ijs) "tabby.js"))))
 
-(deftest test-index-node-modules
-  (test/delete-node-modules)
-  (closure/maybe-install-node-deps! {:npm-deps {:left-pad "1.1.3"}})
-  (let [modules (closure/index-node-modules-dir)]
-    (is (true? (some (fn [module]
-                       (= module {:module-type :es6
-                                  :file (path/resolve "node_modules/left-pad/index.js")
-                                  :provides ["left-pad/index.js"
-                                             "left-pad/index"
-                                             "left-pad"]}))
-                 modules))))
-  (test/delete-node-modules)
-  (closure/maybe-install-node-deps! {:npm-deps {:react "15.6.1"
-                                                :react-dom "15.6.1"}})
-  (let [modules (closure/index-node-modules-dir)]
-    (is (true? (some (fn [module]
-                       (= module {:module-type :es6
-                                  :file (path/resolve "node_modules/react/react.js")
-                                  :provides ["react/react.js"
-                                             "react/react"
-                                             "react"]}))
-                 modules)))
-    (is (true? (some (fn [module]
-                       (= module {:module-type :es6
-                                  :file (path/resolve "node_modules/react/lib/React.js")
-                                  :provides ["react/lib/React.js" "react/lib/React"]}))
-                 modules)))
-    (is (true? (some (fn [module]
-                       (= module {:module-type :es6
-                                  :file (path/resolve "node_modules/react-dom/server.js")
-                                  :provides ["react-dom/server.js" "react-dom/server"]}))
-                 modules))))
-  (test/delete-node-modules)
-  (closure/maybe-install-node-deps! {:npm-deps {:node-fetch "1.7.1"}})
-  (let [modules (closure/index-node-modules-dir)]
-    (is (true? (some (fn [module]
-                       (= module {:module-type :es6
-                                  :file (path/resolve "node_modules/node-fetch/lib/index.js")
-                                  :provides ["node-fetch/lib/index.js"
-                                             "node-fetch/lib/index"
-                                             "node-fetch/lib"]}))
-                 modules))))
-  (test/delete-node-modules)
-  (closure/maybe-install-node-deps! {:npm-deps {"@comandeer/css-filter" "1.0.1"}})
-  (let [modules (closure/index-node-modules-dir)]
-    (is (true? (some (fn [module]
-                       (= module
-                          {:file (path/resolve "node_modules/@comandeer/css-filter/dist/css-filter.umd.js")
-                           :module-type :es6
-                           :provides ["@comandeer/css-filter/dist/css-filter.umd.js"
-                                      "@comandeer/css-filter/dist/css-filter.umd"
-                                      "@comandeer/css-filter"]}))
-                 modules))))
-  (test/delete-node-modules)
-  (closure/maybe-install-node-deps! {:npm-deps {"jss-extend" "5.0.0"}})
-  (let [modules (closure/index-node-modules-dir)]
-    (is (true? (some (fn [module]
-                       (= module
-                         {:file (path/resolve "node_modules/jss-extend/lib/index.js")
-                          :module-type :es6
-                          :provides ["jss-extend/lib/index.js"
-                                     "jss-extend/lib/index"
-                                     "jss-extend"
-                                     "jss-extend/lib"]}))
-                 modules))))
-  (test/delete-node-modules))
-
 (deftest test-index-node-modules-module-deps-js
   (let [opts {:npm-deps {:left-pad "1.1.3"}}
         out (util/output-directory opts)]
@@ -260,136 +193,123 @@
     (test/delete-node-modules)
     (test/delete-out-files out)))
 
-;; TODO: fix these tests once the next version is released
+(deftest test-cljs-2327
+  (spit "package.json" "{}")
+  (let [opts {:npm-deps {:react "16.0.0-beta.5"
+                         :react-dom "16.0.0-beta.5"}}
+        out (util/output-directory opts)]
+    (test/delete-node-modules)
+    (test/delete-out-files out)
+    (closure/maybe-install-node-deps! opts)
+    (let [modules (closure/index-node-modules ["react" "react-dom" "react-dom/server"] opts)]
+      (is (true? (some (fn [module]
+                         (= module {:module-type :es6
+                                    :file (path/resolve "node_modules/react/index.js")
+                                    :provides ["react"
+                                               "react/index.js"
+                                               "react/index"]}))
+                   modules)))
+      (is (true? (some (fn [module]
+                         (= module {:module-type :es6
+                                    :file (path/resolve "node_modules/react-dom/index.js")
+                                    :provides ["react-dom"
+                                               "react-dom/index.js"
+                                               "react-dom/index"]}))
+                   modules)))
+      (is (true? (some (fn [module]
+                         (= module {:module-type :es6
+                                    :file (path/resolve "node_modules/react-dom/server.browser.js")
+                                    :provides ["react-dom/server.js"
+                                               "react-dom/server"
+                                               "react-dom/server.browser.js"
+                                               "react-dom/server.browser"]}))
+                   modules))))
+    (test/delete-node-modules)
+    (test/delete-out-files out)
+    (spit "package.json" "{}")
+    (let [opts {:npm-deps {:warning "3.0.0"}}
+          _ (closure/maybe-install-node-deps! opts)
+          modules (closure/index-node-modules ["warning"] opts)]
+      (is (true? (some (fn [module]
+                         (= module {:module-type :es6
+                                    :file (path/resolve "node_modules/warning/browser.js")
+                                    :provides ["warning"
+                                               "warning/browser.js"
+                                               "warning/browser"]}))
+                   modules))))
+    (test/delete-node-modules)
+    (test/delete-out-files out)
+    (spit "package.json" "{}")
+    (let [opts {:npm-deps {:react-dom "16.0.0-beta.5"
+                           :react "16.0.0-beta.5"}
+                :target :nodejs}
+          _ (closure/maybe-install-node-deps! opts)
+          modules (closure/index-node-modules ["react-dom/server"] opts)]
+      (is (true? (some (fn [module]
+                         (= module {:module-type :es6
+                                    :file (path/resolve "node_modules/react-dom/server.js")
+                                    :provides ["react-dom/server.js"
+                                               "react-dom/server"]}))
+                   modules))))
+    (fs/unlinkSync "package.json")
+    (test/delete-node-modules)
+    (test/delete-out-files out)))
 
-;; (deftest test-cljs-2327
-;;   (spit "package.json" "{}")
-;;   (let [opts {:npm-deps {:react "16.0.0-beta.5"
-;;                          :react-dom "16.0.0-beta.5"}}
-;;         out (util/output-directory opts)]
-;;     (test/delete-node-modules)
-;;     (test/delete-out-files out)
-;;     (closure/maybe-install-node-deps! opts)
-;;     (let [modules (closure/index-node-modules ["react" "react-dom" "react-dom/server"] opts)]
-;;       (is (true? (some (fn [module]
-;;                          (= module {:module-type :es6
-;;                                     :file (path/resolve "node_modules/react/index.js")
-;;                                     :provides ["react"
-;;                                                "react/index.js"
-;;                                                "react/index"]}))
-;;                    modules)))
-;;       (is (true? (some (fn [module]
-;;                          (= module {:module-type :es6
-;;                                     :file (path/resolve "node_modules/react-dom/index.js")
-;;                                     :provides ["react-dom"
-;;                                                "react-dom/index.js"
-;;                                                "react-dom/index"]}))
-;;                    modules)))
-;;       (is (true? (some (fn [module]
-;;                          (= module {:module-type :es6
-;;                                     :file (path/resolve "node_modules/react-dom/server.browser.js")
-;;                                     :provides ["react-dom/server.js"
-;;                                                "react-dom/server"
-;;                                                "react-dom/server.browser.js"
-;;                                                "react-dom/server.browser"]}))
-;;                    modules))))
-;;     (test/delete-node-modules)
-;;     (test/delete-out-files out)
-;;     (spit "package.json" "{}")
-;;     (let [opts {:npm-deps {:warning "3.0.0"}}
-;;           _ (closure/maybe-install-node-deps! opts)
-;;           modules (closure/index-node-modules ["warning"] opts)]
-;;       (is (true? (some (fn [module]
-;;                          (= module {:module-type :es6
-;;                                     :file (path/resolve "node_modules/warning/browser.js")
-;;                                     :provides ["warning"
-;;                                                "warning/browser.js"
-;;                                                "warning/browser"]}))
-;;                    modules))))
-;;     (test/delete-node-modules)
-;;     (test/delete-out-files out)
-;;     (spit "package.json" "{}")
-;;     (let [opts {:npm-deps {:react-dom "16.0.0-beta.5"
-;;                            :react "16.0.0-beta.5"}
-;;                 :target :nodejs}
-;;           _ (closure/maybe-install-node-deps! opts)
-;;           modules (closure/index-node-modules ["react-dom/server"] opts)]
-;;       (is (true? (some (fn [module]
-;;                          (= module {:module-type :es6
-;;                                     :file (path/resolve "node_modules/react-dom/server.js")
-;;                                     :provides ["react-dom/server.js"
-;;                                                "react-dom/server"]}))
-;;                    modules))))
-;;     (fs/unlinkSync "package.json")
-;;     (test/delete-node-modules)
-;;     (test/delete-out-files out)))
+(deftest test-cljs-2326
+  (spit "package.json" "{}")
+  (let [opts {:npm-deps {:bootstrap "4.0.0-beta"}}
+        out (util/output-directory opts)]
+    (test/delete-node-modules)
+    (test/delete-out-files out)
+    (closure/maybe-install-node-deps! opts)
+    (is (true? (some (fn [module]
+                       (= module {:module-type :es6
+                                  :file (path/resolve "node_modules/bootstrap/dist/js/bootstrap.js")
+                                  :provides ["bootstrap"
+                                             "bootstrap/dist/js/bootstrap.js"
+                                             "bootstrap/dist/js/bootstrap"]}))
+                 (closure/index-node-modules ["bootstrap"] opts))))
+    (test/delete-node-modules))
+  (fs/unlinkSync "package.json")
+  (test/delete-node-modules))
 
-;; (deftest test-cljs-2326
-;;   (spit (io/file "package.json") "{}")
-;;   (let [opts {:npm-deps {:bootstrap "4.0.0-beta"}}
-;;         out (util/output-directory opts)]
-;;     (test/delete-node-modules)
-;;     (test/delete-out-files out)
-;;     (closure/maybe-install-node-deps! opts)
-;;     (is (true? (some (fn [module]
-;;                        (= module {:module-type :es6
-;;                                   :file (.getAbsolutePath (io/file "node_modules/bootstrap/dist/js/bootstrap.js"))
-;;                                   :provides ["bootstrap"
-;;                                              "bootstrap/dist/js/bootstrap.js"
-;;                                              "bootstrap/dist/js/bootstrap"]}))
-;;                  (closure/index-node-modules ["bootstrap"] opts))))
-;;     (test/delete-node-modules)
-;;     (spit (io/file "package.json") "{}")
-;;     (test/delete-out-files out))
-;;   (closure/maybe-install-node-deps! {:npm-deps {:bootstrap "4.0.0-beta"}})
-;;   (let [modules (closure/index-node-modules-dir)]
-;;     (is (true? (some (fn [module]
-;;                        (= module {:module-type :es6
-;;                                   :file (.getAbsolutePath (io/file "node_modules/bootstrap/dist/js/bootstrap.js"))
-;;                                   :provides ["bootstrap/dist/js/bootstrap.js"
-;;                                              "bootstrap/dist/js/bootstrap"
-;;                                              "bootstrap"]}))
-;;                  modules))))
-;;   (.delete (io/file "package.json"))
-;;   (test/delete-node-modules))
+(deftest test-cljs-2332
+  (spit "package.json" "{}")
+  (let [opts {:npm-deps {"@material/drawer" "0.5.4"}}
+        out (util/output-directory opts)]
+    (test/delete-node-modules)
+    (test/delete-out-files out)
+    (closure/maybe-install-node-deps! opts)
+    (let [modules (closure/index-node-modules ["@material/drawer"] opts)]
+      (is (true? (some (fn [module]
+                         (= module {:module-type :es6
+                                    :file (path/resolve "node_modules/@material/drawer/slidable/constants.js")
+                                    :provides ["@material/drawer/slidable/constants.js"
+                                               "@material/drawer/slidable/constants"]}))
+                   modules))))
+    (fs/unlinkSync "package.json")
+    (test/delete-node-modules)
+    (test/delete-out-files out)))
 
-;; (deftest test-cljs-2332
-;;   (spit (io/file "package.json") "{}")
-;;   (let [opts {:npm-deps {"@material/drawer" "0.5.4"}}
-;;         out (util/output-directory opts)]
-;;     (test/delete-node-modules)
-;;     (test/delete-out-files out)
-;;     (closure/maybe-install-node-deps! opts)
-;;     (let [modules (closure/index-node-modules ["@material/drawer"] opts)]
-;;       (is (true? (some (fn [module]
-;;                          (= module {:module-type :es6
-;;                                     :file (.getAbsolutePath (io/file "node_modules/@material/drawer/slidable/constants.js"))
-;;                                     :provides ["@material/drawer/slidable/constants.js"
-;;                                                "@material/drawer/slidable/constants"]}))
-;;                    modules))))
-;;     (.delete (io/file "package.json"))
-;;     (test/delete-node-modules)
-;;     (test/delete-out-files out)))
-
-;; (deftest test-cljs-2333
-;;   (spit (io/file "package.json") "{}")
-;;   (let [opts {:npm-deps {"asap" "2.0.6"}}
-;;         out (util/output-directory opts)]
-;;     (test/delete-node-modules)
-;;     (test/delete-out-files out)
-;;     (closure/maybe-install-node-deps! opts)
-;;     (let [modules (closure/index-node-modules ["asap"] opts)]
-;;       (is (true? (some (fn [module]
-;;                          (= module {:module-type :es6
-;;                                     :file (.getAbsolutePath (io/file "node_modules/asap/browser-asap.js"))
-;;                                     :provides ["asap/asap",
-;;                                                "asap/asap",
-;;                                                "asap/asap.js",
-;;                                                "asap/asap",
-;;                                                "asap",
-;;                                                "asap/browser-asap.js",
-;;                                                "asap/browser-asap"]}))
-;;                    modules))))
-;;     (.delete (io/file "package.json"))
-;;     (test/delete-node-modules)
-;;     (test/delete-out-files out)))
+(deftest test-cljs-2333
+  (spit "package.json" "{}")
+  (let [opts {:npm-deps {"asap" "2.0.6"}}
+        out (util/output-directory opts)]
+    (test/delete-node-modules)
+    (test/delete-out-files out)
+    (closure/maybe-install-node-deps! opts)
+    (let [modules (closure/index-node-modules ["asap"] opts)]
+      (is (true? (some (fn [module]
+                         (= module {:module-type :es6
+                                    :file (path/resolve "node_modules/asap/browser-asap.js")
+                                    :provides ["asap/asap",
+                                               "asap/asap",
+                                               "asap/asap.js",
+                                               "asap/asap",
+                                               "asap",
+                                               "asap/browser-asap.js",
+                                               "asap/browser-asap"]}))
+                   modules))))
+    (fs/unlinkSync "package.json")
+    (test/delete-node-modules)
+    (test/delete-out-files out)))

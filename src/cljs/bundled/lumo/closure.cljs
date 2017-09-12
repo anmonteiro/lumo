@@ -1919,68 +1919,6 @@
          (node-inputs [{:file (path/resolve deps-file)}] opts))
        []))))
 
-(defn- node-file-seq->libs-spec*
-  [module-fseq]
-  (letfn [(package-json? [path]
-            (boolean (re-find #"node_modules[/\\](@[^/\\]+?[/\\])?[^/\\]+?[/\\]package\.json$" path)))]
-    (let [pkg-jsons (into {}
-                      (comp
-                        (map path/resolve)
-                        (filter package-json?)
-                        (map (fn [path]
-                               [path (json/read-str (slurp path))])))
-                      module-fseq)]
-      (into []
-        (comp
-          (map path/resolve)
-          (map (fn [path]
-                 (merge
-                   {:file path
-                    :module-type :es6}
-                   (when-not (package-json? path)
-                     (let [pkg-json-main (some
-                                           (fn [[pkg-json-path {:strs [main name]}]]
-                                             (when-not (nil? main)
-                                               ;; should be the only edge case in
-                                               ;; the package.json main field - Antonio
-                                               (let [main (cond-> main
-                                                            (.startsWith main "./")
-                                                            (subs 2))
-                                                     main-path (-> pkg-json-path
-                                                                 (string/replace #"\\" "/")
-                                                                 (string/replace #"package\.json$" "")
-                                                                 (str main))]
-                                                 (some (fn [candidate]
-                                                         (when (= candidate (string/replace path #"\\" "/"))
-                                                           name))
-                                                   (cond-> [main-path]
-                                                     (nil? (re-find #"\.js(on)?$" main-path))
-                                                     (into [(str main-path ".js") (str main-path ".json")]))))))
-                                           pkg-jsons)]
-                       {:provides (let [module-rel-name (-> (subs path (.lastIndexOf path "node_modules"))
-                                                            (string/replace #"\\" "/")
-                                                            (string/replace #"node_modules[\\\/]" ""))
-                                        provides (cond-> [module-rel-name (string/replace module-rel-name #"\.js(on)?$" "")]
-                                                   (some? pkg-json-main)
-                                                   (conj pkg-json-main))
-                                        index-replaced (string/replace module-rel-name #"[\\\/]index\.js(on)?$" "")]
-                                    (cond-> provides
-                                      (and (boolean (re-find #"[\\\/]index\.js(on)?$" module-rel-name))
-                                           (not (some #{index-replaced} provides)))
-                                      (conj index-replaced)))}))))))
-        module-fseq))))
-
-(def node-file-seq->libs-spec (memoize node-file-seq->libs-spec*))
-
-(defn index-node-modules-dir
-  ([]
-   (index-node-modules-dir
-     (when env/*compiler*
-       (:options @env/*compiler*))))
-  ([opts]
-   (let [module-fseq (util/module-file-seq)]
-     (node-file-seq->libs-spec module-fseq))))
-
 (defn add-implicit-options
   [{:keys [optimizations output-dir]
     :or {optimizations :none

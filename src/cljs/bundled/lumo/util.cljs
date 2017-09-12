@@ -301,21 +301,6 @@
       2 (str (first xs) " and " (second xs))
       (str (string/join ", " (pop xs)) " and " (peek xs)))))
 
-(defn module-file-seq
-  ([] (module-file-seq "node_modules"))
-  ([dir]
-   (let [fseq (tree-seq
-                (fn [f]
-                  (and (.isDirectory (fs/statSync f))
-                    (not (boolean
-                           (re-find #"node_modules[\\\/].*[\\\/]node_modules" f)))))
-                (fn [d] (map #(path/join d %) (fs/readdirSync d)))
-                dir)]
-     (filter (fn [path]
-               (or (string/ends-with? path ".json")
-                 (string/ends-with? path ".js")))
-       fseq))))
-
 (defn path->module-identifier
   ([relpath]
    (path->module-identifier relpath true))
