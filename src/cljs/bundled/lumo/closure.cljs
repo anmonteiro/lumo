@@ -347,7 +347,7 @@
                                        (:file-min this))]
                   file-min
                   (:file this))]
-       (when (and file (not (js/$$LUMO_GLOBALS.path.isAbsolute file)))
+       (when (and file (not (path/isAbsolute file)))
          file))))
   (-provides [this] (map name (:provides this)))
   (-requires [this] (map name (:requires this)))
@@ -377,7 +377,7 @@
                                        (:file-min this))]
                   file-min
                   (:file this))]
-       (when (and file (not (js/$$LUMO_GLOBALS.path.isAbsolute file)))
+       (when (and file (not (path/isAbsolute file)))
          file))))
   (-provides [this] (map name (:provides this)))
   (-requires [this] (map name (:requires this)))
@@ -524,7 +524,7 @@
       (when env/*compiler*
         (:options @env/*compiler*))))
   ([url out-dir opts]
-   (let [out-file (js/$$LUMO_GLOBALS.path.join out-dir (path-from-jarfile url))
+   (let [out-file (path/join out-dir (path-from-jarfile url))
          content  (let [reader url]
                     (slurp reader))]
      (when (and url (or ana/*verbose* (:verbose opts)))
@@ -540,9 +540,9 @@
   "Compile a file from a jar if necessary. Returns IJavaScript."
   [jar-file {:keys [output-file] :as opts} cb]
   (let [out-file (when output-file
-                   (js/$$LUMO_GLOBALS.path.join (util/output-directory opts) output-file))]
+                   (path/join (util/output-directory opts) output-file))]
     (if (or (nil? out-file)
-            (not (js/$$LUMO_GLOBALS.fs.existsSync out-file))
+            (not (fs/existsSync out-file))
             (not= (util/compiled-by-version out-file)
                   (util/clojurescript-version))
             (util/changed? jar-file out-file))
@@ -554,7 +554,7 @@
 
       ;; TODO: FIXME: the path won't really have .jar at the end, just
       (compile-file
-        (js/$$LUMO_GLOBALS.path.join (util/output-directory opts)
+        (path/join (util/output-directory opts)
           (last (string/split jar-file #"\.jar!/")))
         opts
         cb))))
@@ -741,10 +741,9 @@
 (defn- constants-filename
   "Returns the filename of the constants table."
   [opts]
-  (let [path js/$$LUMO_GLOBALS.path]
-    (str (path.join (util/output-directory opts)
-           (string/replace (str ana/constants-ns-sym) "." (.-sep path)))
-      ".js")))
+  (str (path/join (util/output-directory opts)
+         (string/replace (str ana/constants-ns-sym) "." path/sep))
+    ".js"))
 
 (defn- constants-javascript-file
   "Returns the constants table as a JavaScriptFile."
@@ -1033,7 +1032,7 @@
          modules))
      (update-in modules [:cljs-base :output-to]
        (fnil identity
-         (js/$$LUMO_GLOBALS.path.join
+         (path/join
            (util/output-directory opts)
            "cljs_base.js")))
      (keys modules))))
@@ -1321,8 +1320,8 @@
   "Generate a string which is the path to the input IJavaScript relative
   to the specified base file."
   [^File base input]
-  (let [base-path  (util/path-seq (js/$$LUMO_GLOBALS.path.resolve base))
-        input-path (util/path-seq (js/$$LUMO_GLOBALS.path.resolve (util/path (deps/-url input))))
+  (let [base-path  (util/path-seq (path/resolve base))
+        input-path (util/path-seq (path/resolve (util/path (deps/-url input))))
         count-base (count base-path)
         common     (count (take-while true? (map #(= %1 %2) base-path input-path)))
         prefix     (repeat (- count-base common 1) "..")]
@@ -1336,7 +1335,7 @@
   (letfn [(ns-list [coll] (when (seq coll) (apply str (interpose ", " (map #(str "'" (comp/munge %) "'") coll)))))]
     (str "goog.addDependency(\""
          (path-relative-to
-           (js/$$LUMO_GLOBALS.path.join (util/output-directory opts) "goog" "base.js") input)
+           (path/join (util/output-directory opts) "goog" "base.js") input)
          "\", ["
          (ns-list (deps/-provides input))
          "], ["
@@ -1587,10 +1586,10 @@
                       :provides (deps/-provides js)
                       :group (:group js)}
                      (when (not js-module?)
-                       {:url (js/$$LUMO_GLOBALS.path.resolve out-file)
+                       {:url (path/resolve out-file)
                         :out-file (.toString out-file)}))]
     (when (and (not js-module?)
-            (or (not (js/$$LUMO_GLOBALS.fs.existsSync out-file))
+            (or (not (fs/existsSync out-file))
               (and res (util/changed? out-file res))))
       (when (and res (or ana/*verbose* (:verbose opts)))
         (util/debug-prn "Copying" (util/path res) "to" (str out-file)))
@@ -1624,11 +1623,11 @@
     (let [out-file (when-let [ns (and (:source-map opts)
                                       (:source-url js)
                                       (first (:provides js)))]
-                     (js/$$LUMO_GLOBALS.path.join (util/output-directory opts)
+                     (path/join (util/output-directory opts)
                        (util/ns->relpath ns (util/ext (:source-url js)))))
           source-url (:source-url js)]
       (when (and out-file source-url
-                 (or (not (js/$$LUMO_GLOBALS.fs.existsSync out-file))
+                 (or (not (fs/existsSync out-file))
                      (util/changed? source-url out-file)))
         (when (or ana/*verbose* (:verbose opts))
           (util/debug-prn "Copying" (str source-url) "to" (str out-file)))
@@ -1645,7 +1644,7 @@
   [opts & sources]
   (let [disk-sources (remove #(= (:group %) :goog)
                        (map #(source-on-disk opts %) sources))
-        goog-deps    (js/$$LUMO_GLOBALS.path.join (util/output-directory opts)
+        goog-deps    (path/join (util/output-directory opts)
                        "goog" "deps.js")
         main         (:main opts)]
     (util/mkdirs goog-deps)
@@ -1654,8 +1653,7 @@
       (do
         (output-deps-file
           (assoc opts :output-to
-            (str (util/output-directory opts)
-                 (.-sep js/$$LUMO_GLOBALS.path) "cljs_deps.js"))
+            (path/join (util/output-directory opts) "cljs_deps.js"))
           disk-sources)
         (output-main-file opts))
       (output-deps-file opts disk-sources))))
@@ -1696,10 +1694,10 @@
     js))
 
 (defn absolute-path? [path]
-  (js/$$LUMO_GLOBALS.path.isAbsolute path))
+  (path/isAbsolute path))
 
 (defn absolute-parent [path]
-  (js/$$LUMO_GLOBALS.path.resolve (js/$$LUMO_GLOBALS.path.resolve path) ".."))
+  (path/resolve path ".."))
 
 (defn in-same-dir? [path-1 path-2]
   "Checks that path-1 and path-2 are siblings in the same logical directory."
@@ -1708,8 +1706,8 @@
 
 (defn same-or-subdirectory-of? [dir path]
   "Checks that path names a file or directory that is the dir or a subdirectory there of."
-  (let [dir-path  (js/$$LUMO_GLOBALS.path.resolve dir)
-        path-path (js/$$LUMO_GLOBALS.path.resolve path)]
+  (let [dir-path  (path/resolve dir)
+        path-path (path/resolve path)]
     (.startsWith path-path dir-path)))
 
 (defn check-output-to [{:keys [output-to] :as opts}]
@@ -2313,7 +2311,7 @@
                                                           ;; emit Node.js bootstrap script for :none & :whitespace optimizations
                                                           (when (and (= (:target opts) :nodejs)
                                                                   (not= (:optimizations opts) :whitespace))
-                                                            (let [outfile (js/$$LUMO_GLOBALS.path.join (util/output-directory opts)
+                                                            (let [outfile (path/join (util/output-directory opts)
                                                                             "goog" "bootstrap" "nodejs.js")]
                                                               (util/mkdirs outfile)
                                                               (spit outfile (slurp (io/resource "cljs/bootstrap_node.js")))))
