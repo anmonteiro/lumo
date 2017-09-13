@@ -227,6 +227,7 @@
                                         :output-dir out
                                         :optimizations :none
                                         :install-deps true
+                                        :verbose true
                                         :npm-deps {:left-pad "1.1.3"}
                                         :closure-warnings {:check-types :off}}}
           cenv (env/default-compiler-env)]
@@ -241,6 +242,7 @@
                                       :output-dir out
                                       :optimizations :none
                                       :install-deps true
+                                      :verbose true
                                       :npm-deps {:react "15.6.1"
                                                  :react-dom "15.6.1"
                                                  :lodash "4.17.4"}
