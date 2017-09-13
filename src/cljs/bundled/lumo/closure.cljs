@@ -12,10 +12,11 @@
             [lumo.analyzer :as lana]
             [lumo.compiler :as lcomp]
             [lumo.cljs-deps :as deps]
+            [lumo.json :as json]
             [lumo.io :as io :refer [slurp spit]]
+            [lumo.repl :as repl]
             [clojure.set :as set]
             [clojure.string :as string]
-            [lumo.json :as json]
             [cljs.tools.reader :as reader]
             [cljs.tools.reader.reader-types :as readers]
             [goog.math :as math]
@@ -1003,6 +1004,21 @@
     (when-let [source (:source js)]
       (js-source-file (javascript-name source) source))))
 
+(defn ensure-cljs-base-module
+  "Ensure that compiler :modules map has :cljs-base module with defined
+  :output-to. If :output-to not provided will default to :output-dir location
+  and the name of the file will be \"cljs_base.js.\""
+  ([modules]
+   (ensure-cljs-base-module modules
+     (when env/*compiler*
+       (:options @env/*compiler*))))
+  ([modules opts]
+   (update-in modules [:cljs-base :output-to]
+     (fnil identity
+       (path/join
+         (util/output-directory opts)
+         "cljs_base.js")))))
+
 (defn add-cljs-base-module
   ([modules]
    (add-cljs-base-module modules
@@ -1919,21 +1935,37 @@
          (node-inputs [{:file (path/resolve deps-file)}] opts))
        []))))
 
+(defn ensure-module-opts [opts]
+  (update opts :modules
+    #(ensure-cljs-base-module % opts)))
+
+(defn shim-process?
+  [{:keys [target process-shim] :as opts}]
+  (if (= :nodejs target)
+    (true? process-shim)
+    (not (false? process-shim))))
+
 (defn add-implicit-options
   [{:keys [optimizations output-dir]
     :or {optimizations :none
          output-dir "out"}
     :as opts}]
-  (let [opts (cond-> (update opts :foreign-libs expand-libs)
-               (:closure-defines opts)
-               (assoc :closure-defines
-                 (into {}
-                   (map (fn [[k v]]
-                          [(if (symbol? k) (str (comp/munge k)) k) v])
-                     (:closure-defines opts))))
+  (let [opts (cond-> opts
+               (shim-process? opts)
+               (-> (update-in [:preloads] (fnil conj []) 'process.env)
+                 (cond->
+                   (not= :none optimizations)
+                   (update-in [:closure-defines 'process.env/NODE_ENV] (fnil str "production"))))
+
+               (or (:closure-defines opts) (shim-process? opts))
+               (update :closure-defines
+                 (fn [defines]
+                   (into {}
+                     (map (fn [[k v]]
+                            [(if (symbol? k) (str (comp/munge k)) k) v])
+                       defines))))
                (:browser-repl opts)
                (update-in [:preloads] (fnil conj []) 'clojure.browser.repl.preload))
-        ;; TODO: enable this
         {:keys [libs foreign-libs externs]} (get-upstream-deps)
         emit-constants (or (and (= optimizations :advanced)
                                 (not (false? (:optimize-constants opts))))
@@ -1944,7 +1976,7 @@
           :optimizations optimizations
           :output-dir output-dir
           :ups-libs libs
-          :ups-foreign-libs foreign-libs
+          :ups-foreign-libs (expand-libs foreign-libs)
           :ups-externs externs
           :emit-constants emit-constants
           :cache-analysis-format (:cache-analysis-format opts :transit))
@@ -1967,8 +1999,14 @@
       (nil? (find (:closure-warnings opts) :check-types))
       (assoc-in [:closure-warnings :check-types] :off)
 
+      (nil? (find (:closure-warnings opts) :check-variables))
+      (assoc-in [:closure-warnings :check-variables] :off)
+
       (nil? (:closure-module-roots opts))
-      (assoc :closure-module-roots []))))
+      (assoc :closure-module-roots [])
+
+      (contains? opts :modules)
+      (ensure-module-opts))))
 
 (defn preprocess-js
   "Given js-module map, apply preprocessing defined by :preprocess value in the map."
@@ -2067,43 +2105,6 @@
                               libs))))))
             opts js-modules)))
       opts)))
-
-(defn- load-data-reader-file [mappings url]
-  (let [rdr (readers/string-push-back-reader (slurp url))]
-    (do ;binding [*file* (.getFile url)]
-      (let [new-mappings (reader/read {:eof nil :read-cond :allow} rdr)]
-        (when (not (map? new-mappings))
-          (throw (ex-info (str "Not a valid data-reader map")
-                   {:url url})))
-        (reduce
-          (fn [m [k v]]
-            (when (not (symbol? k))
-              (throw (ex-info (str "Invalid form in data-reader file")
-                       {:url url
-                        :form k})))
-            (when (and (contains? mappings k)
-                    (not= (mappings k) v))
-              (throw (ex-info "Conflicting data-reader mapping"
-                       {:url url
-                        :conflict k
-                        :mappings m})))
-            (assoc m k v))
-          mappings
-          new-mappings)))))
-
-;; (defn get-data-readers*
-;;   "returns a merged map containing all data readers defined by libraries
-;;    on the classpath."
-;;   ([]
-;;    (get-data-readers* (. (Thread/currentThread) (getContextClassLoader))))
-;;   ([classloader]
-;;    (let [data-reader-urls (enumeration-seq (. classloader (getResources "data_readers.cljc")))]
-;;      (reduce load-data-reader-file {} data-reader-urls))))
-
-;; (def get-data-readers (memoize get-data-readers*))
-
-;; (defn load-data-readers! [compiler]
-;;   (swap! compiler update-in [:cljs.analyzer/data-readers] merge (get-data-readers)))
 
 (defn add-externs-sources [opts]
   (cond-> opts
@@ -2230,7 +2231,7 @@
                compile-opts (if one-file?
                               (assoc all-opts :output-file (:output-to all-opts))
                               all-opts)
-               ;; _ (load-data-readers! compiler-env)
+               _ (repl/load-data-readers! compiler-env)
                ;; reset :js-module-index so that ana/parse-ns called by -find-sources
                ;; can find the missing JS modules
                js-sources (env/with-compiler-env (dissoc @compiler-env :js-module-index)
