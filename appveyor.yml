@@ -1,5 +1,5 @@
 environment:
-  nodejs_version: "8.5.0"
+  nodejs_version: "8"
 
 platform:
   - x64
