@@ -156,23 +156,21 @@
             "goog.require('thirdparty.add');")))))
 
 (deftest cljs-1537-circular-deps
-  (async done
-    (let [out (path/join (test/tmp-dir) "cljs-1537-test-out")
-          root "src/test/cljs_build"]
-      (test/delete-out-files out)
-      (closure/build
-        (build/inputs
-          (path/join root "circular_deps" "a.cljs")
-          (path/join root "circular_deps" "b.cljs"))
-        {:main 'circular-deps.a
-         :optimizations :none
-         :output-to out}
-        (env/default-compiler-env)
-        (fn [{:keys [error]}]
-          (is (some? error))
-          (is (re-find  #"Circular dependency detected circular-deps.b -> circular-deps.a -> circular-deps.b"
-                (.-message error)))
-          (done))))))
+  (let [out (path/join (test/tmp-dir) "cljs-1537-test-out")
+        root "src/test/cljs_build"]
+    (test/delete-out-files out)
+    (closure/build
+      (build/inputs
+        (path/join root "circular_deps" "a.cljs")
+        (path/join root "circular_deps" "b.cljs"))
+      {:main 'circular-deps.a
+       :optimizations :none
+       :output-to out}
+      (env/default-compiler-env)
+      (fn [{:keys [error]}]
+        (is (some? error))
+        (is (re-find  #"Circular dependency detected circular-deps.b -> circular-deps.a -> circular-deps.b"
+              (.-message error)))))))
 
 ;; (defn loader-test-project [output-dir]
 ;;   {:inputs (str (io/file "src" "test" "cljs_build" "loader_test"))
