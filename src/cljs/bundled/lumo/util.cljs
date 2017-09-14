@@ -123,9 +123,8 @@
 
     (or (resource? x)
         (bundled-resource? x))
-    (let [path (.-src x)]
-      (cond-> path
-        windows? normalize-path))
+    (cond-> (.-src x)
+      windows? normalize-path)
 
     (jar-resource? x)
     (str "jar:file:" (.-jarPath x) "!/" (.-src x))

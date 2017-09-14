@@ -218,6 +218,23 @@
 ;;         (build/build (build/inputs inputs) opts)
 ;;         (is (not (nil? (re-find #"foreignA[\s\S]+foreignB" (slurp (io/file out "foo.js"))))))))))
 
+(test/delete-node-modules)
+(let [out (path/join (test/tmp-dir) "npm-deps-test-out")
+      {:keys [inputs opts]} {:inputs (path/join "src" "test" "cljs_build")
+                             :opts {:main 'npm-deps-test.core
+                                    :output-dir out
+                                    :optimizations :none
+                                    :install-deps true
+                                    :verbose true
+                                    :npm-deps {:left-pad "1.1.3"}
+                                    :closure-warnings {:check-types :off}}}
+      cenv (env/default-compiler-env)]
+  (test/delete-out-files out)
+  (build/build (build/inputs (path/join inputs "npm_deps_test/core.cljs")) opts cenv)
+  (println (fs/existsSync (path/join out "node_modules/left-pad/index.js")))
+  (println (contains? (:js-module-index @cenv) "left-pad")))
+
+
 (deftest test-npm-deps
   (testing "simplest case, require"
     (test/delete-node-modules)
@@ -277,7 +294,7 @@
 ;;     (is (.exists (io/file out "preloads_test/preload.cljs")))
 ;;     (is (contains? (get-in @cenv [::ana/namespaces 'preloads-test.preload :defs]) 'preload-var))))
 
-(deftest test-libs-cljs-2152
+#_(deftest test-libs-cljs-2152
   (let [out (path/join (test/tmp-dir) "libs-test-out")
         {:keys [inputs opts]} {:inputs (path/join "src" "test" "cljs_build")
                                :opts {:main 'libs-test.core
@@ -299,7 +316,7 @@
       (when-let [s (ana/error-message warning-type extra)]
         (swap! state conj s)))))
 
-(deftest test-emit-node-requires-cljs-2213
+#_(deftest test-emit-node-requires-cljs-2213
   (test/delete-node-modules)
   (testing "simplest case, require"
     (let [ws (atom [])
