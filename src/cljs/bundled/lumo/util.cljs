@@ -70,7 +70,8 @@
                   (not (fs/existsSync new-path))
                   fs/mkdirSync)
                 new-path))
-      "/" (rest (string/split target-dir #"[/\\]")))))
+      (path/resolve "/")
+      (rest (string/split target-dir #"[/\\]")))))
 
 (defn bundled-resource? [x]
   (and (goog/isObject x) (= (.-type x) "bundled")))
