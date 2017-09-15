@@ -4,7 +4,7 @@ const replace = require('rollup-plugin-replace');
 const commonjs = require('rollup-plugin-commonjs');
 
 rollup({
-  entry: 'node_modules/google-closure-compiler-js/compile.js',
+  input: 'node_modules/google-closure-compiler-js/compile.js',
   plugins: [
     replace({
       'process.env.NODE_ENV': JSON.stringify('production'),
@@ -19,8 +19,8 @@ rollup({
   .then(bundle => {
     bundle.write({
       format: 'cjs',
-      dest: 'target/google-closure-compiler-js.js',
-      useStrict: false,
+      file: 'target/google-closure-compiler-js.js',
+      strict: false,
     });
   })
   .catch(console.error);
