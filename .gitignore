@@ -49,3 +49,12 @@ target/
 /build/
 lumo-cache/
 .vagrant
+
+third_party/*
+!third_party/org/
+
+third_party/org/*
+!third_party/org/clojure/
+
+third_party/org/clojure/*
+!third_party/org/clojure/clojurescript/
