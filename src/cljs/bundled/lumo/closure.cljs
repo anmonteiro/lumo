@@ -282,12 +282,12 @@
       ;; TODO: enable this, figure out how to get default externs
       all-sources
       #_(cond->
-        (if use-only-custom-externs
-          all-sources
-          (into all-sources (CommandLineRunner/getDefaultExterns)))
-        infer-externs
-        (conj (js-source-file nil
-                (io/file (util/output-directory opts) "inferred_externs.js")))))))
+            (if use-only-custom-externs
+              all-sources
+              (into all-sources (CommandLineRunner/getDefaultExterns)))
+            infer-externs
+            (conj (js-source-file nil
+                    (io/file (util/output-directory opts) "inferred_externs.js")))))))
 
 (defn make-closure-compiler []
   (js/$$LUMO_GLOBALS.getGoogleClosureCompiler))
@@ -416,7 +416,7 @@
   (merge
     (javascript-file
       (:foreign m)
-      (when-let [f (:file m)]
+      (when-let [f (or (:file m) (:url m))]
         f)
       (when-let [sf (:source-file m)]
         sf)
@@ -424,8 +424,14 @@
       (:requires m)
       (:lines m)
       (:source-map m))
+    (when-let [source-file (:source-file m)]
+      {:source-file source-file})
+    (when-let [out-file (:out-file m)]
+      {:out-file out-file})
     (when (:closure-lib m)
       {:closure-lib true})
+    (when-let [ns (:ns m)]
+      {:ns ns})
     (when (:macros-ns m)
       {:macros-ns true})))
 
@@ -980,13 +986,6 @@
 
 (defmulti javascript-name type)
 
-(defmethod javascript-name :default [url]
-  (if (or (util/resource? url)
-          (util/bundled-resource? url)
-          (util/jar-resource? url))
-    (.-src url)
-    (throw (ex-info "should never happen :)" {}))))
-
 ;; TODO: this can probably be improved to account for the :url path
 (defmethod javascript-name js/String [s]
   (if-let [name (first (deps/-provides s))] name "cljs/user.js"))
@@ -1254,30 +1253,32 @@
         sources (if (= :whitespace (:optimizations opts))
                   (cons "var CLOSURE_NO_DEPS = true;" sources)
                   sources)
-        inputs (map #(js-source-file (javascript-name %) %) sources)
+        inputs (doall
+                 (map
+                   (fn [source]
+                     (let [source (cond-> source
+                                    (and (not (record? source)) (map? source))
+                                    map->javascript-file)]
+                       (js-source-file (javascript-name source) source)))
+                   sources))
         _ (gobj/extend compiler-options #js {:jsCode (into-array inputs)
-                                             :externs (into-array
-                                                        (map (fn [e]
-                                                               #js {:src e})
-                                                          (concat (:externs opts) externs)))
+                                             :externs (into-array externs)
                                              :defines (clj->js (.-defines compiler-options))})
         result (util/measure (:compiler-stats opts)
                  "Optimizing with Google Closure Compiler"
                  (closure-compiler compiler-options))]
-    ;; FIXME: Java GClosure -> JS GClosure
     (if (optimize-success? result)
       ;; compiler.getSourceMap().reset()
       (let [source (.-compiledCode result)]
         (when-let [name (:source-map opts)]
           (let [name' (str name ".closure")
                 ;; sw (StringWriter.)
-                ;; TODO: figure out what this is doing
                 ;; sm-json-str (do
                 ;;               (.appendTo (.getSourceMap closure-compiler) sw name')
                 ;;               (.toString sw))
                 ]
             #_(when (true? (:closure-source-map opts))
-              (fs.writeFileSync name' sm-json-str))
+              (spit (io/file name') sm-json-str))
             #_(emit-optimized-source-map
               (json/read-str sm-json-str :key-fn keyword)
               sources name

@@ -7,6 +7,10 @@
 - Get arglists from the runtime environment ([#248](https://github.com/anmonteiro/lumo/issues/248)).
 - Honor `*main-cli-fn*` ([#238](https://github.com/anmonteiro/lumo/issues/238)).
 - Completions for JS namespaces ([#254](https://github.com/anmonteiro/lumo/issues/254)).
+- Comprehensive enhancement to the Lumo build API ([#263](https://github.com/anmonteiro/lumo/pull/263)).
+The Lumo build API has been enhanced significantly and now includes JS module
+processing, preloads, and is mostly at feature parity with the JVM ClojureScript
+build API.
 
 ### Changes
 
