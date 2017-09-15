@@ -128,71 +128,78 @@
    we might need to load the corresponding analysis cache."
   [name macros]
   (and (not macros)
-    ('#{cljs.analyzer
-        cljs.compiler
-        cljs.env
-        cljs.js
-        cljs.reader
-        cljs.repl
-        cljs.source-map
-        cljs.source-map.base64
-        cljs.source-map.base64-vlq
-        cljs.spec.alpha
-        cljs.spec.gen.alpha
-        cljs.tagged-literals
-        cljs.tools.reader
-        cljs.tools.reader.reader-types
-        cljs.tools.reader.impl.commons
-        cljs.tools.reader.impl.utils
-        clojure.core.rrb-vector
-        clojure.core.rrb-vector.interop
-        clojure.core.rrb-vector.nodes
-        clojure.core.rrb-vector.protocols
-        clojure.core.rrb-vector.rrbt
-        clojure.core.rrb-vector.transients
-        clojure.core.rrb-vector.trees
-        clojure.string
-        clojure.set
-        clojure.walk
-        cognitect.transit
-        fipp.visit
-        fipp.engine
-        fipp.deque
-        lazy-map.core
-        lumo.core
-        lumo.pprint.data
-        lumo.repl
-        lumo.repl-resources
-        lumo.js-deps
-        lumo.common} name)))
+       (contains?
+        '#{cljs.analyzer
+           cljs.compiler
+           cljs.env
+           cljs.js
+           cljs.reader
+           cljs.repl
+           cljs.source-map
+           cljs.source-map.base64
+           cljs.source-map.base64-vlq
+           cljs.spec.alpha
+           cljs.spec.gen.alpha
+           cljs.tagged-literals
+           cljs.tools.reader
+           cljs.tools.reader.reader-types
+           cljs.tools.reader.impl.commons
+           cljs.tools.reader.impl.utils
+           clojure.core.rrb-vector
+           clojure.core.rrb-vector.interop
+           clojure.core.rrb-vector.nodes
+           clojure.core.rrb-vector.protocols
+           clojure.core.rrb-vector.rrbt
+           clojure.core.rrb-vector.transients
+           clojure.core.rrb-vector.trees
+           clojure.string
+           clojure.set
+           clojure.walk
+           cognitect.transit
+           fipp.visit
+           fipp.engine
+           fipp.deque
+           lazy-map.core
+           lumo.core
+           lumo.pprint.data
+           lumo.repl
+           lumo.repl-resources
+           lumo.js-deps
+           lumo.common}
+        name)))
 
 (defn- skip-load?
   [name macros?]
-  ((if macros?
+  (if macros?
+    (contains?
      '#{cljs.core
         cljs.js
         cljs.repl
         lazy-map.core
         clojure.core.rrb-vector.macros}
-     '#{goog
-        goog.object
-        goog.string
-        goog.string.StringBuffer
-        goog.array
-        goog.crypt.base64
-        goog.math.Long
-        cljs.core
-        com.cognitect.transit
-        com.cognitect.transit.delimiters
-        com.cognitect.transit.handlers
-        com.cognitect.transit.util
-        com.cognitect.transit.caching
-        com.cognitect.transit.types
-        com.cognitect.transit.eq
-        com.cognitect.transit.impl.decoder
-        com.cognitect.transit.impl.reader
-        com.cognitect.transit.impl.writer})
-   name))
+     name)
+    (or
+     (contains?
+      '#{goog
+         goog.object
+         goog.string
+         goog.string.StringBuffer
+         goog.array
+         goog.crypt.base64
+         goog.math.Long
+         cljs.core
+         com.cognitect.transit
+         com.cognitect.transit.delimiters
+         com.cognitect.transit.handlers
+         com.cognitect.transit.util
+         com.cognitect.transit.caching
+         com.cognitect.transit.types
+         com.cognitect.transit.eq
+         com.cognitect.transit.impl.decoder
+         com.cognitect.transit.impl.reader
+         com.cognitect.transit.impl.writer}
+      name)
+     (ana/node-module-dep? name))))
 
 (declare inject-lumo-eval)
 
@@ -835,8 +842,8 @@
   ([form ns]
    (let [result (volatile! nil)]
      (cljs/eval st form
-       {:ns            ns
-        :context       :expr
+       {:ns ns
+        :context :expr
         :def-emits-var true}
        (fn [{:keys [value error]}]
          (if error
@@ -888,7 +895,7 @@
           (recur (rt/read-char reader)))
         (str sb)))))
 
-(defn get-data-readers*
+(defn- get-data-readers*
   "Returns the merged data reader mappings."
   []
   (reduce (fn [data-readers url+source]
@@ -909,13 +916,28 @@
                                          {:url      url
                                           :conflict tag
                                           :mappings data-readers})))
-                           (assoc data-readers tag (eval fn-sym)))
+                           (assoc data-readers tag fn-sym))
                          data-readers
                          mappings)))
           {}
           (js/$$LUMO_GLOBALS.loadUpstreamDataReaders)))
 
-(def get-data-readers (memoize get-data-readers*))
+(def ^:private get-data-readers (memoize get-data-readers*))
+
+(defn- load-data-readers!* [compiler]
+  (let [data-readers (get-data-readers)
+        nses (map (comp symbol namespace) (vals data-readers))]
+    (doseq [ns nses]
+      (try
+        (eval `(require '~ns))
+        (catch js/Error _)))
+    (swap! compiler update-in [::ana/data-readers]
+      merge (into {} (map (fn [[k v]]
+                            [k (eval v)]))
+              data-readers))
+    (::ana/data-readers @compiler)))
+
+(def load-data-readers! (memoize load-data-readers!*))
 
 (defn- repl-read-string
   "Returns a vector of the first read form, and any balance text."
@@ -925,7 +947,7 @@
     (binding [ana/*cljs-ns* cur-ns
               *ns* (create-ns cur-ns)
               env/*compiler* st
-              r/*data-readers* (merge tags/*cljs-data-readers* (get-data-readers))
+              r/*data-readers* (merge tags/*cljs-data-readers* (load-data-readers! env/*compiler*))
               r/resolve-symbol ana/resolve-symbol
               r/*alias-map* (current-alias-map)]
       [(r/read {:read-cond :allow :features #{:cljs}} reader) (read-chars reader)])))
@@ -1004,7 +1026,7 @@
 (defn- process-1-2-3
   [form value]
   (when-not
-    (or ('#{*1 *2 *3 *e} form)
+    (or (contains? '#{*1 *2 *3 *e} form)
         (ns-form? form))
     (set! *3 *2)
     (set! *2 *1)
@@ -1071,7 +1093,7 @@
               *ns*             (create-ns @current-ns)
               env/*compiler*   st
               r/resolve-symbol ana/resolve-symbol
-              tags/*cljs-data-readers* (merge tags/*cljs-data-readers* (get-data-readers))
+              tags/*cljs-data-readers* (merge tags/*cljs-data-readers* (load-data-readers! env/*compiler*))
               r/*alias-map*    (current-alias-map)]
       (let [form (and expression? (first (repl-read-string source)))
             eval-opts (merge (make-eval-opts)

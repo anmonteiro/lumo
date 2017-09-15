@@ -5,6 +5,35 @@
             [cljs.env :as env]
             [lumo.io :as io]))
 
+(defn target-file-for-cljs-ns
+  "Given an output directory and a clojurescript namespace return the
+  compilation target file for that namespace.
+  For example:
+  (target-file-from-cljs-ns \"resources/out\" 'example.core) ->
+  <File: \"resources/out/example/core.js\">"
+  ([ns-sym] (closure/target-file-for-cljs-ns ns-sym nil))
+  ([ns-sym output-dir] (closure/target-file-for-cljs-ns ns-sym output-dir)))
+
+(defn cljs-dependents-for-macro-namespaces
+  "Takes a list of Clojure (.clj) namespaces that define macros and
+  returns a list ClojureScript (.cljs) namespaces that depend on those macro
+  namespaces.
+
+  For example where example.macros is defined in the clojure file
+  \"example/macros.clj\" and both 'example.core and 'example.util are
+  ClojureScript namespaces that require and use the macros from
+  'example.macros :
+  (cljs-dependents-for-macro-namespaces 'example.macros) ->
+  ('example.core 'example.util)"
+  ([namespaces]
+   (closure/cljs-dependents-for-macro-namespaces
+     (if-not (nil? env/*compiler*)
+       env/*compiler*
+       (env/default-compiler-env))
+     namespaces))
+  ([state namespaces]
+   (closure/cljs-dependents-for-macro-namespaces state namespaces)))
+
 (defn build
   "Given a source which can be compiled, produce runnable JavaScript."
   ([source opts]

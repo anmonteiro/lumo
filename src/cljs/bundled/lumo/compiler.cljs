@@ -13,7 +13,9 @@
             [cljs.compiler :as comp]
             [cljs.analyzer :as ana]
             [clojure.string :as string]
-            [cljs.tools.reader :as reader])
+            [cljs.tools.reader :as reader]
+            fs
+            path)
   (:import [goog.string StringBuffer]))
 
 (defn rename-to-js
@@ -53,7 +55,7 @@
    ([src dest opts]
     (let [{:keys [ns requires]} (lana/parse-ns src)]
       (ensure
-        (or (not (js/$$LUMO_GLOBALS.fs.existsSync dest))
+        (or (not (fs/existsSync dest))
           (util/changed? src dest)
           (let [version' (util/compiled-by-version dest)
                 version (util/clojurescript-version)]
@@ -64,8 +66,8 @@
               (comp/build-affecting-options (util/build-options dest))))
           (and opts (:source-map opts)
             (if (= (:optimizations opts) :none)
-              (not (js/$$LUMO_GLOBALS.fs.existsSync (str dest ".map")))
-              (not (get-in @env/*compiler* [::comp/compiled-cljs (js/$$LUMO_GLOBALS.path.resolve dest)]))))
+              (not (fs/existsSync (str dest ".map")))
+              (not (get-in @env/*compiler* [::comp/compiled-cljs (path/resolve dest)]))))
           (when-let [recompiled' (and comp/*recompiled* @comp/*recompiled*)]
             (some requires recompiled')))))))
 
@@ -128,15 +130,15 @@
         (assoc
           (json/read-str (slurp (io/resource "cljs/core.aot.js.map")))
           "file"
-          (js/$$LUMO_GLOBALS.path.join (util/output-directory opts) "cljs" "core.js")))))
+          (path/join (util/output-directory opts) "cljs" "core.js")))))
   (lana/parse-ns src dest nil))
 
 (defn emit-source-map [src dest sm-data opts]
-  (let [sm-file (js/$$LUMO_GLOBALS.path.join (str dest ".map"))]
+  (let [sm-file (path/join (str dest ".map"))]
     (spit sm-file
-      (sm/encode {(js/$$LUMO_GLOBALS.path.resolve src) (:source-map sm-data)}
+      (sm/encode {(path/resolve src) (:source-map sm-data)}
         {:lines (+ (:gen-line sm-data) 2)
-         :file (js/$$LUMO_GLOBALS.path.resolve dest)
+         :file (path/resolve dest)
          :source-map-path (:source-map-path opts)
          :source-map-timestamp (:source-map-timestamp opts)
          :source-map-pretty-print (:source-map-pretty-print opts)
@@ -154,7 +156,7 @@
               "rel=" (system-time))
             ""))
         (comp/emits "\n//# sourceMappingURL="
-          (or (:source-map-url opts) (js/$$LUMO_GLOBALS.path.basename sm-file))
+          (or (:source-map-url opts) (path/basename sm-file))
           (if (true? (:source-map-timestamp opts))
             (str "?rel=" (system-time))
             ""))))))
@@ -164,40 +166,57 @@
   (spit dest (with-out-str (comp/emit-constants-table table))))
 
 (defn emit-source [src dest ext opts cb]
-  (let [source (slurp src)]
-    (cljs/compile-str
-      env/*compiler*
-      source
-      nil
-      ;; fixes #245 and ^:const error in #239
-      (merge opts {:verbose false
-                   :analyze-deps false})
-      (fn [{:keys [value error] :as m}]
-        (if error
-          (cb {:error error})
-          (let [sm-data (when comp/*source-map-data* @comp/*source-map-data*)
-                ret     (merge
-                          (lana/parse-ns src)
-                          ;; All the necessary keys like :requires, :provides,
-                          ;; etc... are already returned (as JavaScriptFile) by
-                          ;; the above lana/parse-ns
-                          {:file dest}
-                          (when sm-data
-                            {:source-map (:source-map sm-data)}))]
-            ;; don't need to call this because `cljs.js/compile-str` already
-            ;; generates inline source maps
-            ;; (when (and sm-data (= :none (:optimizations opts)))
-            ;;   (emit-source-map src dest sm-data
-            ;;     (merge opts {:ext ext :provides [ns-name]})))
-            (let [path (js/$$LUMO_GLOBALS.path.resolve dest)]
-              (swap! env/*compiler* assoc-in [::comp/compiled-cljs path] ret))
-            (let [{:keys [output-dir cache-analysis]} opts]
-              #_(when (and (true? cache-analysis) output-dir)
-                  (ana/write-analysis-cache ns-name
-                    (ana/cache-file src (lana/parse-ns src) output-dir :write)
-                    src))
-              (spit dest value)
-              (cb ret))))))))
+  (let [source (slurp src)
+        cenv @env/*compiler*
+        original-load cljs/*load-fn*]
+    (binding [ana/*cljs-dep-set* (with-meta #{} {:dep-path []})]
+      (cljs/compile-str
+        env/*compiler*
+        source
+        (:ns opts)
+        (merge opts {:verbose false
+                     :load (fn [{dep :name :as m} cb]
+                             (if (or (not-empty (get-in cenv [::ana/namespaces dep :defs]))
+                                   (contains? (:js-dependency-index cenv) (name dep))
+                                   (ana/node-module-dep? dep)
+                                   (ana/js-module-exists? (name dep))
+                                   (deps/find-classpath-lib dep))
+                               (cb {:lang :js})
+                               (if-let [{:keys [source-file]} (first
+                                                                (filter
+                                                                  #(symbol-identical? dep (:ns %))
+                                                                  (:sources cenv)))]
+                                 (cb {:lang :clj
+                                      :file (util/path source-file)
+                                      :source (slurp source-file)})
+                                 (original-load m cb))))})
+        (fn [{:keys [value error] :as m}]
+          (if error
+            (cb {:error error})
+            (let [sm-data (when comp/*source-map-data* @comp/*source-map-data*)
+                  {:keys [ns ast] :as ns-info} (lana/parse-ns src)
+                  ret     (merge
+                            ns-info
+                            ;; All the necessary keys like :requires, :provides,
+                            ;; etc... are already returned (as JavaScriptFile) by
+                            ;; the above lana/parse-ns
+                            {:file dest}
+                            (when sm-data
+                              {:source-map (:source-map sm-data)}))]
+              ;; don't need to call this because `cljs.js/compile-str` already
+              ;; generates inline source maps
+              ;; (when (and sm-data (= :none (:optimizations opts)))
+              ;;   (emit-source-map src dest sm-data
+              ;;     (merge opts {:ext ext :provides [ns-name]})))
+              (let [path (path/resolve dest)]
+                (swap! env/*compiler* assoc-in [::comp/compiled-cljs path] ret))
+              (let [{:keys [output-dir cache-analysis]} opts]
+                #_(when (and (true? cache-analysis) output-dir)
+                    (ana/write-analysis-cache ns-name
+                      (ana/cache-file src (lana/parse-ns src) output-dir :write)
+                      src))
+                (spit dest value)
+                (cb ret)))))))))
 
 (defn compile-file*
      ([src dest cb]
@@ -217,13 +236,11 @@
                 (let [opts (if (macro-ns? ns ext opts)
                              (assoc opts :macros-ns true)
                              opts)]
-                  (emit-source src dest ext opts
+                  (emit-source src dest ext (assoc opts :ns ns)
                     (fn [ret]
-                      (if (:error ret)
-                        (cb ret)
-                        (do
-                          (util/set-last-modified dest (util/last-modified src))
-                          (cb ret)))))))))))))
+                      (when-not (:error ret)
+                        (util/set-last-modified dest (util/last-modified src)))
+                      (cb ret)))))))))))
 
 (defn compile-file
    "Compiles src to a file of the same name, but with a .js extension,
@@ -253,7 +270,7 @@
             src-file  src
             dest-file dest
             opts      (merge {:optimizations :none} opts)]
-        (if (js/$$LUMO_GLOBALS.fs.existsSync src-file)
+        (if (fs/existsSync src-file)
           (try
             (let [{ns :ns :as ns-info} (lana/parse-ns src-file dest-file opts)
                   opts (if (and (not= (util/ext src) "clj") ;; skip cljs.core macro-ns
