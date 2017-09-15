@@ -225,7 +225,6 @@
                                         :output-dir out
                                         :optimizations :none
                                         :install-deps true
-                                        :verbose true
                                         :npm-deps {:left-pad "1.1.3"}
                                         :closure-warnings {:check-types :off}}}
           cenv (env/default-compiler-env)]
@@ -240,7 +239,6 @@
                                       :output-dir out
                                       :optimizations :none
                                       :install-deps true
-                                      :verbose true
                                       :npm-deps {:react "15.6.1"
                                                  :react-dom "15.6.1"
                                                  :lodash "4.17.4"}
@@ -259,21 +257,20 @@
       (test/delete-out-files out)))
   (test/delete-node-modules))
 
-;; (deftest test-preloads
-;;   (let [out (.getPath (io/file (test/tmp-dir) "preloads-test-out"))
-;;         {:keys [inputs opts]} {:inputs (str (io/file "src" "test" "cljs"))
-;;                                :opts {:main 'preloads-test.core
-;;                                       :preloads '[preloads-test.preload]
-;;                                       :output-dir out
-;;                                       :optimizations :none
-;;                                       :closure-warnings {:check-types :off}}}
-;;         cenv (env/default-compiler-env)]
-;;     (test/delete-out-files out)
-;;     (build/build (build/inputs
-;;                    (io/file inputs "preloads_test/core.cljs"))
-;;                  opts cenv)
-;;     (is (.exists (io/file out "preloads_test/preload.cljs")))
-;;     (is (contains? (get-in @cenv [::ana/namespaces 'preloads-test.preload :defs]) 'preload-var))))
+(deftest test-preloads
+  (let [out (path/join (test/tmp-dir) "preloads-test-out")
+        {:keys [inputs opts]} {:inputs (path/join "src" "test" "cljs")
+                               :opts {:main 'preloads-test.core
+                                      :preloads '[preloads-test.preload]
+                                      :output-dir out
+                                      :optimizations :none}}
+        cenv (env/default-compiler-env)]
+    (test/delete-out-files out)
+    (build/build
+      (build/inputs (path/join inputs "preloads_test/core.cljs"))
+      opts cenv)
+    (is (fs/existsSync (path/join out "preloads_test/preload.cljs")))
+    (is (contains? (get-in @cenv [:cljs.analyzer/namespaces 'preloads-test.preload :defs]) 'preload-var))))
 
 (deftest test-libs-cljs-2152
   (let [out (path/join (test/tmp-dir) "libs-test-out")

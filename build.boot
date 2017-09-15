@@ -129,10 +129,10 @@
        'org.clojure/tools.reader #"^cljs.*clj$"
        'org.clojure/clojurescript #""
        'org.clojure/test.check #""}
-      :move {#"^main.out[\\\/]((cljs|clojure|cognitect|lumo|lazy_map|fipp).*)" "$1"})
+      :move {#"^main.out[\\\/]((cljs|clojure|cognitect|lumo|lazy_map|fipp|process).*)" "$1"})
     (sift :include #{#"^main.js" #"^bundle.js" #"^cljs(?!\.js)" #"core\$macros"
                      #"^clojure" #"^cognitect" #"^goog" #"^lumo[\\\/]"
-                     #"^lazy_map[\\\/]" #"^fipp[\\\/]"}
+                     #"^lazy_map[\\\/]" #"^fipp[\\\/]" #"^process[\\\/]env"}
       :to-resource #{#"^lumo[\\\/](repl|util)\.clj$"})
     (sift :include #{#"^cljs[\\\/]core\.cljs\.cache\.json$"
                      #"^cljs[\\\/](analyzer[\\\/]utils|build|closure)"
