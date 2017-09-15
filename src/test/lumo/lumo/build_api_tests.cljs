@@ -159,7 +159,7 @@
   (let [out (path/join (test/tmp-dir) "cljs-1537-test-out")
         root "src/test/cljs_build"]
     (test/delete-out-files out)
-    (closure/build
+    (build/build
       (build/inputs
         (path/join root "circular_deps" "a.cljs")
         (path/join root "circular_deps" "b.cljs"))
