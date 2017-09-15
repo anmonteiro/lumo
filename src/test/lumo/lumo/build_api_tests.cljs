@@ -259,21 +259,21 @@
       (test/delete-out-files out)))
   (test/delete-node-modules))
 
-;; (deftest test-preloads
-;;   (let [out (.getPath (io/file (test/tmp-dir) "preloads-test-out"))
-;;         {:keys [inputs opts]} {:inputs (str (io/file "src" "test" "cljs"))
-;;                                :opts {:main 'preloads-test.core
-;;                                       :preloads '[preloads-test.preload]
-;;                                       :output-dir out
-;;                                       :optimizations :none
-;;                                       :closure-warnings {:check-types :off}}}
-;;         cenv (env/default-compiler-env)]
-;;     (test/delete-out-files out)
-;;     (build/build (build/inputs
-;;                    (io/file inputs "preloads_test/core.cljs"))
-;;                  opts cenv)
-;;     (is (.exists (io/file out "preloads_test/preload.cljs")))
-;;     (is (contains? (get-in @cenv [::ana/namespaces 'preloads-test.preload :defs]) 'preload-var))))
+(deftest test-preloads
+  (let [out (path/join (test/tmp-dir) "preloads-test-out")
+        {:keys [inputs opts]} {:inputs (path/join "src" "test" "cljs")
+                               :opts {:main 'preloads-test.core
+                                      :preloads '[preloads-test.preload]
+                                      :output-dir out
+                                      :verbose true
+                                      :optimizations :none}}
+        cenv (env/default-compiler-env)]
+    (test/delete-out-files out)
+    (build/build
+      (build/inputs (path/join inputs "preloads_test/core.cljs"))
+      opts cenv)
+    (is (fs/existsSync (path/join out "preloads_test/preload.cljs")))
+    (is (contains? (get-in @cenv [:cljs.analyzer/namespaces 'preloads-test.preload :defs]) 'preload-var))))
 
 (deftest test-libs-cljs-2152
   (let [out (path/join (test/tmp-dir) "libs-test-out")
