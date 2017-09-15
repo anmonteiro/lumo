@@ -173,7 +173,7 @@
       (cljs/compile-str
         env/*compiler*
         source
-        nil
+        (:ns opts)
         (merge opts {:verbose false
                      :load (fn [{dep :name :as m} cb]
                              (if (or (not-empty (get-in cenv [::ana/namespaces dep :defs]))
@@ -236,7 +236,7 @@
                 (let [opts (if (macro-ns? ns ext opts)
                              (assoc opts :macros-ns true)
                              opts)]
-                  (emit-source src dest ext opts
+                  (emit-source src dest ext (assoc opts :ns ns)
                     (fn [ret]
                       (when-not (:error ret)
                         (util/set-last-modified dest (util/last-modified src)))
