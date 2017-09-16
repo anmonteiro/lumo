@@ -2325,7 +2325,8 @@
                                                                     (util/mkdirs outfile)
                                                                     (spit outfile (slurp (io/resource "cljs/bootstrap_node.js")))))
                                                                 (reset! cljs/*loaded* runtime-loaded)
-                                                                ret)))))))))))))])))))))))))
+                                                                ret)))))))))))))]
+                     (cb nil))))))))))))
 
 (defn target-file-for-cljs-ns
   [ns-sym output-dir]

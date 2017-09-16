@@ -341,6 +341,34 @@
       (is (empty? @ws))))
   (test/delete-node-modules))
 
+(deftest cljs-test-compilation
+
+  (testing "success"
+    (let [out (path/join (test/tmp-dir) "compilation-test-out")
+          root "src/test/cljs_build"]
+      (test/delete-out-files out)
+      (build/build
+       (path/join root "hello" "world.cljs")
+       {:main 'hello
+        :optimizations :none
+        :output-to out}
+       (env/default-compiler-env)
+       (fn [ret]
+         (is (nil? ret) "Successful compilation should call the callback with nil")))))
+
+  (testing "failure"
+    (let [out (path/join (test/tmp-dir) "compilation-test-out")
+          root "src/test/cljs_build"]
+      (test/delete-out-files out)
+      (build/build
+       (path/join root "hello" "broken_world.cljs")
+       {:main 'hello
+        :optimizations :none
+        :output-to out}
+       (env/default-compiler-env)
+       (fn [{:keys [error]}]
+         (is (some? error) "Failed compilation should call the callback with some error"))))))
+
 ;; (deftest test-emit-global-requires-cljs-2214
 ;;   (testing "simplest case, require"
 ;;     (let [ws (atom [])
