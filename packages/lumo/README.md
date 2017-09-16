@@ -75,6 +75,43 @@ Enter `lumo` at the command line to launch it.
 
 Check out `lumo -h` for usage instructions and supported command line options.
 
+### Compile ClojureScript
+
+Lumo can compile ClojureScript code as of version `1.2.0`. See the introductory
+[blog post](https://anmonteiro.com/2017/02/compiling-clojurescript-projects-without-the-jvm/).
+It is still considered experimental, given the relatively new Google Closure
+Compiler [port](https://github.com/google/closure-compiler-js) to JavaScript,
+but it aims to be at feature parity with the JVM ClojureScript compiler.
+
+The build API mirrors the ClojureScript one. Please reference its
+[Quick Start](https://clojurescript.org/guides/quick-start) and the
+[Compiler Options](https://clojurescript.org/reference/compiler-options).  You
+can basically just replace the namespace with `lumo.build.api`:
+
+```clojure
+(require 'lumo.build.api)
+
+(lumo.build.api/build "src" {:output-to "out/main.js"})
+```
+
+The Lumo compiler is completely asynchronous whereas the ClojureScript compiler
+is sync. This means that you can pass a callback in:
+
+```clojure
+(require '[lumo.build.api :as api])
+
+(api/build
+ (api/inputs "src1" "src2") ;; variadic
+ {:output-to "out/main.js"}
+ (fn [result]
+   (if-let [err (:error result)]
+     (println (.-stack err))
+     (do-something-else result))))
+ ```
+
+The above example also shows how to use multiple source folders. The compiler
+returns a map containing an `:error` key if something went wrong.
+
 ## Building
 
 To build Lumo from source:
