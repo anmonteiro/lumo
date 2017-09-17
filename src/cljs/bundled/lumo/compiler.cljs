@@ -122,7 +122,7 @@
   ;; with-core-cljs
   (when (or ana/*verbose* (:verbose opts))
     (util/debug-prn "Using cached cljs.core" (str src)))
-  (spit dest (slurp cached))
+  (io/copy cached dest)
   (util/set-last-modified dest (util/last-modified src))
   (when (true? (:source-map opts))
     (spit (str dest ".map")

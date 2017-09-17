@@ -159,7 +159,7 @@
                            :compiler-stats true
                            :process-shim false
                            :fn-invoke-direct true
-                           :parallel-build true}))
+                           :parallel-build false}))
 
 (deftask dev []
   (comp

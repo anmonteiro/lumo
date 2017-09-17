@@ -356,8 +356,7 @@
     ([this opts]
       (if-let [s (:source this)]
         s
-        (let [reader (deps/-url this opts)]
-          (slurp reader)))))
+        (slurp (deps/-url this opts)))))
 
   cljs.core/PersistentArrayMap
   (-foreign? [this] (:foreign this))
@@ -386,8 +385,7 @@
     ([this opts]
       (if-let [s (:source this)]
         s
-        (let [reader (deps/-url this opts)]
-          (slurp reader))))))
+        (slurp (deps/-url this opts))))))
 
 (defrecord JavaScriptFile [foreign url source-url provides requires lines source-map]
   deps/IJavaScript
@@ -530,13 +528,11 @@
       (when env/*compiler*
         (:options @env/*compiler*))))
   ([url out-dir opts]
-   (let [out-file (path/join out-dir (path-from-jarfile url))
-         content  (let [reader url]
-                    (slurp reader))]
+   (let [out-file (path/join out-dir (path-from-jarfile url))]
      (when (and url (or ana/*verbose* (:verbose opts)))
        (util/debug-prn "Copying" (util/path url) "to" (str out-file)))
      (util/mkdirs out-file)
-     (spit out-file content)
+     (io/copy url out-file)
      (util/set-last-modified out-file (util/last-modified url))
      out-file)))
 
@@ -1635,7 +1631,7 @@
                      (util/changed? source-url out-file)))
         (when (or ana/*verbose* (:verbose opts))
           (util/debug-prn "Copying" (str source-url) "to" (str out-file)))
-        (spit out-file (slurp source-url))
+        (io/copy source-url out-file)
         (util/set-last-modified out-file (util/last-modified source-url)))
       js)))
 
@@ -1652,7 +1648,7 @@
                        "goog" "deps.js")
         main         (:main opts)]
     (util/mkdirs goog-deps)
-    (spit goog-deps (slurp (io/resource "goog/deps.js")))
+    (io/copy (io/resource "goog/deps.js") goog-deps)
     (if main
       (do
         (output-deps-file
@@ -2139,16 +2135,9 @@
                                                   (not= module-type :amd)))
                                         expanded-libs))))))
                  process-js-modules)]
-    (swap! compiler-env (fn [cenv]
-                          (-> cenv
-                            ;; we need to also track the whole top level - this is to support
-                            ;; cljs.analyze/analyze-deps, particularly in REPL contexts - David
-                            (merge {:js-dependency-index (deps/js-dependency-index opts)})
-                            ;; (update-in [:node-module-index] (fnil into #{})
-                            ;;   (if (= target :nodejs)
-                            ;;     (map str node-required)
-                            ;;     (map str (keys top-level))))
-                            )))
+    ;; we need to also track the whole top level - this is to support
+    ;; cljs.analyze/analyze-deps, particularly in REPL contexts - David
+    (swap! compiler-env assoc :js-dependency-index (deps/js-dependency-index opts))
     opts))
 
 (defn identity-async [a b cb]
@@ -2323,7 +2312,7 @@
                                                                   (let [outfile (path/join (util/output-directory opts)
                                                                                   "goog" "bootstrap" "nodejs.js")]
                                                                     (util/mkdirs outfile)
-                                                                    (spit outfile (slurp (io/resource "cljs/bootstrap_node.js")))))
+                                                                    (io/copy (io/resource "cljs/bootstrap_node.js") outfile)))
                                                                 (reset! cljs/*loaded* runtime-loaded)
                                                                 ret)))))))))))))]
                      (cb nil))))))))))))

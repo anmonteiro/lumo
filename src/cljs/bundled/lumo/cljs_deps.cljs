@@ -237,17 +237,12 @@ case."
 
 (def load-foreign-library (memoize load-foreign-library*))
 
-;; TODO: probably need to use LUMO_READ_SOURCE to guarantee this finds stuff in
-;; the classpath
-(defn line-seq [path]
-  (string/split (slurp path) #"\n"))
-
 (defn- library-graph-node
   "Returns a map of :provides, :requires, and :url given a URL to a goog-style
 JavaScript library containing provide/require 'declarations'."
   ([url] (library-graph-node url nil))
   ([url lib-path]
-   (-> url line-seq parse-js-ns
+   (-> url util/line-seq parse-js-ns
      (merge
        {:url url}
        (when lib-path
@@ -306,7 +301,7 @@ JavaScript library containing provide/require 'declarations'."
                                 (string/split #"'\s*,\s*'"))))]
     ;; TODO: make sure we find this, because it's in the classpath
     (let [reader (io/resource "goog/deps.js")]
-      (->> (line-seq reader)
+      (->> (util/line-seq reader)
            (map #(re-matches #"^goog\.addDependency\(['\"](.*)['\"],\s*\[(.*)\],\s*\[(.*)\],.*\);.*" %))
            (remove nil?)
            (map #(drop 1 %))
