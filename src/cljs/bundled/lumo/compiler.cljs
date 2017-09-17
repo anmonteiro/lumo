@@ -105,11 +105,13 @@
   "Return a sequence of all .cljs and .cljc files in the given directory."
   [dir]
   (filter
-    #(let [name %]
-       (and (or (.endsWith name ".cljs")
-                (.endsWith name ".cljc"))
-         (not= \. (first name))
-         (not (contains? comp/cljs-reserved-file-names name))))
+    (fn [name]
+      (and
+        (util/file? name)
+        (or (.endsWith name ".cljs")
+            (.endsWith name ".cljc"))
+        (not= \. (first name))
+        (not (contains? comp/cljs-reserved-file-names name))))
     (file-seq dir)))
 
 (defn find-root-sources

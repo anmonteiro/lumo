@@ -6,6 +6,10 @@
 
 - Remove #_=> from pasted code ([#261](https://github.com/anmonteiro/lumo/issues/261)).
 
+### Bug fixes
+
+- lumo.compiler/cljs-files-in can match dirs ([#270](https://github.com/anmonteiro/lumo/issues/270)).
+
 ## [1.8.0-beta](https://github.com/anmonteiro/lumo/compare/1.7.0...1.8.0-beta) (2017-09-16)
 
 ### New features
