@@ -150,6 +150,13 @@ export function processLine(replSession: REPLSession, line: string): void {
   return undefined;
 }
 
+function clearLine(session: REPLSession): void {
+  session.rl.write(null, {
+    ctrl: true,
+    name: 'u',
+  });
+}
+
 function stopReverseSearch(
   replSession: REPLSession,
   clear: boolean = true,
@@ -159,10 +166,7 @@ function stopReverseSearch(
   session.reverseSearchBuffer = '';
 
   if (clear) {
-    session.rl.write(null, {
-      ctrl: true,
-      name: 'u',
-    });
+    clearLine(session);
   }
 }
 
@@ -338,10 +342,7 @@ function handleKeyPress(
           }
           rl._refreshLine();
         } else {
-          session.rl.write(null, {
-            ctrl: true,
-            name: 'u',
-          });
+          clearLine(session);
         }
       }
     }
@@ -356,6 +357,12 @@ function handleKeyPress(
 
     if (!session.isPasting) {
       highlight(session, c, rl.line, rl.cursor);
+    }
+
+    const ignorableRegex = /^\s*?#_=>\s/;
+    if (ignorableRegex.test(rl.line)) {
+      rl.line = '';
+      clearLine(session);
     }
   }
 }
