@@ -13,7 +13,7 @@ import {
   projectLogo,
 } from './HomeSplash.scss';
 
-export default () =>
+export default () => (
   <div className={homeContainer}>
     <div className={`wrapper ${homeWrapper}`}>
       <div className={projectLogo}>
@@ -21,9 +21,7 @@ export default () =>
       </div>
       <h2 className={projectTitle}>
         {siteConfig.title}
-        <small>
-          {siteConfig.tagline}
-        </small>
+        <small>{siteConfig.tagline}</small>
       </h2>
       <div className={promoSection}>
         <div className={promoRow}>
@@ -43,8 +41,7 @@ export default () =>
           </div>
         </div>
       </div>
-      <div>
-        {siteConfig.githubButton}
-      </div>
+      <div>{siteConfig.githubButton}</div>
     </div>
-  </div>;
+  </div>
+);

@@ -1,0 +1,499 @@
+@import '../variables';
+
+/* Reset */
+html,
+body,
+div,
+span,
+applet,
+object,
+iframe,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p,
+blockquote,
+pre,
+a,
+abbr,
+acronym,
+address,
+big,
+cite,
+code,
+del,
+dfn,
+em,
+img,
+ins,
+kbd,
+q,
+s,
+samp,
+small,
+strike,
+strong,
+sub,
+sup,
+tt,
+var,
+b,
+u,
+i,
+center,
+dl,
+dt,
+dd,
+ol,
+ul,
+li,
+fieldset,
+form,
+label,
+legend,
+table,
+caption,
+tbody,
+tfoot,
+thead,
+tr,
+th,
+td,
+article,
+aside,
+canvas,
+details,
+embed,
+figure,
+figcaption,
+footer,
+header,
+hgroup,
+menu,
+nav,
+output,
+ruby,
+section,
+summary,
+time,
+mark,
+audio,
+video {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  font-size: 100%;
+  font: inherit;
+  vertical-align: baseline;
+}
+/* HTML5 display-role reset for older browsers */
+article,
+aside,
+details,
+figcaption,
+figure,
+footer,
+header,
+hgroup,
+menu,
+nav,
+section {
+  display: block;
+}
+body {
+  line-height: 1;
+}
+ol,
+ul {
+  list-style: none;
+}
+blockquote,
+q {
+  quotes: none;
+}
+blockquote:before,
+blockquote:after,
+q:before,
+q:after {
+  content: '';
+  content: none;
+}
+table {
+  border-collapse: collapse;
+  border-spacing: 0;
+}
+
+/* Base */
+
+body {
+  background: #f9f9f9;
+  color: #393939;
+  font: normal 16px/1.4em 'proxima-soft', 'Helvetica Neue', Arial, sans-serif;
+  height: 100vh;
+  text-align: left;
+  text-rendering: optimizeLegibility;
+}
+
+img {
+  max-width: 100%;
+}
+
+article p img {
+  max-width: 100%;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+a {
+  color: $desert-mud;
+  text-decoration: none;
+}
+
+blockquote {
+  padding: 15px 30px 15px 15px;
+  margin: 20px 0 0 10px;
+  background-color: rgba(204, 122, 111, 0.1);
+  border-left: 10px solid rgba(191, 87, 73, 0.2);
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: proxima-soft, 'Helvetica Neue', Arial, sans-serif;
+  font-weight: 600;
+  color: $dark-blue;
+}
+
+header h2 {
+  color: white;
+  font-size: 20px;
+}
+
+:global {
+  .wrapper {
+    margin: 0px auto;
+    max-width: 1024px;
+    padding: 0 10px;
+  }
+}
+
+.center {
+  display: block;
+  text-align: center;
+}
+
+:global {
+  .mainContainer {
+    background: #f9f9f9;
+  }
+  .mainContainer .wrapper {
+    text-align: left;
+  }
+  .mainContainer .wrapper em,
+  .mainContainer .wrapper i {
+    font-style: italic;
+  }
+  .mainContainer .wrapper strong,
+  .mainContainer .wrapper b {
+    font-weight: bold;
+  }
+  .referenceContainer .wrapper h3 {
+    border-top: 1px solid #e0e0e0;
+  }
+  .referenceContainer .wrapper h3:first-of-type {
+    border: 0;
+  }
+  .mainContainer .wrapper p {
+    padding: 0.8em 0;
+  }
+  .mainContainer .wrapper ul {
+    list-style: disc;
+  }
+  .mainContainer .wrapper ol,
+  .mainContainer .wrapper ul {
+    padding: 10px 0 10px 24px;
+  }
+  .mainContainer .wrapper ol li,
+  .mainContainer .wrapper ul li {
+    padding-bottom: 4px;
+  }
+  .mainContainer .wrapper strong {
+    font-weight: bold;
+  }
+  .mainContainer .wrapper .post {
+    position: relative;
+  }
+  .mainContainer .wrapper .post.basicPost {
+    margin-top: 30px;
+  }
+  .mainContainer .wrapper .post h2 {
+    font-size: 130%;
+  }
+  .mainContainer .wrapper .post h3 {
+    font-size: 110%;
+  }
+  .mainContainer .wrapper .post h5 {
+    font-weight: 300;
+    font-style: italic;
+  }
+  .mainContainer .wrapper .post h5 strong {
+    font-weight: 400;
+  }
+  .mainContainer .wrapper .post ol {
+    list-style: decimal outside none;
+  }
+  .mainContainer .wrapper .post .postHeader {
+    padding: 2em 0 0;
+  }
+  .mainContainer .wrapper .post .postHeader h1 {
+    font-size: 150%;
+    line-height: 1em;
+    padding: 0.4em 0 0;
+  }
+  .mainContainer .wrapper .post .postHeader h1 a {
+    border: none;
+  }
+
+  .mainContainer .wrapper .post .docPagination {
+    background: $desert-mud;
+    bottom: 0px;
+    left: 0px;
+    position: absolute;
+    right: 0px;
+  }
+  .mainContainer .wrapper .post .docPagination .pager {
+    display: inline-block;
+    width: 50%;
+  }
+  .mainContainer .wrapper .post .docPagination .pagingNext {
+    float: right;
+    text-align: right;
+  }
+  .mainContainer .wrapper .post .docPagination a {
+    border: none;
+    color: #fff;
+    display: block;
+    padding: 4px 12px;
+  }
+  .mainContainer .wrapper .post .docPagination a:hover {
+    background-color: #f9f9f9;
+    color: #393939;
+  }
+  .mainContainer .wrapper .post .docPagination a .pagerLabel {
+    display: inline;
+  }
+  .mainContainer .wrapper .post .docPagination a .pagerTitle {
+    display: none;
+  }
+  .mainContainer .wrapper .posts .post {
+    margin-bottom: 6vh;
+  }
+
+  @media only screen and (min-width: 480px) {
+    .mainContainer .wrapper .post h2 {
+      font-size: 180%;
+    }
+    .mainContainer .wrapper .post h3 {
+      font-size: 120%;
+    }
+    .mainContainer .wrapper .post .docPagination a .pagerLabel {
+      display: none;
+    }
+    .mainContainer .wrapper .post .docPagination a .pagerTitle {
+      display: inline;
+    }
+  }
+  @media only screen and (min-width: 1024px) {
+    .mainContainer .wrapper .post {
+      box-sizing: border-box;
+      display: block;
+    }
+    .mainContainer .wrapper .post .postHeader h1 {
+      font-size: 250%;
+    }
+    .mainContainer .wrapper .posts .post {
+      margin-bottom: 4vh;
+      width: 100%;
+    }
+  }
+}
+@media only screen and (min-width: 1200px) {
+  .wrapper {
+    max-width: 1100px;
+  }
+}
+@media only screen and (min-width: 1500px) {
+  .wrapper {
+    max-width: 1400px;
+  }
+}
+input::-webkit-input-placeholder {
+  color: #e5e5e5;
+}
+
+input::-moz-placeholder {
+  color: #e5e5e5;
+}
+
+input::placeholder {
+  color: #e5e5e5;
+}
+
+code,
+a code,
+.mainContainer .wrapper a code,
+.mainContainer .wrapper a:focus code {
+  color: $desert-mud;
+  font-family: Hack, monospace;
+  font-size: 90%;
+  font-weight: 300;
+}
+a code {
+  text-decoration: underline;
+}
+a:hover code {
+  text-decoration: none;
+}
+
+.prism {
+  white-space: pre-wrap;
+  font-family: 'source-code-pro', Menlo, 'Courier New', Consolas, monospace;
+  font-size: 13px;
+  line-height: 20px;
+  border-left: 4px solid $dark-blue;
+  overflow-x: scroll;
+  -webkit-overflow-scrolling: touch;
+  padding: 5px 10px;
+  margin: 14px 0 14px 20px;
+  background-color: rgba(153, 66, 79, 0.03);
+}
+
+.prism + .prism {
+  margin-top: 14px;
+}
+
+.token.keyword {
+  color: #1990b8;
+}
+
+.token.string,
+.token.regex {
+  color: #2f9c0a;
+}
+
+.token.boolean,
+.token.number {
+  color: #c92c2c;
+}
+
+.token.comment {
+  color: #7d8b99;
+}
+
+.prism table {
+  background: none;
+  border: none;
+}
+.prism table tbody tr {
+  background: none;
+  display: flex;
+  flex-flow: row nowrap;
+}
+.highlighter-rouge .prism table tbody tr td {
+  display: block;
+  flex: 1 1;
+}
+.highlighter-rouge .prism table tbody tr td.gutter {
+  border-right: 1px solid #005469;
+  color: #006883;
+  margin-right: 10px;
+  max-width: 40px;
+  padding-right: 10px;
+}
+.highlighter-rouge .prism table tbody tr td.gutter pre {
+  max-width: 20px;
+}
+
+.sliderActive .navPusher::after {
+  width: 100%;
+  height: 100%;
+  opacity: 1;
+  -webkit-transition: opacity 0.5s;
+  transition: opacity 0.5s;
+  z-index: 100;
+}
+
+.docsSliderActive.docsNavContainer {
+  box-sizing: border-box;
+  height: 100%;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 50px;
+}
+
+table {
+  background: #f8f8f8;
+  border: 1px solid #b0b0b0;
+  border-collapse: collapse;
+  display: table;
+  margin: 20px 0;
+}
+table thead {
+  border-bottom: 1px solid #b0b0b0;
+  display: table-header-group;
+}
+table tbody {
+  display: table-row-group;
+}
+table tr {
+  display: table-row;
+}
+table tr:nth-of-type(odd) {
+  background: #e8e8e8;
+}
+table tr th,
+table tr td {
+  border-right: 1px dotted #b0b0b0;
+  display: table-cell;
+  font-size: 14px;
+  line-height: 1.3em;
+  padding: 10px;
+  text-align: left;
+}
+table tr th:last-of-type,
+table tr td:last-of-type {
+  border-right: 0;
+}
+table tr th code,
+table tr td code {
+  color: #2db04b;
+  display: inline-block;
+  font-size: 12px;
+}
+table tr th {
+  color: #000000;
+  font-weight: bold;
+  font-family: proxima-soft, 'Helvetica Neue', Arial, sans-serif;
+  text-transform: uppercase;
+}
+.header-link {
+  position: absolute;
+  margin-left: 0.2em;
+  opacity: 0;
+  -webkit-transition: opacity 0.2s ease-in-out 0.1s;
+  -moz-transition: opacity 0.2s ease-in-out 0.1s;
+  -ms-transition: opacity 0.2s ease-in-out 0.1s;
+}
+
+h2:hover .header-link,
+h3:hover .header-link,
+h4:hover .header-link,
+h5:hover .header-link,
+h6:hover .header-link {
+  opacity: 1;
+}

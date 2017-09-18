@@ -641,11 +641,7 @@ Token.reactify = function(o, language, parent, key) {
   env.attributes.className = env.classes.join(' ');
 
   const Tag = env.tag;
-  return (
-    <Tag {...env.attributes}>
-      {env.content}
-    </Tag>
-  );
+  return <Tag {...env.attributes}>{env.content}</Tag>;
 };
 
 Prism.languages.markup = {

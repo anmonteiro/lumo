@@ -60,7 +60,10 @@ function extractMetadata(content) {
   for (let i = 0; i < lines.length - 1; i += 1) {
     const keyvalue = lines[i].split(':');
     const key = keyvalue[0].trim();
-    let value = keyvalue.slice(1).join(':').trim();
+    let value = keyvalue
+      .slice(1)
+      .join(':')
+      .trim();
     // Handle the case where you have "Community #10"
     try {
       value = JSON.parse(value);

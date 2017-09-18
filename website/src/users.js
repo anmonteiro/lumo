@@ -7,11 +7,11 @@ import { button } from '../components/Button.scss';
 import { showcaseSection, prose, logos } from './users.scss';
 
 export default () => {
-  const showcase = siteConfig.users.map(({ infoLink, image, caption }) =>
+  const showcase = siteConfig.users.map(({ infoLink, image, caption }) => (
     <a href={infoLink} key={image}>
       <img src={image} title={caption} alt={caption} />
-    </a>,
-  );
+    </a>
+  ));
 
   return (
     <Site>
@@ -25,9 +25,7 @@ export default () => {
                 apps, and APIs.
               </p>
             </div>
-            <div className={logos}>
-              {showcase}
-            </div>
+            <div className={logos}>{showcase}</div>
             <p>Is your company using Jest?</p>
             <a
               href="https://github.com/facebook/jest/edit/master/website/siteConfig.js"

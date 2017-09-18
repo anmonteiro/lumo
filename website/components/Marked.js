@@ -562,11 +562,7 @@ InlineLexer.prototype.output = function(src) {
         text = cap[1];
         href = text;
       }
-      out.push(
-        <a href={this.sanitizeUrl(href)}>
-          {text}
-        </a>,
-      );
+      out.push(<a href={this.sanitizeUrl(href)}>{text}</a>);
       continue;
     }
 
@@ -575,11 +571,7 @@ InlineLexer.prototype.output = function(src) {
       src = src.substring(cap[0].length);
       text = cap[1];
       href = text;
-      out.push(
-        <a href={this.sanitizeUrl(href)}>
-          {text}
-        </a>,
-      );
+      out.push(<a href={this.sanitizeUrl(href)}>{text}</a>);
       continue;
     }
 
@@ -623,33 +615,21 @@ InlineLexer.prototype.output = function(src) {
     // strong
     if ((cap = this.rules.strong.exec(src))) {
       src = src.substring(cap[0].length);
-      out.push(
-        <strong>
-          {this.output(cap[2] || cap[1])}
-        </strong>,
-      );
+      out.push(<strong>{this.output(cap[2] || cap[1])}</strong>);
       continue;
     }
 
     // em
     if ((cap = this.rules.em.exec(src))) {
       src = src.substring(cap[0].length);
-      out.push(
-        <em>
-          {this.output(cap[2] || cap[1])}
-        </em>,
-      );
+      out.push(<em>{this.output(cap[2] || cap[1])}</em>);
       continue;
     }
 
     // code
     if ((cap = this.rules.code.exec(src))) {
       src = src.substring(cap[0].length);
-      out.push(
-        <code>
-          {cap[2]}
-        </code>,
-      );
+      out.push(<code>{cap[2]}</code>);
       continue;
     }
 
@@ -663,11 +643,7 @@ InlineLexer.prototype.output = function(src) {
     // del (gfm)
     if ((cap = this.rules.del.exec(src))) {
       src = src.substring(cap[0].length);
-      out.push(
-        <del>
-          {this.output(cap[1])}
-        </del>,
-      );
+      out.push(<del>{this.output(cap[1])}</del>);
       continue;
     }
 
@@ -833,11 +809,7 @@ Parser.prototype.tok = function() {
       );
     }
     case 'code': {
-      return (
-        <Prism language={this.token.lang}>
-          {this.token.text}
-        </Prism>
-      );
+      return <Prism language={this.token.lang}>{this.token.text}</Prism>;
     }
     case 'table': {
       const table = [];
@@ -858,9 +830,7 @@ Parser.prototype.tok = function() {
       }
       table.push(
         <thead>
-          <tr>
-            {row}
-          </tr>
+          <tr>{row}</tr>
         </thead>,
       );
 
@@ -872,29 +842,13 @@ Parser.prototype.tok = function() {
           const props = this.token.align[j]
             ? { style: { textAlign: this.token.align[j] } }
             : null;
-          row.push(
-            <td {...props}>
-              {this.inline.output(cells[j])}
-            </td>,
-          );
+          row.push(<td {...props}>{this.inline.output(cells[j])}</td>);
         }
-        body.push(
-          <tr>
-            {row}
-          </tr>,
-        );
+        body.push(<tr>{row}</tr>);
       }
-      table.push(
-        <thead>
-          {body}
-        </thead>,
-      );
+      table.push(<thead>{body}</thead>);
 
-      return (
-        <table>
-          {table}
-        </table>
-      );
+      return <table>{table}</table>;
     }
     case 'blockquote_start': {
       const body = [];
@@ -903,11 +857,7 @@ Parser.prototype.tok = function() {
         body.push(this.tok());
       }
 
-      return (
-        <blockquote>
-          {body}
-        </blockquote>
-      );
+      return <blockquote>{body}</blockquote>;
     }
     case 'list_start': {
       const body = [];
@@ -916,13 +866,7 @@ Parser.prototype.tok = function() {
         body.push(this.tok());
       }
 
-      return this.token.ordered
-        ? <ol>
-            {body}
-          </ol>
-        : <ul>
-            {body}
-          </ul>;
+      return this.token.ordered ? <ol>{body}</ol> : <ul>{body}</ul>;
     }
     case 'list_item_start': {
       const body = [];
@@ -931,11 +875,7 @@ Parser.prototype.tok = function() {
         body.push(this.token.type === 'text' ? this.parseText() : this.tok());
       }
 
-      return (
-        <li>
-          {body}
-        </li>
-      );
+      return <li>{body}</li>;
     }
     case 'loose_item_start': {
       const body = [];
@@ -944,11 +884,7 @@ Parser.prototype.tok = function() {
         body.push(this.tok());
       }
 
-      return (
-        <li>
-          {body}
-        </li>
-      );
+      return <li>{body}</li>;
     }
     case 'html': {
       return (
@@ -960,21 +896,18 @@ Parser.prototype.tok = function() {
       );
     }
     case 'paragraph': {
-      return this.options.paragraphFn
-        ? this.options.paragraphFn.call(
-            null,
-            this.inline.output(this.token.text),
-          )
-        : <p>
-            {this.inline.output(this.token.text)}
-          </p>;
+      return this.options.paragraphFn ? (
+        this.options.paragraphFn.call(null, this.inline.output(this.token.text))
+      ) : (
+        <p>{this.inline.output(this.token.text)}</p>
+      );
     }
     case 'text': {
-      return this.options.paragraphFn
-        ? this.options.paragraphFn.call(null, this.parseText())
-        : <p>
-            {this.parseText()}
-          </p>;
+      return this.options.paragraphFn ? (
+        this.options.paragraphFn.call(null, this.parseText())
+      ) : (
+        <p>{this.parseText()}</p>
+      );
     }
   }
 };
@@ -1098,12 +1031,7 @@ function marked(src, opt, callback) {
   } catch (e) {
     e.message += '\nPlease report this to https://github.com/chjj/marked.';
     if ((opt || marked.defaults).silent) {
-      return [
-        <p>An error occurred:</p>,
-        <pre>
-          {e.message}
-        </pre>,
-      ];
+      return [<p>An error occurred:</p>, <pre>{e.message}</pre>];
     }
     throw e;
   }
@@ -1149,7 +1077,4 @@ marked.parse = marked;
 
 /* eslint-enable */
 
-export default ({ children, ...props }) =>
-  <div>
-    {marked(children, props)}
-  </div>;
+export default ({ children, ...props }) => <div>{marked(children, props)}</div>;

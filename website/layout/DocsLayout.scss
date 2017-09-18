@@ -1,0 +1,29 @@
+.docMainWrapper {
+  display: flex;
+  flex-flow: row nowrap;
+  margin-bottom: 50px !important;
+  /*margin-bottom: -90px*/
+  :global(.wrapper) {
+    padding-left: 0;
+    padding-right: 0;
+    padding-top: 0;
+  }
+}
+
+.prevnext {
+  margin: 20px 0;
+  @media only screen and (min-device-width: 360px) and (max-device-width: 736px) {
+    height: 40px;
+  }
+}
+
+.next {
+  float: right;
+}
+
+.prev {
+  float: left;
+  @media only screen and (min-device-width: 360px) and (max-device-width: 736px) {
+    display: none;
+  }
+}

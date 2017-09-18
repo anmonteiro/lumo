@@ -30,11 +30,7 @@ function renderBlockImage(image) {
 
 function renderBlockTitle(title) {
   if (title) {
-    return (
-      <h2>
-        {title}
-      </h2>
-    );
+    return <h2>{title}</h2>;
   }
   return null;
 }
@@ -74,9 +70,7 @@ export default class GridBlock extends React.Component {
         {topLeftImage}
         <div className={blockContent}>
           {renderBlockTitle(block.title)}
-          <Marked>
-            {block.content}
-          </Marked>
+          <Marked>{block.content}</Marked>
         </div>
         {bottomRightImage}
       </div>

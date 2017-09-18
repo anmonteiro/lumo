@@ -29,7 +29,10 @@ module.exports = {
             {
               loader: 'css-loader',
               options: {
-                localIdentName: '[local]-[hash:8]',
+                localIdentName:
+                  process.env.NODE_ENV === 'production'
+                    ? '[hash:8]'
+                    : '[name]-[local]-[hash:8]',
                 modules: true,
                 minimize: true,
               },

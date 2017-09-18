@@ -1,8 +1,12 @@
 import React from 'react';
+import classNames from 'classnames';
 import Site from '../components/Site';
 import Container from '../components/Container';
 import Doc from '../components/Doc';
 import DocsSidebar from '../components/DocsSidebar';
+
+import { docMainWrapper, prevnext, prev, next } from './DocsLayout.scss';
+import { button } from '../components/Button.scss';
 
 export default ({ metadata, children, ...props }) => {
   const content = children;
@@ -14,7 +18,7 @@ export default ({ metadata, children, ...props }) => {
       title={metadata.title}
       description={content.trim().split('\n')[0]}
     >
-      <div className="docMainWrapper wrapper">
+      <div className={classNames(docMainWrapper, 'wrapper')}>
         <DocsSidebar metadata={metadata} />
         <Container className="mainContainer">
           <Doc
@@ -22,21 +26,23 @@ export default ({ metadata, children, ...props }) => {
             source={metadata.source}
             title={metadata.title}
           />
-          <div className="docs-prevnext">
-            {metadata.previous &&
+          <div className={prevnext}>
+            {metadata.previous && (
               <a
-                className="docs-prev button"
+                className={classNames(prev, button)}
                 href={`${metadata.previous}.html#content`}
               >
                 ← Previous
-              </a>}
-            {metadata.next &&
+              </a>
+            )}
+            {metadata.next && (
               <a
-                className="docs-next button"
+                className={classNames(next, button)}
                 href={`${metadata.next}.html#content`}
               >
                 Continue Reading →
-              </a>}
+              </a>
+            )}
           </div>
         </Container>
       </div>

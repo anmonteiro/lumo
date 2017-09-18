@@ -1,0 +1,225 @@
+@import '../../src/variables';
+
+nav.toc .navBreadcrumb {
+  box-sizing: border-box;
+  display: flex;
+  flex-flow: row nowrap;
+  font-size: 12px;
+  height: 35px;
+  overflow: hidden;
+  padding: 5px 10px;
+}
+.navBreadcrumb a,
+.navBreadcrumb span {
+  border: 0;
+  color: #393939;
+}
+.navBreadcrumb i {
+  padding: 0 3px;
+}
+nav.toc {
+  width: 224px;
+}
+nav.toc section {
+  padding: 0px;
+  position: relative;
+}
+nav.toc:last-child {
+  padding-bottom: 100px;
+}
+@media only screen and (min-device-width: 360px) and (max-device-width: 736px) {
+  nav.toc {
+    width: 100%;
+  }
+  nav.toc:last-child {
+    padding-bottom: 0;
+  }
+}
+nav.toc .navWrapper {
+  padding: 0;
+}
+nav.toc section .navGroups {
+  display: none;
+  padding: 40px 10px 60px;
+}
+nav.toc .toggleNav {
+  background: #c6c6c6;
+  color: #393939;
+  position: relative;
+  transition: background-color 0.3s, color 0.3s;
+}
+nav.toc .toggleNav .navToggle {
+  cursor: pointer;
+  height: 24px;
+  margin-right: 10px;
+  position: relative;
+  text-align: left;
+  width: 18px;
+}
+nav.toc .toggleNav .navToggle::before,
+nav.toc .toggleNav .navToggle::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  left: 8px;
+  width: 3px;
+  height: 6px;
+  border: 5px solid #393939;
+  border-width: 5px 0;
+  margin-top: -8px;
+  transform: rotate(45deg);
+  z-index: 1;
+}
+nav.toc .toggleNav .navToggle::after {
+  transform: rotate(-45deg);
+}
+nav.toc .toggleNav .navToggle i::before,
+nav.toc .toggleNav .navToggle i::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 2px;
+  background: transparent;
+  border-width: 0 5px 5px;
+  border-style: solid;
+  border-color: transparent #393939;
+  height: 0;
+  margin-top: -7px;
+  opacity: 1;
+  width: 5px;
+  z-index: 10;
+}
+nav.toc .toggleNav .navToggle i::after {
+  border-width: 5px 5px 0;
+  margin-top: 2px;
+}
+.docsSliderActive nav.toc .toggleNav .navToggle::before,
+.docsSliderActive nav.toc .toggleNav .navToggle::after {
+  border-width: 6px 0;
+  height: 0px;
+  margin-top: -6px;
+}
+.docsSliderActive nav.toc .toggleNav .navToggle i {
+  opacity: 0;
+}
+nav.toc .toggleNav .navGroup {
+  background: #adadad;
+  margin: 1px 0;
+}
+nav.toc .toggleNav .navGroup ul {
+  display: none;
+}
+nav.toc .toggleNav .navGroup h3 {
+  background: #adadad;
+  color: #393939;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.2em;
+  margin: 0;
+  padding: 10px;
+  transition: color 0.2s;
+}
+nav.toc .toggleNav .navGroup h3 i:not(:empty) {
+  width: 16px;
+  height: 16px;
+  display: inline-block;
+  box-sizing: border-box;
+  text-align: center;
+  color: rgba(57, 57, 57, 0.5);
+  margin-right: 10px;
+  transition: color 0.2s;
+}
+nav.toc .toggleNav .navGroup h3:hover {
+  color: $desert-mud;
+}
+nav.toc .toggleNav .navGroup h3:hover i:not(:empty) {
+  color: $desert-mud;
+}
+nav.toc .toggleNav .navGroup.navGroupActive {
+  background: #e0e0e0;
+  color: #393939;
+}
+nav.toc .toggleNav .navGroup.navGroupActive ul {
+  display: block;
+  padding-bottom: 10px;
+  padding-top: 10px;
+}
+nav.toc .toggleNav .navGroup.navGroupActive h3 {
+  background: $desert-mud;
+  color: #fff;
+}
+nav.toc .toggleNav ul {
+  padding-left: 0;
+  padding-right: 24px;
+}
+nav.toc .toggleNav ul li {
+  list-style-type: none;
+  padding-bottom: 0;
+  padding-left: 0;
+}
+nav.toc .toggleNav ul li a {
+  border: none;
+  color: #393939;
+  display: inline-block;
+  font-size: 14px;
+  line-height: 1.1em;
+  margin: 2px 10px 5px;
+  padding: 5px 0 2px;
+  transition: color 0.3s;
+}
+nav.toc .toggleNav ul li a:hover,
+nav.toc .toggleNav ul li a:focus {
+  color: $desert-mud;
+}
+nav.toc .toggleNav ul li a.navItemActive {
+  color: $desert-mud;
+  font-weight: 600;
+}
+.docsSliderActive nav.toc .navBreadcrumb {
+  background: #c6c6c6;
+  margin-bottom: 20px;
+  position: fixed;
+  width: 100%;
+}
+nav.toc .toggleNav .navBreadcrumb h2 {
+  border: 0;
+  font-size: inherit;
+  line-height: inherit;
+  margin: 0;
+  padding: 1px 0 0;
+}
+.docsSliderActive nav.toc section .navGroups {
+  display: block;
+}
+
+@media only screen and (min-width: 900px) {
+  nav.toc section .navGroups {
+    padding: 40px 0 0;
+  }
+}
+@media only screen and (min-width: 1024px) {
+  .navToggle {
+    display: none;
+  }
+
+  .docsSliderActive .mainContainer {
+    display: block;
+  }
+
+  .sideNavVisible .navPusher .mainContainer {
+    padding-top: 0;
+  }
+
+  nav.toc section .navGroups {
+    display: block;
+    padding-top: 0px;
+  }
+
+  .docsNavContainer nav.toc .navBreadcrumb {
+    display: none;
+  }
+  .navBreadcrumb h2 {
+    padding: 0 10px;
+  }
+}

@@ -3,7 +3,7 @@
   "extends": [
     "airbnb"
   ],
-.  "plugins" : ["import", "babel"],
+  "plugins" : ["import", "babel"],
   "rules" : {
     "arrow-parens": 0,
     "keyword-spacing": [2, {"before": true, "after": true}],

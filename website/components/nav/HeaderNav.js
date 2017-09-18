@@ -69,12 +69,10 @@ export default class HeaderNav extends Component {
           <header>
             <a href={this.props.baseUrl}>
               <img
-                src={`${this.props.baseUrl}img/jest-outline.svg`}
+                src={`${this.props.baseUrl}img/lumo_outline.svg`}
                 alt="outline"
               />
-              <h2>
-                {this.props.title}
-              </h2>
+              <h2>{this.props.title}</h2>
             </a>
             {this.renderResponsiveNav()}
           </header>

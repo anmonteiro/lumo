@@ -23,7 +23,7 @@ footer {
     display: flex;
     justify-content: space-between;
     max-width: 1080px;
-    margin: 0 auto 3em;
+    margin: 0 auto 2em;
 
     div {
       flex: 1;
@@ -38,8 +38,9 @@ footer {
       opacity: 0.4;
       transition: opacity 0.15s ease-in-out;
 
-      &:hover, &:focus {
-        opacity: 1.0;
+      &:hover,
+      &:focus {
+        opacity: 1;
       }
     }
 
@@ -49,18 +50,21 @@ footer {
       margin: 2px -10px;
       padding: 3px 10px;
 
-      &:hover, &:focus {
+      &:hover,
+      &:focus {
         color: white;
         text-decoration: none;
       }
     }
 
-    h5 > a:hover, h5 > a:focus {
+    h5 > a:hover,
+    h5 > a:focus {
       color: white;
       text-decoration: none;
     }
 
-    h5, h6 {
+    h5,
+    h6 {
       margin: 0 0 10px;
     }
 
@@ -68,24 +72,15 @@ footer {
       color: white;
     }
 
-    h6, h5 > a, h6 > a {
+    h6,
+    h5 > a,
+    h6 > a {
       color: #cca0a7;
     }
 
-    h5 > a, h6 > a {
+    h5 > a,
+    h6 > a {
       margin: 0 -10px;
-    }
-  }
-
-  .fbOpenSource {
-    display: block;
-    margin: 1em auto;
-    opacity: 0.4;
-    transition: opacity 0.15s ease-in-out;
-    width: 170px;
-
-    &:hover {
-      opacity: 1.0;
     }
   }
 

@@ -1,22 +1,22 @@
-/* eslint-disable max-len */
-
 import React from 'react';
+import classNames from 'classnames';
 import Site from '../components/Site';
 import Container from '../components/Container';
 import HomeSplash from '../components/home/HomeSplash';
 import GridBlock from '../components/home/GridBlock';
 import siteConfig from '../siteConfig';
 
+import { moreUsers, productShowcaseSection, logos } from './index.scss';
 import { button } from '../components/Button.scss';
 
 export default () => {
   const showcase = siteConfig.users
     .filter(user => user.pinned)
-    .map(({ infoLink, image, caption }) =>
+    .map(({ infoLink, image, caption }) => (
       <a href={infoLink} key={image}>
         <img src={image} title={caption} alt={caption} />
-      </a>,
-    );
+      </a>
+    ));
 
   return (
     <Site>
@@ -118,16 +118,14 @@ export default () => {
           />
         </Container>
 
-        <div className="productShowcaseSection paddingBottom">
-          <h2>Who's using Jest?</h2>
+        <div className={productShowcaseSection}>
+          <h2>Who's using Lumo?</h2>
           <p>
             Jest is used by teams of all sizes to test web application, node.js
             services, mobile apps, and APIs.
           </p>
-          <div className="logos">
-            {showcase}
-          </div>
-          <div className="more-users">
+          <div className={logos}>{showcase}</div>
+          <div className={moreUsers}>
             <a className={button} href="/users.html" target="_self">
               More Jest Users
             </a>

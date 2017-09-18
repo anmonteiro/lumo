@@ -1,0 +1,18 @@
+.docsNavContainer {
+  background: #c6c6c6;
+  height: 35px;
+  left: 0;
+  position: fixed;
+  width: 100%;
+  z-index: 100;
+
+  @media only screen and (min-width: 1024px) {
+    background: none;
+    box-sizing: border-box;
+    height: auto;
+    margin: 40px 40px 0 0;
+    overflow-y: auto;
+    position: relative;
+    width: 300px;
+  }
+}

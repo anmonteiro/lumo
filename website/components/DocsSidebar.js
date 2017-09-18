@@ -3,6 +3,8 @@ import Metadata from './metadata';
 import Container from './Container';
 import SideNav from './nav/SideNav';
 
+import { docsNavContainer } from './DocsSidebar.scss';
+
 export default class DocsSidebar extends Component {
   static defaultProps = {
     layout: 'docs',
@@ -71,7 +73,7 @@ export default class DocsSidebar extends Component {
 
   render() {
     return (
-      <Container className="docsNavContainer" id="docsNav" wrapper={false}>
+      <Container className={docsNavContainer} id="docsNav" wrapper={false}>
         <SideNav
           root={this.props.root}
           title={this.props.title}

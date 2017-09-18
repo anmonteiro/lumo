@@ -5,7 +5,7 @@ import Marked from './Marked';
 import { editPageLink } from './Doc.scss';
 import { button } from './Button.scss';
 
-export default ({ source, title, content }) =>
+export default ({ source, title, content }) => (
   <div className="post">
     <header className="postHeader">
       <a
@@ -16,13 +16,10 @@ export default ({ source, title, content }) =>
       >
         Edit this Doc
       </a>
-      <h1>
-        {title}
-      </h1>
+      <h1>{title}</h1>
     </header>
     <article>
-      <Marked>
-        {content}
-      </Marked>
+      <Marked>{content}</Marked>
     </article>
-  </div>;
+  </div>
+);

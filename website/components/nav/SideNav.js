@@ -1,6 +1,19 @@
 import React, { Component } from 'react';
 import classNames from 'classnames';
 
+import {
+  toc,
+  toggleNav,
+  navWrapper,
+  navBreadcrumb,
+  navToggle,
+  navGroups,
+  navGroup,
+  navGroupActive,
+  navListItem,
+  navItem,
+} from './SideNav.scss';
+
 function getLink(metadata) {
   if (metadata.permalink) {
     if (metadata.permalink.match(/^https?:/)) {
@@ -22,22 +35,18 @@ export default class SideNav extends Component {
 
   renderCategory(category) {
     return (
-      <div className="navGroup navGroupActive" key={category.name}>
-        <h3>
-          {category.name}
-        </h3>
-        <ul>
-          {category.links.map(this.renderItemLink, this)}
-        </ul>
+      <div className={classNames(navGroup, navGroupActive)} key={category.name}>
+        <h3>{category.name}</h3>
+        <ul>{category.links.map(this.renderItemLink, this)}</ul>
       </div>
     );
   }
 
   renderItemLink(link) {
-    const itemClasses = classNames('navListItem', {
+    const itemClasses = classNames(navListItem, {
       navListItemActive: link.id === this.props.current.id,
     });
-    const linkClasses = classNames('navItem', {
+    const linkClasses = classNames(navItem, {
       navItemActive: link.id === this.props.current.id,
     });
     return (
@@ -51,24 +60,21 @@ export default class SideNav extends Component {
 
   render() {
     return (
-      <nav className="toc">
-        <div className="toggleNav">
-          <section className="navWrapper wrapper">
-            <div className="navBreadcrumb wrapper">
-              <div className="navToggle" id="navToggler">
+      <nav className={toc}>
+        <div className={toggleNav}>
+          <section className={classNames(navWrapper, 'wrapper')}>
+            <div className={classNames(navBreadcrumb, 'wrapper')}>
+              <div className={navToggle} id="navToggler">
                 <i />
               </div>
               <h2>
-                <a href={this.props.root}>
-                  {this.props.title}
-                </a>
+                <a href={this.props.root}>{this.props.title}</a>
                 <i>›</i>
-                <span>
-                  {this.props.current.category}
-                </span>
+                <span>{this.props.current.category}</span>
               </h2>
+              p{' '}
             </div>
-            <div className="navGroups">
+            <div className={navGroups}>
               {this.props.contents.map(this.renderCategory, this)}
             </div>
           </section>

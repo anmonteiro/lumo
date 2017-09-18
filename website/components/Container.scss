@@ -1,6 +1,13 @@
+@import '../src/variables';
+
 .container {
-  &.highlightBackground, &.darkBackground {
-    h1, h2, h3, h4, h5 {
+  &.highlightBackground,
+  &.darkBackground {
+    h1,
+    h2,
+    h3,
+    h4,
+    h5 {
       border-color: white;
       color: white;
     }
@@ -43,7 +50,8 @@
   background: #808080;
   color: #fff;
 
-  a, code {
+  a,
+  code {
     color: #d6b3b8;
   }
 }
@@ -69,7 +77,7 @@
   }
 
   h2 {
-    color: #99424f;
+    color: $dark-blue;
     font-size: 22px;
     line-height: 1em;
     margin-top: 20px;
@@ -78,14 +86,14 @@
   }
 
   h3 {
-    color: #99424f;
+    color: $dark-blue;
     font-size: 18px;
     margin-top: 10px;
     padding: 10px 0;
   }
 
   h4 {
-    color: #99424f;
+    color: $dark-blue;
     font-size: 16px;
     font-weight: 300;
     margin: 0;

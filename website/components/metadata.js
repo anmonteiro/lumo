@@ -2,6 +2,14 @@
 export default {
   "files": [
     {
+      "id": "bla",
+      "title": "BLA",
+      "layout": "docs",
+      "category": "Developers",
+      "permalink": "docs/bla.html",
+      "source": "cljs-self-hosting.md"
+    },
+    {
       "id": "dependencies",
       "title": "Dependencies",
       "layout": "docs",
@@ -45,14 +53,6 @@ export default {
       "permalink": "docs/running-lumo.html",
       "next": "repl",
       "source": "RunningLumo.md"
-    },
-    {
-      "id": "bla",
-      "title": "BLA",
-      "layout": "docs",
-      "category": "Developers",
-      "permalink": "docs/bla.html",
-      "source": "cljs-self-hosting.md"
     }
   ]
 };

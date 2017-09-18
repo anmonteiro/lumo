@@ -1,6 +1,8 @@
+@import '../../src/variables';
+
 .homeContainer {
-  background: #fff;
-  color: #99424f;
+  background: $white;
+  color: $dark-blue;
   text-align: center;
 
   .homeWrapper {
@@ -22,7 +24,7 @@
 .projectTitle {
   font-size: 250%;
   line-height: 1em;
-  font-weight: 400;
+  font-weight: 600;
 
   & > small {
     display: block;
