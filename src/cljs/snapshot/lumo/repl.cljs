@@ -203,6 +203,24 @@
 
 (declare inject-lumo-eval)
 
+(defn- run-sync!
+  "Like cljs.js/run-async!, but with the expectation that cb will be called
+  synchronously within proc. When callbacks are done synchronously, run-async!
+  ends up growing the stack as coll is processed, while this implementation
+  employs recur."
+  [proc coll break? cb]
+  (loop [coll coll]
+    (if (seq coll)
+      (let [cb-val (atom nil)]
+        (proc (first coll) #(reset! cb-val %))
+        (if (break? @cb-val)
+          (cb @cb-val)
+          (recur (rest coll))))
+      (cb nil))))
+
+;; Monkey-patch cljs.js/run-async! to instead be our more stack-efficient run-sync!
+(set! cljs/run-async! run-sync!)
+
 (defn- load-bundled [name path file-path source cb]
   (when-let [cache-json (or (js/$$LUMO_GLOBALS.load (str file-path ".cache.json"))
                             (js/$$LUMO_GLOBALS.load (str path ".cache.json")))]
@@ -251,8 +269,8 @@
           cache-prefix (str cache-dir "/" (munge path) (when macros? MACROS_SUFFIX))]
       (if-let [cached-callback-data (cached-callback-data cache-dir cache-prefix source-data)]
         (cb cached-callback-data)
-        (let [ret {:lang   (filename->lang filename)
-                   :file   filename
+        (let [ret {:lang (filename->lang filename)
+                   :file filename
                    :source (.-source source-data)}]
           (if (or (string/ends-with? filename ".cljs")
                   (string/ends-with? filename ".cljc"))
