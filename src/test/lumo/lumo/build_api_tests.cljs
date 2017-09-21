@@ -337,7 +337,7 @@
         (build/build (build/inputs (path/join inputs "emit_node_requires_test/native_modules.cljs")) opts cenv))
       (is (fs/existsSync (path/join out "emit_node_requires_test/native_modules.js")))
       (is (true? (boolean (re-find #"emit_node_requires_test\.native_modules\.node\$module\$path\.isAbsolute"
-                            (slurp (path/join out "emit_node_requires_test/native_modules.js"))))))
+                                   (slurp (path/join out "emit_node_requires_test/native_modules.js"))))))
       (is (empty? @ws))))
   (test/delete-node-modules))
 
@@ -368,6 +368,21 @@
        (env/default-compiler-env)
        (fn [{:keys [error]}]
          (is (some? error) "Failed compilation should call the callback with some error"))))))
+
+(deftest lumo-273-test
+  (let [out (path/join (test/tmp-dir) "lumo-273-test-out")
+        root "src/test/cljs_build"]
+    (testing ":optimizations :none"
+      (test/delete-out-files out)
+      (build/build
+       (path/join root "test_check")
+       {:main 'hello
+        :optimizations :none
+        :output-to out}
+       (env/default-compiler-env)
+       (fn [ret]
+         (is (nil? ret) "It should successfully compile with :optimizations :none")
+         (test/delete-out-files out))))))
 
 ;; (deftest test-emit-global-requires-cljs-2214
 ;;   (testing "simplest case, require"
