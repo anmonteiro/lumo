@@ -9,23 +9,25 @@ import JSZip from 'jszip';
 import ArrayStream from './array-stream';
 import * as util from './util';
 
-function inferNodeModulesClasspathLibs() {
+function inferNodeModulesClasspathLibs(): string[] {
   const nodeDir = path.resolve(process.cwd(), 'node_modules');
   const modules = fs.readdirSync(nodeDir);
   const result = [];
 
   for (const module of modules) {
-    const pkgJson = JSON.parse(
-      fs.readFileSync(path.join(nodeDir, module, 'package.json'), 'utf8'),
-    );
+    try {
+      const pkgJson = JSON.parse(
+        fs.readFileSync(path.join(nodeDir, module, 'package.json'), 'utf8'),
+      );
 
-    if (pkgJson.directories != null) {
-      const libPath = pkgJson.directories.lib;
+      if (pkgJson.directories != null) {
+        const libPath = pkgJson.directories.lib;
 
-      if (libPath != null) {
-        result.push(path.resolve(nodeDir, module, libPath));
+        if (libPath != null) {
+          result.push(path.resolve(nodeDir, module, libPath));
+        }
       }
-    }
+    } catch (_) {} // eslint-disable-line no-empty
   }
 
   return result;
@@ -33,13 +35,17 @@ function inferNodeModulesClasspathLibs() {
 
 const sourcePaths = {
   manual: new Set([process.cwd()]),
-  get inferred() {
+  // $FlowIssue: doesn't support getters yet
+  get inferred(): string[] {
     delete this.inferred;
-    return (this.inferred = inferNodeModulesClasspathLibs());
+    this.inferred = inferNodeModulesClasspathLibs();
+    return this.inferred;
   },
-  get paths() {
+  // $FlowIssue: doesn't support getters yet
+  get paths(): Set<string> {
     delete this.paths;
-    return (this.paths = new Set([...this.manual, ...this.inferred]));
+    this.paths = new Set([...this.manual, ...this.inferred]);
+    return this.paths;
   },
 };
 
@@ -106,6 +112,7 @@ export function getGoogleClosureCompiler(): Function {
 
 // TODO: cache JARs that we know have a given file / path
 export function readSource(filename: string): ?SourceType {
+  // $FlowIssue: getters not supported
   for (const srcPath of sourcePaths.paths.values()) {
     try {
       if (srcPath.endsWith('.jar')) {
@@ -162,6 +169,7 @@ export function writeCache(filename: string, source: string): ?Error {
 
 export function loadUpstreamJsLibs(): string[] {
   const ret = [];
+  // $FlowIssue: getters not supported
   for (const srcPath of sourcePaths.paths.values()) {
     try {
       if (srcPath.endsWith('.jar')) {
@@ -183,6 +191,7 @@ export function loadUpstreamJsLibs(): string[] {
 
 export function loadUpstreamDataReaders(): { url: string, source: string }[] {
   const ret = [];
+  // $FlowIssue: getters not supported
   for (const srcPath of sourcePaths.paths.values()) {
     for (const filename of ['data_readers.cljs', 'data_readers.cljc']) {
       const url = path.join(srcPath, filename);
@@ -220,6 +229,7 @@ export function resource(filename: string): ?ResourceType {
     };
   }
 
+  // $FlowIssue: getters not supported
   for (const srcPath of sourcePaths.paths.values()) {
     if (srcPath.endsWith('.jar')) {
       const data = fs.readFileSync(srcPath);
@@ -249,6 +259,7 @@ export function resource(filename: string): ?ResourceType {
 }
 
 export function getSourcePaths(): string[] {
+  // $FlowIssue: getters not supported
   return [...sourcePaths.paths];
 }
 
