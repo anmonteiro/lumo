@@ -9,7 +9,39 @@ import JSZip from 'jszip';
 import ArrayStream from './array-stream';
 import * as util from './util';
 
-const sourcePaths = new Set([process.cwd()]);
+function inferNodeModulesClasspathLibs() {
+  const nodeDir = path.resolve(process.cwd(), 'node_modules');
+  const modules = fs.readdirSync(nodeDir);
+  const result = [];
+
+  for (const module of modules) {
+    const pkgJson = JSON.parse(
+      fs.readFileSync(path.join(nodeDir, module, 'package.json'), 'utf8'),
+    );
+
+    if (pkgJson.directories != null) {
+      const libPath = pkgJson.directories.lib;
+
+      if (libPath != null) {
+        result.push(path.resolve(nodeDir, module, libPath));
+      }
+    }
+  }
+
+  return result;
+}
+
+const sourcePaths = {
+  manual: new Set([process.cwd()]),
+  get inferred() {
+    delete this.inferred;
+    return (this.inferred = inferNodeModulesClasspathLibs());
+  },
+  get paths() {
+    delete this.paths;
+    return (this.paths = new Set([...this.manual, ...this.inferred]));
+  },
+};
 
 type SourceType = {|
   source: string,
@@ -74,7 +106,7 @@ export function getGoogleClosureCompiler(): Function {
 
 // TODO: cache JARs that we know have a given file / path
 export function readSource(filename: string): ?SourceType {
-  for (const srcPath of sourcePaths.values()) {
+  for (const srcPath of sourcePaths.paths.values()) {
     try {
       if (srcPath.endsWith('.jar')) {
         const data = fs.readFileSync(srcPath);
@@ -130,7 +162,7 @@ export function writeCache(filename: string, source: string): ?Error {
 
 export function loadUpstreamJsLibs(): string[] {
   const ret = [];
-  for (const srcPath of sourcePaths.values()) {
+  for (const srcPath of sourcePaths.paths.values()) {
     try {
       if (srcPath.endsWith('.jar')) {
         const data = fs.readFileSync(srcPath);
@@ -151,7 +183,7 @@ export function loadUpstreamJsLibs(): string[] {
 
 export function loadUpstreamDataReaders(): { url: string, source: string }[] {
   const ret = [];
-  for (const srcPath of sourcePaths.values()) {
+  for (const srcPath of sourcePaths.paths.values()) {
     for (const filename of ['data_readers.cljs', 'data_readers.cljc']) {
       const url = path.join(srcPath, filename);
 
@@ -188,7 +220,7 @@ export function resource(filename: string): ?ResourceType {
     };
   }
 
-  for (const srcPath of sourcePaths.values()) {
+  for (const srcPath of sourcePaths.paths.values()) {
     if (srcPath.endsWith('.jar')) {
       const data = fs.readFileSync(srcPath);
       const zip = new JSZip().load(data);
@@ -217,7 +249,7 @@ export function resource(filename: string): ?ResourceType {
 }
 
 export function getSourcePaths(): string[] {
-  return [...sourcePaths];
+  return [...sourcePaths.paths];
 }
 
 export function addSourcePaths(srcPaths: string[]): void {
@@ -225,11 +257,11 @@ export function addSourcePaths(srcPaths: string[]): void {
     path.normalize(util.expandPath(srcPath)),
   );
 
-  expanded.forEach((p: string) => sourcePaths.add(p));
+  expanded.forEach((p: string) => sourcePaths.manual.add(p));
 }
 
 export function removeSourcePath(srcPath: string): boolean {
-  return sourcePaths.delete(util.expandPath(srcPath));
+  return sourcePaths.manual.delete(util.expandPath(srcPath));
 }
 
 export function readSourceFromJar({
