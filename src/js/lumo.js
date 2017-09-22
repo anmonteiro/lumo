@@ -1,6 +1,7 @@
 /* @flow */
 
 import fs from 'fs';
+import Module from 'module';
 import path from 'path';
 import { REPLServer } from 'repl';
 import v8 from 'v8';
@@ -10,26 +11,33 @@ import ArrayStream from './array-stream';
 import * as util from './util';
 
 function inferNodeModulesClasspathLibs(): string[] {
-  const nodeDir = path.resolve(process.cwd(), 'node_modules');
-  const modules = fs.readdirSync(nodeDir);
   const result = [];
 
-  for (const module of modules) {
+  // $FlowIssue: it's there
+  for (const nodeDir of Module._nodeModulePaths(process.cwd())) {
     try {
-      const pkgJson = JSON.parse(
-        fs.readFileSync(path.join(nodeDir, module, 'package.json'), 'utf8'),
-      );
+      const modules = fs.readdirSync(nodeDir);
 
-      if (pkgJson.directories != null) {
-        const libPath = pkgJson.directories.lib;
+      for (const moduleName of modules) {
+        try {
+          const pkgJson = JSON.parse(
+            fs.readFileSync(
+              path.join(nodeDir, moduleName, 'package.json'),
+              'utf8',
+            ),
+          );
 
-        if (libPath != null) {
-          result.push(path.resolve(nodeDir, module, libPath));
-        }
+          if (pkgJson.directories != null) {
+            const libPath = pkgJson.directories.lib;
+
+            if (libPath != null) {
+              result.push(path.resolve(nodeDir, moduleName, libPath));
+            }
+          }
+        } catch (_) {} // eslint-disable-line no-empty
       }
     } catch (_) {} // eslint-disable-line no-empty
   }
-
   return result;
 }
 
@@ -43,9 +51,7 @@ const sourcePaths = {
   },
   // $FlowIssue: doesn't support getters yet
   get paths(): Set<string> {
-    delete this.paths;
-    this.paths = new Set([...this.manual, ...this.inferred]);
-    return this.paths;
+    return new Set([...this.manual, ...this.inferred]);
   },
 };
 

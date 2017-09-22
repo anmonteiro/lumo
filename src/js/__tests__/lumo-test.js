@@ -156,10 +156,15 @@ describe('lumo', () => {
       const mockCalls = fs.readFileSync.mock.calls;
 
       expect(source).toBe(null);
-      expect(fs.readFileSync).toHaveBeenCalledTimes(4);
-      expect(mockCalls.map((x: string[]) => x[0])).toEqual(
-        lumoPaths.map((p: string) => path.join(p, 'bar/baz')),
-      );
+      expect(
+        mockCalls
+          .map((x: string[]) => x[0])
+          .filter(x =>
+            new Set(lumoPaths.map((p: string) => path.join(p, 'bar/baz'))).has(
+              x,
+            ),
+          ),
+      ).toEqual(lumoPaths.map((p: string) => path.join(p, 'bar/baz')));
     });
 
     describe('reads JAR archives', () => {
