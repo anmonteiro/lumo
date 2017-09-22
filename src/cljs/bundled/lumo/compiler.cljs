@@ -177,21 +177,25 @@
         source
         (:ns opts)
         (merge opts {:verbose false
-                     :load (fn [{dep :name :as m} cb]
-                             (if (or (not-empty (get-in cenv [::ana/namespaces dep :defs]))
-                                   (contains? (:js-dependency-index cenv) (name dep))
-                                   (ana/node-module-dep? dep)
-                                   (ana/js-module-exists? (name dep))
-                                   (deps/find-classpath-lib dep))
-                               (cb {:lang :js})
-                               (if-let [{:keys [source-file]} (first
-                                                                (filter
-                                                                  #(symbol-identical? dep (:ns %))
-                                                                  (:sources cenv)))]
-                                 (cb {:lang :clj
-                                      :file (util/path source-file)
-                                      :source (slurp source-file)})
-                                 (original-load m cb))))})
+                     :load (fn [{:keys [macros]
+                                 dep :name :as m} cb]
+                             (let [dep (if macros
+                                         (symbol (str dep "$macros"))
+                                         dep)]
+                               (if (or (not-empty (get-in cenv [::ana/namespaces dep :defs]))
+                                     (contains? (:js-dependency-index cenv) (name dep))
+                                     (ana/node-module-dep? dep)
+                                     (ana/js-module-exists? (name dep))
+                                     (deps/find-classpath-lib dep))
+                                 (cb {:lang :js})
+                                 (if-let [{:keys [source-file]} (first
+                                                                  (filter
+                                                                    #(symbol-identical? dep (:ns %))
+                                                                    (:sources cenv)))]
+                                   (cb {:lang :clj
+                                        :file (util/path source-file)
+                                        :source (slurp source-file)})
+                                   (original-load m cb)))))})
         (fn [{:keys [value error] :as m}]
           (if error
             (cb {:error error})
