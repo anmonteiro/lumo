@@ -159,7 +159,7 @@ describe('lumo', () => {
       expect(
         mockCalls
           .map((x: string[]) => x[0])
-          .filter(x =>
+          .filter((x: string) =>
             new Set(lumoPaths.map((p: string) => path.join(p, 'bar/baz'))).has(
               x,
             ),
