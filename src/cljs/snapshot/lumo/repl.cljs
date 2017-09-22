@@ -858,8 +858,10 @@
   ([form]
    (eval form (.-name *ns*)))
   ([form ns]
+   (eval form ns env/*compiler*))
+  ([form ns compiler]
    (let [result (volatile! nil)]
-     (cljs/eval st form
+     (cljs/eval compiler form
        {:ns ns
         :context :expr
         :def-emits-var true}
