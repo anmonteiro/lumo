@@ -46,6 +46,12 @@ If you enjoy Lumo, consider backing or sponsoring the project on
 $ npm install -g lumo-cljs
 ```
 
+If you get a [permission failure](https://github.com/anmonteiro/lumo/issues/206), try this:
+
+```
+$ npm install -g lumo-cljs --unsafe-perm
+```
+
 _Note: the installed binary will be named `lumo` rather than `lumo-cljs`_
 
 ### Via [Homebrew](http://brew.sh/) (macOS)

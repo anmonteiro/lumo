@@ -25,40 +25,6 @@
             path)
   (:import [goog.string format StringBuffer]))
 
-(defmethod cljs.compiler/emit-constant Keyword [x]
-  (if-let [value (and (-> @env/*compiler* :options :emit-constants)
-                      (-> @env/*compiler* ::ana/constant-table x))]
-    (comp/emits "cljs.core." value)
-    (comp/emits-keyword x)))
-
-(defmethod cljs.compiler/emit-constant Symbol [x]
-  (if-let [value (and (-> @env/*compiler* :options :emit-constants)
-                      (-> @env/*compiler* ::ana/constant-table x))]
-    (comp/emits "cljs.core." value)
-    (comp/emits-symbol x)))
-
-(set! cljs.analyzer/register-constant!
-  (fn register-constant!
-    ([val] (register-constant! nil val))
-    ([env val]
-     (when-not (.endsWith (str (-> env :ns :name)) "$macros")
-       (swap! env/*compiler*
-         (fn [cenv]
-           (cond->
-               (-> cenv
-                 (update-in [::ana/constant-table]
-                   (fn [table]
-                     (if (get table val)
-                       table
-                       (assoc table val (ana/gen-constant-id val))))))
-             env (update-in [::ana/namespaces (-> env :ns :name) ::ana/constants]
-                   (fn [{:keys [seen order] :or {seen #{} order []} :as constants}]
-                     (cond-> constants
-                       (not (contains? seen val))
-                       (assoc
-                         :seen (conj seen val)
-                         :order (conj order val))))))))))))
-
 (def name-chars (map char (concat (range 48 57) (range 65 90) (range 97 122))))
 
 (defn random-char []
@@ -861,29 +827,31 @@
       (throw @failed))
     @compiled))
 
-(defn- map-async
-  ([proc coll cb]
-   (map-async proc coll [] cb))
-  ([proc coll accum cb]
-   (if (seq coll)
-     (proc (first coll)
-       (fn [res]
-         (if (:error res)
-           (cb res)
-           (map-async proc (rest coll) (conj accum res) cb))))
-     (cb accum))))
+(defn- map-sync
+  ([proc coll break? cb]
+   (loop [coll coll
+          accum []]
+     (if (seq coll)
+       (let [cb-val (volatile! nil)]
+         (proc (first coll) #(vreset! cb-val %))
+         (if (break? @cb-val)
+           (cb @cb-val)
+           (recur (rest coll) (conj accum @cb-val))))
+       (doto accum cb)))))
 
-(defn mapcat-async
-  ([proc coll cb]
-   (mapcat-async proc coll [] cb))
-  ([proc coll accum cb]
-   (if (seq coll)
-     (proc (first coll)
-       (fn [res]
-         (if (:error res)
-           (cb res)
-           (mapcat-async proc (rest coll) (conj accum res) cb))))
-     (cb (mapcat identity accum)))))
+(defn- mapcat-sync
+  ([proc coll break? cb]
+   (loop [coll coll
+          accum []]
+     (if (seq coll)
+       (let [cb-val (volatile! nil)]
+         (proc (first coll) #(vreset! cb-val %))
+         (if (break? @cb-val)
+           (cb @cb-val)
+           (recur (rest coll) (conj accum @cb-val))))
+       (let [ret (mapcat identity accum)]
+         (cb ret)
+         ret)))))
 
 (defn compile-sources
   "Takes dependency ordered list of IJavaScript compatible maps from parse-ns
@@ -896,7 +864,7 @@
      (util/measure compiler-stats
        "Compile sources"
        (binding [comp/*inputs* (zipmap (map :ns inputs) inputs)]
-         (map-async
+         (map-sync
            (fn [ns-info cb]
              ;; TODO: compile-file calls parse-ns unnecessarily to get ns-info
              ;; TODO: we could mark dependent namespaces for recompile here
@@ -907,7 +875,7 @@
                  ;; - ns-info -> ns -> cljs file relpath -> js relpath
                  (merge opts {:output-file (lcomp/rename-to-js (util/ns->relpath (:ns ns-info)))})
                  cb)))
-           inputs cb))))))
+           inputs :error cb))))))
 
 (defn add-goog-base
   [inputs]

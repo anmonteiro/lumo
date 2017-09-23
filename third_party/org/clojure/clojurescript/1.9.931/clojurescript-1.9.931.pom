@@ -3,7 +3,7 @@
     <groupId>org.clojure</groupId>
     <artifactId>clojurescript</artifactId>
     <!-- Version number will be replaced by script/build -->
-    <version>1.9.927</version>
+    <version>1.9.931</version>
     <packaging>jar</packaging>
     <name>ClojureScript</name>
 
