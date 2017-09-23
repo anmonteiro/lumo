@@ -5,9 +5,11 @@
   {:added "1.0"}
   ([msg expr] `(measure true ~msg ~expr))
   ([enable msg expr]
-    `(if ~enable
-       (let [start# (cljs.core/system-time)
-             ret# ~expr]
-         (debug-prn (str ~msg ", elapsed time:") (- (cljs.core/system-time) start#) "msecs")
-         ret#)
-       ~expr)))
+   `(if ~enable
+      (let [start# (cljs.core/system-time)
+            ret# ~expr]
+        (debug-prn (str ~msg ", elapsed time:")
+          (.toFixed (- (cljs.core/system-time) start#) 2)
+          "msecs")
+        ret#)
+      ~expr)))
