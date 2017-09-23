@@ -11,6 +11,7 @@
 
 - lumo.compiler/cljs-files-in can match dirs ([#270](https://github.com/anmonteiro/lumo/issues/270)).
 - Broken execution of cljs.spec.test.alpha/check ([#273](https://github.com/anmonteiro/lumo/issues/273)).
+- Fix compilation crash with macros & `:optimize-constants true` ([#274](https://github.com/anmonteiro/lumo/issues/274)).
 
 ## [1.8.0-beta](https://github.com/anmonteiro/lumo/compare/1.7.0...1.8.0-beta) (2017-09-16)
 
