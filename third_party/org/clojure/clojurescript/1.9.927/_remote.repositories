@@ -1,5 +1,0 @@
-#NOTE: This is an Aether internal implementation file, its format can be changed without prior notice.
-#Wed Sep 13 21:55:13 PDT 2017
-clojurescript-1.9.927.pom>=
-clojurescript-1.9.927-aot.jar>=
-clojurescript-1.9.927.jar>=

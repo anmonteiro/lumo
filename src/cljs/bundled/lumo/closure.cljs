@@ -25,40 +25,6 @@
             path)
   (:import [goog.string format StringBuffer]))
 
-(defmethod cljs.compiler/emit-constant Keyword [x]
-  (if-let [value (and (-> @env/*compiler* :options :emit-constants)
-                      (-> @env/*compiler* ::ana/constant-table x))]
-    (comp/emits "cljs.core." value)
-    (comp/emits-keyword x)))
-
-(defmethod cljs.compiler/emit-constant Symbol [x]
-  (if-let [value (and (-> @env/*compiler* :options :emit-constants)
-                      (-> @env/*compiler* ::ana/constant-table x))]
-    (comp/emits "cljs.core." value)
-    (comp/emits-symbol x)))
-
-(set! cljs.analyzer/register-constant!
-  (fn register-constant!
-    ([val] (register-constant! nil val))
-    ([env val]
-     (when-not (.endsWith (str (-> env :ns :name)) "$macros")
-       (swap! env/*compiler*
-         (fn [cenv]
-           (cond->
-               (-> cenv
-                 (update-in [::ana/constant-table]
-                   (fn [table]
-                     (if (get table val)
-                       table
-                       (assoc table val (ana/gen-constant-id val))))))
-             env (update-in [::ana/namespaces (-> env :ns :name) ::ana/constants]
-                   (fn [{:keys [seen order] :or {seen #{} order []} :as constants}]
-                     (cond-> constants
-                       (not (contains? seen val))
-                       (assoc
-                         :seen (conj seen val)
-                         :order (conj order val))))))))))))
-
 (def name-chars (map char (concat (range 48 57) (range 65 90) (range 97 122))))
 
 (defn random-char []
