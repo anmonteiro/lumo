@@ -211,12 +211,12 @@
   [proc coll break? cb]
   (loop [coll coll]
     (if (seq coll)
-      (let [cb-val (atom nil)]
-        (proc (first coll) #(reset! cb-val %))
+      (let [cb-val (volatile! nil)]
+        (proc (first coll) #(vreset! cb-val %))
         (if (break? @cb-val)
           (cb @cb-val)
           (recur (rest coll))))
-      (cb nil))))
+      (doto nil cb))))
 
 ;; Monkey-patch cljs.js/run-async! to instead be our more stack-efficient run-sync!
 (set! cljs/run-async! run-sync!)

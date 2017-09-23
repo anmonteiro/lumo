@@ -827,29 +827,31 @@
       (throw @failed))
     @compiled))
 
-(defn- map-async
-  ([proc coll cb]
-   (map-async proc coll [] cb))
-  ([proc coll accum cb]
-   (if (seq coll)
-     (proc (first coll)
-       (fn [res]
-         (if (:error res)
-           (cb res)
-           (map-async proc (rest coll) (conj accum res) cb))))
-     (cb accum))))
+(defn- map-sync
+  ([proc coll break? cb]
+   (loop [coll coll
+          accum []]
+     (if (seq coll)
+       (let [cb-val (volatile! nil)]
+         (proc (first coll) #(vreset! cb-val %))
+         (if (break? @cb-val)
+           (cb @cb-val)
+           (recur (rest coll) (conj accum @cb-val))))
+       (doto accum cb)))))
 
-(defn mapcat-async
-  ([proc coll cb]
-   (mapcat-async proc coll [] cb))
-  ([proc coll accum cb]
-   (if (seq coll)
-     (proc (first coll)
-       (fn [res]
-         (if (:error res)
-           (cb res)
-           (mapcat-async proc (rest coll) (conj accum res) cb))))
-     (cb (mapcat identity accum)))))
+(defn- mapcat-sync
+  ([proc coll break? cb]
+   (loop [coll coll
+          accum []]
+     (if (seq coll)
+       (let [cb-val (volatile! nil)]
+         (proc (first coll) #(vreset! cb-val %))
+         (if (break? @cb-val)
+           (cb @cb-val)
+           (recur (rest coll) (conj accum @cb-val))))
+       (let [ret (mapcat identity accum)]
+         (cb ret)
+         ret)))))
 
 (defn compile-sources
   "Takes dependency ordered list of IJavaScript compatible maps from parse-ns
@@ -862,7 +864,7 @@
      (util/measure compiler-stats
        "Compile sources"
        (binding [comp/*inputs* (zipmap (map :ns inputs) inputs)]
-         (map-async
+         (map-sync
            (fn [ns-info cb]
              ;; TODO: compile-file calls parse-ns unnecessarily to get ns-info
              ;; TODO: we could mark dependent namespaces for recompile here
@@ -873,7 +875,7 @@
                  ;; - ns-info -> ns -> cljs file relpath -> js relpath
                  (merge opts {:output-file (lcomp/rename-to-js (util/ns->relpath (:ns ns-info)))})
                  cb)))
-           inputs cb))))))
+           inputs :error cb))))))
 
 (defn add-goog-base
   [inputs]

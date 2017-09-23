@@ -69,6 +69,6 @@
                     (cb (if (sequential? compiled)
                           compiled
                           [compiled])))))]
-        (closure/mapcat-async compile-input xs cb)))
+        (closure/mapcat-sync compile-input xs :error cb)))
     (-find-sources [_ opts]
       (mapcat #(closure/-find-sources % opts) xs))))
