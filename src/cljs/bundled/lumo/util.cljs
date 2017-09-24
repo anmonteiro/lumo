@@ -17,14 +17,32 @@
   []
   cljs.core/*clojurescript-version*)
 
+(defn line-seq [path]
+  (string/split (io/slurp path) #"\n"))
+
 (defn compiled-by-version [f]
-  #_(with-open [reader (io/reader f)]
-    (let [match (->> reader line-seq first
-                     (re-matches #".*ClojureScript (\d+\.\d+\.\d+).*$"))]
-      (or (and match (second match)) "0.0.0000"))))
+  (let [match (->> f line-seq first
+                (re-matches #".*ClojureScript (\d+\.\d+\.\d+).*$"))]
+    (or (and match (second match)) "0.0.0000")))
+
+(defn build-options [f]
+  (let [match (->> f line-seq first
+                (re-matches #".*ClojureScript \d+\.\d+\.\d+ (.*)$"))]
+    (and match (edn/read-string (second match)))))
 
 (def windows?
   (identical? (os/platform) "win32"))
+
+(defn content-sha
+  ([s]
+   (content-sha s nil))
+  ([s n]
+   (let [digest (crypto/createHash "sha1")
+         _ (.update digest s)
+         sha (.toUpperCase (.digest digest "hex"))]
+     (if-not (nil? n)
+       (apply str (take n sha))
+       sha))))
 
 (defn distinct-by
   ([f coll]
@@ -36,7 +54,7 @@
                          (if (contains? seen v)
                            (recur (rest s) seen)
                            (cons x (step (rest s) (conj seen v)))))))
-                    xs seen)))]
+                   xs seen)))]
      (step coll #{}))))
 
 (defn output-directory
@@ -82,13 +100,11 @@
   (and (goog/isObject x) (= (.-type x) "file")))
 
 (defn last-modified [path]
-  (-> (cond
-        (bundled-resource? path) (js/Date.)
-        (jar-resource? path) (.-date path)
-        (resource? path) (.-mtime (fs/statSync (.-src path)))
-        :else (.-mtime (fs/statSync path)))
-      (.getTime)
-      (/ 1000)))
+  (cond
+    (bundled-resource? path) (js/parseInt (content-sha (.-src path) 10) 16)
+    (jar-resource? path) (.-modified path)
+    (resource? path) (.-mtimeMs (fs/statSync (.-src path)))
+    :else (.-mtimeMs (fs/statSync path))))
 
 (defn changed? [a b]
   (not (== (last-modified a) (last-modified b))))
@@ -177,26 +193,6 @@
           (last (string/split f #"\.jar!/"))
           (strip-user-dir f))))))
 
-(defn content-sha
-  ([s]
-   (content-sha s nil))
-  ([s n]
-   (let [digest (crypto/createHash "sha1")
-         _ (.update digest s)
-         sha (.toUpperCase (.digest digest "hex"))]
-     (if-not (nil? n)
-       (apply str (take n sha))
-       sha))))
-
-(defn line-seq [path]
-  (string/split (io/slurp path) #"\n"))
-
-(defn build-options [f]
-  (let [reader f]
-    (let [match (->> reader line-seq first
-                  (re-matches #".*ClojureScript \d+\.\d+\.\d+ (.*)$"))]
-      (and match (edn/read-string (second match))))))
-
 (defn map-merge [a b]
   (if (and (map? a) (map? b))
     (loop [ks (seq (keys a)) ret a b' b]
@@ -252,7 +248,9 @@
             (throw (ex-info "should never happen!" {:x file-or-resource})))))
 
 (defn set-last-modified [file time]
-  (fs/utimesSync file time time))
+  ;; fs.utimesSync expects seconds
+  (let [secs (js/Math.floor (/ time 1000))]
+    (fs/utimesSync file secs secs)))
 
 (defn levenshtein-distance
   "The the minimum number of single-element edits needed to

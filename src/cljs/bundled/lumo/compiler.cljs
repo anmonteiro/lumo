@@ -24,12 +24,12 @@
   [file-str]
   (cond
     (.endsWith file-str ".cljs")
-    (clojure.string/replace file-str #"\.cljs$" ".js")
+    (string/replace file-str #"\.cljs$" ".js")
 
     (.endsWith file-str ".cljc")
     (if (= "cljs/core.cljc" file-str)
       "cljs/core$macros.js"
-      (clojure.string/replace file-str #"\.cljc$" ".js"))
+      (string/replace file-str #"\.cljc$" ".js"))
 
     :else
     (throw (ex-info
@@ -47,29 +47,33 @@
        (str " " (pr-str (comp/build-affecting-options opts)))))))
 
 (defn requires-compilation?
-   "Return true if the src file requires compilation."
-   ([src dest]
-    (requires-compilation? src dest
-      (when env/*compiler*
-        (:options @env/*compiler*))))
-   ([src dest opts]
-    (let [{:keys [ns requires]} (lana/parse-ns src)]
-      (ensure
-        (or (not (fs/existsSync dest))
-          (util/changed? src dest)
-          (let [version' (util/compiled-by-version dest)
-                version (util/clojurescript-version)]
-            (and version (not= version version')))
-          (and opts
-            (not (and (io/resource "cljs/core.aot.js") (= 'cljs.core ns)))
-            (not= (comp/build-affecting-options opts)
-              (comp/build-affecting-options (util/build-options dest))))
-          (and opts (:source-map opts)
-            (if (= (:optimizations opts) :none)
-              (not (fs/existsSync (str dest ".map")))
-              (not (get-in @env/*compiler* [::comp/compiled-cljs (path/resolve dest)]))))
-          (when-let [recompiled' (and comp/*recompiled* @comp/*recompiled*)]
-            (some requires recompiled')))))))
+  "Return true if the src file requires compilation."
+  ([src dest]
+   (requires-compilation? src dest
+     (when env/*compiler*
+       (:options @env/*compiler*))))
+  ([src dest opts]
+   (let [{:keys [ns requires]} (lana/parse-ns src)]
+     (if (and (symbol-identical? 'cljs.loader ns) (not (contains? opts :cache-key)))
+       false
+       (ensure
+         (or (not (fs/existsSync dest))
+             (util/changed? src dest)
+           (let [version' (util/compiled-by-version dest)
+                 version (util/clojurescript-version)]
+             (and version (not= version version')))
+           (and opts
+             (not (and (io/resource "cljs/core.aot.js") (= 'cljs.core ns)))
+             (not= (comp/build-affecting-options opts)
+                   (comp/build-affecting-options (util/build-options dest))))
+           (and opts (:source-map opts)
+             (if (= (:optimizations opts) :none)
+               ;; TODO: not sure if this is 100% correct, but the self-hosted
+               ;; compiler generates inline source maps
+               false ;; (not (fs/existsSync (str dest ".map")))
+               (not (get-in @env/*compiler* [::compiled-cljs (path/resolve dest)]))))
+           (when-let [recompiled' (and comp/*recompiled* @comp/*recompiled*)]
+             (some requires recompiled'))))))))
 
 (defn with-core-cljs
      "Ensure that core.cljs has been loaded."
@@ -223,7 +227,7 @@
                 (ana/write-analysis-cache ns-name
                   (ana/cache-file src (lana/parse-ns src) output-dir :write)
                   src))
-            (spit dest value)
+            (spit dest (str (compiled-by-string opts) "\n" value))
             ret))))))
 
 (defn compile-file*
@@ -291,7 +295,7 @@
                           true (dissoc :checked-arrays))
                         opts)]
              (if (or (requires-compilation? src-file dest-file opts)
-                   (:force opts))
+                     (:force opts))
                (do
                  (util/mkdirs dest-file)
                  (when (and (get-in nses [ns :defs])
@@ -306,9 +310,9 @@
                  ;; populate compilation environment with analysis information
                  ;; when constants are optimized
                  (when (or (and (= ns 'cljs.loader)
-                             (not (contains? opts :cache-key)))
-                         (and (true? (:optimize-constants opts))
-                           (nil? (get-in nses [ns :defs]))))
+                                (not (contains? opts :cache-key)))
+                           (and (true? (:optimize-constants opts))
+                                (nil? (get-in nses [ns :defs]))))
                    (with-core-cljs opts (fn [] (lana/analyze-file src-file opts))))
                  (assoc ns-info :out-file dest-file))))
            (catch js/Error e

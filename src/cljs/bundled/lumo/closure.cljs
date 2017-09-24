@@ -515,11 +515,8 @@
         (-compile file-on-disk opts))
       ;; have to call compile-file as it includes more IJavaScript
       ;; information than ana/parse-ns
-
-      ;; TODO: FIXME: the path won't really have .jar at the end, just
       (compile-file
-        (path/join (util/output-directory opts)
-          (last (string/split jar-file #"\.jar!/")))
+        (path/join (util/output-directory opts) (path-from-jarfile jar-file))
         opts))))
 
 (defn find-jar-sources
@@ -839,10 +836,10 @@
                            (:source-forms ns-info))
                ;; - ns-info -> ns -> cljs file relpath -> js relpath
                (merge opts {:output-file (lcomp/rename-to-js (util/ns->relpath (:ns ns-info)))})))))))))
+
 (defn add-goog-base
   [inputs]
-  (cons (javascript-file nil (io/resource "goog/base.js") ["goog"] nil)
-        inputs))
+  (cons (javascript-file nil (io/resource "goog/base.js") ["goog"] nil) inputs))
 
 (defn add-js-sources
   "Given list of IJavaScript objects, add foreign-deps, constants-table
