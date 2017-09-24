@@ -159,18 +159,19 @@
   (let [out (path/join (test/tmp-dir) "cljs-1537-test-out")
         root "src/test/cljs_build"]
     (test/delete-out-files out)
-    (build/build
-      (build/inputs
-        (path/join root "circular_deps" "a.cljs")
-        (path/join root "circular_deps" "b.cljs"))
-      {:main 'circular-deps.a
-       :optimizations :none
-       :output-to out}
-      (env/default-compiler-env)
-      (fn [{:keys [error]}]
-        (is (some? error))
+    (try
+      (build/build
+        (build/inputs
+          (path/join root "circular_deps" "a.cljs")
+          (path/join root "circular_deps" "b.cljs"))
+        {:main 'circular-deps.a
+         :optimizations :none
+         :output-to out}
+        (env/default-compiler-env))
+      (is false)
+      (catch js/Error error
         (is (re-find  #"Circular dependency detected circular-deps.b -> circular-deps.a -> circular-deps.b"
-              (.-message error)))))))
+              (-> error .-cause .-message)))))))
 
 ;; (defn loader-test-project [output-dir]
 ;;   {:inputs (str (io/file "src" "test" "cljs_build" "loader_test"))
@@ -342,47 +343,45 @@
   (test/delete-node-modules))
 
 (deftest cljs-test-compilation
-
   (testing "success"
     (let [out (path/join (test/tmp-dir) "compilation-test-out")
           root "src/test/cljs_build"]
       (test/delete-out-files out)
-      (build/build
-       (path/join root "hello" "world.cljs")
-       {:main 'hello
-        :optimizations :none
-        :output-to out}
-       (env/default-compiler-env)
-       (fn [ret]
-         (is (nil? ret) "Successful compilation should call the callback with nil")))))
+      (is (nil? (build/build
+                  (path/join root "hello" "world.cljs")
+                  {:main 'hello
+                   :optimizations :none
+                   :output-to out}
+                  (env/default-compiler-env)))
+        "Successful compilation should return")))
 
   (testing "failure"
     (let [out (path/join (test/tmp-dir) "compilation-test-out")
           root "src/test/cljs_build"]
       (test/delete-out-files out)
-      (build/build
-       (path/join root "hello" "broken_world.cljs")
-       {:main 'hello
-        :optimizations :none
-        :output-to out}
-       (env/default-compiler-env)
-       (fn [{:keys [error]}]
-         (is (some? error) "Failed compilation should call the callback with some error"))))))
+      (try
+        (build/build
+          (path/join root "hello" "broken_world.cljs")
+          {:main 'hello
+           :optimizations :none
+           :output-to out}
+          (env/default-compiler-env))
+        (is false)
+        (catch js/Error e
+          (is (some? e) "Failed compilation should throw"))))))
 
 (deftest lumo-273-test
   (let [out (path/join (test/tmp-dir) "lumo-273-test-out")
         root "src/test/cljs_build"]
     (testing ":optimizations :none"
       (test/delete-out-files out)
-      (build/build
-       (path/join root "test_check")
-       {:main 'hello
-        :optimizations :none
-        :output-to out}
-       (env/default-compiler-env)
-       (fn [ret]
-         (is (nil? ret) "It should successfully compile with :optimizations :none")
-         (test/delete-out-files out))))))
+      (is (nil? (build/build
+                  (path/join root "test_check")
+                  {:main 'hello
+                   :optimizations :none
+                   :output-to out}
+                  (env/default-compiler-env))) "It should successfully compile with :optimizations :none")
+        (test/delete-out-files out))))
 
 ;; (deftest test-emit-global-requires-cljs-2214
 ;;   (testing "simplest case, require"

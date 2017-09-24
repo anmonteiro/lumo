@@ -37,21 +37,20 @@
 (defn build
   "Given a source which can be compiled, produce runnable JavaScript."
   ([source opts]
-   (build source opts nil (fn [& args] args)))
-  ([source opts compiler-env-or-cb]
-   (if (goog/isFunction compiler-env-or-cb)
-     (build source opts nil compiler-env-or-cb)
-     (build source opts compiler-env-or-cb (fn [& args] args))))
-  ([source opts compiler-env cb]
+   (build source opts
+     (if-not (nil? env/*compiler*)
+       env/*compiler*
+       (env/default-compiler-env
+         ;; need to dissoc :foreign-libs since we won't know what overriding
+         ;; foreign libspecs are referring to until after add-implicit-options
+         ;; - David
+         (closure/add-externs-sources (dissoc opts :foreign-libs))))))
+  ([source opts compiler-env]
    (doseq [[unknown-opt suggested-opt] (util/unknown-opts (set (keys opts)) closure/known-opts)]
      (when suggested-opt
        (println (str "WARNING: Unknown compiler option '" unknown-opt "'. Did you mean '" suggested-opt "'?"))))
    (binding [ana/*cljs-warning-handlers* (:warning-handlers opts ana/*cljs-warning-handlers*)]
-     (closure/build source opts
-                    (if (some? compiler-env)
-                      compiler-env
-                      (env/default-compiler-env
-                       (closure/add-externs-sources opts))) cb))))
+     (closure/build source opts compiler-env))))
 
 (defn inputs
   "Given a list of directories and files, return a compilable object that may
@@ -62,13 +61,12 @@
     (-paths [_]
       xs)
     closure/Compilable
-    (-compile [_ opts cb]
-      (letfn [(compile-input [x cb]
-                (closure/-compile x opts
-                  (fn [compiled]
-                    (cb (if (sequential? compiled)
-                          compiled
-                          [compiled])))))]
-        (closure/mapcat-sync compile-input xs :error cb)))
+    (-compile [_ opts]
+      (letfn [(compile-input [x]
+                (let [compiled (closure/-compile x opts)]
+                  (if (sequential? compiled)
+                    compiled
+                    [compiled])))]
+        (mapcat compile-input xs)))
     (-find-sources [_ opts]
       (mapcat #(closure/-find-sources % opts) xs))))

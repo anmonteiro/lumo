@@ -100,23 +100,15 @@ can basically just replace the namespace with `lumo.build.api`:
 (lumo.build.api/build "src" {:output-to "out/main.js"})
 ```
 
-The Lumo compiler is completely asynchronous whereas the ClojureScript compiler
-is sync. This means that you can pass a callback in:
+The following example also shows how to use multiple source folders.
 
 ```clojure
-(require '[lumo.build.api :as api])
+(require '[lumo.build.api :as b])
 
-(api/build
- (api/inputs "src1" "src2") ;; variadic
- {:output-to "out/main.js"}
- (fn [result]
-   (if-let [err (:error result)]
-     (println (.-stack err))
-     (do-something-else result))))
+(b/build
+ (b/inputs "src1" "src2") ;; variadic
+ {:output-to "out/main.js"})
  ```
-
-The above example also shows how to use multiple source folders. The compiler
-returns a map containing an `:error` key if something went wrong.
 
 ## Building
 

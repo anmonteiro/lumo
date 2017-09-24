@@ -167,8 +167,9 @@
   (util/mkdirs dest)
   (spit dest (with-out-str (comp/emit-constants-table table))))
 
-(defn emit-source [src dest ext opts cb]
+(defn emit-source [src dest ext opts]
   (let [source (slurp src)
+        cb-val (volatile! nil)
         cenv @env/*compiler*
         original-load cljs/*load-fn*]
     (binding [ana/*cljs-dep-set* (with-meta #{} {:dep-path []})]
@@ -196,117 +197,123 @@
                                         :file (util/path source-file)
                                         :source (slurp source-file)})
                                    (original-load m cb)))))})
-        (fn [{:keys [value error] :as m}]
-          (if error
-            (cb {:error error})
-            (let [sm-data (when comp/*source-map-data* @comp/*source-map-data*)
-                  {:keys [ns ast] :as ns-info} (lana/parse-ns src)
-                  ret     (merge
-                            ns-info
-                            ;; All the necessary keys like :requires, :provides,
-                            ;; etc... are already returned (as JavaScriptFile) by
-                            ;; the above lana/parse-ns
-                            {:file dest}
-                            (when sm-data
-                              {:source-map (:source-map sm-data)}))]
-              ;; don't need to call this because `cljs.js/compile-str` already
-              ;; generates inline source maps
-              ;; (when (and sm-data (= :none (:optimizations opts)))
-              ;;   (emit-source-map src dest sm-data
-              ;;     (merge opts {:ext ext :provides [ns-name]})))
-              (let [path (path/resolve dest)]
-                (swap! env/*compiler* assoc-in [::comp/compiled-cljs path] ret))
-              (let [{:keys [output-dir cache-analysis]} opts]
-                #_(when (and (true? cache-analysis) output-dir)
-                    (ana/write-analysis-cache ns-name
-                      (ana/cache-file src (lana/parse-ns src) output-dir :write)
-                      src))
-                (spit dest value)
-                (cb ret)))))))))
+        #(vreset! cb-val %)))
+    (let [{:keys [value error]} @cb-val]
+      (if error
+        (throw error)
+        (let [sm-data (when comp/*source-map-data* @comp/*source-map-data*)
+              {:keys [ns ast] :as ns-info} (lana/parse-ns src)
+              ret     (merge
+                        ns-info
+                        ;; All the necessary keys like :requires, :provides,
+                        ;; etc... are already returned (as JavaScriptFile) by
+                        ;; the above lana/parse-ns
+                        {:file dest}
+                        (when sm-data
+                          {:source-map (:source-map sm-data)}))]
+          ;; don't need to call this because `cljs.js/compile-str` already
+          ;; generates inline source maps
+          ;; (when (and sm-data (= :none (:optimizations opts)))
+          ;;   (emit-source-map src dest sm-data
+          ;;     (merge opts {:ext ext :provides [ns-name]})))
+          (let [path (path/resolve dest)]
+            (swap! env/*compiler* assoc-in [::comp/compiled-cljs path] ret))
+          (let [{:keys [output-dir cache-analysis]} opts]
+            #_(when (and (true? cache-analysis) output-dir)
+                (ana/write-analysis-cache ns-name
+                  (ana/cache-file src (lana/parse-ns src) output-dir :write)
+                  src))
+            (spit dest value)
+            ret))))))
 
 (defn compile-file*
-     ([src dest cb]
-      (compile-file* src dest
-        (when env/*compiler*
-          (:options @env/*compiler*)) cb))
-     ([src dest opts cb]
-      (ensure
-        (with-core-cljs opts
-          (fn []
-            (when (or ana/*verbose* (:verbose opts))
-              (util/debug-prn "Compiling" (str src)))
-            (let [ext (util/ext src)
-                  {:keys [ns] :as ns-info} (lana/parse-ns src)]
-              (if-let [cached (cached-core ns ext opts)]
-                (cb (emit-cached-core src dest cached opts))
-                (let [opts (if (macro-ns? ns ext opts)
-                             (assoc opts :macros-ns true)
-                             opts)]
-                  (emit-source src dest ext (assoc opts :ns ns)
-                    (fn [ret]
-                      (when-not (:error ret)
-                        (util/set-last-modified dest (util/last-modified src)))
-                      (cb ret)))))))))))
+  ([src dest]
+   (compile-file* src dest
+     (when env/*compiler*
+       (:options @env/*compiler*))))
+  ([src dest opts]
+   (ensure
+     (with-core-cljs opts
+       (fn []
+         (when (and (or ana/*verbose* (:verbose opts))
+                    (not (:compiler-stats opts)))
+           (util/debug-prn "Compiling" (str src)))
+         (util/measure (and (or ana/*verbose* (:verbose opts))
+                            (:compiler-stats opts))
+           (str "Compiling " src)
+           (let [ext (util/ext src)
+                 {:keys [ns] :as ns-info} (lana/parse-ns src)]
+             (if-let [cached (cached-core ns ext opts)]
+               (emit-cached-core src dest cached opts)
+               (let [opts (if (macro-ns? ns ext opts)
+                            (assoc opts :macros-ns true)
+                            opts)
+                     ret (emit-source src dest ext opts)]
+                 (util/set-last-modified dest (util/last-modified src))
+                 ret)))))))))
 
 (defn compile-file
-   "Compiles src to a file of the same name, but with a .js extension,
-    in the src file's directory.
-    With dest argument, write file to provided location. If the dest
-    argument is a file outside the source tree, missing parent
-    directories will be created. The src file will only be compiled if
-    the dest file has an older modification time.
-    Both src and dest may be either a String or a File.
-    Returns a map containing {:ns .. :provides .. :requires .. :file ..}.
-    If the file was not compiled returns only {:file ...}"
-   ([src cb]
-    (let [dest (rename-to-js src)]
-      (compile-file src dest
-        (when env/*compiler*
-          (:options @env/*compiler*)) cb)))
-   ([src dest cb]
-    (compile-file src dest
-      (when env/*compiler*
-        (:options @env/*compiler*)) cb))
-   ([src dest opts cb]
-    {:post [map?]}
-    (binding [ana/*file-defs*     (atom #{})
-              ;*unchecked-if*  false
-              ana/*cljs-warnings* ana/*cljs-warnings*]
-      (let [nses      (get @env/*compiler* ::ana/namespaces)
-            src-file  src
-            dest-file dest
-            opts      (merge {:optimizations :none} opts)]
-        (if (fs/existsSync src-file)
-          (try
-            (let [{ns :ns :as ns-info} (lana/parse-ns src-file dest-file opts)
-                  opts (if (and (not= (util/ext src) "clj") ;; skip cljs.core macro-ns
-                             (= ns 'cljs.core)
-                             (not (false? (:static-fns opts))))
-                         (assoc opts :static-fns true)
-                         opts)]
-              (if (or (requires-compilation? src-file dest-file opts)
-                      (:force opts))
-                (do
-                  (util/mkdirs dest-file)
-                  (when (and (get-in nses [ns :defs])
-                          (not= 'cljs.core ns)
-                          (not= :interactive (:mode opts)))
-                    (swap! env/*compiler* update-in [::ana/namespaces] dissoc ns))
-                  (compile-file* src-file dest-file opts
-                    (fn [ret]
-                      (when (and (not (:error ret)) comp/*recompiled*)
-                        (swap! comp/*recompiled* conj ns))
-                      (cb ret))))
-                (do
-                  ;; populate compilation environment with analysis information
-                  ;; when constants are optimized
-                  (when (and (true? (:optimize-constants opts))
-                          (nil? (get-in nses [ns :defs])))
-                    (with-core-cljs opts (fn [] (lana/analyze-file src-file opts))))
-                  ns-info)))
-            (catch :default e
-              (cb {:error (ex-info (str "failed compiling file:" src) {:file src} e)})))
-          (cb {:error (ex-info (str "The file " src " does not exist.") {:file src})}))))))
+  "Compiles src to a file of the same name, but with a .js extension,
+   in the src file's directory.
+   With dest argument, write file to provided location. If the dest
+   argument is a file outside the source tree, missing parent
+   directories will be created. The src file will only be compiled if
+   the dest file has an older modification time.
+   Both src and dest may be either a String or a File.
+   Returns a map containing {:ns .. :provides .. :requires .. :file ..}.
+   If the file was not compiled returns only {:file ...}"
+  ([src]
+   (let [dest (rename-to-js src)]
+     (compile-file src dest
+       (when env/*compiler*
+         (:options @env/*compiler*)))))
+  ([src dest]
+   (compile-file src dest
+     (when env/*compiler*
+       (:options @env/*compiler*))))
+  ([src dest opts]
+   {:post [map?]}
+   (binding [ana/*file-defs*        (atom #{})
+             ;; ana/*unchecked-if*     false
+             ;; ana/*unchecked-arrays* false
+             ana/*cljs-warnings*    ana/*cljs-warnings*]
+     (let [nses      (get @env/*compiler* ::ana/namespaces)
+           src-file  src
+           dest-file dest
+           opts      (merge {:optimizations :none} opts)]
+       (if (fs/existsSync src-file)
+         (try
+           (let [{ns :ns :as ns-info} (lana/parse-ns src-file dest-file opts)
+                 opts (if (and (not= (util/ext src) "clj") ;; skip cljs.core macro-ns
+                            (= ns 'cljs.core))
+                        (cond-> opts
+                          (not (false? (:static-fns opts))) (assoc :static-fns true)
+                          true (dissoc :checked-arrays))
+                        opts)]
+             (if (or (requires-compilation? src-file dest-file opts)
+                   (:force opts))
+               (do
+                 (util/mkdirs dest-file)
+                 (when (and (get-in nses [ns :defs])
+                         (not= 'cljs.core ns)
+                         (not= :interactive (:mode opts)))
+                   (swap! env/*compiler* update-in [::ana/namespaces] dissoc ns))
+                 (let [ret (compile-file* src-file dest-file opts)]
+                   (when comp/*recompiled*
+                     (swap! comp/*recompiled* conj ns))
+                   ret))
+               (do
+                 ;; populate compilation environment with analysis information
+                 ;; when constants are optimized
+                 (when (or (and (= ns 'cljs.loader)
+                             (not (contains? opts :cache-key)))
+                         (and (true? (:optimize-constants opts))
+                           (nil? (get-in nses [ns :defs]))))
+                   (with-core-cljs opts (fn [] (lana/analyze-file src-file opts))))
+                 (assoc ns-info :out-file dest-file))))
+           (catch js/Error e
+             (throw (ex-info (str "failed compiling file:" src) {:file src} e))))
+         (throw (js/Error. (str "The file " src " does not exist."))))))))
 
 (defn compile-root
   "Looks recursively in src-dir for .cljs files and compiles them to

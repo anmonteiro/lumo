@@ -24,9 +24,6 @@
 The Lumo build API has been enhanced significantly and now includes JS module
 processing, preloads, and is mostly at feature parity with the JVM ClojureScript
 build API.
-One noteworthy feature is the possibility of passing a callback to
-`lumo.build.api/build`: Lumo compilation is intrinsically asynchronous,
-therefore now it is possible to pass a callback.
 
 ### Changes
 
