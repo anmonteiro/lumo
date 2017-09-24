@@ -38,13 +38,14 @@
   "Given a source which can be compiled, produce runnable JavaScript."
   ([source opts]
    (build source opts
-     (if-not (nil? env/*compiler*)
-       env/*compiler*
-       (env/default-compiler-env
-         ;; need to dissoc :foreign-libs since we won't know what overriding
-         ;; foreign libspecs are referring to until after add-implicit-options
-         ;; - David
-         (closure/add-externs-sources (dissoc opts :foreign-libs))))))
+     ;; We can't fully honor the JVM CLJS build API here wrt. to a bound compiler
+     ;; environment because we wanna keep Lumo's evaluation environment separate
+     ;; from a project's compilation environment
+     (env/default-compiler-env
+       ;; need to dissoc :foreign-libs since we won't know what overriding
+       ;; foreign libspecs are referring to until after add-implicit-options
+       ;; - David
+       (closure/add-externs-sources (dissoc opts :foreign-libs)))))
   ([source opts compiler-env]
    (doseq [[unknown-opt suggested-opt] (util/unknown-opts (set (keys opts)) closure/known-opts)]
      (when suggested-opt

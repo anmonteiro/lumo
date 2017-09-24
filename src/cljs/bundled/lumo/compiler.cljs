@@ -174,7 +174,6 @@
 (defn emit-source [src dest ext opts]
   (let [source (slurp src)
         cb-val (volatile! nil)
-        cenv @env/*compiler*
         original-load cljs/*load-fn*]
     (binding [ana/*cljs-dep-set* (with-meta #{} {:dep-path []})]
       (cljs/compile-str
@@ -184,7 +183,8 @@
         (merge opts {:verbose false
                      :load (fn [{:keys [macros]
                                  dep :name :as m} cb]
-                             (let [dep (if macros
+                             (let [cenv @env/*compiler*
+                                   dep (if macros
                                          (symbol (str dep "$macros"))
                                          dep)]
                                (if (or (not-empty (get-in cenv [::ana/namespaces dep :defs]))
