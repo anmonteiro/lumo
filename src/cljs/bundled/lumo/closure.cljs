@@ -115,7 +115,9 @@
     :pretty-print :print-input-delimiter :pseudo-names :recompile-dependents :source-map
     :source-map-inline :source-map-timestamp :static-fns :target :verbose :warnings
     :emit-constants :ups-externs :ups-foreign-libs :ups-libs :warning-handlers :preloads
-    :browser-repl :cache-analysis-format :infer-externs})
+    :browser-repl :cache-analysis-format :infer-externs :closure-generate-exports :npm-deps
+    :fn-invoke-direct :checked-arrays :closure-module-roots :rewrite-polyfills :use-only-custom-externs
+    :watch :watch-error-fn :watch-fn :install-deps :process-shim :rename-prefix :rename-prefix-namespace})
 
 #_(def string->charset
   {"iso-8859-1" StandardCharsets/ISO_8859_1
@@ -405,7 +407,6 @@
   (let [source (slurp f)
         m (deps/parse-js-ns (string/split-lines source))]
     (map->javascript-file (assoc m :file f))))
-
 
 ;; Compile
 ;; =======
@@ -707,7 +708,7 @@
   "Returns the constants table as a JavaScriptFile."
   [opts]
   (let [url (constants-filename opts)]
-    (javascript-file nil url url [(str ana/constants-ns-sym)] ["cljs.core"] nil nil)))
+    (javascript-file nil url [(str ana/constants-ns-sym)] ["cljs.core"])))
 
 (defn add-dependencies
   "Given one or more IJavaScript objects in dependency order, produce
@@ -718,21 +719,20 @@
         requires      (set (mapcat deps/-requires inputs))
         required-cljs (clojure.set/difference (cljs-dependencies opts requires) inputs)
         required-js   (js-dependencies opts
-                        (into (set (mapcat deps/-requires required-cljs)) requires))
-        provided      (set (mapcat deps/-provides (clojure.set/union inputs required-cljs required-js)))
-        unprovided    (clojure.set/difference requires provided)]
-    (when (seq unprovided)
-      (ana/warning :unprovided @env/*compiler* {:unprovided (sort unprovided)}))
+                        (into (set (mapcat deps/-requires required-cljs)) requires))]
     (cons
       (javascript-file nil (io/resource "goog/base.js") ["goog"] nil)
       (deps/dependency-order
         (concat
           (map
-            (fn [{:keys [foreign url file provides requires] :as js-map}]
-              (let [url (or url (io/resource file))]
-                (merge
-                  (javascript-file foreign url provides requires)
-                  js-map)))
+            (fn [{:keys [type foreign url file provides requires] :as js-map}]
+              ;; ignore :seed inputs, only for REPL - David
+              (if (not= :seed type)
+                (let [url (or url (io/resource file))]
+                 (merge
+                   (javascript-file foreign url provides requires)
+                   js-map))
+                js-map))
             required-js)
           (when (-> @env/*compiler* :options :emit-constants)
             [(constants-javascript-file opts)])
@@ -1205,7 +1205,7 @@
               sources name
               (assoc opts
                 :preamble-line-count
-                (+ (- (count (.split #"\r?\n" (make-preamble opts) -1)) 1)
+                (+ (- (count (string/split (make-preamble opts) #"\r?\n" -1)) 1)
                    (if (:output-wrapper opts) 1 0))))))
         source)
       (report-failure result))))
@@ -1374,7 +1374,7 @@
                  0)
                :foreign-deps-line-count
                (if fdeps-str
-                 (- (count (.split #"\r?\n" fdeps-str -1)) 1)
+                 (- (count (string/split fdeps-str #"\r?\n" -1)) 1)
                  0)})))))))
 
 (defn lib-rel-path [{:keys [lib-path url provides] :as ijs}]
@@ -1530,12 +1530,15 @@
   "Returns true if IJavaScript instance needs to be written/copied to output
   directory. True when in memory, in a JAR, or if foreign library."
   [js]
-  (let [url (deps/-url js)]
-    (or (not url)
+  (try
+    (let [url (deps/-url js)]
+      (or (not url)
         (= (.-type url) "jar")
         (= (.-type url) "bundled")
         (deps/-closure-lib? js)
-        (deps/-foreign? js))))
+        (deps/-foreign? js)))
+    (catch js/Error e
+      (throw (js/Error. (str "Could not write JavaScript " (pr-str js)))))))
 
 (defn source-on-disk
   "Ensure that the given IJavaScript exists on disk in the output directory.
@@ -1545,17 +1548,18 @@
     (write-javascript opts js)
     ;; always copy original ClojureScript sources to the output directory
     ;; when source maps enabled
-    (let [out-file (when-let [ns (and (:source-map opts)
-                                      (:source-url js)
-                                      (first (:provides js)))]
+    (let [source-url  (:source-url js)
+          out-file (when-let [ns (and (:source-map opts)
+                                   source-url
+                                   (first (:provides js)))]
                      (path/join (util/output-directory opts)
-                       (util/ns->relpath ns (util/ext (:source-url js)))))
-          source-url (:source-url js)]
+                       (util/ns->relpath ns (util/ext source-url))))]
       (when (and out-file source-url
-                 (or (not (fs/existsSync out-file))
-                     (util/changed? source-url out-file)))
+              (or (not (fs/existsSync out-file))
+                (util/changed? source-url out-file)))
         (when (or ana/*verbose* (:verbose opts))
           (util/debug-prn "Copying" (str source-url) "to" (str out-file)))
+        (util/mkdirs out-file)
         (io/copy source-url out-file)
         (util/set-last-modified out-file (util/last-modified source-url)))
       js)))
@@ -2191,7 +2195,7 @@
                                                     (filter foreign-source? js-sources))
                                         all-opts  (assoc all-opts
                                                     :foreign-deps-line-count
-                                                    (- (count (.split #"\r?\n" fdeps-str -1)) 1))]
+                                                    (- (count (string/split fdeps-str #"\r?\n" -1)) 1))]
                                     (->>
                                       (util/measure compiler-stats
                                         (str "Optimizing " (count js-sources) " sources")
