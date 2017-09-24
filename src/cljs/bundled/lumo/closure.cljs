@@ -709,7 +709,7 @@
   (let [url (constants-filename opts)]
     (javascript-file nil url url [(str ana/constants-ns-sym)] ["cljs.core"] nil nil)))
 
-#_(defn add-dependencies
+(defn add-dependencies
   "Given one or more IJavaScript objects in dependency order, produce
   a new sequence of IJavaScript objects which includes the input list
   plus all dependencies in dependency order."
@@ -2336,10 +2336,10 @@
 #_(defn output-directory [opts]
   (util/output-directory opts))
 
-#_(defn parse-js-ns [f]
-  (deps/parse-js-ns (line-seq (io/reader f))))
+(defn parse-js-ns [f]
+  (deps/parse-js-ns (util/line-seq f)))
 
-#_(defn ^File src-file->target-file
+(defn src-file->target-file
   ([src]
    (src-file->target-file src
      (when env/*compiler*
@@ -2350,7 +2350,7 @@
         (util/output-directory opts))
       (lana/parse-ns src))))
 
-#_(defn ^String src-file->goog-require
+(defn src-file->goog-require
   ([src] (src-file->goog-require src {:wrap true}))
   ([src {:keys [wrap all-provides macros-ns] :as options}]
     (let [goog-ns
@@ -2362,7 +2362,7 @@
             "js" (cond-> (:provides (parse-js-ns src))
                    (not all-provides) first)
             (throw
-              (IllegalArgumentException.
+              (js/Error.
                 (str "Can't create goog.require expression for " src))))]
       (if (and (not all-provides) wrap)
         (if (:reload options)
