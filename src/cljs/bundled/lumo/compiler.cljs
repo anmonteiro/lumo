@@ -71,7 +71,7 @@
                ;; TODO: not sure if this is 100% correct, but the self-hosted
                ;; compiler generates inline source maps
                false ;; (not (fs/existsSync (str dest ".map")))
-               (not (get-in @env/*compiler* [::compiled-cljs (path/resolve dest)]))))
+               (not (get-in @env/*compiler* [::comp/compiled-cljs (path/resolve dest)]))))
            (when-let [recompiled' (and comp/*recompiled* @comp/*recompiled*)]
              (some requires recompiled'))))))))
 
@@ -85,8 +85,7 @@
       {:pre [(or (nil? opts) (map? opts))
              (fn? body)]}
       (when-not (get-in @env/*compiler* [::ana/namespaces 'cljs.core :defs])
-        (common/load-core-analysis-caches env/*compiler* true)
-        #_(lana/analyze-file "cljs/core.cljs" opts))
+        (common/load-core-analysis-caches env/*compiler* true))
       (body)))
 
 (defn cached-core [ns ext opts]
@@ -171,7 +170,7 @@
   (util/mkdirs dest)
   (spit dest (with-out-str (comp/emit-constants-table table))))
 
-(defn emit-source [src dest ext opts]
+(defn emit-source [src dest ext {:keys [ns-info] :as opts}]
   (let [source (slurp src)
         cb-val (volatile! nil)
         original-load cljs/*load-fn*]
@@ -179,20 +178,48 @@
       (cljs/compile-str
         env/*compiler*
         source
-        (:ns opts)
+        (:ns ns-info)
         (merge opts {:verbose false
-                     :load (fn [{:keys [macros]
-                                 dep :name :as m} cb]
+                     :load (fn load
+                             [{:keys [macros path]
+                               dep :name :as m} cb]
                              (let [cenv @env/*compiler*
                                    dep (if macros
                                          (symbol (str dep "$macros"))
-                                         dep)]
-                               (if (or (not-empty (get-in cenv [::ana/namespaces dep :defs]))
-                                     (contains? (:js-dependency-index cenv) (name dep))
-                                     (ana/node-module-dep? dep)
-                                     (ana/js-module-exists? (name dep))
-                                     (deps/find-classpath-lib dep))
+                                         dep)
+                                   cache (get-in cenv [::ana/namespaces dep :defs])]
+                               (cond
+                                 (or (not-empty cache)
+                                   (contains? (:js-dependency-index cenv) (name dep))
+                                   (ana/node-module-dep? dep)
+                                   (ana/js-module-exists? (name dep))
+                                   (deps/find-classpath-lib dep))
                                  (cb {:lang :js})
+
+                                 (and (not macros) (empty? cache))
+                                 (let [path (path/join (util/output-directory opts) path)
+                                       f (or (io/resource (str path ".cljs"))
+                                             (io/resource (str path ".cljc")))]
+                                   (try
+                                     (lana/read-analysis-cache
+                                       (when (:cache-analysis opts)
+                                         (lana/cache-file f (lana/parse-ns dep) (util/output-directory opts)))
+                                       f
+                                       opts)
+                                     (let [cache (get-in @env/*compiler* [::ana/namespaces dep])]
+                                       (cljs/analyze-deps {:*compiler* env/*compiler*
+                                                           :*cljs-dep-set* ana/*cljs-dep-set*
+                                                           :*load-fn* load}
+                                         nil
+                                         dep
+                                         (distinct (concat (vals (:requires cache)) (vals (:imports cache))))
+                                         opts
+                                         cb)
+                                       (cb {:lang :js}))
+                                     (catch :default e
+                                       (original-load m cb))))
+
+                                 :else
                                  (if-let [{:keys [source-file]} (first
                                                                   (filter
                                                                     #(symbol-identical? dep (:ns %))
@@ -223,10 +250,10 @@
           (let [path (path/resolve dest)]
             (swap! env/*compiler* assoc-in [::comp/compiled-cljs path] ret))
           (let [{:keys [output-dir cache-analysis]} opts]
-            #_(when (and (true? cache-analysis) output-dir)
-                (ana/write-analysis-cache ns-name
-                  (ana/cache-file src (lana/parse-ns src) output-dir :write)
-                  src))
+            (when (and (true? cache-analysis) output-dir)
+              (lana/write-analysis-cache ns
+                (lana/cache-file src ns-info output-dir :write)
+                src))
             (spit dest (str (compiled-by-string opts) "\n" value))
             ret))))))
 
@@ -252,7 +279,7 @@
                (let [opts (if (macro-ns? ns ext opts)
                             (assoc opts :macros-ns true)
                             opts)
-                     ret (emit-source src dest ext opts)]
+                     ret (emit-source src dest ext (assoc opts :ns-info ns-info))]
                  (util/set-last-modified dest (util/last-modified src))
                  ret)))))))))
 
@@ -278,8 +305,6 @@
   ([src dest opts]
    {:post [map?]}
    (binding [ana/*file-defs*        (atom #{})
-             ;; ana/*unchecked-if*     false
-             ;; ana/*unchecked-arrays* false
              ana/*cljs-warnings*    ana/*cljs-warnings*]
      (let [nses      (get @env/*compiler* ::ana/namespaces)
            src-file  src
@@ -287,7 +312,7 @@
            opts      (merge {:optimizations :none} opts)]
        (if (fs/existsSync src-file)
          (try
-           (let [{ns :ns :as ns-info} (lana/parse-ns src-file dest-file opts)
+           (let [{:keys [ns] :as ns-info} (lana/parse-ns src-file dest-file opts)
                  opts (if (and (not= (util/ext src) "clj") ;; skip cljs.core macro-ns
                             (= ns 'cljs.core))
                         (cond-> opts
