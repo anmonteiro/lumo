@@ -188,38 +188,12 @@
                                          (symbol (str dep "$macros"))
                                          dep)
                                    cache (get-in cenv [::ana/namespaces dep :defs])]
-                               (cond
-                                 (or (not-empty cache)
-                                   (contains? (:js-dependency-index cenv) (name dep))
-                                   (ana/node-module-dep? dep)
-                                   (ana/js-module-exists? (name dep))
-                                   (deps/find-classpath-lib dep))
+                               (if (or (not-empty cache)
+                                       (contains? (:js-dependency-index cenv) (name dep))
+                                       (ana/node-module-dep? dep)
+                                       (ana/js-module-exists? (name dep))
+                                       (deps/find-classpath-lib dep))
                                  (cb {:lang :js})
-
-                                 (and (not macros) (empty? cache))
-                                 (let [path (path/join (util/output-directory opts) path)
-                                       f (or (io/resource (str path ".cljs"))
-                                             (io/resource (str path ".cljc")))]
-                                   (try
-                                     (lana/read-analysis-cache
-                                       (when (:cache-analysis opts)
-                                         (lana/cache-file f (lana/parse-ns dep) (util/output-directory opts)))
-                                       f
-                                       opts)
-                                     (let [cache (get-in @env/*compiler* [::ana/namespaces dep])]
-                                       (cljs/analyze-deps {:*compiler* env/*compiler*
-                                                           :*cljs-dep-set* ana/*cljs-dep-set*
-                                                           :*load-fn* load}
-                                         nil
-                                         dep
-                                         (distinct (concat (vals (:requires cache)) (vals (:imports cache))))
-                                         opts
-                                         cb)
-                                       (cb {:lang :js}))
-                                     (catch :default e
-                                       (original-load m cb))))
-
-                                 :else
                                  (if-let [{:keys [source-file]} (first
                                                                   (filter
                                                                     #(symbol-identical? dep (:ns %))
@@ -227,7 +201,29 @@
                                    (cb {:lang :clj
                                         :file (util/path source-file)
                                         :source (slurp source-file)})
-                                   (original-load m cb)))))})
+                                   (if (and (not macros) (empty? cache))
+                                     (let [path (path/join (util/output-directory opts) path)
+                                           f (or (io/resource (str path ".cljs"))
+                                                 (io/resource (str path ".cljc")))]
+                                       (try
+                                         (lana/read-analysis-cache
+                                           (when (:cache-analysis opts)
+                                             (lana/cache-file f (lana/parse-ns dep) (util/output-directory opts)))
+                                           f
+                                           opts)
+                                         (let [cache (get-in @env/*compiler* [::ana/namespaces dep])]
+                                           (cljs/analyze-deps {:*compiler* env/*compiler*
+                                                               :*cljs-dep-set* ana/*cljs-dep-set*
+                                                               :*load-fn* load}
+                                             nil
+                                             dep
+                                             (distinct (concat (vals (:requires cache)) (vals (:imports cache))))
+                                             opts
+                                             cb)
+                                           (cb {:lang :js}))
+                                         (catch :default e
+                                           (original-load m cb))))
+                                     (original-load m cb))))))})
         #(vreset! cb-val %)))
     (let [{:keys [value error]} @cb-val]
       (if error
