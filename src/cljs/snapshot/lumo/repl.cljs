@@ -1255,6 +1255,14 @@
 ;; --------------------
 ;; Autocompletion
 
+(defn- completion-candidates-for-spec
+  [ns]
+  (eduction
+   (filter keyword?)
+   (filter #(= (str ns) (namespace %)))
+   (map name)
+   (keys (spec/registry))))
+
 (defn- completion-candidates-for-ns
   [ns-sym allow-private?]
   (map (comp str key)
@@ -1270,9 +1278,10 @@
 
 (defn- completion-candidates-for-current-ns []
   (let [cur-ns @current-ns]
-    (into (completion-candidates-for-ns cur-ns true)
-      (comp (mapcat keys) (map str))
-      ((juxt :renames :rename-macros :uses :use-macros) (get-namespace cur-ns)))))
+    (concat (completion-candidates-for-spec cur-ns)
+            (into (completion-candidates-for-ns cur-ns true)
+                  (comp (mapcat keys) (map str))
+                  ((juxt :renames :rename-macros :uses :use-macros) (get-namespace cur-ns))))))
 
 (defn- completion-candidates-for-closure-js
   [ns]
@@ -1298,14 +1307,6 @@
   (when-not (get-namespace ns)
     (into (completion-candidates-for-closure-js ns)
           (completion-candidates-for-node-modules ns))))
-
-(defn- completion-candidates-for-spec
-  [ns]
-  (eduction
-   (filter keyword?)
-   (filter #(= (str ns) (namespace %)))
-   (map name)
-   (keys (spec/registry))))
 
 (defn- is-completion?
   [match-suffix candidate]
@@ -1430,7 +1431,6 @@
        (map #(str % "/") (keys (current-alias-map)))
        (completion-candidates-for-ns 'cljs.core false)
        (completion-candidates-for-ns 'cljs.core$macros false)
-       (completion-candidates-for-spec ns-alias)
        (completion-candidates-for-current-ns)
        (when top-level?
          (concat

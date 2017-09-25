@@ -1,6 +1,7 @@
 (ns lumo.repl-tests
   (:require [cljs.nodejs :as node]
             [cljs.test :refer [deftest is testing use-fixtures]]
+            [cljs.spec.alpha :as s]
             [lumo.repl :as lumo]
             [lumo.common :as common]
             [lumo.test-util :as test-util]))
@@ -103,7 +104,23 @@
       (is-contains-completion "(MER" "(merge"))
     (testing "JS completions"
       (is-contains-completion "(require 'goog.m" "(require 'goog.math")
-      (is-contains-completion "g/isF" "g/isFunction"))))
+      (is-contains-completion "g/isF" "g/isFunction"))
+    (testing "Spec completions"
+      (testing "namespace fully qualified completion"
+        (s/def ::a-spec string?)
+        (is-contains-completion ":lumo.repl-tests/" ":lumo.repl-tests/a-spec")
+        (reset! s/registry-ref {}))
+      (with-redefs [lumo/current-alias-map (constantly '{common lumo.common})]
+        (testing "namespace fully qualified completion - alias"
+          (s/def ::common/a-spec string?)
+          (is-contains-completion "::common/" "::common/a-spec")
+          (reset! s/registry-ref {})))
+      (testing "arbitrary fully qualified keyword"
+        (s/def :arbitrary/a-spec string?)
+        (is-contains-completion ":arbitrary/" ":arbitrary/a-spec")
+        (reset! s/registry-ref {})))))
+
+
 
 (deftest test-root-resource
   (is (= (lumo/root-resource 'foo-bar-baz) "/foo_bar_baz"))
