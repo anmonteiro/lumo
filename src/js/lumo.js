@@ -73,7 +73,7 @@ type ResourceType =
       type: 'jar',
       jarPath: string,
       src: string,
-      date: number,
+      modified: number,
     |};
 
 function isBundled(filename: string): boolean {
@@ -248,7 +248,7 @@ export function resource(filename: string): ?ResourceType {
           type: 'jar',
           jarPath: path.resolve(srcPath),
           src: filename,
-          date: entry.date,
+          modified: entry.date.getTime(),
         };
       }
     }

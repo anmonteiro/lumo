@@ -8,7 +8,7 @@ JSZip.mockImplementation(() => ({
           asText: () => 'zipContents',
           date: new Date(),
         }),
-        filter: () => ['zipContents'],
+        filter: () => [{ name: 'zipContents', date: new Date() }],
       };
     }
     return null;

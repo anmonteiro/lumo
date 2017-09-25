@@ -3,12 +3,14 @@
                    [cljs.analyzer.macros
                     :refer [no-warn wrapping-errors
                             disallowing-recur allowing-redef disallowing-ns*]])
-  (:require [lumo.util :as util :refer [line-seq]]
-            [lumo.io :as io :refer [slurp]]
+  (:require [lumo.common :as common]
+            [lumo.util :as util :refer [line-seq]]
+            [lumo.io :as io :refer [slurp spit]]
             [lumo.cljs-deps :as deps]
             [cljs.env :as env]
             [cljs.analyzer :as ana]
             [cljs.tools.reader :as reader]
+            [cljs.reader :as edn]
             [cljs.js :as cljs]
             [cljs.tools.reader.reader-types :as readers]
             [cljs.tagged-literals :as tags]
@@ -49,59 +51,6 @@
         cljsf
         (if (and (fs/existsSync cljcf) (util/file? cljcf))
           cljcf)))))
-
-(declare analyze-file)
-
-(defn analyze-deps
-  "Given a lib, a namespace, deps, its dependencies, env, an analysis environment
-   and opts, compiler options - analyze all of the dependencies. Required to
-   correctly analyze usage of other namespaces."
-  ([lib deps env]
-   (analyze-deps lib deps env
-     (when env/*compiler*
-       (:options @env/*compiler*))))
-  ([lib deps env opts]
-   (let [compiler @env/*compiler*]
-     (binding [ana/*cljs-dep-set* (vary-meta (conj (set ana/*cljs-dep-set*) lib) update-in [:dep-path] conj lib)]
-       (assert (every? #(not (contains? ana/*cljs-dep-set* %)) deps)
-         (str "Circular dependency detected, "
-           (apply str
-             (interpose " -> "
-               (conj (-> ana/*cljs-dep-set* meta :dep-path)
-                 (some ana/*cljs-dep-set* deps))))))
-       (doseq [dep deps]
-         ;; we don't have the problem in the following commit because our macro
-         ;; namespaces have different names
-         ;; https://github.com/clojure/clojurescript/commit/0d0f5095
-         (when-not (or (not-empty (get-in compiler [::ana/namespaces dep]))
-                     (contains? (:js-dependency-index compiler) (name dep))
-                     (ana/node-module-dep? dep)
-                     (ana/js-module-exists? (name dep))
-                     (deps/find-classpath-lib dep))
-           (if-some [src (locate-src dep)]
-             (analyze-file src opts)
-             (throw
-               (ana/error env
-                 (ana/error-message :undeclared-ns {:ns-sym dep :js-provide (name dep)}))))))))))
-
-(defn ns-side-effects
-  [env {:keys [op] :as ast} opts]
-  (if (#{:ns :ns*} op)
-    (let [{:keys [name deps uses require-macros use-macros reload reloads]} ast]
-      (when (and ana/*analyze-deps*
-              (seq deps))
-        (analyze-deps name deps env (dissoc opts :macros-ns)))
-      (if ana/*load-macros*
-        (-> ast
-          (ana/check-use-macros-inferring-missing env)
-          (ana/check-rename-macros-inferring-missing env))
-        (do
-          (ana/check-uses
-            (when (and ana/*analyze-deps* (seq uses))
-              (ana/missing-uses uses env))
-            env)
-          ast)))
-    ast))
 
 (defn forms-seq*
   "Seq of Clojure/ClojureScript forms from rdr, a java.io.Reader. Optionally
@@ -247,38 +196,103 @@
                      ret)))))]
        ijs))))
 
+(defn- cache-analysis-ext
+  ([] (cache-analysis-ext (get-in @env/*compiler* [:options :cache-analysis-format] :transit)))
+  ([format]
+   (if (= format :transit) "json" "edn")))
+
+(defn cache-file
+  "Given a ClojureScript source file returns the read/write path to the analysis
+   cache file. Defaults to the read path which is usually also the write path."
+  ([src] (cache-file src "out"))
+  ([src output-dir] (cache-file src (parse-ns src) output-dir))
+  ([src ns-info output-dir]
+   (cache-file src (parse-ns src) output-dir :read))
+  ([src ns-info output-dir mode]
+   {:pre [(map? ns-info)]}
+   (let [ext (cache-analysis-ext)]
+     (if-let [core-cache
+              (and (= mode :read)
+                (= (:ns ns-info) 'cljs.core)
+                (io/resource (str "cljs/core.cljs.cache.aot._COLON_defs." ext)))]
+       core-cache
+       (let [target-file (util/to-target-file output-dir ns-info
+                           (util/ext (:source-file ns-info)))]
+         (str target-file ".cache." ext))))))
+
 (defn requires-analysis?
   "Given a src, a resource, and output-dir, a compilation output directory
    return true or false depending on whether src needs to be (re-)analyzed.
    Can optionally pass cache, the analysis cache file."
   ([src] (requires-analysis? src "out"))
   ([src output-dir]
-   (requires-analysis? src nil output-dir)
-   #_(let [cache (cache-file src output-dir)]
+   (let [cache (cache-file src output-dir)]
      (requires-analysis? src cache output-dir)))
   ([src cache output-dir]
-   true
-   #_(cond
-     (util/url? cache)
-     (let [path (.getPath ^URL cache)]
-       (if (or (.endsWith path "cljs/core.cljs.cache.aot.edn")
-             (.endsWith path "cljs/core.cljs.cache.aot.json"))
+   (cond
+     (util/bundled-resource? cache)
+     (let [path (.-src cache)]
+       (if (.startsWith path "cljs/core.cljs.cache.aot")
          false
-         (throw (Exception. (str "Invalid anlaysis cache, must be file not URL " cache)))))
+         (throw (js/Error. (str "Invalid analysis cache, must be file not URL " cache)))))
 
-     (and (util/file? cache)
-       (not (.exists ^File cache)))
+     (and (string? cache)
+          (not (fs/existsSync cache)))
      true
 
      :else
      (let [out-src (util/to-target-file output-dir (parse-ns src))]
-       (if (not (.exists out-src))
+       (if (not (fs/existsSync out-src))
          true
          (util/changed? src cache))))))
+
+(defn write-analysis-cache
+  ([ns cache-file]
+   (write-analysis-cache ns cache-file nil))
+  ([ns cache-file src]
+   (util/mkdirs cache-file)
+   (ana/dump-specs ns)
+   (let [ext (util/ext cache-file)
+         analysis (dissoc (get-in @env/*compiler* [::ana/namespaces ns]) :macros)]
+     (case ext
+       "edn"  (spit cache-file
+                (str ";; Analyzed by ClojureScript " (util/clojurescript-version) "\n"
+                  (pr-str analysis)))
+       "json"
+       ;; TODO: transit write ops
+       (spit cache-file (common/cljs->transit-json analysis))))
+   (when src
+     (util/set-last-modified cache-file (util/last-modified src)))))
+
+(defn read-analysis-cache
+  ([cache-file src]
+   (read-analysis-cache cache-file src nil))
+  ([cache-file src opts]
+   ;; we want want to keep dependency analysis information
+   ;; don't revert the environment - David
+   (let [{:keys [ns]} (parse-ns src
+                        (merge opts
+                          {:restore false
+                           :analyze-deps true
+                           :load-macros true}))
+         ext          (util/ext cache-file)
+         cached-ns    (case ext
+                        "edn"  (edn/read-string (slurp cache-file))
+                        "json" (common/transit-json->cljs (slurp cache-file)))]
+     (when (or ana/*verbose* (:verbose opts))
+       (util/debug-prn "Reading analysis cache for" (cond-> src (not (string? src)) .-src)))
+     (swap! env/*compiler*
+       (fn [cenv]
+         (ana/register-specs cached-ns)
+         (doseq [x (get-in cached-ns [::ana/constants :order])]
+           (ana/register-constant! x))
+         (-> cenv
+           (assoc-in [::ana/namespaces ns] cached-ns)))))))
 
 (defn analyze-file
   "Given a java.io.File, java.net.URL or a string identifying a resource on the
    classpath attempt to analyze it.
+
    This function side-effects the ambient compilation environment
    `cljs.env/*compiler*` to aggregate analysis information. opts argument is
    compiler options, if :cache-analysis true will cache analysis to
@@ -291,74 +305,39 @@
   ([f opts]
    (analyze-file f false opts))
   ([f skip-cache opts]
-   (binding [ana/*file-defs*     (atom #{})
-             ;*unchecked-if*  false
-             ana/*cljs-warnings* ana/*cljs-warnings*]
+   (binding [ana/*file-defs*        (atom #{})
+             ana/*cljs-warnings*    ana/*cljs-warnings*]
      (let [output-dir (util/output-directory opts)
            res        (cond
-                        ;(string? f) f
+                        ;; (string? f) f
                         (or (util/jar-resource? f)
-                            (util/resource? f)
-                            (util/bundled-resource? f))
+                          (util/resource? f)
+                          (util/bundled-resource? f))
                         f
-
-                        ;(re-find #"^file://" f) (URL. f)
                         :else (io/resource f))]
        (assert res (str "Can't find " f " in classpath"))
        (ensure
-         (let [ns-info (parse-ns res)
+         (let [{:keys [ns] :as  ns-info} (parse-ns res)
                path    (.-src res)
-               cache   nil #_(when (:cache-analysis opts)
+               cache   (when (:cache-analysis opts)
                          (cache-file res ns-info output-dir))]
            (when-not (get-in @env/*compiler* [::ana/namespaces (:ns ns-info) :defs])
              (if (or skip-cache (not cache) (requires-analysis? res output-dir))
                (binding [ana/*cljs-ns* 'cljs.user
                          ana/*cljs-file* path
-                         ana/*passes* [ana/infer-type ana/check-invoke-arg-types ns-side-effects]
                          reader/*alias-map* (or reader/*alias-map* {})]
                  (when (or ana/*verbose* (:verbose opts))
                    (util/debug-prn "Analyzing" (cond-> res (not (string? res)) .-src)))
-                 (let [env (assoc (ana/empty-env) :build-options opts)
-                       ns  (let [rdr res]
-                             (loop [ns nil forms (seq (forms-seq* rdr (util/path res)))]
-                               (if forms
-                                 (let [form (first forms)
-                                       env (assoc env :ns (ana/get-namespace ana/*cljs-ns*))
-                                       ast (ana/analyze env form nil opts)]
-                                   (cond
-                                     (= (:op ast) :ns)
-                                     (recur (:name ast) (next forms))
-
-                                     (and (nil? ns) (= (:op ast) :ns*))
-                                     (recur (gen-user-ns res) (next forms))
-
-                                     :else
-                                     (recur ns (next forms))))
-                                 ns)))]
-                   #_(when (and cache (true? (:cache-analysis opts)))
-                     (write-analysis-cache ns cache res))))
+                 (cljs/analyze-str
+                   env/*compiler*
+                   (slurp res)
+                   ns
+                   (merge opts
+                     {:verbose false})
+                   identity)
+                 (when (and cache (true? (:cache-analysis opts)))
+                   (write-analysis-cache ns cache res)))
                (try
-                 ;; we want want to keep dependency analysis information
-                 ;; don't revert the environment - David
-                 #_(let [{:keys [ns]} (parse-ns res
-                                      (merge opts
-                                        {:restore false
-                                         :analyze-deps true
-                                         :load-macros true}))
-                       ext          (util/ext cache)
-                       cached-ns    (case ext
-                                      "edn"  (edn/read-string (slurp cache))
-                                      "json" (let [{:keys [reader read]} @transit]
-                                               (with-open [is (io/input-stream cache)]
-                                                 (read (reader is :json transit-read-opts)))))]
-                   (when (or *verbose* (:verbose opts))
-                     (util/debug-prn "Reading analysis cache for" (str res)))
-                   (swap! env/*compiler*
-                     (fn [cenv]
-                       (let []
-                         (doseq [x (get-in cached-ns [::constants :order])]
-                           (register-constant! x))
-                         (-> cenv
-                           (assoc-in [::namespaces ns] cached-ns))))))
-                 (catch :default e
+                 (read-analysis-cache cache res opts)
+                 (catch js/Error e
                    (analyze-file f true opts)))))))))))
