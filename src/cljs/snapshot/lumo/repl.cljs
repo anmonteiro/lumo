@@ -14,6 +14,7 @@
             [cljs.tools.reader :as r]
             [cljs.tools.reader.reader-types :as rt]
             [clojure.string :as string]
+            [cljs.spec.alpha :as spec]
             [cognitect.transit :as transit]
             [goog.object :as gobj]
             [lumo.js-deps :as deps]
@@ -1254,6 +1255,14 @@
 ;; --------------------
 ;; Autocompletion
 
+(defn- completion-candidates-for-spec
+  [ns]
+  (eduction
+   (filter keyword?)
+   (filter #(= (str ns) (namespace %)))
+   (map name)
+   (keys (spec/registry))))
+
 (defn- completion-candidates-for-ns
   [ns-sym allow-private?]
   (map (comp str key)
@@ -1269,9 +1278,10 @@
 
 (defn- completion-candidates-for-current-ns []
   (let [cur-ns @current-ns]
-    (into (completion-candidates-for-ns cur-ns true)
-      (comp (mapcat keys) (map str))
-      ((juxt :renames :rename-macros :uses :use-macros) (get-namespace cur-ns)))))
+    (concat (completion-candidates-for-spec cur-ns)
+            (into (completion-candidates-for-ns cur-ns true)
+                  (comp (mapcat keys) (map str))
+                  ((juxt :renames :rename-macros :uses :use-macros) (get-namespace cur-ns))))))
 
 (defn- completion-candidates-for-closure-js
   [ns]
@@ -1411,7 +1421,8 @@
   (if ns-alias
     (let [full-ns (expand-ns-alias (symbol ns-alias))]
       (into #{} (mapcat identity)
-        [(completion-candidates-for-ns full-ns false)
+        [(completion-candidates-for-spec full-ns)
+         (completion-candidates-for-ns full-ns false)
          (completion-candidates-for-ns (add-macros-suffix full-ns) false)
          (completion-candidates-for-js-sources full-ns)]))
     (into #{} (mapcat identity)
