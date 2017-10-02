@@ -4,6 +4,10 @@
 [![Backers on Open Collective](https://opencollective.com/lumo/backers/badge.svg)](#backers)
 [![Sponsors on Open Collective](https://opencollective.com/lumo/sponsors/badge.svg)](#sponsors)
 
+<a target='_blank' rel='nofollow' href='https://app.codesponsor.io/link/ALNNHWnz2xVL5iHcyg6jZ2me/anmonteiro/lumo'>
+  <img alt='Sponsor' width='888' height='68' src='https://app.codesponsor.io/embed/ALNNHWnz2xVL5iHcyg6jZ2me/anmonteiro/lumo.svg' />
+</a>
+
 Lumo is a standalone ClojureScript environment that runs on Node.js and the V8
 JavaScript engine. It starts up instantaneously and has out-of-the-box access to
 the entire Node.js ecosystem.
