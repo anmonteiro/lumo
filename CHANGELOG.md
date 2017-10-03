@@ -12,6 +12,12 @@
 - lumo.compiler/cljs-files-in can match dirs ([#270](https://github.com/anmonteiro/lumo/issues/270)).
 - Fix bug in the build API caused by requiring `cljs.spec.test.alpha` ([#273](https://github.com/anmonteiro/lumo/issues/273)).
 - Fix compilation crash with macros & `:optimize-constants true` ([#274](https://github.com/anmonteiro/lumo/issues/274)).
+- Require fails if Lumo output is redirected ([#283](https://github.com/anmonteiro/lumo/issues/283)).
+- Lumo script failure when redirecting stdout? ([#286](https://github.com/anmonteiro/lumo/issues/286)).
+
+### Changes
+
+- Upgrade Node.js to version 8.6.0.
 
 ## [1.8.0-beta](https://github.com/anmonteiro/lumo/compare/1.7.0...1.8.0-beta) (2017-09-16)
 
