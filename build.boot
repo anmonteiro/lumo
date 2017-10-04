@@ -2,8 +2,8 @@
  :source-paths #{"src/cljs/snapshot"}
  :asset-paths #{"src/js" "src/cljs/bundled"}
  :dependencies '[[org.clojure/clojure         "1.9.0-alpha19"]
-                 [org.clojure/clojurescript   "1.9.931"]
-                 [org.clojure/tools.reader    "1.0.5"]
+                 [org.clojure/clojurescript   "1.9.946"]
+                 [org.clojure/tools.reader    "1.1.0"]
                  [com.cognitect/transit-cljs  "0.8.239"]
                  [malabarba/lazy-map          "1.3"]
                  [fipp                        "0.6.10"]
@@ -15,8 +15,7 @@
                  [org.clojure/tools.nrepl     "0.2.13"  :scope "test"]
                  [weasel                      "0.7.0"   :scope "test"]
                  [doo                         "0.1.7"   :scope "test"]]
- :exclusions '[org.clojure/clojure org.clojure/clojurescript]
- :local-repo "third_party")
+ :exclusions '[org.clojure/clojure org.clojure/clojurescript])
 
 (require
   '[adzerk.boot-cljs      :refer [cljs]]

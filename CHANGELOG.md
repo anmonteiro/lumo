@@ -18,6 +18,7 @@
 ### Changes
 
 - Upgrade Node.js to version 8.6.0.
+- Upgrade ClojureScript to version 1.9.946.
 
 ## [1.8.0-beta](https://github.com/anmonteiro/lumo/compare/1.7.0...1.8.0-beta) (2017-09-16)
 
