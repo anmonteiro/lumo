@@ -27,8 +27,7 @@ const originalArgv = process.argv;
 const originalStdoutWrite = process.stdout.write;
 const originalStderrWrite = process.stderr.write;
 const pathResolve = path.resolve;
-const exit = process.exit;
-const nodeVersion = process.version;
+const { exit, version: nodeVersion } = process;
 
 beforeAll(() => {
   process.version = 'X.X.X';
@@ -469,7 +468,7 @@ describe('getCliOpts', () => {
 
 describe('print Functions', () => {
   describe('printBanner', () => {
-    const stdin = process.stdin;
+    const { stdin } = process;
 
     beforeAll(() => {
       process.stdin = { on: jest.fn() };

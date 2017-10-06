@@ -138,7 +138,7 @@ describe('startREPL', () => {
   });
 
   describe('sets dumb-terminal', () => {
-    const isTTY = process.stdin.isTTY;
+    const { isTTY } = process.stdin;
 
     beforeEach(() => {
       process.stdin.isTTY = true;
@@ -193,7 +193,7 @@ describe('startREPL', () => {
   });
 
   describe('exits when an exit command is specified', () => {
-    const exit = process.exit;
+    const { exit } = process;
 
     beforeEach(() => {
       process.exit = jest.fn();

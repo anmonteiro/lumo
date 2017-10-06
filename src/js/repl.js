@@ -261,8 +261,7 @@ function handleKeyPress(
   { name, ctrl, meta, code, ...key }: KeyType,
 ): void {
   const session = replSession;
-  const rl = session.rl;
-  const isReverseSearch = session.isReverseSearch;
+  const { rl, isReverseSearch } = session;
   const isReverseSearchKey = ctrl && name === 'r';
 
   // TODO: factor this out into own function

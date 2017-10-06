@@ -26,7 +26,7 @@ afterEach(() => {
   process.stderr.write = originalStderrWrite;
 });
 
-const exit = process.exit;
+const { exit } = process;
 
 beforeAll(() => {
   process.exit = jest.fn();

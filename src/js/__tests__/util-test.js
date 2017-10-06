@@ -13,8 +13,8 @@ import {
 } from '../util';
 
 describe('srcPathsFromClasspathStrings', () => {
-  const homedir = os.homedir;
-  const pathResolve = path.resolve;
+  const { homedir } = os;
+  const { resolve: pathResolve } = path;
 
   beforeEach(() => {
     os.homedir = jest.fn(() => '/Users/foo');
@@ -34,9 +34,7 @@ describe('srcPathsFromClasspathStrings', () => {
 });
 
 describe('ensureDir', () => {
-  const mkdirSync = fs.mkdirSync;
-  const existsSync = fs.existsSync;
-  const statSync = fs.statSync;
+  const { mkdirSync, existsSync, statSync } = fs;
   const isDir = fs.Stats.prototype.isDirectory;
 
   afterEach(() => {

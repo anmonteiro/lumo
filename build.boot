@@ -1,7 +1,7 @@
 (set-env!
  :source-paths #{"src/cljs/snapshot"}
  :asset-paths #{"src/js" "src/cljs/bundled"}
- :dependencies '[[org.clojure/clojure         "1.9.0-alpha19"]
+ :dependencies '[[org.clojure/clojure         "1.9.0-beta1"]
                  [org.clojure/clojurescript   "1.9.946"]
                  [org.clojure/tools.reader    "1.1.0"]
                  [com.cognitect/transit-cljs  "0.8.239"]
@@ -10,11 +10,11 @@
                  [org.clojure/test.check      "0.10.0-alpha2" :scope "test"]
                  [com.cognitect/transit-clj   "0.8.300" :scope "test"]
                  [com.cemerick/piggieback     "0.2.2"   :scope "test"]
-                 [adzerk/boot-cljs            "2.1.4-SNAPSHOT"   :scope "test"]
+                 [adzerk/boot-cljs            "2.1.4"   :scope "test"]
                  [crisptrutski/boot-cljs-test "0.3.4" :scope "test"]
                  [org.clojure/tools.nrepl     "0.2.13"  :scope "test"]
                  [weasel                      "0.7.0"   :scope "test"]
-                 [doo                         "0.1.7"   :scope "test"]]
+                 [doo                         "0.1.8"   :scope "test"]]
  :exclusions '[org.clojure/clojure org.clojure/clojurescript])
 
 (require

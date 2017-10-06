@@ -11,8 +11,7 @@ jest.mock('jszip');
 require('jszip');
 
 describe('lumo', () => {
-  const readFileSync = fs.readFileSync;
-  const existsSync = fs.existsSync;
+  const { readFileSync, existsSync } = fs;
 
   beforeEach(() => {
     fs.readFileSync = jest.fn((p: string) => {
@@ -41,7 +40,7 @@ describe('lumo', () => {
     });
 
     describe('in production', () => {
-      const inflateSync = zlib.inflateSync;
+      const { inflateSync } = zlib;
 
       beforeEach(() => {
         jest.resetModules();
@@ -81,7 +80,7 @@ describe('lumo', () => {
   });
 
   describe('readCache', () => {
-    const statSync = fs.statSync;
+    const { statSync } = fs;
     beforeEach(() => {
       fs.statSync = jest.fn((filename: string) => ({
         mtimeMs: new Date().getTime(),
@@ -105,7 +104,7 @@ describe('lumo', () => {
   });
 
   describe('writeCache', () => {
-    const writeFileSync = fs.writeFileSync;
+    const { writeFileSync } = fs;
     beforeEach(() => {
       fs.writeFileSync = jest.fn(
         (fname: string, contents: string, encoding: string) => {
