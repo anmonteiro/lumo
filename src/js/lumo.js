@@ -64,13 +64,23 @@ function scanModules(
     return libPath ? libPaths.concat(libPath) : libPaths;
   }
 
-  const modulePath = path.resolve(baseDir, moduleName);
-  return fs
-    .readdirSync(modulePath)
-    .reduce((acc: string[], childName: string) => {
-      const parentPath = path.join(baseDir, moduleName);
-      return acc.concat(scanModules(acc, parentPath, childName));
-    }, libPaths);
+  let newLibPaths = libPaths;
+
+  if (moduleName.startsWith('@')) {
+    try {
+      const modulePath = path.resolve(baseDir, moduleName);
+
+      if (fs.lstatSync(modulePath).isDirectory()) {
+        newLibPaths = fs
+          .readdirSync(modulePath)
+          .reduce((acc: string[], childName: string) => {
+            const parentPath = path.join(baseDir, moduleName);
+            return acc.concat(scanModules(acc, parentPath, childName));
+          }, libPaths);
+      }
+    } catch (_) {} // eslint-disable-line no-empty
+  }
+  return newLibPaths;
 }
 
 function modulesByNodeDir(): Map<string, string[]> {
