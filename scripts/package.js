@@ -1,4 +1,5 @@
 const nexe = require('nexe');
+const monkeyPatch = require('nexe/lib/monkeypatch');
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
@@ -52,7 +53,27 @@ function moveLibs(compiler, options, callback) {
     fs.readFileSync(`target/google-closure-compiler-js.js`),
   );
 
-  callback();
+  callback(null, compiler, options);
+}
+
+function patchNodeGyp(compiler, options, callback) {
+  const gypPath = path.join(compiler.dir, 'node.gyp');
+
+  monkeyPatch(
+    gypPath,
+    function(content) {
+      return ~content.indexOf('google-closure-compiler-js.js');
+    },
+    function(content, next) {
+      const newContent = content.replace(
+        "'deps/node-inspect/lib/internal/inspect_repl.js',",
+        `'deps/node-inspect/lib/internal/inspect_repl.js',
+      'google-closure-compiler-js.js',`,
+      );
+      next(null, newContent);
+    },
+    callback,
+  );
 }
 
 Promise.all(resources.map(deflate)).then(() => {
@@ -63,7 +84,7 @@ Promise.all(resources.map(deflate)).then(() => {
       input: 'target/bundle.min.js',
       output: outputPath,
       nodeTempDir: 'tmp',
-      patchFns: moveLibs,
+      patchFns: [moveLibs, patchNodeGyp],
       nodeConfigureArgs: [
         '--without-dtrace',
         '--without-npm',
@@ -71,8 +92,6 @@ Promise.all(resources.map(deflate)).then(() => {
         '--without-etw',
         '--without-perfctr',
         '--with-snapshot',
-        '--link-module',
-        'google-closure-compiler-js.js',
       ],
       nodeMakeArgs: ['-j', '8'],
       nodeVCBuildArgs: ['nosign', 'x64', 'noetw', 'noperfctr'],
