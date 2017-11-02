@@ -1,10 +1,10 @@
 (set-env!
  :source-paths #{"src/cljs/snapshot"}
  :asset-paths #{"src/js" "src/cljs/bundled"}
- :dependencies '[[org.clojure/clojure         "1.9.0-beta1"]
+ :dependencies '[[org.clojure/clojure         "1.9.0-beta4"]
                  [org.clojure/clojurescript   "1.9.946"]
                  [org.clojure/tools.reader    "1.1.0"]
-                 [com.cognitect/transit-cljs  "0.8.239"]
+                 [com.cognitect/transit-cljs  "0.8.243"]
                  [malabarba/lazy-map          "1.3"]
                  [fipp                        "0.6.10"]
                  [org.clojure/test.check      "0.10.0-alpha2" :scope "test"]
