@@ -10,36 +10,106 @@ import JSZip from 'jszip';
 import ArrayStream from './array-stream';
 import * as util from './util';
 
-function inferNodeModulesClasspathLibs(): string[] {
-  const result = [];
+type PackageJsonType = {
+  directories: {
+    lib: string,
+    cache: string,
+  },
+};
 
-  // $FlowIssue: it's there
-  for (const nodeDir of Module._nodeModulePaths(process.cwd())) {
+function packageJson(
+  nodeDir: string,
+  moduleName: string,
+): ?PackageJsonType {
+  let pkgJson = null;
+
+  try {
+    pkgJson = JSON.parse(
+      fs.readFileSync(path.join(nodeDir, moduleName, 'package.json'), 'utf8'),
+    );
+  } catch (_) {} // eslint-disable-line no-empty
+
+  return pkgJson;
+}
+
+function inferClasspathLib(
+  nodeDir: string,
+  moduleName: string,
+  pkgJson: PackageJsonType,
+): ?string {
+  let libPath = null;
+
+  try {
+    if (pkgJson.directories != null) {
+      libPath = pkgJson.directories.lib;
+
+      if (libPath != null) {
+        libPath = path.resolve(nodeDir, moduleName, libPath);
+      }
+    }
+  } catch (_) {} // eslint-disable-line no-empty
+
+  return libPath;
+}
+
+function scanModules(
+  libPaths: string[],
+  baseDir: string,
+  moduleName: string,
+): string[] {
+  const pkgJson = packageJson(baseDir, moduleName);
+
+  if (pkgJson) {
+    const libPath = inferClasspathLib(baseDir, moduleName, pkgJson);
+    return libPath ? libPaths.concat(libPath) : libPaths;
+  }
+
+  let newLibPaths = libPaths;
+
+  if (moduleName.startsWith('@')) {
     try {
-      const modules = fs.readdirSync(nodeDir);
+      const modulePath = path.resolve(baseDir, moduleName);
 
-      for (const moduleName of modules) {
-        try {
-          const pkgJson = JSON.parse(
-            fs.readFileSync(
-              path.join(nodeDir, moduleName, 'package.json'),
-              'utf8',
-            ),
-          );
-
-          if (pkgJson.directories != null) {
-            const libPath = pkgJson.directories.lib;
-
-            if (libPath != null) {
-              result.push(path.resolve(nodeDir, moduleName, libPath));
-            }
-          }
-        } catch (_) {} // eslint-disable-line no-empty
+      if (fs.lstatSync(modulePath).isDirectory()) {
+        newLibPaths = fs
+          .readdirSync(modulePath)
+          .reduce((acc: string[], childName: string) => {
+            const parentPath = path.join(baseDir, moduleName);
+            return acc.concat(scanModules(acc, parentPath, childName));
+          }, libPaths);
       }
     } catch (_) {} // eslint-disable-line no-empty
   }
+  return newLibPaths;
+}
+
+function modulesByNodeDir(): Map<string, string[]> {
+  const moduleByDir: Map<string, string[]> = new Map();
+
+  // $FlowIssue: it's there
+  Module._nodeModulePaths(process.cwd()).forEach((nodeDir: string) => {
+    try {
+      moduleByDir.set(nodeDir, fs.readdirSync(nodeDir));
+    } catch (_) {} // eslint-disable-line no-empty
+  });
+
+  return moduleByDir;
+}
+
+/* eslint-disable no-loop-func */
+function inferNodeModulesClasspathLibs(): string[] {
+  let result = [];
+
+  for (const [nodeDir, modules] of modulesByNodeDir()) {
+    modules
+      .filter((moduleName: string) => !moduleName.startsWith('.'))
+      .forEach((moduleName: string) => {
+        result = result.concat(scanModules([], nodeDir, moduleName));
+      });
+  }
   return result;
 }
+/* eslint-enable no-loop-func */
 
 const sourcePaths = {
   manual: new Set([process.cwd()]),
