@@ -79,13 +79,14 @@
                       windows? (into ["cmd" "/c"])))
         (dosh "node" "scripts/bundleForeign.js")))))
 
+
 (defn write-cache! [cache out-path]
   (let [out (ByteArrayOutputStream. 1000000)
         writer (transit/writer out :json)]
     (transit/write writer cache)
     (spit (doto out-path
             io/make-parents)
-      (.toString out))))
+          (.toString out))))
 
 (deftask cache-edn->transit []
   (let [tmp (tmp-dir!)]
@@ -164,13 +165,140 @@
   (comp
     (install-node-modules)
     (watch)
-    (speak)
+    ;; (speak)
     (compile-cljs)
     (sift-cljs-resources)
     (cache-edn->transit)
     (write-core-analysis-caches)
     (target)
     (bundle-js :dev true)))
+
+(deftask pkg-install-node-modules
+  [p proj PROJECTPATH str "Path to the project to be bundled"]
+  (let [target-path (-> (io/file "target") .getAbsolutePath)
+        project-directory-list (->> (io/file proj)
+                                  .listFiles
+                                  (map #(.getName %)))
+        package-json-exists? (some #(= "package.json" %) project-directory-list)
+        node-modules-exists? (some #(= "node_modules" %) project-directory-list)
+        sep (if windows? "\\" "/")]
+    (with-pass-thru _
+      (if-not package-json-exists?
+        (util/warn (str "package.json was not found in " proj "\n"))
+        (do
+          (when node-modules-exists?
+            (.renameTo (io/file (str proj sep "node_modules"))
+                       (io/file (str proj sep "node_modules_bak"))))
+          (util/info (str "Fetching node_modules from " proj
+                          " with `yarn install --production`\n"))
+          (binding [*sh-dir* proj]
+            (if windows?
+              (do
+                (dosh "cmd" "/c" "yarn" "install" "--production")
+                (dosh "cmd" "/c" "move" "node_modules" target-path))
+              (do
+                (dosh "yarn" "install" "--production")
+                (dosh "mv" "node_modules" target-path))))
+          (when node-modules-exists?
+            (.renameTo (io/file (str proj sep "node_modules_bak"))
+                       (io/file (str proj sep "node_modules")))))))))
+
+
+(defn pkg-classpath
+  "Bundles all artifacts on classpath and
+   and return new json map with relative
+   classpaths if absolute paths were provided."
+  [proj opts]
+  (let [opts (str/replace opts #"'" "\"")
+        opts-edn (json/read-str opts)
+        classpath (get opts-edn "classpath")
+        sep (if windows? "\\" "/")
+        target-path (-> (io/file "target") .getAbsolutePath)
+        target-dir-list (->> (io/file "target")
+                             .listFiles
+                             (map #(.getName %)))
+        validate-abs-fn (fn [file] (cond (not (.exists file)) false
+                                         (some #(= (.getName file) %) target-dir-list)
+                                         (do (util/fail (str "Filename " (str "target" sep (.getName file))
+                                                             " already exists.\n"))
+                                             (System/exit -1))
+                                         (.isAbsolute file) true
+                                         :else false))
+        validate-rel-fn (fn [file] (let [root-folder (-> (.getPath file)
+                                                         (str/split #"/")
+                                                         first)]
+                                     (cond (not (.exists file)) false
+                                           (some #(= root-folder %) target-dir-list)
+                                           (do (util/fail (str "Folder or filename " root-folder
+                                                               " already exists in bundle.\n"))
+                                               (System/exit -1))
+                                           :else true)))]
+    (if (empty? classpath)
+      opts
+      (binding [*sh-dir* proj]
+        (->> (for [classp classpath]
+               (let [abs-file (io/file classp)
+                     rel-file (io/file proj classp)]
+                 (cond (validate-abs-fn abs-file) (do (if windows?
+                                                        (dosh "cmd" "/c" "xcopy" classp target-path "/s" "/e" "/y")
+                                                        (dosh "cp" "-R" classp target-path))
+                                                      (.getName abs-file))
+                       (validate-rel-fn rel-file) (let [rel-path-tree (-> ;;(.getPath rel-file)
+                                                                       classp
+                                                                       (str/split #"/"))
+                                                        parent-folders (vec (butlast rel-path-tree))
+                                                        child-file (last rel-path-tree)]
+                                                    ;; Create dirs if they don't exist
+                                                    (doseq [nest-lvl (range (count parent-folders))]
+                                                      (let [path (->> (subvec parent-folders 0 (inc nest-lvl))
+                                                                      (interpose sep))
+                                                            rel-path (apply str "target" sep path)
+                                                            abs-path (apply str target-path sep path)]
+                                                        (when-not (-> abs-path io/file .exists)
+                                                          (if windows?
+                                                            (dosh "cmd" "/c" "mkdir" abs-path)
+                                                            (dosh "mkdir" abs-path)))))
+                                                    (if windows?
+                                                      (dosh "cmd" "/c" "xcopy" classp (str target-path sep classp) "/s" "/e" "/y")
+                                                      (dosh "cp" "-R" classp (str target-path sep classp)))
+                                                    classp)
+                       :else (do (util/fail (str "File " classp
+                                                 " does not exist\n"))
+                                 (System/exit -1)))))
+             doall
+             (into [])
+             (assoc opts-edn "classpath")
+             json/write-str)))))
+
+(deftask pkg-bundle
+  [p proj PROJECTPATH str "Path to the project to be bundled"
+   o opts OPTS str "Lumo options as JSON map"
+   d dev  bool   "Development build"]
+  (with-pass-thru _
+    (let [opts (if opts
+                 (pkg-classpath proj opts)
+                 "{}")]
+      (apply dosh
+             (cond->> ["node" "scripts/bundle.js"
+                       (if dev "--pkg-dev" "--pkg")
+                       opts]
+               windows? (into ["cmd" "/c"]))))))
+
+
+(deftask pkg-dev
+  [p proj PROJECTPATH str "Path to the project to be bundled"
+   o opts OPTS        str "Lumo options as JSON map"]
+  ;; (empty-dir! "target")
+  (comp
+   (speak)
+   (install-node-modules)
+   (compile-cljs)
+   (sift-cljs-resources)
+   (cache-edn->transit)
+   (write-core-analysis-caches)
+   (target)
+   (pkg-install-node-modules :proj proj)
+   (pkg-bundle :proj proj :opts opts :dev true)))
 
 (deftask prepare-snapshot []
   (with-pass-thru _
@@ -194,6 +322,26 @@
     (if windows?
       (dosh "cmd" "/c" ".\\scripts\\aot-bundle-macros.bat")
       (dosh "./scripts/aot-bundle-macros.sh"))))
+
+(deftask pkg
+  [p proj PROJECTPATH str "Path to the project to be bundled"
+   o opts OPTS        str "Lumo options as JSON map"]
+  (comp
+    (install-node-modules)
+    (compile-cljs)
+    (sift-cljs-resources)
+    (cache-edn->transit)
+    (write-core-analysis-caches)
+    (target)
+    (pkg-install-node-modules :proj proj)
+    (pkg-bundle :proj proj :opts opts :dev false)
+    (prepare-snapshot)
+    (backup-resources)
+    ;; Package first stage binary
+    (package-executable)
+    (aot-macros)
+    ;; Package final executable
+    (package-executable)))
 
 (deftask release-ci []
   (comp

@@ -30,7 +30,7 @@ function lumoEval(
   isForeign: boolean,
   execPath: ?string,
 ): mixed {
-  if (execPath != null) {
+  if (execPath != null && !__DEV__) {
     const filename = path.resolve(execPath);
     const dirname = path.dirname(filename);
     const module = new Module(filename);
