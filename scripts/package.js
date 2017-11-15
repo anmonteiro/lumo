@@ -50,8 +50,8 @@ const resources = getDirContents('target').filter(
 );
 
 if (isPkgBuild) {
-  var classpath = JSON.parse(argv[1]);
-  console.log('classpaths: ' + classpath);
+  var classpath = JSON.parse(argv[1]).push('node_modules');
+
   getDirContents('target').filter(fname => {
     if (classpath.some(cp => fname.split('target/').pop().startsWith(cp))) {
       resources.push(fname);
