@@ -6,7 +6,9 @@ const os = require('os');
 const zlib = require('zlib');
 const embed = require('./embed');
 
-const nodeVersion = '9.0.0';
+const argv = process.argv.slice(2);
+const isPkgBuild = /(--pkg)$/.test(argv[0]);
+const nodeVersion = '9.2.0';
 
 function getDirContents(dir, accumPath = dir) {
   let filenames = fs.readdirSync(dir);
@@ -46,6 +48,16 @@ const resources = getDirContents('target').filter(
       !/target[\\\/]cljs[\\/]core.js/.test(fname) &&
       !fname.endsWith('.map')),
 );
+
+if (isPkgBuild) {
+  var classpath = JSON.parse(argv[1]);
+  console.log('classpaths: ' + classpath);
+  getDirContents('target').filter(fname => {
+    if (classpath.some(cp => fname.split('target/').pop().startsWith(cp))) {
+      resources.push(fname);
+    };
+  });
+};
 
 function moveLibs(compiler, options, callback) {
   fs.writeFileSync(

@@ -98,6 +98,7 @@ function pkgGenerateLumoEntryPoint (opts) {
             const srcPaths = util.srcPathsFromClasspathStrings(classpath);
             options.classpath = srcPaths;
             lumo.addSourcePaths(srcPaths);
+            console.log(srcPaths);
           };
 
           v8.setFlagsFromString('--use_strict');
@@ -131,19 +132,19 @@ if (isPkgDevBuild || isPkgBuild) {
 		     if (err) {
 		       return console.log(err);
 		     };
-       console.log('Wrote pkg.js lumo entry point ' + process.argv.slice(3));
-     });
+		     console.log('Wrote pkg.js lumo entry point ' + process.argv.slice(3));
+		   });
 };
 
 rollup({
-  input: !isPkgDevBuild ? 'src/js/index.js' : 'src/js/pkg.js',
+  input: (!isPkgDevBuild && !isPkgBuild) ? 'src/js/index.js' : 'src/js/pkg.js',
   plugins,
   external,
 })
   .then(bundle => {
     bundle.write({
       format: 'cjs',
-      file: `target/bundle${!isDevBuild && !isPkgDevBuild ? '.min' : ''}.js`,
+      file: `target/bundle${!isDevBuild || !isPkgDevBuild ? '.min' : ''}.js`,
       interop: false,
       exports: 'none',
       intro: `;(function(){

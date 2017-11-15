@@ -208,10 +208,11 @@
     (str/replace-first s "~" (System/getProperty "user.home"))
     s))
 
-(defn pkg-classpath
+(defn bundle-classpaths
   "Bundles all artifacts on classpath and
-   and return new json map with relative
-   classpaths if absolute paths were provided."
+   and return a vector of new json map with relative
+   classpaths where absolute paths were provided and
+   a map of "
   [proj opts]
   (let [opts (str/replace opts #"'" "\"")
         opts-edn (json/read-str opts)
@@ -238,72 +239,75 @@
                                                (System/exit -1))
                                            :else true)))]
     (if (empty? classpath)
-      opts
+      [opts []]
       (binding [*sh-dir* proj]
-        (->> (for [classp classpath]
-               (let [abs-file (io/file classp)
-                     rel-file (try (io/file proj classp)
-                                   (catch java.lang.IllegalArgumentException e nil))]
-                 (cond (validate-abs-fn abs-file) (do (if windows?
-                                                        (dosh "cmd" "/c" "xcopy" classp target-path "/s" "/e" "/y")
-                                                        (dosh "cp" "-R" classp target-path))
-                                                      (.getName abs-file))
-                       (and rel-file
-                            (validate-rel-fn rel-file)) (let [rel-path-tree (-> classp
-                                                                                (str/split #"/"))
-                                                              parent-folders (vec (butlast rel-path-tree))
-                                                              child-file (last rel-path-tree)]
-                                                          ;; Create dirs if they don't exist
-                                                          (doseq [nest-lvl (range (count parent-folders))]
-                                                            (let [path (->> (subvec parent-folders 0 (inc nest-lvl))
-                                                                            (interpose sep))
-                                                                  rel-path (apply str "target" sep path)
-                                                                  abs-path (apply str target-path sep path)]
-                                                              (when-not (-> abs-path io/file .exists)
-                                                                (if windows?
-                                                                  (dosh "cmd" "/c" "mkdir" abs-path)
-                                                                  (dosh "mkdir" abs-path)))))
-                                                          (if windows?
-                                                            (dosh "cmd" "/c" "xcopy" classp (str target-path sep classp) "/s" "/e" "/y")
-                                                            (dosh "cp" "-R" classp (str target-path sep classp)))
-                                                          classp)
-                       :else (do (util/fail (str "File " classp
-                                                 " does not exist\n"))
-                                 (System/exit -1)))))
-             doall
-             (into [])
-             (assoc opts-edn "classpath")
-             json/write-str)))))
+        (let [rel-cp (->> (for [classp classpath]
+                            (let [abs-file (io/file classp)
+                                  rel-file (try (io/file proj classp)
+                                                (catch java.lang.IllegalArgumentException e nil))]
+                              (cond (validate-abs-fn abs-file) (do (if windows?
+                                                                     (dosh "cmd" "/c" "xcopy" classp target-path "/s" "/e" "/y")
+                                                                     (dosh "cp" "-R" classp target-path))
+                                                                   (.getName abs-file))
+                                    (and rel-file
+                                         (validate-rel-fn rel-file)) (let [rel-path-tree (-> classp
+                                                                                             (str/split #"/"))
+                                                                           parent-folders (vec (butlast rel-path-tree))
+                                                                           child-file (last rel-path-tree)]
+                                                                       ;; Create dirs if they don't exist
+                                                                       (doseq [nest-lvl (range (count parent-folders))]
+                                                                         (let [path (->> (subvec parent-folders 0 (inc nest-lvl))
+                                                                                         (interpose sep))
+                                                                               rel-path (apply str "target" sep path)
+                                                                               abs-path (apply str target-path sep path)]
+                                                                           (when-not (-> abs-path io/file .exists)
+                                                                             (if windows?
+                                                                               (dosh "cmd" "/c" "mkdir" abs-path)
+                                                                               (dosh "mkdir" abs-path)))))
+                                                                       (if windows?
+                                                                         (dosh "cmd" "/c" "xcopy" classp (str target-path sep classp) "/s" "/e" "/y")
+                                                                         (dosh "cp" "-R" classp (str target-path sep classp)))
+                                                                       classp)
+                                    :else (do (util/fail (str "File " classp
+                                                              " does not exist\n"))
+                                              (System/exit -1)))))
+                          (into []))
+              opts-with-rel-cp (-> (assoc opts-edn "classpath" rel-cp)
+                                   json/write-str)]
+          [opts-with-rel-cp rel-cp])))))
 
 (deftask pkg-bundle
   [p proj PROJECTPATH str "Path to the project to be bundled"
    o opts OPTS str "Lumo options as JSON map"
    d dev  bool   "Development build"]
   (with-pass-thru _
-    (let [opts (if opts
-                 (pkg-classpath proj opts)
-                 "{}")]
-      (apply dosh
-             (cond->> ["node" "scripts/bundle.js"
-                       (if dev "--pkg-dev" "--pkg")
-                       opts]
-               windows? (into ["cmd" "/c"]))))))
+    (apply dosh
+           (cond->> ["node" "scripts/bundle.js"
+                     (if dev "--pkg-dev" "--pkg")
+                     opts]
+             windows? (into ["cmd" "/c"])))))
 
 
 (deftask pkg-dev
   [p proj PROJECTPATH str "Path to the project to be bundled"
    o opts OPTS        str "Lumo options as JSON map"]
   ;; (empty-dir! "target")
-  (comp
-   (speak)
-   (install-node-modules)
-   (compile-cljs)
-   (sift-cljs-resources)
-   (cache-edn->transit)
-   (write-core-analysis-caches)
-   (target)
-   (pkg-install-node-modules :proj proj)
-   (pkg-bundle :proj proj :opts opts :dev true)))
+  (let [options-with-rel-cp (atom "{}")
+        relative-classpaths (atom [])]
+    (comp
+     (speak)
+     (install-node-modules)
+     (compile-cljs)
+     (sift-cljs-resources)
+     (cache-edn->transit)
+     (write-core-analysis-caches)
+     (target)
+     (pkg-install-node-modules :proj proj)
+     (with-pass-thru _
+       (let [[opts-with-rel-cp rel-cp] (bundle-classpaths proj opts)]
+         (reset! options-with-rel-cp opts-with-rel-cp)
+         (reset! relative-classpaths rel-cp)))
+     (pkg-bundle :proj proj :opts @options-with-rel-cp :dev true))))
 
 (deftask prepare-snapshot []
   (with-pass-thru _
@@ -320,14 +324,16 @@
   (with-pass-thru _
     (if windows?
       (dosh "cmd" "/c" "echo" "d" "|" "xcopy" "target" "resources_bak" "/s" "/e" "/y")
-      (dosh "cp" "-R" "target" "resources_bak"))))
+      (do (dosh "rm" "-rf" "resources_bak")
+          (dosh "cp" "-R" "target" "resources_bak")))))
 
 (deftask restore-resources
   []
   (with-pass-thru _
     (if windows?
       (dosh "cmd" "/c" "move" "resources_bak" "target")
-      (dosh "move" "resources_bak" "target"))))
+      (do (dosh "rm" "-rf" "target")
+          (dosh "mv" "resources_bak" "target")))))
 
 (deftask aot-macros []
   (with-pass-thru _
@@ -335,44 +341,38 @@
       (dosh "cmd" "/c" ".\\scripts\\aot-bundle-macros.bat")
       (dosh "./scripts/aot-bundle-macros.sh"))))
 
-(deftask pkg-aot [p proj PROJECTPATH str "Path to the project to be bundled"]
+(deftask pkg-aot
+  [p proj PROJECTPATH str "Path to the project to be bundled"
+   o opts OPTS        str "Lumo options as JSON map"]
   (with-pass-thru _
     (let [sep (if windows? "\\" "/")
           aot-cljs-path (str proj sep "aot.cljs")
-          aot-cljs-exists? (.exists (io/file aot-cljs-path))]
+          aot-cljs-exists? (.exists (io/file aot-cljs-path))
+          aot-target-dir-path (.getAbsolutePath (io/file "target/aot"))
+          target-dir-path (.getAbsolutePath (io/file "target"))
+          build-dir-path (.getAbsolutePath (io/file "build"))
+          opts (str/replace opts #"'" "\"")
+          opts-edn (json/read-str opts)
+          aot-classpath (apply str target-dir-path ":"
+                               (interpose ":" (get opts-edn "classpath")))]
       (if-not aot-cljs-exists?
         (util/warn (str "No aot.clj was found in " proj
                         " aot compilations are skipped"))
-        (if windows?
-          (do (dosh "mkdir" "target\\aot")
-              (dosh "cmd" "/c" "type" aot-cljs-path "|"
-                    "build\\lumo.exe" "--quiet" "-c" "target" "-sfdk" "target\\aot"))
-          (do (dosh "mkdir" "target/aot")
-              (dosh "cat" aot-cljs-path "|"
-                    "build/lumo" "--quiet" "-c" "target" "-sfdk" "target/aot")))))))
+        (binding [*sh-dir* proj]
+          (if windows?
+            (do (dosh "mkdir" "target\\aot")
+                (dosh "cmd" "/c" "type" aot-cljs-path
+                      "| build\\lumo.exe" "--quiet" "-c"
+                      aot-classpath"-sfdk"
+                      aot-target-dir-path))
+            (do (dosh "mkdir" "-p" aot-target-dir-path)
+                (dosh "bash" "-c" (str "cat " aot-cljs-path " | "
+                                       build-dir-path "/lumo"
+                                       " --quiet -c"
+                                       aot-classpath
+                                       " -sfdk "
+                                       aot-target-dir-path)))))))))
 
-(deftask pkg
-  [p proj PROJECTPATH str "Path to the project to be bundled"
-   o opts OPTS        str "Lumo options as JSON map"]
-  (comp
-    (install-node-modules)
-    (compile-cljs)
-    (sift-cljs-resources)
-    (cache-edn->transit)
-    (write-core-analysis-caches)
-    (target)
-    (bundle-js)
-    (prepare-snapshot)
-    (backup-resources)
-    ;; Package first stage binary
-    (package-executable)
-    (restore-resources)
-    (pkg-install-node-modules :proj proj)
-    (pkg-bundle :proj proj :opts opts :dev false)
-    (pkg-aot :proj proj)
-    (aot-macros)
-    ;; Package final executable
-    (package-executable)))
 
 (deftask release-ci []
   (comp
@@ -387,12 +387,46 @@
     (backup-resources)
     ;; Package first stage binary
     (package-executable)
-    (restore-resources)
     (aot-macros)
     ;; Package final executable
-    (package-executable)))
+    (package-executable)
+    ))
+
+(deftask pkg
+  [p proj PROJECTPATH str "Path to the project to be bundled"
+   o opts OPTS        str "Lumo options as JSON map"]
+  (let [options-with-rel-cp (atom "{}")
+        relative-classpaths (atom [])]
+    (comp
+     ;; (install-node-modules)
+     ;; (compile-cljs)
+     ;; (sift-cljs-resources)
+     ;; (cache-edn->transit)
+     ;; (write-core-analysis-caches)
+     ;; (target)
+     ;; (bundle-js)
+     ;; (prepare-snapshot)
+     ;; (backup-resources)
+     ;; (package-executable)
+     ;; (aot-macros)
+     ;; ;; Same as release-ci up to this point
+     ;; (backup-resources)
+     ;; (package-executable)
+     ;; (restore-resources)
+     ;;   (pkg-install-node-modules :proj proj)
+     (with-pass-thru _
+       (let [[opts-with-rel-cp rel-cp] (bundle-classpaths proj opts)]
+         (reset! options-with-rel-cp opts-with-rel-cp)
+         (reset! relative-classpaths rel-cp)))
+     (pkg-bundle :proj proj :opts @options-with-rel-cp :dev false)
+     ;; (pkg-aot :proj proj :opts opts)
+     (backup-resources)
+     ;; The third and final exe compilation
+     (with-pass-thru _
+       (dosh "node" "scripts/package.js" "--pkg"
+             (json/write-str @relative-classpaths))))))
 
 (deftask release []
   (comp
-    (speak)
-    (release-ci)))
+   (speak)
+   (release-ci)))
