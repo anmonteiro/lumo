@@ -4,9 +4,6 @@ echo y | rd target /s || goto :error
 REM remove possible artifacts of failed compilations
 echo y | rd lumo-cljs /s
 
-REM move the backed up resources back to target
-move resources_bak target || goto :error
-
 echo "### Compiling Macro Namespaces"
 
 mkdir lumo-cljs\out\macros-tmp || goto :error

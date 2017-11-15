@@ -121,7 +121,7 @@ if (isPkgDevBuild || isPkgBuild) {
 		     'fn-invoke-direct':false,
 		     'elide-asserts':false,
 		     'quiet':false,
-		     // 'cache':'cljs',
+		     'cache':'aot',
 		     'args':[]};
   
   var opts = Object.assign({}, defaultOpts, JSON.parse(process.argv[3]));

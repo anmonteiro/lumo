@@ -177,8 +177,8 @@
   [p proj PROJECTPATH str "Path to the project to be bundled"]
   (let [target-path (-> (io/file "target") .getAbsolutePath)
         project-directory-list (->> (io/file proj)
-                                  .listFiles
-                                  (map #(.getName %)))
+                                    .listFiles
+                                    (map #(.getName %)))
         package-json-exists? (some #(= "package.json" %) project-directory-list)
         node-modules-exists? (some #(= "node_modules" %) project-directory-list)
         sep (if windows? "\\" "/")]
@@ -203,6 +203,10 @@
             (.renameTo (io/file (str proj sep "node_modules_bak"))
                        (io/file (str proj sep "node_modules")))))))))
 
+(defn expand-home [s]
+  (if (.startsWith s "~")
+    (str/replace-first s "~" (System/getProperty "user.home"))
+    s))
 
 (defn pkg-classpath
   "Bundles all artifacts on classpath and
@@ -211,7 +215,7 @@
   [proj opts]
   (let [opts (str/replace opts #"'" "\"")
         opts-edn (json/read-str opts)
-        classpath (get opts-edn "classpath")
+        classpath (mapv #(expand-home %) (get opts-edn "classpath"))
         sep (if windows? "\\" "/")
         target-path (-> (io/file "target") .getAbsolutePath)
         target-dir-list (->> (io/file "target")
@@ -238,30 +242,31 @@
       (binding [*sh-dir* proj]
         (->> (for [classp classpath]
                (let [abs-file (io/file classp)
-                     rel-file (io/file proj classp)]
+                     rel-file (try (io/file proj classp)
+                                   (catch java.lang.IllegalArgumentException e nil))]
                  (cond (validate-abs-fn abs-file) (do (if windows?
                                                         (dosh "cmd" "/c" "xcopy" classp target-path "/s" "/e" "/y")
                                                         (dosh "cp" "-R" classp target-path))
                                                       (.getName abs-file))
-                       (validate-rel-fn rel-file) (let [rel-path-tree (-> ;;(.getPath rel-file)
-                                                                       classp
-                                                                       (str/split #"/"))
-                                                        parent-folders (vec (butlast rel-path-tree))
-                                                        child-file (last rel-path-tree)]
-                                                    ;; Create dirs if they don't exist
-                                                    (doseq [nest-lvl (range (count parent-folders))]
-                                                      (let [path (->> (subvec parent-folders 0 (inc nest-lvl))
-                                                                      (interpose sep))
-                                                            rel-path (apply str "target" sep path)
-                                                            abs-path (apply str target-path sep path)]
-                                                        (when-not (-> abs-path io/file .exists)
+                       (and rel-file
+                            (validate-rel-fn rel-file)) (let [rel-path-tree (-> classp
+                                                                                (str/split #"/"))
+                                                              parent-folders (vec (butlast rel-path-tree))
+                                                              child-file (last rel-path-tree)]
+                                                          ;; Create dirs if they don't exist
+                                                          (doseq [nest-lvl (range (count parent-folders))]
+                                                            (let [path (->> (subvec parent-folders 0 (inc nest-lvl))
+                                                                            (interpose sep))
+                                                                  rel-path (apply str "target" sep path)
+                                                                  abs-path (apply str target-path sep path)]
+                                                              (when-not (-> abs-path io/file .exists)
+                                                                (if windows?
+                                                                  (dosh "cmd" "/c" "mkdir" abs-path)
+                                                                  (dosh "mkdir" abs-path)))))
                                                           (if windows?
-                                                            (dosh "cmd" "/c" "mkdir" abs-path)
-                                                            (dosh "mkdir" abs-path)))))
-                                                    (if windows?
-                                                      (dosh "cmd" "/c" "xcopy" classp (str target-path sep classp) "/s" "/e" "/y")
-                                                      (dosh "cp" "-R" classp (str target-path sep classp)))
-                                                    classp)
+                                                            (dosh "cmd" "/c" "xcopy" classp (str target-path sep classp) "/s" "/e" "/y")
+                                                            (dosh "cp" "-R" classp (str target-path sep classp)))
+                                                          classp)
                        :else (do (util/fail (str "File " classp
                                                  " does not exist\n"))
                                  (System/exit -1)))))
@@ -317,11 +322,34 @@
       (dosh "cmd" "/c" "echo" "d" "|" "xcopy" "target" "resources_bak" "/s" "/e" "/y")
       (dosh "cp" "-R" "target" "resources_bak"))))
 
+(deftask restore-resources
+  []
+  (with-pass-thru _
+    (if windows?
+      (dosh "cmd" "/c" "move" "resources_bak" "target")
+      (dosh "move" "resources_bak" "target"))))
+
 (deftask aot-macros []
   (with-pass-thru _
     (if windows?
       (dosh "cmd" "/c" ".\\scripts\\aot-bundle-macros.bat")
       (dosh "./scripts/aot-bundle-macros.sh"))))
+
+(deftask pkg-aot [p proj PROJECTPATH str "Path to the project to be bundled"]
+  (with-pass-thru _
+    (let [sep (if windows? "\\" "/")
+          aot-cljs-path (str proj sep "aot.cljs")
+          aot-cljs-exists? (.exists (io/file aot-cljs-path))]
+      (if-not aot-cljs-exists?
+        (util/warn (str "No aot.clj was found in " proj
+                        " aot compilations are skipped"))
+        (if windows?
+          (do (dosh "mkdir" "target\\aot")
+              (dosh "cmd" "/c" "type" aot-cljs-path "|"
+                    "build\\lumo.exe" "--quiet" "-c" "target" "-sfdk" "target\\aot"))
+          (do (dosh "mkdir" "target/aot")
+              (dosh "cat" aot-cljs-path "|"
+                    "build/lumo" "--quiet" "-c" "target" "-sfdk" "target/aot")))))))
 
 (deftask pkg
   [p proj PROJECTPATH str "Path to the project to be bundled"
@@ -333,12 +361,15 @@
     (cache-edn->transit)
     (write-core-analysis-caches)
     (target)
-    (pkg-install-node-modules :proj proj)
-    (pkg-bundle :proj proj :opts opts :dev false)
+    (bundle-js)
     (prepare-snapshot)
     (backup-resources)
     ;; Package first stage binary
     (package-executable)
+    (restore-resources)
+    (pkg-install-node-modules :proj proj)
+    (pkg-bundle :proj proj :opts opts :dev false)
+    (pkg-aot :proj proj)
     (aot-macros)
     ;; Package final executable
     (package-executable)))
@@ -356,6 +387,7 @@
     (backup-resources)
     ;; Package first stage binary
     (package-executable)
+    (restore-resources)
     (aot-macros)
     ;; Package final executable
     (package-executable)))

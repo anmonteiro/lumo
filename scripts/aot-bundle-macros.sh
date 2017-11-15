@@ -6,8 +6,6 @@ rm -rf target
 # remove possible artifacts of failed compilations
 rm -rf lumo-cljs
 
-# move the backed up resources back to target
-mv resources_bak target
 
 echo "### Compiling Macro Namespaces"
 

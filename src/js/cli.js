@@ -334,7 +334,7 @@ function startCLI(): mixed {
   if (opts.repl && !quiet) {
     printBanner();
   }
-  console.log('opts: ' + JSON.stringify(opts));
+
   return startClojureScriptEngine(opts);
 }
 
