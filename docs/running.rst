@@ -94,11 +94,11 @@ For example, if you have previously downloaded the
 `clojure/tools.cli <https://github.com/clojure/tools.cli>`_ package,
 you can store it in a local project folder and tell Lumo about it::
 
-  $ lumo -c src:lib/tools.cli-0.3.5.jar -m roll-dice --json 3d6
+  $ lumo -c src:lib/tools.cli-0.3.5.jar -m roll.dice --json 3d6
   {"3d6": 17}
 
-This adds the :file:`src` directory (presumably containing :file:`roll_dice.cljs`) and
-the tools.cli library to the classpath before running the ``roll-dice/-main`` function.
+This adds the :file:`src` directory (presumably containing :file:`roll/dice.cljs`) and
+the tools.cli library to the classpath before running the ``roll.dice/-main`` function.
 Our pretend tool rolls virtual dice and writes a JSON representation of the results
 to standard out before exiting.
 
@@ -115,13 +115,13 @@ Lumo can also use artifacts in your local Maven repository.
 
 ::
 
-  $ lumo -c src -D clojure/tools.cli:0.3.5 -m roll-dice --text 1d20
+  $ lumo -c src -D org.clojure/tools.cli:0.3.5 -m roll.dice --text 1d20
   1d20: 5
 
 This is not particularily more concise, and comes with the following caveats:
 
-* The library must *already* be present in your local repository. Lumo
-  will not download it.
+* The library must *already* be present in your local repository.
+  Lumo will not download it.
 * You must list any transitive dependencies, explicitly.
 
 Using NPM Libraries
