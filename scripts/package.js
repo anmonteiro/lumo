@@ -49,12 +49,21 @@ const resources = getDirContents('target').filter(
       !fname.endsWith('.map')),
 );
 
+
+var pkgResourcesMap = {};
 if (isPkgBuild) {
-  var classpath = JSON.parse(argv[1]).push('node_modules');
+  var classpath = JSON.parse(argv[1]);
+  classpath.push('node_modules');
 
   getDirContents('target').filter(fname => {
-    if (classpath.some(cp => fname.split('target/').pop().startsWith(cp))) {
+    if ((classpath.some(cp => fname.split('target/').pop().startsWith(cp))) &&
+	(!fs.lstatSync(fname).isDirectory())) {
       resources.push(fname);
+      // Map artifacts within classpath to require paths
+      let filePath = fname.split('target/').pop();
+      let filePathSplit = filePath.split('/');
+      let requirePath = filePathSplit.length === 1 ? filePath : filePathSplit.slice(1,filePathSplit.length).join('/');
+      pkgResourcesMap.requirePath = filePath;
     };
   });
 };
@@ -89,8 +98,11 @@ function patchNodeGyp(compiler, options, callback) {
 }
 
 Promise.all(resources.map(deflate)).then(() => {
-  embed(resources, 'target');
-
+  embed(resources, 'target', pkgResourcesMap);
+  for (i=0; i < resources.length; ++ i) {
+    console.log(resources[i]);
+  }
+  // console.log(resourceRoot);
   nexe.compile(
     {
       input: 'target/bundle.min.js',

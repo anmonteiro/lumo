@@ -86,6 +86,7 @@ if (!isDevBuild && !isPkgDevBuild) {
 }
 
 function pkgGenerateLumoEntryPoint (opts) {
+  
   return `import startClojureScriptEngine from './cljs';
           import * as util from './util';
           import * as lumo from './lumo';
@@ -98,7 +99,6 @@ function pkgGenerateLumoEntryPoint (opts) {
             const srcPaths = util.srcPathsFromClasspathStrings(classpath);
             options.classpath = srcPaths;
             lumo.addSourcePaths(srcPaths);
-            console.log(srcPaths);
           };
 
           v8.setFlagsFromString('--use_strict');
@@ -108,25 +108,14 @@ function pkgGenerateLumoEntryPoint (opts) {
 
 if (isPkgDevBuild || isPkgBuild) {
 
-  var defaultOpts = {'scripts': [],
-		     'classpath': [],
-		     'dependencies':[],
-		     'unrecognized':false,
-		     'help':false,
-		     'version':false,
-		     'legal':false,
-		     'repl':true,
-		     'verbose':false,
-		     'dumb-terminal':false,
-		     'static-fns':false,
-		     'fn-invoke-direct':false,
-		     'elide-asserts':false,
-		     'quiet':false,
-		     'cache':'aot',
-		     'args':[]};
-  
-  var opts = Object.assign({}, defaultOpts, JSON.parse(process.argv[3]));
+  var opts =  JSON.parse(process.argv[3]);
 
+  if (isPkgBuild) {
+    opts.cache = 'aot';
+  } else if (isPkgDevBuild) {
+    opts.classpath.push('target');
+  }
+  
   fs.writeFileSync('src/js/pkg.js',
 		   pkgGenerateLumoEntryPoint(opts), (err) => {
 		     if (err) {
@@ -137,14 +126,14 @@ if (isPkgDevBuild || isPkgBuild) {
 };
 
 rollup({
-  input: (!isPkgDevBuild && !isPkgBuild) ? 'src/js/index.js' : 'src/js/pkg.js',
+  input: (isPkgDevBuild || isPkgBuild) ? 'src/js/pkg.js' : 'src/js/index.js',
   plugins,
   external,
 })
   .then(bundle => {
     bundle.write({
       format: 'cjs',
-      file: `target/bundle${!isDevBuild || !isPkgDevBuild ? '.min' : ''}.js`,
+      file: `target/bundle${isDevBuild || isPkgDevBuild ? '': '.min'}.js`,
       interop: false,
       exports: 'none',
       intro: `;(function(){

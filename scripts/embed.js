@@ -12,7 +12,7 @@ function encode(filePath) {
   return fs.readFileSync(filePath).toString('base64');
 }
 
-function embed(resourceFiles = [], resourceRoot = '') {
+function embed(resourceFiles = [], resourceRoot = '', pkgResourcesMap = {}) {
   if (!Array.isArray(resourceFiles)) {
     throw new Error('Bad Argument: resourceFiles is not an array');
   }
@@ -27,6 +27,8 @@ function embed(resourceFiles = [], resourceRoot = '') {
 
   buffer +=
     '\n};\n\nlumo.internal.embedded.keys=function(){return Object.keys(lumo.internal.embedded.resources);}';
+  buffer += '\n\nlumo.internal.embedded.getPkgResourcesMap= ';
+  buffer += JSON.stringify(pkgResourcesMap);
   buffer += '\n\nlumo.internal.embedded.get=';
   buffer += accessor.toString();
   fs.appendFileSync('target/main.js', buffer);

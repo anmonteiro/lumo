@@ -44,6 +44,9 @@ jspm_packages
 # Output of 'npm pack'
 *.tgz
 
+# Generated lumo entry file
+src/js/pkg.js
+
 tmp/
 target/
 
