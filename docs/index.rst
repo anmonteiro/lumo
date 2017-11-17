@@ -14,5 +14,6 @@ long running servers.
 
    install
    running
+   node
 
    GitHub Project <https://github.com/anmonteiro/lumo>
