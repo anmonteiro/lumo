@@ -7,6 +7,7 @@
                  [com.cognitect/transit-cljs  "0.8.243"]
                  [malabarba/lazy-map          "1.3"]
                  [fipp                        "0.6.10"]
+                 [me.raynes/fs                "1.4.6"]
                  [org.clojure/test.check      "0.10.0-alpha2" :scope "test"]
                  [com.cognitect/transit-clj   "0.8.300" :scope "test"]
                  [com.cemerick/piggieback     "0.2.2"   :scope "test"]
@@ -18,14 +19,15 @@
  :exclusions '[org.clojure/clojure org.clojure/clojurescript])
 
 (require
-  '[adzerk.boot-cljs      :refer [cljs]]
-  '[crisptrutski.boot-cljs-test :refer [test-cljs]]
-  '[boot.util             :as util]
-  '[clojure.edn           :as edn]
-  '[clojure.string        :as str]
-  '[clojure.data.json     :as json]
-  '[clojure.java.io       :as io]
-  '[cognitect.transit     :as transit])
+ '[adzerk.boot-cljs      :refer [cljs]]
+ '[crisptrutski.boot-cljs-test :refer [test-cljs]]
+ '[boot.util             :as util]
+ '[clojure.edn           :as edn]
+ '[clojure.string        :as str]
+ '[clojure.data.json     :as json]
+ '[clojure.java.io       :as io]
+ '[cognitect.transit     :as transit]
+ '[me.raynes.fs          :as fs])
 
 (import [java.io ByteArrayOutputStream FileInputStream])
 
@@ -79,13 +81,14 @@
                       windows? (into ["cmd" "/c"])))
         (dosh "node" "scripts/bundleForeign.js")))))
 
+
 (defn write-cache! [cache out-path]
   (let [out (ByteArrayOutputStream. 1000000)
         writer (transit/writer out :json)]
     (transit/write writer cache)
     (spit (doto out-path
             io/make-parents)
-      (.toString out))))
+          (.toString out))))
 
 (deftask cache-edn->transit []
   (let [tmp (tmp-dir!)]
@@ -172,6 +175,143 @@
     (target)
     (bundle-js :dev true)))
 
+(deftask pkg-install-node-modules
+  [p ppath PROJECTPATH str "String with absolute path to project root-dir."]
+  (let [target-path (-> (io/file "target") .getAbsolutePath)
+        project-directory-list (->> (io/file ppath)
+                                    .listFiles
+                                    (map #(.getName %)))
+        package-json-exists? (some #(= "package.json" %) project-directory-list)
+        node-modules-exists? (some #(= "node_modules" %) project-directory-list)
+        sep (if windows? "\\" "/")]
+    (with-pass-thru _
+      (if-not package-json-exists?
+        (util/warn (str "package.json was not found in " ppath "\n"))
+        (do
+          (when node-modules-exists?
+            (.renameTo (io/file (str ppath sep "node_modules"))
+                       (io/file (str ppath sep "node_modules_bak"))))
+          (util/info (str "Fetching node_modules from " ppath
+                          " with `yarn install --production`\n"))
+          (binding [*sh-dir* ppath]
+            (if windows?
+              (do
+                (dosh "cmd" "/c" "yarn" "install" "--production")
+                (dosh "cmd" "/c" "move" "node_modules" (str target-path sep "node_modules")))
+              (do
+                (dosh "yarn" "install" "--production")
+                (dosh "mv" "node_modules" (str target-path sep "node_modules")))))
+          (when node-modules-exists?
+            (.renameTo (io/file (str ppath sep "node_modules_bak"))
+                       (io/file (str ppath sep "node_modules")))))))))
+
+(defn pkg-options
+  "Returns json string that gets passed to the pkg bundle"
+  [ppath main source-paths asset-paths with-repl]
+  {:mainNsName (or main "")
+   :classpath (into (or source-paths [])
+                    (or asset-paths []))
+   :repl (true? with-repl)
+   :scripts []
+   :dependencies []
+   :unrecognized false
+   :quiet false
+   :dumb-terminal false
+   :version false
+   :leagal false
+   :verbose false
+   :static-fns false
+   :elide-asserts false
+   :args []})
+
+(defn expand-home [s]
+  (if (.startsWith s "~")
+    (str/replace-first s "~" (System/getProperty "user.home"))
+    s))
+
+(deftask pkg-orchestrate-bundles
+  [p ppath        PROJECTPATH str  "String with absolute path to project root-dir."
+   s source-paths SOURCEPATHS edn  "Vector of paths and relative/absolute jar paths."
+   a asset-paths  ASSETPATHS  edn  "Vector of resource paths to bundle."]
+  (with-pass-thru _
+    (let [sep (if windows? "\\" "/")
+          target (io/file "target")
+          source-paths (or source-paths [])
+          asset-paths  (or asset-paths [])]
+      (spit "target/classpaths.edn"
+            (-> (fn [init-v path]
+                  (let [path (expand-home path)
+                        is-absolute? (.isAbsolute (io/file path))
+                        source-file (if is-absolute?
+                                      (io/file path)
+                                      (io/file (str ppath sep path)))
+                        destination-file (if is-absolute?
+                                           (io/file (str "target" sep (.getName source-file)))
+                                           (io/file (str "target" sep path)))]
+                    (cond (not (.exists source-file))
+                          (do (util/warn (str "Source or Asset path "
+                                              (.toString source-file)
+                                              " does not exists.\n"))
+                              init-v)
+                          (.exists destination-file)
+                          (do (util/fail (str "Folder or filename "
+                                              (.toString destination-file)
+                                              " already exists in bundle.\n"))
+                              (System/exit -1))
+                          (re-find #"\.jar$" (.toString source-file))
+                          (do (io/copy source-file
+                                       (io/file (str "target" sep (.getName source-file))))
+                              (conj init-v (str "target" sep (.getName source-file))))
+                          :else (let [is-directory? (.isDirectory source-file)]
+                                  (if is-directory?
+                                    (fs/copy-dir source-file target)
+                                    (io/copy source-file destination-file))
+                                  (if (some #(= path %) asset-paths)
+                                    init-v
+                                    (conj init-v (.toString destination-file)))))))
+                (reduce [] (into source-paths asset-paths)))))))
+
+(deftask pkg-bundle
+  [o opts OPTS edn "Lumo options as edn map"
+   d dev  bool   "Development build?"]
+  (with-pass-thru _
+    (when (.exists (io/file "target/bundle.min.js"))
+      (io/delete-file "target/bundle.min.js"))
+    (when (.exists (io/file "target/bundle.js"))
+      (io/delete-file "target/bundle.js"))
+    (when (.exists (io/file "src/js/pkg.js"))
+      (io/delete-file "src/js/pkg.js"))
+    (apply dosh
+           (cond->> ["node" "scripts/bundle.js"
+                     (if dev "--pkg-dev" "--pkg")
+                     (->> "target/classpaths.edn"
+                          slurp
+                          read-string
+                          (assoc opts :classpath)
+                          json/write-str)]
+             windows? (into ["cmd" "/c"])))))
+
+(deftask pkg-dev
+  [p ppath        PROJECTPATH str  "String with absolute path to project root-dir."
+   m main         MAIN        str  "String with the name of the main namespace to load."
+   s source-paths SOURCEPATHS edn  "Vector of relative source paths and jar paths."
+   a asset-paths  ASSETPATHS  edn  "Vector of resource paths to bundle."
+   r with-repl                bool "If passed, lumo repl promt will be started."]
+  (let [opts (pkg-options ppath main source-paths asset-paths with-repl)]
+    (comp
+     (speak)
+     (install-node-modules)
+     (compile-cljs)
+     (sift-cljs-resources)
+     (cache-edn->transit)
+     (write-core-analysis-caches)
+     (target)
+     (pkg-install-node-modules :ppath ppath)
+     (pkg-orchestrate-bundles :ppath ppath
+                              :source-paths source-paths
+                              :asset-paths asset-paths)
+     (pkg-bundle :opts opts :dev true))))
+
 (deftask prepare-snapshot []
   (with-pass-thru _
     (dosh "node" "scripts/prepare_snapshot.js")))
@@ -187,7 +327,16 @@
   (with-pass-thru _
     (if windows?
       (dosh "cmd" "/c" "echo" "d" "|" "xcopy" "target" "resources_bak" "/s" "/e" "/y")
-      (dosh "cp" "-R" "target" "resources_bak"))))
+      (do (dosh "rm" "-rf" "resources_bak")
+          (dosh "cp" "-R" "target" "resources_bak")))))
+
+(deftask restore-resources
+  []
+  (with-pass-thru _
+    (if windows?
+      (dosh "cmd" "/c" "move" "resources_bak" "target")
+      (do (dosh "rm" "-rf" "target")
+          (dosh "mv" "resources_bak" "target")))))
 
 (deftask aot-macros []
   (with-pass-thru _
@@ -195,24 +344,93 @@
       (dosh "cmd" "/c" ".\\scripts\\aot-bundle-macros.bat")
       (dosh "./scripts/aot-bundle-macros.sh"))))
 
+(deftask pkg-aot
+  [p ppath PROJECTPATH str  "String with absolute path to project root-dir."
+   o opts  OPTS        edn  "Lumo options as edn map"]
+  (with-pass-thru _
+    (let [sep (if windows? "\\" "/")
+          aot-target-dir-path (.getAbsolutePath (io/file "target/aot"))
+          target-dir-path (.getAbsolutePath (io/file "target"))
+          build-dir-path (.getAbsolutePath (io/file "build"))
+          classpath (apply str target-dir-path ":"
+                           (interpose ":" (:classpath opts)))]
+      (binding [*sh-dir* ppath]
+        (if windows?
+          (do (dosh "mkdir" "target\\aot")
+              (dosh (str build-dir-path "\\lumo.exe")
+                    "--quiet" "-c"
+                    classpath
+                    "-sfdk"
+                    aot-target-dir-path
+                    "-m" (:mainNsName opts)))
+          (do (dosh "mkdir" "-p" aot-target-dir-path)
+              (dosh (str build-dir-path "/lumo")
+                    "--quiet" "-c"
+                    classpath
+                    "-sfdk"
+                    aot-target-dir-path
+                    "-m" (:mainNsName opts))))))))
+
+(deftask pkg-nexe
+  [a asset-paths ASSETPATHS edn "Vector of resource paths to bundle."]
+  (with-pass-thru _
+    (apply dosh
+           (cond->> ["node" "scripts/package.js" "--pkg"
+                     (-> "target/classpaths.edn"
+                         slurp read-string json/write-str)]
+             windows? (into ["cmd" "/c"])))))
+
+(deftask pkg
+  [p ppath        PROJECTPATH str  "String with absolute path to project root-dir."
+   m main         MAIN        str  "String with the name of the main namespace to load."
+   s source-paths SOURCEPATHS edn  "Vector of relative source paths or jar paths."
+   a asset-paths  ASSETPATHS  edn  "Vector of resource paths to bundle."
+   r with-repl                bool "If passed, lumo repl promt will be started."]
+  (let [opts (pkg-options ppath main source-paths asset-paths with-repl)]
+    (comp
+     (install-node-modules)
+     (compile-cljs)
+     (sift-cljs-resources)
+     (cache-edn->transit)
+     (write-core-analysis-caches)
+     (target)
+     (bundle-js)
+     (prepare-snapshot)
+     (backup-resources)
+     (package-executable)
+     (aot-macros)
+     ;; Same as release-ci up to this point
+     (backup-resources)
+     (package-executable)
+     (restore-resources)
+     (pkg-install-node-modules :ppath ppath)
+     (pkg-orchestrate-bundles :ppath ppath
+                              :source-paths source-paths
+                              :asset-paths asset-paths)
+     (pkg-bundle :opts opts :dev false)
+     (pkg-aot :ppath ppath :opts opts)
+     (backup-resources)
+     ;; The third and final exe compilation
+     (pkg-nexe :asset-paths asset-paths))))
+
 (deftask release-ci []
   (comp
-    (install-node-modules)
-    (compile-cljs)
-    (sift-cljs-resources)
-    (cache-edn->transit)
-    (write-core-analysis-caches)
-    (target)
-    (bundle-js)
-    (prepare-snapshot)
-    (backup-resources)
-    ;; Package first stage binary
-    (package-executable)
-    (aot-macros)
-    ;; Package final executable
-    (package-executable)))
+   (install-node-modules)
+   (compile-cljs)
+   (sift-cljs-resources)
+   (cache-edn->transit)
+   (write-core-analysis-caches)
+   (target)
+   (bundle-js)
+   (prepare-snapshot)
+   (backup-resources)
+   ;; Package first stage binary
+   (package-executable)
+   (aot-macros)
+   ;; Package final executable
+   (package-executable)))
 
 (deftask release []
   (comp
-    (speak)
-    (release-ci)))
+   (speak)
+   (release-ci)))

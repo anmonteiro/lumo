@@ -6,7 +6,9 @@ const os = require('os');
 const zlib = require('zlib');
 const embed = require('./embed');
 
-const nodeVersion = '9.0.0';
+const argv = process.argv.slice(2);
+const isPkgBuild = /(--pkg)$/.test(argv[0]);
+const nodeVersion = '9.2.0';
 
 function getDirContents(dir, accumPath = dir) {
   let filenames = fs.readdirSync(dir);
@@ -34,18 +36,34 @@ function deflate(fname) {
   });
 }
 
+function resourceFilter (fname) {
+  if (isPkgBuild) {
+    return fname.endsWith('.aot.js.map') ||
+      fname.startsWith('target/node_modules') ||
+      (!fname.endsWith('target/main.js') &&
+       !fname.endsWith('target/bundle.js') &&
+       !fname.endsWith('target/bundle.min.js') &&
+       !fname.endsWith('target/google-closure-compiler-js.js') &&
+       !fname.endsWith('target/aot.edn') &&
+       !/target[\\\/]cljs[\\/]core.js/.test(fname))
+  }
+  else {
+    return fname.endsWith('.aot.js.map') ||
+      (!fname.endsWith('main.js') &&
+       !fname.endsWith('bundle.js') &&
+       !fname.endsWith('bundle.min.js') &&
+       !fname.endsWith('google-closure-compiler-js.js') &&
+       !fname.endsWith('aot.edn') &&
+       !fname.endsWith('.jar') &&
+       !/target[\\\/]cljs[\\/]core.js/.test(fname) &&
+       !fname.endsWith('.map'))
+  }
+}
+
 const outputPath = `build/${/^Windows/.test(os.type()) ? 'lumo.exe' : 'lumo'}`;
-const resources = getDirContents('target').filter(
-  fname =>
-    fname.endsWith('.aot.js.map') ||
-    (!fname.endsWith('main.js') &&
-      !fname.endsWith('bundle.js') &&
-      !fname.endsWith('bundle.min.js') &&
-      !fname.endsWith('google-closure-compiler-js.js') &&
-      !fname.endsWith('aot.edn') &&
-      !/target[\\\/]cljs[\\/]core.js/.test(fname) &&
-      !fname.endsWith('.map')),
-);
+var resources = getDirContents('target').filter(fname => resourceFilter(fname));
+
+var pkgSourcePaths = JSON.parse(argv[1] || '[]');
 
 function moveLibs(compiler, options, callback) {
   fs.writeFileSync(
@@ -55,6 +73,7 @@ function moveLibs(compiler, options, callback) {
 
   callback(null, compiler, options);
 }
+
 
 function patchNodeGyp(compiler, options, callback) {
   const gypPath = path.join(compiler.dir, 'node.gyp');
@@ -73,18 +92,32 @@ function patchNodeGyp(compiler, options, callback) {
       next(null, newContent);
     },
     callback,
+  );  
+}
+
+function patchRequire(compiler, options, callback) {
+  const libModulePath = path.join(compiler.dir, 'lib','module.js');
+  fs.writeFileSync(libModulePath,
+		   fs.readFileSync(`scripts/requirePatch.js`),
   );
+  callback(null, compiler, options);
+}
+
+var patches = [moveLibs, patchNodeGyp];
+
+if (isPkgBuild) {
+  patches.unshift(patchRequire);
 }
 
 Promise.all(resources.map(deflate)).then(() => {
-  embed(resources, 'target');
-
+  embed(resources, 'target', pkgSourcePaths);
+  
   nexe.compile(
     {
       input: 'target/bundle.min.js',
       output: outputPath,
       nodeTempDir: 'tmp',
-      patchFns: [moveLibs, patchNodeGyp],
+      patchFns: patches,
       nodeConfigureArgs: [
         '--without-dtrace',
         '--without-npm',

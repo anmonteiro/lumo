@@ -39,9 +39,13 @@ jspm_packages
 
 # Optional REPL history
 .node_repl_history
+.nrepl-history
 
 # Output of 'npm pack'
 *.tgz
+
+# Generated lumo entry file
+src/js/pkg.js
 
 tmp/
 target/

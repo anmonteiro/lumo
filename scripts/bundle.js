@@ -6,9 +6,11 @@ const resolve = require('rollup-plugin-node-resolve');
 const commonjs = require('rollup-plugin-commonjs');
 const babelMinify = require('rollup-plugin-babel-minify');
 
-const pkg = require('../package.json');
+const packageDotJson = require('../package.json');
 const argv = process.argv.slice(2);
 const isDevBuild = /(--dev|-d)$/.test(argv[0]);
+const isPkgDevBuild = /(--pkg-dev)$/.test(argv[0]);
+const isPkgBuild = /(--pkg)$/.test(argv[0]);
 
 function writeClojureScriptVersion() {
   const rs = fs.createReadStream('target/cljs/analyzer.js');
@@ -34,7 +36,7 @@ function writeClojureScriptVersion() {
 
 writeClojureScriptVersion();
 
-console.log(`Building ${isDevBuild ? 'development' : 'production'} bundle...`);
+console.log(`Building ${isDevBuild || isPkgDevBuild ? 'development' : 'production'} bundle...`);
 
 const external = [
   'google-closure-compiler-js',
@@ -54,13 +56,13 @@ const external = [
   'zlib',
 ];
 
-const replacement = JSON.stringify(isDevBuild ? 'development' : 'production');
+const replacement = JSON.stringify(isDevBuild || isPkgDevBuild ? 'development' : 'production');
 const plugins = [
   babel(),
   replace({
     values: {
       'process.env.NODE_ENV': replacement,
-      'process.env.LUMO_VERSION': JSON.stringify(pkg.version),
+      'process.env.LUMO_VERSION': JSON.stringify(packageDotJson.version),
     },
   }),
   resolve({
@@ -73,7 +75,7 @@ const plugins = [
   }),
 ];
 
-if (!isDevBuild) {
+if (!isDevBuild && !isPkgDevBuild) {
   plugins.push(
     babelMinify({
       comments: false,
@@ -83,15 +85,56 @@ if (!isDevBuild) {
   );
 }
 
+
+function pkgGenerateLumoEntryPoint (opts) {
+  
+  return `import startClojureScriptEngine from './cljs';
+          import * as util from './util';
+          import * as lumo from './lumo';
+          import v8 from 'v8';
+
+          const options = ${JSON.stringify(opts)};
+          const classpath = options['classpath'];
+
+          if (classpath.length !== 0) {
+            const srcPaths = util.srcPathsFromClasspathStrings(classpath);
+            options.classpath = srcPaths;
+            lumo.addSourcePaths(srcPaths);
+          };
+
+          v8.setFlagsFromString('--use_strict');
+
+          startClojureScriptEngine(options);`
+};
+
+if (isPkgDevBuild || isPkgBuild) {
+
+  var opts =  JSON.parse(process.argv[3]);
+  
+  if (isPkgBuild) {
+    opts.cache = 'aot';
+  } else if (isPkgDevBuild) {
+    opts.classpath.push('target');
+  }
+  
+  fs.writeFileSync('src/js/pkg.js',
+		   pkgGenerateLumoEntryPoint(opts), (err) => {
+		     if (err) {
+		       return console.log(err);
+		     };
+		     console.log('Wrote pkg.js lumo entry point ' + process.argv.slice(3));
+		   });
+};
+
 rollup({
-  input: 'src/js/index.js',
+  input: (isPkgDevBuild || isPkgBuild) ? 'src/js/pkg.js' : 'src/js/index.js',
   plugins,
   external,
 })
   .then(bundle => {
     bundle.write({
       format: 'cjs',
-      file: `target/bundle${!isDevBuild ? '.min' : ''}.js`,
+      file: `target/bundle${isDevBuild || isPkgDevBuild ? '': '.min'}.js`,
       interop: false,
       exports: 'none',
       intro: `;(function(){
