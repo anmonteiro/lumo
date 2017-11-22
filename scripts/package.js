@@ -36,37 +36,34 @@ function deflate(fname) {
   });
 }
 
+function resourceFilter (fname) {
+  if (isPkgBuild) {
+    return fname.endsWith('.aot.js.map') ||
+      fname.startsWith('target/node_modules') ||
+      (!fname.endsWith('target/main.js') &&
+       !fname.endsWith('target/bundle.js') &&
+       !fname.endsWith('target/bundle.min.js') &&
+       !fname.endsWith('target/google-closure-compiler-js.js') &&
+       !fname.endsWith('target/aot.edn') &&
+       !/target[\\\/]cljs[\\/]core.js/.test(fname))
+  }
+  else {
+    return fname.endsWith('.aot.js.map') ||
+      (!fname.endsWith('main.js') &&
+       !fname.endsWith('bundle.js') &&
+       !fname.endsWith('bundle.min.js') &&
+       !fname.endsWith('google-closure-compiler-js.js') &&
+       !fname.endsWith('aot.edn') &&
+       !fname.endsWith('.jar') &&
+       !/target[\\\/]cljs[\\/]core.js/.test(fname) &&
+       !fname.endsWith('.map'))
+  }
+}
+
 const outputPath = `build/${/^Windows/.test(os.type()) ? 'lumo.exe' : 'lumo'}`;
-const resources = getDirContents('target').filter(
-  fname =>
-    fname.endsWith('.aot.js.map') ||
-    (!fname.endsWith('main.js') &&
-      !fname.endsWith('bundle.js') &&
-      !fname.endsWith('bundle.min.js') &&
-      !fname.endsWith('google-closure-compiler-js.js') &&
-      !fname.endsWith('aot.edn') &&
-      !/target[\\\/]cljs[\\/]core.js/.test(fname) &&
-      !fname.endsWith('.map')),
-);
+var resources = getDirContents('target').filter(fname => resourceFilter(fname));
 
-
-var pkgResourcesMap = {};
-if (isPkgBuild) {
-  var classpath = JSON.parse(argv[1]);
-  classpath.push('node_modules');
-
-  getDirContents('target').filter(fname => {
-    if ((classpath.some(cp => fname.split('target/').pop().startsWith(cp))) &&
-	(!fs.lstatSync(fname).isDirectory())) {
-      resources.push(fname);
-      // Map artifacts within classpath to require paths
-      let filePath = fname.split('target/').pop();
-      let filePathSplit = filePath.split('/');
-      let requirePath = filePathSplit.length === 1 ? filePath : filePathSplit.slice(1,filePathSplit.length).join('/');
-      pkgResourcesMap.requirePath = filePath;
-    };
-  });
-};
+var pkgSourcePaths = JSON.parse(argv[1] || '[]');
 
 function moveLibs(compiler, options, callback) {
   fs.writeFileSync(
@@ -76,6 +73,7 @@ function moveLibs(compiler, options, callback) {
 
   callback(null, compiler, options);
 }
+
 
 function patchNodeGyp(compiler, options, callback) {
   const gypPath = path.join(compiler.dir, 'node.gyp');
@@ -94,21 +92,32 @@ function patchNodeGyp(compiler, options, callback) {
       next(null, newContent);
     },
     callback,
+  );  
+}
+
+function patchRequire(compiler, options, callback) {
+  const libModulePath = path.join(compiler.dir, 'lib','module.js');
+  fs.writeFileSync(libModulePath,
+		   fs.readFileSync(`scripts/requirePatch.js`),
   );
+  callback(null, compiler, options);
+}
+
+var patches = [moveLibs, patchNodeGyp];
+
+if (isPkgBuild) {
+  patches.unshift(patchRequire);
 }
 
 Promise.all(resources.map(deflate)).then(() => {
-  embed(resources, 'target', pkgResourcesMap);
-  for (i=0; i < resources.length; ++ i) {
-    console.log(resources[i]);
-  }
-  // console.log(resourceRoot);
+  embed(resources, 'target', pkgSourcePaths);
+  
   nexe.compile(
     {
       input: 'target/bundle.min.js',
       output: outputPath,
       nodeTempDir: 'tmp',
-      patchFns: [moveLibs, patchNodeGyp],
+      patchFns: patches,
       nodeConfigureArgs: [
         '--without-dtrace',
         '--without-npm',

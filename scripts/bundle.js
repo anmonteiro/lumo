@@ -85,6 +85,7 @@ if (!isDevBuild && !isPkgDevBuild) {
   );
 }
 
+
 function pkgGenerateLumoEntryPoint (opts) {
   
   return `import startClojureScriptEngine from './cljs';
@@ -109,7 +110,7 @@ function pkgGenerateLumoEntryPoint (opts) {
 if (isPkgDevBuild || isPkgBuild) {
 
   var opts =  JSON.parse(process.argv[3]);
-
+  
   if (isPkgBuild) {
     opts.cache = 'aot';
   } else if (isPkgDevBuild) {

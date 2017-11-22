@@ -12,7 +12,7 @@ function encode(filePath) {
   return fs.readFileSync(filePath).toString('base64');
 }
 
-function embed(resourceFiles = [], resourceRoot = '', pkgResourcesMap = {}) {
+function embed(resourceFiles = [], resourceRoot = '', pkgSourcePaths = []) {
   if (!Array.isArray(resourceFiles)) {
     throw new Error('Bad Argument: resourceFiles is not an array');
   }
@@ -20,15 +20,23 @@ function embed(resourceFiles = [], resourceRoot = '', pkgResourcesMap = {}) {
   let buffer =
     '\nlumo.internal={embedded: {}};lumo.internal.embedded.resources={\n';
   for (let i = 0; i < resourceFiles.length; i++) {
-    buffer +=
-      JSON.stringify(path.relative(resourceRoot, resourceFiles[i])) + ':"';
+    var relativePath = path.relative(resourceRoot, resourceFiles[i]);
+
+    if (pkgSourcePaths.length !== 0) {
+      if (pkgSourcePaths.some(cp => relativePath.startsWith(cp))) {
+      	relativePath = relativePath.replace(cp,'').replace(/^\//, '');
+      }
+      if (relativePath.startsWith('aot')){
+	relativePath = relativePath.replace('aot/', '').replace(/_SLASH_/g, '/');
+      }
+    }
+
+    buffer += JSON.stringify(relativePath) + ':"';
     buffer += encode(resourceFiles[i]) + '",\n';
   }
 
   buffer +=
     '\n};\n\nlumo.internal.embedded.keys=function(){return Object.keys(lumo.internal.embedded.resources);}';
-  buffer += '\n\nlumo.internal.embedded.getPkgResourcesMap= ';
-  buffer += JSON.stringify(pkgResourcesMap);
   buffer += '\n\nlumo.internal.embedded.get=';
   buffer += accessor.toString();
   fs.appendFileSync('target/main.js', buffer);
