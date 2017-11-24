@@ -347,12 +347,12 @@
     (let [out (path/join (test/tmp-dir) "compilation-test-out")
           root "src/test/cljs_build"]
       (test/delete-out-files out)
-      (is (nil? (build/build
-                  (path/join root "hello" "world.cljs")
-                  {:main 'hello
-                   :optimizations :none
-                   :output-dir out}
-                  (env/default-compiler-env)))
+      (is (build/build
+            (path/join root "hello" "world.cljs")
+            {:main 'hello
+             :optimizations :none
+             :output-dir out}
+            (env/default-compiler-env))
         "Successful compilation should return")))
 
   (testing "failure"
@@ -375,12 +375,12 @@
         root "src/test/cljs_build"]
     (testing ":optimizations :none"
       (test/delete-out-files out)
-      (is (nil? (build/build
-                  (path/join root "test_check")
-                  {:main 'hello
-                   :optimizations :none
-                   :output-dir out}
-                  (env/default-compiler-env))) "It should successfully compile with :optimizations :none")
+      (is (build/build
+            (path/join root "test_check")
+            {:main 'hello
+             :optimizations :none
+             :output-dir out}
+            (env/default-compiler-env)) "It should successfully compile with :optimizations :none")
         (test/delete-out-files out))))
 
 (deftest lumo-308-test
