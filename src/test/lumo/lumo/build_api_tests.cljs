@@ -11,102 +11,102 @@
             fs
             path))
 
-(deftest test-target-file-for-cljs-ns
-  (is (= (build/target-file-for-cljs-ns 'example.core-lib nil)
-         (test/platform-path "out/example/core_lib.js")))
-  (is (= (build/target-file-for-cljs-ns 'example.core-lib "output")
-         (test/platform-path "output/example/core_lib.js"))))
+#_(deftest test-target-file-for-cljs-ns
+    (is (= (build/target-file-for-cljs-ns 'example.core-lib nil)
+           (test/platform-path "out/example/core_lib.js")))
+    (is (= (build/target-file-for-cljs-ns 'example.core-lib "output")
+           (test/platform-path "output/example/core_lib.js"))))
 
-(deftest test-cljs-dependents-for-macro-namespaces
-  (env/with-compiler-env (env/default-compiler-env)
-    (swap! env/*compiler* assoc :cljs.analyzer/namespaces
-                                { 'example.core
-                                 {:require-macros {'example.macros 'example.macros
-                                                   'mac 'example.macros}
-                                  :name 'example.core}
-                                 'example.util
-                                 {:require-macros {'example.macros 'example.macros
-                                                   'mac 'example.macros}
-                                  :name 'example.util}
-                                 'example.helpers
-                                 {:require-macros {'example.macros-again 'example.macros-again
-                                                   'mac 'example.macros-again}
-                                  :name 'example.helpers }
-                                 'example.fun
-                                 {:require-macros nil
-                                  :name 'example.fun }})
-    (is (= (set (build/cljs-dependents-for-macro-namespaces ['example.macros]))
-           #{'example.core 'example.util}))
-    (is (= (set (build/cljs-dependents-for-macro-namespaces ['example.macros-again]))
-           #{'example.helpers}))
-    (is (= (set (build/cljs-dependents-for-macro-namespaces ['example.macros 'example.macros-again]))
-           #{'example.core 'example.util 'example.helpers}))
-    (is (= (set (build/cljs-dependents-for-macro-namespaces ['example.not-macros]))
-           #{}))))
+#_(deftest test-cljs-dependents-for-macro-namespaces
+    (env/with-compiler-env (env/default-compiler-env)
+      (swap! env/*compiler* assoc :cljs.analyzer/namespaces
+             { 'example.core
+              {:require-macros {'example.macros 'example.macros
+                                'mac 'example.macros}
+               :name 'example.core}
+              'example.util
+              {:require-macros {'example.macros 'example.macros
+                                'mac 'example.macros}
+               :name 'example.util}
+              'example.helpers
+              {:require-macros {'example.macros-again 'example.macros-again
+                                'mac 'example.macros-again}
+               :name 'example.helpers }
+              'example.fun
+              {:require-macros nil
+               :name 'example.fun }})
+      (is (= (set (build/cljs-dependents-for-macro-namespaces ['example.macros]))
+             #{'example.core 'example.util}))
+      (is (= (set (build/cljs-dependents-for-macro-namespaces ['example.macros-again]))
+             #{'example.helpers}))
+      (is (= (set (build/cljs-dependents-for-macro-namespaces ['example.macros 'example.macros-again]))
+             #{'example.core 'example.util 'example.helpers}))
+      (is (= (set (build/cljs-dependents-for-macro-namespaces ['example.not-macros]))
+             #{}))))
 
 (def test-cenv (atom {}))
 (def test-env (assoc-in (ana/empty-env) [:ns :name] 'cljs.user))
 
 ;; basic
 
-(binding [ana/*cljs-ns* 'cljs.user
-          ana/*analyze-deps* false]
-  (env/with-compiler-env test-cenv
-    (ana/no-warn
-      (ana/analyze test-env
-        '(ns cljs.user
-           (:use [clojure.string :only [join]]))))))
+#_(binding [ana/*cljs-ns* 'cljs.user
+            ana/*analyze-deps* false]
+    (env/with-compiler-env test-cenv
+      (ana/no-warn
+       (ana/analyze test-env
+                    '(ns cljs.user
+                       (:use [clojure.string :only [join]]))))))
 
 ;; linear
 
-(binding [ana/*cljs-ns* 'cljs.user
-          ana/*analyze-deps* false]
-  (env/with-compiler-env test-cenv
-    (ana/no-warn
-      (ana/analyze test-env
-        '(ns foo.core)))))
+#_(binding [ana/*cljs-ns* 'cljs.user
+            ana/*analyze-deps* false]
+    (env/with-compiler-env test-cenv
+      (ana/no-warn
+       (ana/analyze test-env
+                    '(ns foo.core)))))
 
-(binding [ana/*cljs-ns* 'cljs.user
-          ana/*analyze-deps* false]
-  (env/with-compiler-env test-cenv
-    (ana/no-warn
-      (ana/analyze test-env
-        '(ns bar.core
-           (:require [foo.core :as foo]))))))
+#_(binding [ana/*cljs-ns* 'cljs.user
+            ana/*analyze-deps* false]
+    (env/with-compiler-env test-cenv
+      (ana/no-warn
+       (ana/analyze test-env
+                    '(ns bar.core
+                       (:require [foo.core :as foo]))))))
 
-(binding [ana/*cljs-ns* 'cljs.user
-          ana/*analyze-deps* false]
-  (env/with-compiler-env test-cenv
-    (ana/no-warn
-      (ana/analyze test-env
-        '(ns baz.core
-           (:require [bar.core :as bar]))))))
+#_(binding [ana/*cljs-ns* 'cljs.user
+            ana/*analyze-deps* false]
+    (env/with-compiler-env test-cenv
+      (ana/no-warn
+       (ana/analyze test-env
+                    '(ns baz.core
+                       (:require [bar.core :as bar]))))))
 
 ;; graph
 
-(binding [ana/*cljs-ns* 'cljs.user
-          ana/*analyze-deps* false]
-  (env/with-compiler-env test-cenv
-    (ana/no-warn
-      (ana/analyze test-env
-        '(ns graph.foo.core)))))
+#_(binding [ana/*cljs-ns* 'cljs.user
+            ana/*analyze-deps* false]
+    (env/with-compiler-env test-cenv
+      (ana/no-warn
+       (ana/analyze test-env
+                    '(ns graph.foo.core)))))
 
-(binding [ana/*cljs-ns* 'cljs.user
-          ana/*analyze-deps* false]
-  (env/with-compiler-env test-cenv
-    (ana/no-warn
-      (ana/analyze test-env
-        '(ns graph.bar.core
-           (:require [graph.foo.core :as foo]))))))
+#_(binding [ana/*cljs-ns* 'cljs.user
+            ana/*analyze-deps* false]
+    (env/with-compiler-env test-cenv
+      (ana/no-warn
+       (ana/analyze test-env
+                    '(ns graph.bar.core
+                       (:require [graph.foo.core :as foo]))))))
 
-(binding [ana/*cljs-ns* 'cljs.user
-          ana/*analyze-deps* false]
-  (env/with-compiler-env test-cenv
-    (ana/no-warn
-      (ana/analyze test-env
-        '(ns graph.baz.core
-           (:require [graph.foo.core :as foo]
-                     [graph.bar.core :as bar]))))))
+#_(binding [ana/*cljs-ns* 'cljs.user
+            ana/*analyze-deps* false]
+    (env/with-compiler-env test-cenv
+      (ana/no-warn
+       (ana/analyze test-env
+                    '(ns graph.baz.core
+                       (:require [graph.foo.core :as foo]
+                                 [graph.bar.core :as bar]))))))
 
 ;; (deftest cljs-1469
 ;;   (let [out (.getPath (io/file (test/tmp-dir) "loader-test-out"))
@@ -138,40 +138,40 @@
 ;;     (is (re-find #"Module A loaded" (slurp (-> modules :module-a :output-to))))
 ;;     (is (re-find #"Module B loaded" (slurp (-> modules :module-b :output-to))))))
 
-(deftest cljs-1883-test-foreign-libs-use-relative-path
-  (let [out (path/join (test/tmp-dir) "cljs-1883-out")
-        root (path/join "src" "test" "cljs_build")
-        opts {:foreign-libs
-              [{:file (str (path/join root "thirdparty" "add.js"))
-                :provides  ["thirdparty.add"]}]
-              :output-dir (str out)
-              :target :nodejs}]
-    (test/delete-out-files out)
-    (build/build (build/inputs (path/join root "foreign_libs") (path/join root "thirdparty")) opts)
-    (let [foreign-lib-file (path/join out (-> opts :foreign-libs first :file))]
-      (is (fs/existsSync foreign-lib-file))
-      (is (= (->> (fs/readFileSync (path/join out "foreign_libs" "core.js") "utf8")
-               (re-matches #"[\s\S]*(goog\.require\('thirdparty.add'\);)[\s\S]*")
-               (second))
-            "goog.require('thirdparty.add');")))))
+#_(deftest cljs-1883-test-foreign-libs-use-relative-path
+    (let [out (path/join (test/tmp-dir) "cljs-1883-out")
+          root (path/join "src" "test" "cljs_build")
+          opts {:foreign-libs
+                [{:file (str (path/join root "thirdparty" "add.js"))
+                  :provides  ["thirdparty.add"]}]
+                :output-dir (str out)
+                :target :nodejs}]
+      (test/delete-out-files out)
+      (build/build (build/inputs (path/join root "foreign_libs") (path/join root "thirdparty")) opts)
+      (let [foreign-lib-file (path/join out (-> opts :foreign-libs first :file))]
+        (is (fs/existsSync foreign-lib-file))
+        (is (= (->> (fs/readFileSync (path/join out "foreign_libs" "core.js") "utf8")
+                    (re-matches #"[\s\S]*(goog\.require\('thirdparty.add'\);)[\s\S]*")
+                    (second))
+               "goog.require('thirdparty.add');")))))
 
-(deftest cljs-1537-circular-deps
-  (let [out (path/join (test/tmp-dir) "cljs-1537-test-out")
-        root "src/test/cljs_build"]
-    (test/delete-out-files out)
-    (try
-      (build/build
-        (build/inputs
+#_(deftest cljs-1537-circular-deps
+    (let [out (path/join (test/tmp-dir) "cljs-1537-test-out")
+          root "src/test/cljs_build"]
+      (test/delete-out-files out)
+      (try
+        (build/build
+         (build/inputs
           (path/join root "circular_deps" "a.cljs")
           (path/join root "circular_deps" "b.cljs"))
-        {:main 'circular-deps.a
-         :optimizations :none
-         :output-to out}
-        (env/default-compiler-env))
-      (is false)
-      (catch js/Error error
-        (is (re-find  #"Circular dependency detected circular-deps.b -> circular-deps.a -> circular-deps.b"
-              (-> error .-cause .-message)))))))
+         {:main 'circular-deps.a
+          :optimizations :none
+          :output-to out}
+         (env/default-compiler-env))
+        (is false)
+        (catch js/Error error
+          (is (re-find  #"Circular dependency detected circular-deps.b -> circular-deps.a -> circular-deps.b"
+                        (-> error .-cause .-message)))))))
 
 ;; (defn loader-test-project [output-dir]
 ;;   {:inputs (str (io/file "src" "test" "cljs_build" "loader_test"))
@@ -217,158 +217,158 @@
 ;;         (build/build (build/inputs inputs) opts)
 ;;         (is (not (nil? (re-find #"foreignA[\s\S]+foreignB" (slurp (io/file out "foo.js"))))))))))
 
-(deftest test-npm-deps
-  (testing "simplest case, require"
-    (test/delete-node-modules)
-    (let [out (path/join (test/tmp-dir) "npm-deps-test-out")
+#_(deftest test-npm-deps
+    (testing "simplest case, require"
+      (test/delete-node-modules)
+      (let [out (path/join (test/tmp-dir) "npm-deps-test-out")
+            {:keys [inputs opts]} {:inputs (path/join "src" "test" "cljs_build")
+                                   :opts {:main 'npm-deps-test.core
+                                          :output-dir out
+                                          :optimizations :none
+                                          :install-deps true
+                                          :npm-deps {:left-pad "1.1.3"}
+                                          :closure-warnings {:check-types :off}}}
+            cenv (env/default-compiler-env)]
+        (test/delete-out-files out)
+        (build/build (build/inputs (path/join inputs "npm_deps_test/core.cljs")) opts cenv)
+        (is (fs/existsSync (path/join out "node_modules/left-pad/index.js")))
+        (is (contains? (:js-module-index @cenv) "left-pad"))))
+    (let [cenv (env/default-compiler-env)
+          out (path/join (test/tmp-dir) "npm-deps-test-out")
           {:keys [inputs opts]} {:inputs (path/join "src" "test" "cljs_build")
-                                 :opts {:main 'npm-deps-test.core
+                                 :opts {:main 'npm-deps-test.string-requires
                                         :output-dir out
                                         :optimizations :none
                                         :install-deps true
-                                        :npm-deps {:left-pad "1.1.3"}
+                                        :npm-deps {:react "15.6.1"
+                                                   :react-dom "15.6.1"
+                                                   :lodash "4.17.4"}
+                                        :closure-warnings {:check-types :off
+                                                           :non-standard-jsdoc :off}}}]
+      (testing "mix of symbol & string-based requires"
+        (test/delete-out-files out)
+        (test/delete-node-modules)
+        (build/build (build/inputs (path/join inputs "npm_deps_test/string_requires.cljs")) opts cenv)
+        (is (fs/existsSync (path/join out "node_modules/react/react.js")))
+        (is (contains? (:js-module-index @cenv) "react"))
+        (is (contains? (:js-module-index @cenv) "react-dom/server")))
+      (testing "builds with string requires are idempotent"
+        (build/build (build/inputs (path/join inputs "npm_deps_test/string_requires.cljs")) opts cenv)
+        (is (not (nil? (re-find #"\.\.[\\/]node_modules[\\/]react-dom[\\/]server\.js" (slurp (path/join out "cljs_deps.js"))))))
+        (test/delete-out-files out)))
+    (test/delete-node-modules))
+
+#_(deftest test-preloads
+    (let [out (path/join (test/tmp-dir) "preloads-test-out")
+          {:keys [inputs opts]} {:inputs (path/join "src" "test" "cljs")
+                                 :opts {:main 'preloads-test.core
+                                        :preloads '[preloads-test.preload]
+                                        :output-dir out
+                                        :optimizations :none}}
+          cenv (env/default-compiler-env)]
+      (test/delete-out-files out)
+      (build/build
+       (build/inputs (path/join inputs "preloads_test/core.cljs"))
+       opts cenv)
+      (is (fs/existsSync (path/join out "preloads_test/preload.cljs")))
+      (is (contains? (get-in @cenv [:cljs.analyzer/namespaces 'preloads-test.preload :defs]) 'preload-var))))
+
+#_(deftest test-libs-cljs-2152
+    (let [out (path/join (test/tmp-dir) "libs-test-out")
+          {:keys [inputs opts]} {:inputs (path/join "src" "test" "cljs_build")
+                                 :opts {:main 'libs-test.core
+                                        :output-dir out
+                                        :libs ["src/test/cljs/js_libs"]
+                                        :optimizations :none
                                         :closure-warnings {:check-types :off}}}
           cenv (env/default-compiler-env)]
       (test/delete-out-files out)
-      (build/build (build/inputs (path/join inputs "npm_deps_test/core.cljs")) opts cenv)
-      (is (fs/existsSync (path/join out "node_modules/left-pad/index.js")))
-      (is (contains? (:js-module-index @cenv) "left-pad"))))
-  (let [cenv (env/default-compiler-env)
-        out (path/join (test/tmp-dir) "npm-deps-test-out")
-        {:keys [inputs opts]} {:inputs (path/join "src" "test" "cljs_build")
-                               :opts {:main 'npm-deps-test.string-requires
-                                      :output-dir out
-                                      :optimizations :none
-                                      :install-deps true
-                                      :npm-deps {:react "15.6.1"
-                                                 :react-dom "15.6.1"
-                                                 :lodash "4.17.4"}
-                                      :closure-warnings {:check-types :off
-                                                         :non-standard-jsdoc :off}}}]
-    (testing "mix of symbol & string-based requires"
-      (test/delete-out-files out)
-      (test/delete-node-modules)
-      (build/build (build/inputs (path/join inputs "npm_deps_test/string_requires.cljs")) opts cenv)
-      (is (fs/existsSync (path/join out "node_modules/react/react.js")))
-      (is (contains? (:js-module-index @cenv) "react"))
-      (is (contains? (:js-module-index @cenv) "react-dom/server")))
-    (testing "builds with string requires are idempotent"
-      (build/build (build/inputs (path/join inputs "npm_deps_test/string_requires.cljs")) opts cenv)
-      (is (not (nil? (re-find #"\.\.[\\/]node_modules[\\/]react-dom[\\/]server\.js" (slurp (path/join out "cljs_deps.js"))))))
-      (test/delete-out-files out)))
-  (test/delete-node-modules))
+      (build/build (build/inputs
+                    (path/join inputs "libs_test/core.cljs")
+                    "src/test/cljs/js_libs")
+                   opts cenv)
+      (is (fs/existsSync (path/join out "tabby.js")))))
 
-(deftest test-preloads
-  (let [out (path/join (test/tmp-dir) "preloads-test-out")
-        {:keys [inputs opts]} {:inputs (path/join "src" "test" "cljs")
-                               :opts {:main 'preloads-test.core
-                                      :preloads '[preloads-test.preload]
-                                      :output-dir out
-                                      :optimizations :none}}
-        cenv (env/default-compiler-env)]
-    (test/delete-out-files out)
-    (build/build
-      (build/inputs (path/join inputs "preloads_test/core.cljs"))
-      opts cenv)
-    (is (fs/existsSync (path/join out "preloads_test/preload.cljs")))
-    (is (contains? (get-in @cenv [:cljs.analyzer/namespaces 'preloads-test.preload :defs]) 'preload-var))))
+#_(defn collecting-warning-handler [state]
+    (fn [warning-type env extra]
+      (when (warning-type ana/*cljs-warnings*)
+        (when-let [s (ana/error-message warning-type extra)]
+          (swap! state conj s)))))
 
-(deftest test-libs-cljs-2152
-  (let [out (path/join (test/tmp-dir) "libs-test-out")
-        {:keys [inputs opts]} {:inputs (path/join "src" "test" "cljs_build")
-                               :opts {:main 'libs-test.core
-                                      :output-dir out
-                                      :libs ["src/test/cljs/js_libs"]
-                                      :optimizations :none
-                                      :closure-warnings {:check-types :off}}}
-        cenv (env/default-compiler-env)]
-    (test/delete-out-files out)
-    (build/build (build/inputs
-                   (path/join inputs "libs_test/core.cljs")
-                   "src/test/cljs/js_libs")
-      opts cenv)
-    (is (fs/existsSync (path/join out "tabby.js")))))
+#_(deftest test-emit-node-requires-cljs-2213
+    (test/delete-node-modules)
+    (testing "simplest case, require"
+      (let [ws (atom [])
+            out (path/join (test/tmp-dir) "emit-node-requires-test-out")
+            {:keys [inputs opts]} {:inputs (path/join "src" "test" "cljs_build")
+                                   :opts {:main 'emit-node-requires-test.core
+                                          :output-dir out
+                                          :optimizations :none
+                                          :target :nodejs
+                                          :install-deps true
+                                          :npm-deps {:react "15.6.1"
+                                                     :react-dom "15.6.1"}
+                                          :closure-warnings {:check-types :off
+                                                             :non-standard-jsdoc :off}}}
+            cenv (env/default-compiler-env opts)]
+        (test/delete-out-files out)
+        (ana/with-warning-handlers [(collecting-warning-handler ws)]
+          (build/build (build/inputs (path/join inputs "emit_node_requires_test/core.cljs")) opts cenv))
+        ;; wasn't processed by Closure
+        (is (not (fs/existsSync (path/join out "node_modules/react/react.js"))))
+        (is (fs/existsSync (path/join out "emit_node_requires_test/core.js")))
+        (is (true? (boolean (re-find #"emit_node_requires_test\.core\.node\$module\$react_dom_BSLASH_\$server = require\('react-dom/server'\);"
+                                     (slurp (path/join out "emit_node_requires_test/core.js"))))))
+        (is (true? (boolean (re-find #"emit_node_requires_test\.core\.node\$module\$react_dom_BSLASH_\$server\.renderToString"
+                                     (slurp (path/join out "emit_node_requires_test/core.js"))))))
+        (is (empty? @ws))))
+    (testing "Node native modules, CLJS-2218"
+      (let [ws (atom [])
+            out (path/join (test/tmp-dir) "emit-node-requires-test-out")
+            {:keys [inputs opts]} {:inputs (path/join "src" "test" "cljs_build")
+                                   :opts {:main 'emit-node-requires-test.native-modules
+                                          :output-dir out
+                                          :optimizations :none
+                                          :target :nodejs
+                                          :closure-warnings {:check-types :off}}}
+            cenv (env/default-compiler-env opts)]
+        (test/delete-out-files out)
+        (test/delete-node-modules)
+        (ana/with-warning-handlers [(collecting-warning-handler ws)]
+          (build/build (build/inputs (path/join inputs "emit_node_requires_test/native_modules.cljs")) opts cenv))
+        (is (fs/existsSync (path/join out "emit_node_requires_test/native_modules.js")))
+        (is (true? (boolean (re-find #"emit_node_requires_test\.native_modules\.node\$module\$path\.isAbsolute"
+                                     (slurp (path/join out "emit_node_requires_test/native_modules.js"))))))
+        (is (empty? @ws))))
+    (test/delete-node-modules))
 
-(defn collecting-warning-handler [state]
-  (fn [warning-type env extra]
-    (when (warning-type ana/*cljs-warnings*)
-      (when-let [s (ana/error-message warning-type extra)]
-        (swap! state conj s)))))
+#_(deftest cljs-test-compilation
+    (testing "success"
+      (let [out (path/join (test/tmp-dir) "compilation-test-out")
+            root "src/test/cljs_build"]
+        (test/delete-out-files out)
+        (is (nil? (build/build
+                   (path/join root "hello" "world.cljs")
+                   {:main 'hello
+                    :optimizations :none
+                    :output-to out}
+                   (env/default-compiler-env)))
+            "Successful compilation should return")))
 
-(deftest test-emit-node-requires-cljs-2213
-  (test/delete-node-modules)
-  (testing "simplest case, require"
-    (let [ws (atom [])
-          out (path/join (test/tmp-dir) "emit-node-requires-test-out")
-          {:keys [inputs opts]} {:inputs (path/join "src" "test" "cljs_build")
-                                 :opts {:main 'emit-node-requires-test.core
-                                        :output-dir out
-                                        :optimizations :none
-                                        :target :nodejs
-                                        :install-deps true
-                                        :npm-deps {:react "15.6.1"
-                                                   :react-dom "15.6.1"}
-                                        :closure-warnings {:check-types :off
-                                                           :non-standard-jsdoc :off}}}
-          cenv (env/default-compiler-env opts)]
-      (test/delete-out-files out)
-      (ana/with-warning-handlers [(collecting-warning-handler ws)]
-        (build/build (build/inputs (path/join inputs "emit_node_requires_test/core.cljs")) opts cenv))
-      ;; wasn't processed by Closure
-      (is (not (fs/existsSync (path/join out "node_modules/react/react.js"))))
-      (is (fs/existsSync (path/join out "emit_node_requires_test/core.js")))
-      (is (true? (boolean (re-find #"emit_node_requires_test\.core\.node\$module\$react_dom_BSLASH_\$server = require\('react-dom/server'\);"
-                            (slurp (path/join out "emit_node_requires_test/core.js"))))))
-      (is (true? (boolean (re-find #"emit_node_requires_test\.core\.node\$module\$react_dom_BSLASH_\$server\.renderToString"
-                            (slurp (path/join out "emit_node_requires_test/core.js"))))))
-      (is (empty? @ws))))
-  (testing "Node native modules, CLJS-2218"
-    (let [ws (atom [])
-          out (path/join (test/tmp-dir) "emit-node-requires-test-out")
-          {:keys [inputs opts]} {:inputs (path/join "src" "test" "cljs_build")
-                                 :opts {:main 'emit-node-requires-test.native-modules
-                                        :output-dir out
-                                        :optimizations :none
-                                        :target :nodejs
-                                        :closure-warnings {:check-types :off}}}
-          cenv (env/default-compiler-env opts)]
-      (test/delete-out-files out)
-      (test/delete-node-modules)
-      (ana/with-warning-handlers [(collecting-warning-handler ws)]
-        (build/build (build/inputs (path/join inputs "emit_node_requires_test/native_modules.cljs")) opts cenv))
-      (is (fs/existsSync (path/join out "emit_node_requires_test/native_modules.js")))
-      (is (true? (boolean (re-find #"emit_node_requires_test\.native_modules\.node\$module\$path\.isAbsolute"
-                                   (slurp (path/join out "emit_node_requires_test/native_modules.js"))))))
-      (is (empty? @ws))))
-  (test/delete-node-modules))
-
-(deftest cljs-test-compilation
-  (testing "success"
-    (let [out (path/join (test/tmp-dir) "compilation-test-out")
-          root "src/test/cljs_build"]
-      (test/delete-out-files out)
-      (is (nil? (build/build
-                  (path/join root "hello" "world.cljs")
-                  {:main 'hello
-                   :optimizations :none
-                   :output-to out}
-                  (env/default-compiler-env)))
-        "Successful compilation should return")))
-
-  (testing "failure"
-    (let [out (path/join (test/tmp-dir) "compilation-test-out")
-          root "src/test/cljs_build"]
-      (test/delete-out-files out)
-      (try
-        (build/build
-          (path/join root "hello" "broken_world.cljs")
-          {:main 'hello
-           :optimizations :none
-           :output-to out}
-          (env/default-compiler-env))
-        (is false)
-        (catch js/Error e
-          (is (some? e) "Failed compilation should throw"))))))
+    (testing "failure"
+      (let [out (path/join (test/tmp-dir) "compilation-test-out")
+            root "src/test/cljs_build"]
+        (test/delete-out-files out)
+        (try
+          (build/build
+           (path/join root "hello" "broken_world.cljs")
+           {:main 'hello
+            :optimizations :none
+            :output-to out}
+           (env/default-compiler-env))
+          (is false)
+          (catch js/Error e
+            (is (some? e) "Failed compilation should throw"))))))
 
 (deftest lumo-273-test
   (let [out (path/join (test/tmp-dir) "lumo-273-test-out")
@@ -376,12 +376,41 @@
     (testing ":optimizations :none"
       (test/delete-out-files out)
       (is (nil? (build/build
-                  (path/join root "test_check")
-                  {:main 'hello
-                   :optimizations :none
-                   :output-to out}
-                  (env/default-compiler-env))) "It should successfully compile with :optimizations :none")
-        (test/delete-out-files out))))
+                 (path/join root "test_check")
+                 {:main 'test-check.summary.core
+                  ;; :verbose true
+                  :optimizations :none
+                  :output-to out}
+                 (env/default-compiler-env))) "It should successfully compile with :optimizations :none")
+      (test/delete-out-files out))))
+
+(deftest lumo-308-test
+  (let [out (path/join (test/tmp-dir) "lumo-308-test-out")
+        root "src/test/cljs_build"
+        warning-handlers [(fn [warning-type env extra]
+                            (let [w (warning-type ana/*cljs-warnings*)
+                                  err (ana/error-message warning-type extra)]
+                              (println "received warning error:" (ana/message env err))
+                              (is (nil? w) "when compiling twice, the second time it should not emit a WARNING for cljs.spec.test.alpha/instrument")))]]
+    (testing ":optimizations :none"
+      (test/delete-out-files out)
+      (build/build
+       (path/join root "instrument")
+       {:main 'test-check.instrument.core
+        ;; :verbose true
+        :optimizations :none
+        :warning-handlers warning-handlers
+        :output-to out}
+       (env/default-compiler-env))
+      (build/build
+       (path/join root "instrument")
+       {:main 'test-check.instrument.core
+        ;; :verbose true
+        :optimizations :none
+        :warning-handlers warning-handlers
+        :output-to out}
+       (env/default-compiler-env))
+      (test/delete-out-files out))))
 
 ;; (deftest test-emit-global-requires-cljs-2214
 ;;   (testing "simplest case, require"
