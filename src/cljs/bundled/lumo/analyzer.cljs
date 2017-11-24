@@ -264,6 +264,45 @@
    (when src
      (util/set-last-modified cache-file (util/last-modified src)))))
 
+(declare read-analysis-cache)
+
+(defn compiler-load
+  ([m opts cb]
+   (compiler-load m opts cljs/*load-fn* cb))
+  ([{:keys [macros path] dep :name :as m} opts original-load cb]
+   (let [cenv @env/*compiler*
+         dep (if macros
+               (symbol (str dep "$macros"))
+               dep)
+         cache (get-in cenv [::ana/namespaces dep :defs])]
+     (if (or (not-empty cache)
+           (contains? (:js-dependency-index cenv) (name dep))
+           (ana/node-module-dep? dep)
+           (ana/js-module-exists? (name dep))
+           (deps/find-classpath-lib dep))
+       (cb {:lang :js})
+       (if-let [{:keys [source-file]} (first
+                                        (filter
+                                          #(symbol-identical? dep (:ns %))
+                                          (:sources cenv)))]
+         (cb {:lang :clj
+              :file (util/path source-file)
+              :source (slurp source-file)})
+         (if (and (not macros) (empty? cache))
+           (let [path (path/join (util/output-directory opts) path)
+                 f (or (io/resource (str path ".cljs"))
+                     (io/resource (str path ".cljc")))]
+             (try
+               (read-analysis-cache
+                 (when (:cache-analysis opts)
+                   (cache-file f (parse-ns dep) (util/output-directory opts)))
+                 f
+                 opts)
+               (cb {:lang :js})
+               (catch :default e
+                 (original-load m cb))))
+           (original-load m cb)))))))
+
 (defn read-analysis-cache
   ([cache-file src]
    (read-analysis-cache cache-file src nil))
@@ -287,7 +326,33 @@
          (doseq [x (get-in cached-ns [::ana/constants :order])]
            (ana/register-constant! x))
          (-> cenv
-           (assoc-in [::ana/namespaces ns] cached-ns)))))))
+           (assoc-in [::ana/namespaces ns] cached-ns))))
+     (let [cache (get-in @env/*compiler* [::ana/namespaces ns])]
+       (cljs/ns-side-effects
+         false
+         {:*compiler* env/*compiler*
+          :*analyze-deps* true
+          :*load-macros* true
+          :*load-fn* (fn [x cb]
+                       (compiler-load x opts cb))
+          :*eval-fn* cljs/*eval-fn*}
+         nil
+         (merge cache
+           {:op :ns
+            :deps (into []
+                    (comp
+                      (mapcat identity)
+                      (distinct))
+                    [(vals (:requires cache))
+                     (vals (:require-macros cache))
+                     (vals (:uses cache))
+                     (vals (:use-macros cache))
+                     (vals (:imports cache))])
+            :reload {}
+            :reloads {}})
+         (assoc opts :verbose false)
+         ;; TODO: throw if error in side-effects?
+         identity)))))
 
 (defn analyze-file
   "Given a java.io.File, java.net.URL or a string identifying a resource on the
