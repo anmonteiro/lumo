@@ -166,7 +166,7 @@
           (path/join root "circular_deps" "b.cljs"))
         {:main 'circular-deps.a
          :optimizations :none
-         :output-to out}
+         :output-dir out}
         (env/default-compiler-env))
       (is false)
       (catch js/Error error
@@ -347,12 +347,12 @@
     (let [out (path/join (test/tmp-dir) "compilation-test-out")
           root "src/test/cljs_build"]
       (test/delete-out-files out)
-      (is (nil? (build/build
-                  (path/join root "hello" "world.cljs")
-                  {:main 'hello
-                   :optimizations :none
-                   :output-to out}
-                  (env/default-compiler-env)))
+      (is (build/build
+            (path/join root "hello" "world.cljs")
+            {:main 'hello
+             :optimizations :none
+             :output-dir out}
+            (env/default-compiler-env))
         "Successful compilation should return")))
 
   (testing "failure"
@@ -364,7 +364,7 @@
           (path/join root "hello" "broken_world.cljs")
           {:main 'hello
            :optimizations :none
-           :output-to out}
+           :output-dir out}
           (env/default-compiler-env))
         (is false)
         (catch js/Error e
@@ -375,13 +375,40 @@
         root "src/test/cljs_build"]
     (testing ":optimizations :none"
       (test/delete-out-files out)
-      (is (nil? (build/build
-                  (path/join root "test_check")
-                  {:main 'hello
-                   :optimizations :none
-                   :output-to out}
-                  (env/default-compiler-env))) "It should successfully compile with :optimizations :none")
+      (is (build/build
+            (path/join root "test_check")
+            {:main 'hello
+             :optimizations :none
+             :output-dir out}
+            (env/default-compiler-env)) "It should successfully compile with :optimizations :none")
         (test/delete-out-files out))))
+
+(deftest lumo-308-test
+  (let [out (path/join (test/tmp-dir) "lumo-308-test-out")
+        root "src/test/cljs_build"
+        warning-handlers [(fn [warning-type env extra]
+                            (when-let [w (warning-type ana/*cljs-warnings*)]
+                              (let [err (ana/error-message warning-type extra)]
+                                (println "WARNING:" (ana/message env err))
+                                (is (nil? warning-type) "when compiling twice, it should not emit a WARNING for cljs.spec.test.alpha/instrument the second time"))))]]
+    (testing "correctly cljs.js/ns-side-effects on read analysis cache"
+      (test/delete-out-files out)
+      (build/build
+        (path/join root "instrument")
+       {:main 'instrument.core
+        :optimizations :none
+        :warning-handlers warning-handlers
+        :output-dir out}
+       (env/default-compiler-env))
+      (build/build
+        (path/join root "instrument")
+       {:main 'instrument.core
+        :optimizations :none
+        :warning-handlers warning-handlers
+        :output-dir out}
+       (env/default-compiler-env))
+      (test/delete-out-files out)
+      (set! ana/*cljs-warning-handlers* ana/default-warning-handler))))
 
 ;; (deftest test-emit-global-requires-cljs-2214
 ;;   (testing "simplest case, require"

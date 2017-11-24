@@ -1,5 +1,5 @@
 (ns test-check.core
-  (:require [cljs.spec.alpha :as s :include-macros true]))
+  (:require [cljs.spec.alpha :as s]))
 
 (s/fdef ranged-rand
   :args (s/and (s/cat :start int? :end int?)
