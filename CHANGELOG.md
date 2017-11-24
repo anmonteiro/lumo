@@ -14,10 +14,11 @@
 - Fix compilation crash with macros & `:optimize-constants true` ([#274](https://github.com/anmonteiro/lumo/issues/274)).
 - Require fails if Lumo output is redirected ([#283](https://github.com/anmonteiro/lumo/issues/283)).
 - Lumo script failure when redirecting stdout? ([#286](https://github.com/anmonteiro/lumo/issues/286)).
+- Load required macro namespaces when reading analysis cache ([#308](https://github.com/anmonteiro/lumo/issues/308)).
 
 ### Changes
 
-- Upgrade Node.js to version 9.0.0.
+- Upgrade Node.js to version 9.2.0.
 - Upgrade ClojureScript to version 1.9.946.
 
 ## [1.8.0-beta](https://github.com/anmonteiro/lumo/compare/1.7.0...1.8.0-beta) (2017-09-16)
