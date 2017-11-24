@@ -14,6 +14,7 @@
 - Fix compilation crash with macros & `:optimize-constants true` ([#274](https://github.com/anmonteiro/lumo/issues/274)).
 - Require fails if Lumo output is redirected ([#283](https://github.com/anmonteiro/lumo/issues/283)).
 - Lumo script failure when redirecting stdout? ([#286](https://github.com/anmonteiro/lumo/issues/286)).
+- Load required macro namespaces when reading analysis cache ([#308](https://github.com/anmonteiro/lumo/issues/308)).
 
 ### Changes
 
