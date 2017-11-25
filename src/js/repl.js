@@ -1,5 +1,6 @@
 /* @flow */
 
+import fs from 'fs';
 import os from 'os';
 import path from 'path';
 import readline from 'readline';
@@ -401,11 +402,20 @@ function completer(
   });
 }
 
+function getHistoryFilePath(): string {
+  const homedir = os.homedir();
+  const historyFilename = '.lumo_history';
+
+  return fs.existsSync(homedir)
+    ? path.join(homedir, historyFilename)
+    : historyFilename;
+}
+
 export default function startREPL(opts: CLIOptsType): void {
   const dumbTerminal = opts['dumb-terminal'];
 
   const rl = replHistory({
-    path: path.join(os.homedir(), '.lumo_history'),
+    path: getHistoryFilePath(),
     historySize: 200,
     input: process.stdin,
     output: process.stdout,

@@ -15,6 +15,7 @@
 - Require fails if Lumo output is redirected ([#283](https://github.com/anmonteiro/lumo/issues/283)).
 - Lumo script failure when redirecting stdout? ([#286](https://github.com/anmonteiro/lumo/issues/286)).
 - Load required macro namespaces when reading analysis cache ([#308](https://github.com/anmonteiro/lumo/issues/308)).
+- Don't look for the REPL history file in the user's home directory if one doesn't exist ([#309](https://github.com/anmonteiro/lumo/issues/309)).
 
 ### Changes
 
