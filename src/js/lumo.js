@@ -17,10 +17,7 @@ type PackageJsonType = {
   },
 };
 
-function packageJson(
-  nodeDir: string,
-  moduleName: string,
-): ?PackageJsonType {
+function packageJson(nodeDir: string, moduleName: string): ?PackageJsonType {
   let pkgJson = null;
 
   try {
