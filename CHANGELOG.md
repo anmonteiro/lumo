@@ -6,6 +6,7 @@
 
 - Remove #_=> from pasted code ([#261](https://github.com/anmonteiro/lumo/issues/261)).
 - Allow CLJS require from `node_modules` ([#130](https://github.com/anmonteiro/lumo/issues/130)).
+- Make `dir` work on aliases.
 
 ### Bug fixes
 

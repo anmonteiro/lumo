@@ -681,11 +681,23 @@
 (defn- repl-special? [form]
   (and (seq? form) (contains? repl-special-fns (first form))))
 
+(defn- expand-ns-alias
+  "Expand a namespace alias symbol to a known namespace, consulting
+   current namespace aliases if necessary."
+  [alias]
+  (let [alias (if (symbol-identical? alias 'clojure.core)
+                'cljs.core
+                alias)]
+    (or (get-in st [::ana/namespaces alias :name])
+        (get (current-alias-map) alias)
+        alias)))
+
 (defn- dir* [nsname]
-  (run! prn
-    (into
-      (apply sorted-set (public-syms nsname))
-      (public-syms (add-macros-suffix nsname)))))
+  (let [ns (expand-ns-alias nsname)]
+    (run! prn
+      (into
+        (apply sorted-set (public-syms ns))
+        (public-syms (add-macros-suffix ns))))))
 
 (defn- special-doc [name-symbol]
   (assoc (special-doc-map name-symbol)
@@ -1404,17 +1416,6 @@
       [(keys @deps/js-lib-index)
        (keys (closure-index))])
     (all-ns)))
-
-(defn- expand-ns-alias
-  "Expand a namespace alias symbol to a known namespace, consulting
-   current namespace aliases if necessary."
-  [alias]
-  (let [alias (if (symbol-identical? alias 'clojure.core)
-                'cljs.core
-                alias)]
-    (or (get-in st [::ana/namespaces alias :name])
-        (alias (current-alias-map))
-        alias)))
 
 (defn- completion-candidates
   [top-level? ns-alias]
