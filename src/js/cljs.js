@@ -415,9 +415,9 @@ async function initSocketRepl(
 
     if (!quiet) {
       process.stdout.write(
-        `Lumo socket REPL listening at ${replOpts.host != null
-          ? host
-          : 'localhost'}:${replOpts.port}.\n`,
+        `Lumo socket REPL listening at ${
+          replOpts.host != null ? host : 'localhost'
+        }:${replOpts.port}.\n`,
       );
     }
   } catch (e) {
