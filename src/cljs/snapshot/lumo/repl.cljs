@@ -578,6 +578,11 @@
     :ns (get-namespace @current-ns)
     :context :expr))
 
+(defn- current-alias-map []
+  (let [cur-ns @current-ns]
+    (into {}
+      (merge (get-in @st [::ana/namespaces cur-ns :requires])
+             (get-in @st [::ana/namespaces cur-ns :require-macros])))))
 (defn- ns-syms
   [nsname pred]
   (into []
@@ -903,12 +908,6 @@
     {:ns @current-ns
      :target :nodejs}
     (select-keys @app-opts [:verbose :static-fns :fn-invoke-direct :checked-arrays])))
-
-(defn- current-alias-map []
-  (let [cur-ns @current-ns]
-    (into {}
-      (merge (get-in @st [::ana/namespaces cur-ns :requires])
-        (get-in @st [::ana/namespaces cur-ns :require-macros])))))
 
 (defn- current-alias?
   [ns]
