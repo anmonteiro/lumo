@@ -2268,7 +2268,8 @@
                   (catch js/Error e
                     (if-let [f (:watch-error-fn opts)]
                       (f e)
-                      (println e)))))
+                      (binding [*print-fn* *print-err-fn*]
+                        (println e))))))
               (watch-all [root]
                 (.watch fs root #js {:recursive true}
                         (fn [change fstr]
