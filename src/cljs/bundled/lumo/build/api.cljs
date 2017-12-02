@@ -183,6 +183,20 @@
    (binding [ana/*cljs-warning-handlers* (:warning-handlers opts ana/*cljs-warning-handlers*)]
      (closure/build source opts compiler-env))))
 
+(defn watch
+  "Given a source which can be compiled, watch it for changes to produce."
+  ([source opts]
+   (watch source opts
+     (if-not (nil? env/*compiler*)
+       env/*compiler*
+       (env/default-compiler-env
+         (closure/add-externs-sources opts)))))
+  ([source opts compiler-env]
+   (watch source opts compiler-env nil))
+  ([source opts compiler-env stop]
+   (binding [ana/*cljs-warning-handlers* (:warning-handlers opts ana/*cljs-warning-handlers*)]
+     (closure/watch source opts compiler-env stop))))
+
 ;; =============================================================================
 ;; Node.js / NPM dependencies
 

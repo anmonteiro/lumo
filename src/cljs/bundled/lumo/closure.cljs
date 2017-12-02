@@ -2238,7 +2238,7 @@
                         (set/intersection namespaces-set (-> x :require-macros vals set))))
         (vals (:cljs.analyzer/namespaces @state))))))
 
-#_(defn watch
+(defn watch
   "Given a source directory, produce runnable JavaScript. Watch the source
    directory for changes rebuilding when necessary. Takes the same arguments as
    cljs.closure/build in addition to some watch-specific options:
@@ -2255,83 +2255,45 @@
     (let [opts  (cond-> opts
                   (= (:verbose opts :not-found) :not-found)
                   (assoc :verbose true))
-          paths (map #(Paths/get (.toURI %)) (-paths source))
-          path  (first paths)
-          fs    (.getFileSystem path)
-          srvc  (.newWatchService fs)]
+          paths (if (seq? source)
+                  source (vector source))]
       (letfn [(buildf []
                 (try
-                  (let [start (System/nanoTime)]
+                  (let [start (.getTime (new js/Date))]
                     (build source opts compiler-env)
                     (println "... done. Elapsed"
-                      (/ (unchecked-subtract (System/nanoTime) start) 1e9) "seconds")
-                    (flush))
+                      (/ (- (.getTime (new js/Date)) start) 1e3) "seconds"))
                   (when-let [f (:watch-fn opts)]
                     (f))
-                  (catch Throwable e
+                  (catch js/Error e
                     (if-let [f (:watch-error-fn opts)]
                       (f e)
-                      (binding [*out* *err*]
-                        (println (Throwables/getStackTraceAsString e)))))))
-              (watch-all [^Path root]
-                (Files/walkFileTree root
-                  (reify
-                    FileVisitor
-                    (preVisitDirectory [_ dir _]
-                      (let [^Path dir dir]
-                        (. dir
-                          (register srvc
-                            (into-array [StandardWatchEventKinds/ENTRY_CREATE
-                                         StandardWatchEventKinds/ENTRY_DELETE
-                                         StandardWatchEventKinds/ENTRY_MODIFY])
-                            (into-array [SensitivityWatchEventModifier/HIGH]))))
-                      FileVisitResult/CONTINUE)
-                    (postVisitDirectory [_ dir exc]
-                      FileVisitResult/CONTINUE)
-                    (visitFile [_ file attrs]
-                      FileVisitResult/CONTINUE)
-                    (visitFileFailed [_ file exc]
-                      FileVisitResult/CONTINUE))))]
+                      (println e)))))
+              (watch-all [root]
+                (.watch fs root #js {:recursive true}
+                        (fn [change fstr]
+                          (when (and (or (. fstr (endsWith "cljc"))
+                                         (. fstr (endsWith "cljs"))
+                                         (. fstr (endsWith "clj"))
+                                         (. fstr (endsWith "js")))
+                                     (not (. fstr (startsWith ".#"))))
+                            (when (and (or (. fstr (endsWith "cljc"))
+                                           (. fstr (endsWith "clj")))
+                                       (not (. fstr (startsWith ".#"))))
+                              (let [ns (-> (path/join root fstr)
+                                             lana/parse-ns :ns)]
+                                ;; FIX: this require offends two specs
+                                  ;; (require ns :reload)
+                                (-> (cljs-dependents-for-macro-namespaces compiler-env [ns])
+                                    (mark-cljs-ns-for-recompile! (:output-dir opts)))))
+                              (println "Change detected, recompiling ...")
+                              (buildf)))))]
         (println "Building ...")
-        (flush)
         (buildf)
         (println "Watching paths:" (apply str (interpose ", " paths)))
         (doseq [path paths]
-          (watch-all path))
-        (loop [key nil]
-          (when (and (or (nil? quit) (not @quit))
-                     (or (nil? key) (. ^WatchKey key reset)))
-            (let [key (. srvc (poll 300 TimeUnit/MILLISECONDS))
-                  poll-events-seq (when key (seq (.pollEvents key)))]
-              (when (and key
-                         (some
-                           (fn [^WatchEvent e]
-                             (let [fstr (.. e context toString)]
-                               (and (or (. fstr (endsWith "cljc"))
-                                        (. fstr (endsWith "cljs"))
-                                        (. fstr (endsWith "clj"))
-                                        (. fstr (endsWith "js")))
-                                    (not (. fstr (startsWith ".#"))))))
-                           poll-events-seq))
-                (when-let [clj-files (seq (keep (fn [^WatchEvent e]
-                                                  (let [ctx (.context e)
-                                                        fstr (.toString ctx)]
-                                                    (when (and (or (. fstr (endsWith "cljc"))
-                                                                   (. fstr (endsWith "clj")))
-                                                               (not (. fstr (startsWith ".#"))))
-                                                      ctx)))
-                                            poll-events-seq))]
-                  (let [^Path dir (.watchable key)
-                        file-seq (map #(.toFile (.resolve dir %)) clj-files)
-                        nses (map (comp :ns lana/parse-ns) file-seq)]
-                    (doseq [ns nses]
-                      (require ns :reload))
-                    (doseq [ns (cljs-dependents-for-macro-namespaces compiler-env nses)]
-                      (mark-cljs-ns-for-recompile! ns (:output-dir opts)))))
-                (println "Change detected, recompiling ...")
-                (flush)
-                (buildf))
-              (recur key))))))))
+          (watch-all path))))))
+
 
 ;; =============================================================================
 ;; Utilities
