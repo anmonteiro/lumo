@@ -2245,55 +2245,79 @@
     - :watch-fn, a function of no arguments to run after a successful build.
     - :watch-error-fn, a function receiving the exception of a failed build."
   ([source opts]
-    (watch source opts
-      (if-not (nil? env/*compiler*)
-        env/*compiler*
-        (env/default-compiler-env opts))))
+   (watch source opts
+          (if-not (nil? env/*compiler*)
+            env/*compiler*
+            (env/default-compiler-env opts))))
   ([source opts compiler-env]
-    (watch source opts compiler-env nil))
+   (watch source opts compiler-env nil))
   ([source opts compiler-env quit]
-    (let [opts  (cond-> opts
-                  (= (:verbose opts :not-found) :not-found)
-                  (assoc :verbose true))
-          paths (if (seq? source)
-                  source (vector source))]
-      (letfn [(buildf []
-                (try
-                  (let [start (.getTime (new js/Date))]
-                    (build source opts compiler-env)
-                    (println "... done. Elapsed"
-                      (/ (- (.getTime (new js/Date)) start) 1e3) "seconds"))
-                  (when-let [f (:watch-fn opts)]
-                    (f))
-                  (catch js/Error e
-                    (if-let [f (:watch-error-fn opts)]
-                      (f e)
-                      (binding [*print-fn* *print-err-fn*]
-                        (println e))))))
-              (watch-all [root]
-                (.watch fs root #js {:recursive true}
-                        (fn [change fstr]
-                          (when (and (or (. fstr (endsWith "cljc"))
-                                         (. fstr (endsWith "cljs"))
-                                         (. fstr (endsWith "clj"))
-                                         (. fstr (endsWith "js")))
-                                     (not (. fstr (startsWith ".#"))))
-                            (when (and (or (. fstr (endsWith "cljc"))
-                                           (. fstr (endsWith "clj")))
-                                       (not (. fstr (startsWith ".#"))))
-                              (let [ns (-> (path/join root fstr)
-                                             lana/parse-ns :ns)]
-                                ;; FIX: this require offends two specs
-                                  ;; (require ns :reload)
-                                (-> (cljs-dependents-for-macro-namespaces compiler-env [ns])
-                                    (mark-cljs-ns-for-recompile! (:output-dir opts)))))
-                              (println "Change detected, recompiling ...")
-                              (buildf)))))]
-        (println "Building ...")
-        (buildf)
-        (println "Watching paths:" (apply str (interpose ", " paths)))
-        (doseq [path paths]
-          (watch-all path))))))
+   (let [opts  (cond-> opts
+                 (= (:verbose opts :not-found) :not-found)
+                 (assoc :verbose true))
+         paths (if (seq? source)
+                 source (vector source))
+         throttling? (volatile! false)]
+     (letfn [(buildf []
+               (try
+                 (let [start (system-time)]
+                   (build source opts compiler-env)
+                   (println "... done. Elapsed"
+                            (-> (system-time) (- start) (/ 1e3) (.toFixed 2)) "seconds"))
+                 (when-let [f (:watch-fn opts)]
+                   (f))
+                 (catch js/Error e
+                   (if-let [f (:watch-error-fn opts)]
+                     (f e)
+                     (binding [*print-fn* *print-err-fn*]
+                       (println e))))))
+             (watch-all [root]
+               (fs/watch root #js {:recursive false}
+                         (fn [change fstr]
+                           (let [rel-path (path/join root fstr)]
+                             (when (and (or (nil? quit) (not @quit))
+                                        (fs/existsSync rel-path)
+                                        (or (. fstr (endsWith "cljc"))
+                                            (. fstr (endsWith "cljs"))
+                                            (. fstr (endsWith "clj"))
+                                            (. fstr (endsWith "js")))
+                                        (not (. fstr (startsWith ".#"))))
+                               (when (and (or (. fstr (endsWith "cljc"))
+                                              (. fstr (endsWith "clj")))
+                                          (not (. fstr (startsWith ".#"))))
+                                 (let [ns (-> rel-path
+                                              lana/parse-ns :ns)]
+                                   ;; FIX: this require offends two specs
+                                   ;; (require ns :reload)
+                                   (-> (cljs-dependents-for-macro-namespaces compiler-env [ns])
+                                       (mark-cljs-ns-for-recompile! (:output-dir opts)))))
+                               (when-not @throttling?
+                                 (vreset! throttling? true)
+                                 (js/setTimeout
+                                  (fn [_]
+                                    (println "Change detected, recompiling ...")
+                                    (vreset! throttling? false)
+                                    (buildf))
+                                  300)))))))
+             (recur-dirs [dir cb]
+               (cb dir)
+               (letfn [(read-dir [dir]
+                         (->> (fs/readdirSync dir)
+                              js->clj
+                              (map (fn [file] (path/join dir file)))))]
+                 (loop [files (read-dir dir)]
+                   (when-not (empty? files)
+                     (let [file (first files)]
+                       (if (.isDirectory
+                            (fs/lstatSync file))
+                         (do (cb file)
+                             (recur (into (rest files) (read-dir file))))
+                         (recur (rest files))))))))]
+       (println "Building ...")
+       (buildf)
+       (println "Watching paths:" (apply str (interpose ", " paths)))
+       (doseq [path paths]
+         (recur-dirs path watch-all))))))
 
 
 ;; =============================================================================

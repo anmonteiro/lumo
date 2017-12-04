@@ -127,6 +127,7 @@ function newDevelopmentContext(): vm$Context {
     require,
     process,
     console,
+    setTimeout,
     $$LUMO_GLOBALS: {
       crypto,
       fs,
