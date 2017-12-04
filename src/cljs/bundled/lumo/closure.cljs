@@ -2257,6 +2257,7 @@
                  (assoc :verbose true))
          paths (if (seq? source)
                  source (vector source))
+         active-watchers (volatile! [])
          throttling? (volatile! false)]
      (letfn [(buildf []
                (try
@@ -2271,53 +2272,54 @@
                      (f e)
                      (binding [*print-fn* *print-err-fn*]
                        (println e))))))
-             (watch-all [root]
-               (fs/watch root #js {:recursive false}
-                         (fn [change fstr]
-                           (let [rel-path (path/join root fstr)]
-                             (when (and (or (nil? quit) (not @quit))
-                                        (fs/existsSync rel-path)
-                                        (or (. fstr (endsWith "cljc"))
-                                            (. fstr (endsWith "cljs"))
-                                            (. fstr (endsWith "clj"))
-                                            (. fstr (endsWith "js")))
-                                        (not (. fstr (startsWith ".#"))))
-                               (when (and (or (. fstr (endsWith "cljc"))
-                                              (. fstr (endsWith "clj")))
-                                          (not (. fstr (startsWith ".#"))))
-                                 (let [ns (-> rel-path
-                                              lana/parse-ns :ns)]
-                                   ;; FIX: this require offends two specs
-                                   ;; (require ns :reload)
-                                   (-> (cljs-dependents-for-macro-namespaces compiler-env [ns])
-                                       (mark-cljs-ns-for-recompile! (:output-dir opts)))))
-                               (when-not @throttling?
-                                 (vreset! throttling? true)
-                                 (js/setTimeout
-                                  (fn [_]
-                                    (println "Change detected, recompiling ...")
-                                    (vreset! throttling? false)
-                                    (buildf))
-                                  300)))))))
-             (recur-dirs [dir cb]
-               (cb dir)
+             (watch-dir [root]
+               (->> (fs/watch root #js {:recursive false}
+                              (fn [change fstr]
+                                (if (or (nil? quit) (not @quit))
+                                  (let [rel-path (path/join root fstr)]
+                                    (when (and (fs/existsSync rel-path)
+                                               (or (. fstr (endsWith "cljc"))
+                                                   (. fstr (endsWith "cljs"))
+                                                   (. fstr (endsWith "clj"))
+                                                   (. fstr (endsWith "js")))
+                                               (not (. fstr (startsWith ".#"))))
+                                      (when (and (or (. fstr (endsWith "cljc"))
+                                                     (. fstr (endsWith "clj")))
+                                                 (not (. fstr (startsWith ".#"))))
+                                        (let [ns (-> rel-path
+                                                     lana/parse-ns :ns)]
+                                          ;; FIX: this require offends two specs
+                                          ;; (require ns :reload)
+                                          (-> (cljs-dependents-for-macro-namespaces compiler-env [ns])
+                                              (mark-cljs-ns-for-recompile! (:output-dir opts)))))
+                                      (when-not @throttling?
+                                        (vreset! throttling? true)
+                                        (js/setTimeout
+                                         (fn []
+                                           (println "Change detected, recompiling ...")
+                                           (vreset! throttling? false)
+                                           (buildf))
+                                         300))))
+                                  (run! (fn [fs-watcher] (.close fs-watcher)) @active-watchers))))
+                    (vswap! active-watchers conj)))
+             (watch-all [dir]
+               (watch-dir dir)
                (letfn [(read-dir [dir]
                          (->> (fs/readdirSync dir)
-                              js->clj
                               (map (fn [file] (path/join dir file)))))]
                  (loop [files (read-dir dir)]
                    (when-not (empty? files)
                      (let [file (first files)]
                        (if (.isDirectory
                             (fs/lstatSync file))
-                         (do (cb file)
+                         (do (watch-dir file)
                              (recur (into (rest files) (read-dir file))))
                          (recur (rest files))))))))]
        (println "Building ...")
        (buildf)
        (println "Watching paths:" (apply str (interpose ", " paths)))
        (doseq [path paths]
-         (recur-dirs path watch-all))))))
+         (watch-all path))))))
 
 
 ;; =============================================================================
