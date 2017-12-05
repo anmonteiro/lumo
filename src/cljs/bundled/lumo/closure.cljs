@@ -2238,100 +2238,89 @@
                         (set/intersection namespaces-set (-> x :require-macros vals set))))
         (vals (:cljs.analyzer/namespaces @state))))))
 
-#_(defn watch
+(defn watch
   "Given a source directory, produce runnable JavaScript. Watch the source
    directory for changes rebuilding when necessary. Takes the same arguments as
    cljs.closure/build in addition to some watch-specific options:
     - :watch-fn, a function of no arguments to run after a successful build.
     - :watch-error-fn, a function receiving the exception of a failed build."
   ([source opts]
-    (watch source opts
-      (if-not (nil? env/*compiler*)
-        env/*compiler*
-        (env/default-compiler-env opts))))
+   (watch source opts
+          (if-not (nil? env/*compiler*)
+            env/*compiler*
+            (env/default-compiler-env opts))))
   ([source opts compiler-env]
-    (watch source opts compiler-env nil))
+   (watch source opts compiler-env nil))
   ([source opts compiler-env quit]
-    (let [opts  (cond-> opts
-                  (= (:verbose opts :not-found) :not-found)
-                  (assoc :verbose true))
-          paths (map #(Paths/get (.toURI %)) (-paths source))
-          path  (first paths)
-          fs    (.getFileSystem path)
-          srvc  (.newWatchService fs)]
-      (letfn [(buildf []
-                (try
-                  (let [start (System/nanoTime)]
-                    (build source opts compiler-env)
-                    (println "... done. Elapsed"
-                      (/ (unchecked-subtract (System/nanoTime) start) 1e9) "seconds")
-                    (flush))
-                  (when-let [f (:watch-fn opts)]
-                    (f))
-                  (catch Throwable e
-                    (if-let [f (:watch-error-fn opts)]
-                      (f e)
-                      (binding [*out* *err*]
-                        (println (Throwables/getStackTraceAsString e)))))))
-              (watch-all [^Path root]
-                (Files/walkFileTree root
-                  (reify
-                    FileVisitor
-                    (preVisitDirectory [_ dir _]
-                      (let [^Path dir dir]
-                        (. dir
-                          (register srvc
-                            (into-array [StandardWatchEventKinds/ENTRY_CREATE
-                                         StandardWatchEventKinds/ENTRY_DELETE
-                                         StandardWatchEventKinds/ENTRY_MODIFY])
-                            (into-array [SensitivityWatchEventModifier/HIGH]))))
-                      FileVisitResult/CONTINUE)
-                    (postVisitDirectory [_ dir exc]
-                      FileVisitResult/CONTINUE)
-                    (visitFile [_ file attrs]
-                      FileVisitResult/CONTINUE)
-                    (visitFileFailed [_ file exc]
-                      FileVisitResult/CONTINUE))))]
-        (println "Building ...")
-        (flush)
-        (buildf)
-        (println "Watching paths:" (apply str (interpose ", " paths)))
-        (doseq [path paths]
-          (watch-all path))
-        (loop [key nil]
-          (when (and (or (nil? quit) (not @quit))
-                     (or (nil? key) (. ^WatchKey key reset)))
-            (let [key (. srvc (poll 300 TimeUnit/MILLISECONDS))
-                  poll-events-seq (when key (seq (.pollEvents key)))]
-              (when (and key
-                         (some
-                           (fn [^WatchEvent e]
-                             (let [fstr (.. e context toString)]
-                               (and (or (. fstr (endsWith "cljc"))
-                                        (. fstr (endsWith "cljs"))
-                                        (. fstr (endsWith "clj"))
-                                        (. fstr (endsWith "js")))
-                                    (not (. fstr (startsWith ".#"))))))
-                           poll-events-seq))
-                (when-let [clj-files (seq (keep (fn [^WatchEvent e]
-                                                  (let [ctx (.context e)
-                                                        fstr (.toString ctx)]
-                                                    (when (and (or (. fstr (endsWith "cljc"))
-                                                                   (. fstr (endsWith "clj")))
-                                                               (not (. fstr (startsWith ".#"))))
-                                                      ctx)))
-                                            poll-events-seq))]
-                  (let [^Path dir (.watchable key)
-                        file-seq (map #(.toFile (.resolve dir %)) clj-files)
-                        nses (map (comp :ns lana/parse-ns) file-seq)]
-                    (doseq [ns nses]
-                      (require ns :reload))
-                    (doseq [ns (cljs-dependents-for-macro-namespaces compiler-env nses)]
-                      (mark-cljs-ns-for-recompile! ns (:output-dir opts)))))
-                (println "Change detected, recompiling ...")
-                (flush)
-                (buildf))
-              (recur key))))))))
+   (let [opts  (cond-> opts
+                 (= (:verbose opts :not-found) :not-found)
+                 (assoc :verbose true))
+         paths (if (seq? source)
+                 source (vector source))
+         active-watchers (volatile! [])
+         throttling? (volatile! false)]
+     (letfn [(buildf []
+               (try
+                 (let [start (system-time)]
+                   (build source opts compiler-env)
+                   (println "... done. Elapsed"
+                            (-> (system-time) (- start) (/ 1e3) (.toFixed 2)) "seconds"))
+                 (when-let [f (:watch-fn opts)]
+                   (f))
+                 (catch js/Error e
+                   (if-let [f (:watch-error-fn opts)]
+                     (f e)
+                     (binding [*print-fn* *print-err-fn*]
+                       (println e))))))
+             (watch-dir [root]
+               (->> (fs/watch root #js {:recursive false}
+                              (fn [change fstr]
+                                (if (or (nil? quit) (not @quit))
+                                  (let [rel-path (path/join root fstr)]
+                                    (when (and (fs/existsSync rel-path)
+                                               (or (. fstr (endsWith "cljc"))
+                                                   (. fstr (endsWith "cljs"))
+                                                   (. fstr (endsWith "clj"))
+                                                   (. fstr (endsWith "js")))
+                                               (not (. fstr (startsWith ".#"))))
+                                      (when (and (or (. fstr (endsWith "cljc"))
+                                                     (. fstr (endsWith "clj")))
+                                                 (not (. fstr (startsWith ".#"))))
+                                        (let [ns (-> rel-path
+                                                     lana/parse-ns :ns)]
+                                          ;; FIX: this require offends two specs
+                                          ;; (require ns :reload)
+                                          (-> (cljs-dependents-for-macro-namespaces compiler-env [ns])
+                                              (mark-cljs-ns-for-recompile! (:output-dir opts)))))
+                                      (when-not @throttling?
+                                        (vreset! throttling? true)
+                                        (js/setTimeout
+                                         (fn []
+                                           (println "Change detected, recompiling ...")
+                                           (vreset! throttling? false)
+                                           (buildf))
+                                         300))))
+                                  (run! (fn [fs-watcher] (.close fs-watcher)) @active-watchers))))
+                    (vswap! active-watchers conj)))
+             (watch-all [dir]
+               (watch-dir dir)
+               (letfn [(read-dir [dir]
+                         (->> (fs/readdirSync dir)
+                              (map (fn [file] (path/join dir file)))))]
+                 (loop [files (read-dir dir)]
+                   (when-not (empty? files)
+                     (let [file (first files)]
+                       (if (.isDirectory
+                            (fs/lstatSync file))
+                         (do (watch-dir file)
+                             (recur (into (rest files) (read-dir file))))
+                         (recur (rest files))))))))]
+       (println "Building ...")
+       (buildf)
+       (println "Watching paths:" (apply str (interpose ", " paths)))
+       (doseq [path paths]
+         (watch-all path))))))
+
 
 ;; =============================================================================
 ;; Utilities
