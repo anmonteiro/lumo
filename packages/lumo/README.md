@@ -4,7 +4,9 @@
 [![Backers on Open Collective](https://opencollective.com/lumo/backers/badge.svg)](#backers)
 [![Sponsors on Open Collective](https://opencollective.com/lumo/sponsors/badge.svg)](#sponsors)
 
-Lumo is a standalone ClojureScript environment that runs on Node.js and the V8
+![Lumo is fast](https://github.com/anmonteiro/lumo/raw/master/ascii.gif)
+
+Lumo is a standalone ClojureScript environment and REPL that runs on Node.js and the V8
 JavaScript engine. It starts up instantaneously and has out-of-the-box access to
 the entire Node.js ecosystem.
 
