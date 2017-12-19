@@ -86,7 +86,8 @@ export function processLine(replSession: REPLSession, line: string): void {
   const session = replSession;
   const { input, rl, isMain } = session;
 
-  let extraForms;
+  let extraForms, done; // done is either a boolean or a function
+  const donecb = () => { if (done) done(); else done = true; }
 
   if (exitCommands.has(line.trim())) {
     // $FlowIssue - use of rl.output
@@ -117,8 +118,16 @@ export function processLine(replSession: REPLSession, line: string): void {
       cljs.setPrintFns(rl.output);
       currentREPLInterface = rl;
 
-      cljs.execute(session.input, 'text', true, true, session.id);
-
+      done = false;
+//      cljs.execute(session.input, 'text', true, true, session.id, donecb);
+      donecb(); // tmp
+      cljs.execute(session.input, 'text', true, true, session.id);      
+      if (!done) {
+    	  // donecb hasn't been called, user code is in control
+    	  done = () => processLine(session, extraForms);
+    	  break;
+      }
+      
       currentREPLInterface = null;
       cljs.setPrintFns();
       // If *print-newline* is off, we need to emit a newline now, otherwise

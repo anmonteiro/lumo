@@ -646,6 +646,23 @@
   "Wrap wfn around all (fn) values in fns hashmap."
   (into {} (for [[k v] fns] [k (wfn v)])))
 
+;; --------------------
+;; REPL upgrade
+
+(deftype ^:private SuspensionRequest [f])
+
+(defn suspension-request? [x] (instance? SuspensionRequest x))
+
+(defn suspension-request [f] (SuspensionRequest. f))
+
+(defprotocol AsyncReader
+  "Asynchronous stream of strings."
+  (read-chars [r f] "Calls f with a string or nil (EOF)")
+  (pushback [r s] "Unread s"))
+
+(defn yield-control [suspension-request async-reader resume-cb]
+  ((.-f suspension-request) async-reader resume-cb))
+
 (declare execute-path)
 
 (def ^:private repl-special-fns
@@ -917,7 +934,7 @@
   (let [{:keys [ex-kind]} (ex-data e)]
     (keyword-identical? ex-kind :eof)))
 
-(defn- read-chars
+(defn- read-all-chars
   [reader]
   (let [sb (StringBuffer.)]
     (loop [c (rt/read-char reader)]
@@ -982,7 +999,7 @@
               r/*data-readers* (merge tags/*cljs-data-readers* (load-data-readers! env/*compiler*))
               r/resolve-symbol ana/resolve-symbol
               r/*alias-map* (current-alias-map)]
-      [(r/read {:read-cond :allow :features #{:cljs}} reader) (read-chars reader)])))
+      [(r/read {:read-cond :allow :features #{:cljs}} reader) (read-all-chars reader)])))
 
 (defn- ns-for-source [source]
   (let [[ns-form] (repl-read-string source)
@@ -1113,53 +1130,71 @@
         (handle-error (ex-info (str "Could not load file " file) {}) true)))))
 
 (defn- execute-text
-  [source {:keys [expression? print-nil-result? filename session-id] :as opts}]
-  (try
-    (set-session-state-for-session-id! session-id)
-    (binding [ana/*cljs-warning-handlers* (if expression?
-                                              [warning-handler]
-                                              [ana/default-warning-handler])
-              cljs/*eval-fn*   caching-node-eval
-              cljs/*load-fn*   load
-              ana/*cljs-ns*    @current-ns
-              *ns*             (create-ns @current-ns)
-              env/*compiler*   st
-              r/resolve-symbol ana/resolve-symbol
-              tags/*cljs-data-readers* (merge tags/*cljs-data-readers* (load-data-readers! env/*compiler*))
-              r/*alias-map*    (current-alias-map)]
-      (let [form (and expression? (first (repl-read-string source)))
-            eval-opts (merge (make-eval-opts)
-                        (when expression?
-                          {:context :expr
-                           :def-emits-var true}))]
-        (if (repl-special? form)
-          ((get repl-special-fns (first form)) form (merge opts eval-opts))
-          (cljs/eval-str
-            st
-            source
-            (cond
-              expression? source
-              filename (or (ns-for-source source) filename)
-              :else "source")
-            eval-opts
-            (fn [{:keys [ns value error] :as ret}]
-              (if-not error
-                (when expression?
-                  (when (or (true? print-nil-result?)
-                            (not (nil? value)))
-                    (js/$$LUMO_GLOBALS.doPrint print-value value))
-                  (process-1-2-3 form value)
-                  (when (def-form? form)
-                    (let [{:keys [ns name]} (meta value)]
-                      (swap! st assoc-in [::ana/namespaces ns :defs name ::repl-entered-source] source)))
-                  (vreset! current-ns ns))
-                (handle-error error true)))))))
-    (catch :default e
-      ;; `;;` and `#_`
-      (when-not (identical? (.-message e) "Unexpected EOF.")
-        (handle-error e true)))
-    (finally (capture-session-state-for-session-id session-id)))
-  nil)
+  [source {:keys [expression? print-nil-result? filename session-id done-cb] :as opts}]
+  (let [suspended (volatile! false)]
+    (try
+      (set-session-state-for-session-id! session-id)
+      (binding [ana/*cljs-warning-handlers* (if expression?
+                                                [warning-handler]
+                                                [ana/default-warning-handler])
+                cljs/*eval-fn*   caching-node-eval
+                cljs/*load-fn*   load
+                ana/*cljs-ns*    @current-ns
+                *ns*             (create-ns @current-ns)
+                env/*compiler*   st
+                r/resolve-symbol ana/resolve-symbol
+                tags/*cljs-data-readers* (merge tags/*cljs-data-readers* (load-data-readers! env/*compiler*))
+                r/*alias-map*    (current-alias-map)]
+        (let [form (and expression? (first (repl-read-string source)))
+              eval-opts (merge (make-eval-opts)
+                          (when expression?
+                            {:context :expr
+                             :def-emits-var true}))]
+          (if (repl-special? form)
+            ((get repl-special-fns (first form)) form (merge opts eval-opts))
+            (cljs/eval-str
+              st
+              source
+              (cond
+                expression? source
+                filename (or (ns-for-source source) filename)
+                :else "source")
+              eval-opts
+              (fn eval-cb [{:keys [ns value error] :as ret}]
+                (when @suspended
+                  (set-session-state-for-session-id! session-id))
+                (if (and expression? (suspension-request? value))
+                  (if done-cb
+                    (let [async-reader 'TODO]
+                      (vreset! suspended true)
+                      (capture-session-state-for-session-id session-id)
+                      (yield-control value async-reader eval-cb))
+                    (throw (js/Error. "This REPL can't be upgraded.")))
+                  (try
+                    (if-not error
+                      (when expression?
+                        (when (or (true? print-nil-result?)
+                                (not (nil? value)))
+                          (js/$$LUMO_GLOBALS.doPrint print-value value))
+                        (process-1-2-3 form value)
+                        (when (def-form? form)
+                          (let [{:keys [ns name]} (meta value)]
+                            (swap! st assoc-in [::ana/namespaces ns :defs name ::repl-entered-source] source)))
+                        (vreset! current-ns ns))
+                      (handle-error error true))
+                    (finally
+                      (when @suspended
+                        (capture-session-state-for-session-id session-id)
+                        (done-cb))))))))))
+      (catch :default e
+        ;; `;;` and `#_`
+        (when-not (identical? (.-message e) "Unexpected EOF.")
+          (handle-error e true)))
+      (finally
+        (when-not @suspended
+          (capture-session-state-for-session-id session-id)
+          (when done-cb (done-cb)))))
+  nil))
 
 (defn- execute-source
   [source-or-path {:keys [type] :as opts}]
