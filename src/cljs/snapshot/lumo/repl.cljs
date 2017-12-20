@@ -1055,7 +1055,9 @@
    :*2 *2
    :*3 *3
    :*e *e
-   :ns @current-ns})
+   :ns @current-ns
+   :*print-fn* *print-fn*
+   :*print-err-fn* *print-err-fn*})
 
 (defn- set-session-state!
   "Sets the session state given a sesssion state map."
@@ -1070,7 +1072,9 @@
   (set! *2 (:*2 session-state))
   (set! *3 (:*3 session-state))
   (set! *e (:*e session-state))
-  (vreset! current-ns (:ns session-state)))
+  (vreset! current-ns (:ns session-state))
+  (set! *print-fn* (:*print-fn* session-state))
+  (set! *print-err-fn* (:*print-err-fn* session-state)))
 
 (def ^{:private true
        :doc "The default state used to initialize a new REPL session."}
@@ -1090,7 +1094,10 @@
 (defn- set-session-state-for-session-id!
   "Sets the session state for a given session."
   [session-id]
-  (set-session-state! (get @session-states session-id @default-session-state)))
+  (set-session-state! (or (get @session-states session-id)
+                        (assoc @default-session-state
+                          :*print-fn* *print-fn*
+                          :*print-err-fn* *print-err-fn*))))
 
 (defn- capture-session-state-for-session-id
   "Captures the session state for a given session."
