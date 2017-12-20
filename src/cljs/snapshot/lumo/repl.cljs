@@ -663,6 +663,35 @@
 (defn yield-control [suspension-request async-reader resume-cb]
   ((.-f suspension-request) async-reader resume-cb))
 
+(defn- create-async-pipe []
+  (let [front #js []
+        back #js []
+        cb (volatile! nil)
+        spill! #(loop []
+                  (when-some [s (.pop back)]
+                    (do (.push front s) (recur))))]
+    #js [(fn 
+           ([] (spill!) (.join front ""))
+           ([s]
+             (when (and s (not= "" s)) ; TODO handle EOF
+               (if-some [f @cb]
+                 (do (vreset! cb nil) (f s))
+                 (if (pos? (.-length front))
+                   (.push back s)
+                   (.push front s))))))
+         (reify AsyncReader
+           (read-chars [r f]
+             (if-some [s (.pop front)]
+               (f s)
+               (do
+                 (spill!)
+                 (if-some [s (.pop front)]
+                   (f s)
+                   (vreset! cb f)))))
+           (pushback [r s]
+             (when (and s (not= "" s))
+               (.push front s))))]))
+
 (declare execute-path)
 
 (def ^:private repl-special-fns
@@ -1130,7 +1159,7 @@
         (handle-error (ex-info (str "Could not load file " file) {}) true)))))
 
 (defn- execute-text
-  [source {:keys [expression? print-nil-result? filename session-id done-cb] :as opts}]
+  [source {:keys [expression? print-nil-result? filename session-id host-yield-control] :as opts}]
   (let [suspended (volatile! false)]
     (try
       (set-session-state-for-session-id! session-id)
@@ -1164,13 +1193,26 @@
                 (when @suspended
                   (set-session-state-for-session-id! session-id))
                 (if (and expression? (suspension-request? value))
-                  (if done-cb
-                    (let [async-reader 'TODO]
-                      (vreset! suspended true)
+                  (if host-yield-control
+                   (if-let [re-yield @suspended]
+                    (re-yield value)
+                    (do
                       (capture-session-state-for-session-id session-id)
-                      (yield-control value async-reader eval-cb))
-                    (throw (js/Error. "This REPL can't be upgraded.")))
+                      ; host-yield-control is the function for readline yielding control
+                      ; this could be avoided by using .once and .pause but readline seems to have
+                      ; issues with pauses, see https://github.com/nodejs/node-v0.x-archive/issues/8340
+                      (host-yield-control
+                        (fn [async-reader done-cb]
+                          (let [resume #(try
+                                          (eval-cb %)
+                                          (finally
+                                            ; eval-cb may have resuspended (see re-yield above)
+                                            (when-not @suspended (done-cb))))]
+                            (vreset! suspended #(yield-control % async-reader resume))
+                            (yield-control value async-reader resume))))))
+                   (throw (js/Error. "This REPL can't be upgraded.")))
                   (try
+                    (vreset! suspended false)
                     (if-not error
                       (when expression?
                         (when (or (true? print-nil-result?)
@@ -1184,16 +1226,14 @@
                       (handle-error error true))
                     (finally
                       (when @suspended
-                        (capture-session-state-for-session-id session-id)
-                        (done-cb))))))))))
+                        (capture-session-state-for-session-id session-id))))))))))
       (catch :default e
         ;; `;;` and `#_`
         (when-not (identical? (.-message e) "Unexpected EOF.")
           (handle-error e true)))
       (finally
         (when-not @suspended
-          (capture-session-state-for-session-id session-id)
-          (when done-cb (done-cb)))))
+          (capture-session-state-for-session-id session-id))))
   nil))
 
 (defn- execute-source
@@ -1203,14 +1243,17 @@
     (execute-text source-or-path opts)))
 
 (defn- ^:export execute
-  [type source-or-path expression? print-nil-result? setNS session-id]
-  (clear-fns!)
-  (when setNS
-    (vreset! current-ns (symbol setNS)))
-  (execute-source source-or-path {:type type
-                                  :expression? expression?
-                                  :print-nil-result? print-nil-result?
-                                  :session-id session-id}))
+  ([type source-or-path expression? print-nil-result? setNS session-id]
+    (execute type source-or-path expression? print-nil-result? setNS session-id nil))
+  ([type source-or-path expression? print-nil-result? setNS session-id host-yield-control]
+    (clear-fns!)
+    (when setNS
+      (vreset! current-ns (symbol setNS)))
+    (execute-source source-or-path {:type type
+                                    :expression? expression?
+                                    :print-nil-result? print-nil-result?
+                                    :session-id session-id
+                                    :host-yield-control host-yield-control})))
 
 (defn- ^:export is-readable?
   [form]

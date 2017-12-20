@@ -270,6 +270,7 @@ export function execute(
   printNilResult?: boolean = true,
   sessionID?: number = 0,
   setNS?: string,
+  yieldControl: () => void,
 ): void {
   // $FlowIssue: context can have globals
   return ClojureScriptContext.lumo.repl.execute(
@@ -279,6 +280,7 @@ export function execute(
     printNilResult,
     setNS,
     sessionID,
+    yieldControl
   );
 }
 
@@ -313,6 +315,10 @@ export function isPrintingNewline(): boolean {
 export function clearREPLSessionState(sessionID: number): void {
   // $FlowIssue: context can have globals
   return ClojureScriptContext.lumo.repl.clear_state_for_session(sessionID);
+}
+
+export function createAsyncPipe() {
+	return ClojureScriptContext.lumo.repl.create_async_pipe();
 }
 
 function executeScript(

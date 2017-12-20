@@ -23,6 +23,7 @@ type KeyType = {
 export type REPLSession = {
   id: number,
   rl: readline$Interface,
+  linecb?: (s?:string) => void,
   isMain: boolean,
   isReverseSearch: boolean,
   reverseSearchBuffer: string,
@@ -85,9 +86,22 @@ function inferPastingBehavior(replSession: REPLSession): void {
 export function processLine(replSession: REPLSession, line: string): void {
   const session = replSession;
   const { input, rl, isMain } = session;
+  
+  if (session.linecb) {
+	  session.linecb(line);
+	  return;
+  }
 
-  let extraForms, done; // done is either a boolean or a function
-  const donecb = () => { if (done) done(); else done = true; }
+  let extraForms, suspended; // suspended is either a boolean or a function
+  function yieldControl(f) {
+	  suspended = true;
+	  const [linecb, reader] = cljs.createAsyncPipe();
+	  session.linecb = linecb;
+	  f(reader, () => {
+		  session.linecb = null;
+		  processLine(session, linecb());
+	  });
+  };
 
   if (exitCommands.has(line.trim())) {
     // $FlowIssue - use of rl.output
@@ -118,13 +132,12 @@ export function processLine(replSession: REPLSession, line: string): void {
       cljs.setPrintFns(rl.output);
       currentREPLInterface = rl;
 
-      done = false;
-//      cljs.execute(session.input, 'text', true, true, session.id, donecb);
-      donecb(); // tmp
-      cljs.execute(session.input, 'text', true, true, session.id);      
-      if (!done) {
-    	  // donecb hasn't been called, user code is in control
-    	  done = () => processLine(session, extraForms);
+      suspended = false;
+      cljs.execute(session.input, 'text', true, true, session.id, undefined, yieldControl);
+      if (suspended) {
+    	  // yieldControl has been called, user code is in control
+    	  session.input = '';
+    	  session.linecb(extraForms);
     	  break;
       }
       
@@ -384,6 +397,7 @@ export function createSession(
     id: sessionCount,
     rl,
     input: '',
+    linecb: null,
     isMain,
     reverseSearchBuffer: '',
     isReverseSearch: false,
