@@ -11,6 +11,7 @@ import { currentTimeMicros, isWhitespace, indentationSpaces } from './util';
 import { close as socketServerClose } from './socketRepl';
 
 import type { CLIOptsType } from './cli';
+import type { AsyncReader } from './cljs';
 
 type KeyType = {
   name: string,
@@ -23,7 +24,7 @@ type KeyType = {
 export type REPLSession = {
   id: number,
   rl: readline$Interface,
-  linecb?: (s?: string) => void,
+  linecb: ?(s?: string) => string,
   isMain: boolean,
   isReverseSearch: boolean,
   reverseSearchBuffer: string,
@@ -93,7 +94,7 @@ export function processLine(replSession: REPLSession, line: string): void {
   }
 
   let suspended;
-  function yieldControl(f: (async_reader: object, resume_cb: ()=>void)=>void): void {
+  function yieldControl(f: (async_reader: AsyncReader, resume_cb: ()=>void)=>void): void {
       suspended = true;
       const [linecb, reader] = cljs.createAsyncPipe();
       session.linecb = linecb;
@@ -141,6 +142,7 @@ export function processLine(replSession: REPLSession, line: string): void {
       if (suspended) {
           // yieldControl has been called, user code is in control
           session.input = '';
+          // $FlowIssue: linecb is guaranteed to be defined when suspended
           session.linecb(extraForms);
           break;
       }
