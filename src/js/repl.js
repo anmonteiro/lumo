@@ -92,13 +92,16 @@ export function processLine(replSession: REPLSession, line: string): void {
 	  return;
   }
 
-  let extraForms, suspended; // suspended is either a boolean or a function
+  let extraForms, suspended;
   function yieldControl(f) {
 	  suspended = true;
 	  const [linecb, reader] = cljs.createAsyncPipe();
 	  session.linecb = linecb;
+	  const prompt = rl._prompt;
+	  rl.setPrompt('');
 	  f(reader, () => {
 		  session.linecb = null;
+		  rl.setPrompt(prompt);
 		  processLine(session, linecb());
 	  });
   };
@@ -287,6 +290,8 @@ function handleKeyPress(
   const { rl, isReverseSearch } = session;
   const isReverseSearchKey = ctrl && name === 'r';
 
+  if (session.linecb) return;
+  
   // TODO: factor this out into own function
   if (isReverseSearch || isReverseSearchKey) {
     let failedSearch = false;
