@@ -668,15 +668,15 @@
         back #js []
         cb (volatile! nil)
         spill! #(when-some [s (.pop back)] (.push front s) (recur))]
-    #js [(fn 
-           ([]
+    #js [(fn line-cb
+           ([] ; 0-arg is called on resumption by repl.js to retrieve the content of the buffer
              (spill!)
              (when-some [last (.pop front)]
-               ; remove last newline when going back to repl/readline
+               ; remove last newline since repl/readline assumes no trailing newline
                (let [n (dec (.-length last))]
                  (.push front (if (= \newline (.charAt last n)) (subs last 0 n) last))))
              (.join front ""))
-           ([s]
+           ([s] ; 1-arg is called by repl.js when new input is available 
              (when (and s (not= "" s)) ; TODO handle EOF
                (let [s (str s "\n")]
                  (if-some [f @cb]
