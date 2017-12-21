@@ -207,13 +207,13 @@ function setRuntimeOpts(opts: CLIOptsType): void {
   );
 }
 
-function mkPrintFn(cljsSender: stream$Writable) {
-	return (...args: string[]): void => {
-		if (utilBinding.watchdogHasPendingSigint()) {
-			throw interruptSentinel;
-		}
-		cljsSender.write(args.join(' '));
-	};
+function mkPrintFn(cljsSender: stream$Writable): () => void {
+    return (...args: string[]): void => {
+        if (utilBinding.watchdogHasPendingSigint()) {
+            throw interruptSentinel;
+        }
+        cljsSender.write(args.join(' '));
+    };
 }
 
 const printErrFn = mkPrintFn(process.stderr);
@@ -224,9 +224,9 @@ export function setPrintFns(stream?: stream$Writable): void {
     ClojureScriptContext.cljs.core.set_print_fn_BANG_(printOutFn);
     ClojureScriptContext.cljs.core.set_print_err_fn_BANG_(printErrFn);
   } else {
-	const printFn = mkPrintFn(stream)
-	ClojureScriptContext.cljs.core.set_print_fn_BANG_(printFn);
-	ClojureScriptContext.cljs.core.set_print_err_fn_BANG_(printFn);
+    const printFn = mkPrintFn(stream);
+    ClojureScriptContext.cljs.core.set_print_fn_BANG_(printFn);
+    ClojureScriptContext.cljs.core.set_print_err_fn_BANG_(printFn);
   }
 }
 
@@ -272,7 +272,7 @@ export function execute(
     printNilResult,
     setNS,
     sessionID,
-    yieldControl
+    yieldControl,
   );
 }
 
@@ -309,8 +309,8 @@ export function clearREPLSessionState(sessionID: number): void {
   return ClojureScriptContext.lumo.repl.clear_state_for_session(sessionID);
 }
 
-export function createAsyncPipe() {
-	return ClojureScriptContext.lumo.repl.create_async_pipe();
+export function createAsyncPipe(): array {
+    return ClojureScriptContext.lumo.repl.create_async_pipe();
 }
 
 function executeScript(

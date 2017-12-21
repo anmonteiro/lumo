@@ -23,7 +23,7 @@ type KeyType = {
 export type REPLSession = {
   id: number,
   rl: readline$Interface,
-  linecb?: (s?:string) => void,
+  linecb?: (s?: string) => void,
   isMain: boolean,
   isReverseSearch: boolean,
   reverseSearchBuffer: string,
@@ -86,25 +86,25 @@ function inferPastingBehavior(replSession: REPLSession): void {
 export function processLine(replSession: REPLSession, line: string): void {
   const session = replSession;
   const { input, rl, isMain } = session;
-  
+
   if (session.linecb) {
-	  session.linecb(line);
-	  return;
+      session.linecb(line);
+      return undefined;
   }
 
-  let extraForms, suspended;
-  function yieldControl(f) {
-	  suspended = true;
-	  const [linecb, reader] = cljs.createAsyncPipe();
-	  session.linecb = linecb;
-	  const prompt = rl._prompt;
-	  rl.setPrompt('');
-	  f(reader, () => {
-		  session.linecb = null;
-		  rl.setPrompt(prompt);
-		  processLine(session, linecb());
-	  });
-  };
+  let suspended;
+  function yieldControl(f: (async_reader: object, resume_cb: ()=>void)=>void): void {
+      suspended = true;
+      const [linecb, reader] = cljs.createAsyncPipe();
+      session.linecb = linecb;
+      const bakprompt = rl._prompt;
+      rl.setPrompt('');
+      f(reader, () => {
+          session.linecb = null;
+          rl.setPrompt(bakprompt);
+          processLine(session, linecb());
+      });
+  }
 
   if (exitCommands.has(line.trim())) {
     // $FlowIssue - use of rl.output
@@ -117,6 +117,7 @@ export function processLine(replSession: REPLSession, line: string): void {
     session.input = `${input}\n${line}`;
   }
 
+  let extraForms;
   for (;;) {
     const currentInput = session.input;
     extraForms = cljs.isReadable(currentInput);
@@ -138,12 +139,12 @@ export function processLine(replSession: REPLSession, line: string): void {
       suspended = false;
       cljs.execute(session.input, 'text', true, true, session.id, undefined, yieldControl);
       if (suspended) {
-    	  // yieldControl has been called, user code is in control
-    	  session.input = '';
-    	  session.linecb(extraForms);
-    	  break;
+          // yieldControl has been called, user code is in control
+          session.input = '';
+          session.linecb(extraForms);
+          break;
       }
-      
+
       currentREPLInterface = null;
       cljs.setPrintFns();
       // If *print-newline* is off, we need to emit a newline now, otherwise
@@ -291,7 +292,7 @@ function handleKeyPress(
   const isReverseSearchKey = ctrl && name === 'r';
 
   if (session.linecb) return;
-  
+
   // TODO: factor this out into own function
   if (isReverseSearch || isReverseSearchKey) {
     let failedSearch = false;
