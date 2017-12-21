@@ -667,9 +667,7 @@
   (let [front #js []
         back #js []
         cb (volatile! nil)
-        spill! #(loop []
-                  (when-some [s (.pop back)]
-                    (do (.push front s) (recur))))]
+        spill! #(when-some [s (.pop back)] (.push front s) (recur))]
     #js [(fn 
            ([]
              (spill!)
