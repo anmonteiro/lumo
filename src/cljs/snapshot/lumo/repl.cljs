@@ -671,14 +671,21 @@
                   (when-some [s (.pop back)]
                     (do (.push front s) (recur))))]
     #js [(fn 
-           ([] (spill!) (.join front ""))
+           ([]
+             (spill!)
+             (when-some [last (.pop front)]
+               ; remove last newline when going back to repl/readline
+               (let [n (dec (.-length last))]
+                 (.push front (if (= \newline (.charAt last n)) (subs last 0 n) last))))
+             (.join front ""))
            ([s]
              (when (and s (not= "" s)) ; TODO handle EOF
-               (if-some [f @cb]
-                 (do (vreset! cb nil) (f s))
-                 (if (pos? (.-length front))
-                   (.push back s)
-                   (.push front s))))))
+               (let [s (str s "\n")]
+                 (if-some [f @cb]
+                  (do (vreset! cb nil) (f s))
+                  (if (pos? (.-length front))
+                    (.push back s)
+                    (.push front s)))))))
          (reify AsyncReader
            (read-chars [r f]
              (if-some [s (.pop front)]
