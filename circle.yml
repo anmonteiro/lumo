@@ -30,7 +30,8 @@ dependencies:
     - "/usr/local/lib/node_modules"
     - "/usr/local/Cellar"
   pre:
-    - (brew uninstall node || true) && brew update && brew install node && brew link node && brew link --force icu4c
+    - curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.33.8/install.sh | bash && export NVM_DIR="$HOME/.nvm" && [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+    - nvm install v9.2.0
     - if [[ ! -e /usr/local/bin/yarn ]]; then brew install yarn; fi
     - if [[ ! -e /usr/local/bin/wget ]]; then brew install wget; fi
     - |
