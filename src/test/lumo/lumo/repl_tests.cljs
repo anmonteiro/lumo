@@ -41,7 +41,8 @@
 (defn is-completion [i o]
   (lumo/get-completions i
     (fn [completions]
-      (is (= (js->clj completions) (sort (into [] (map str) o)))))))
+      (let [sorted (sort (into [] (map str) o))]
+        (is (= (js->clj completions) sorted) (str i " should generate the " sorted " completion"))))))
 
 (defn is-contains-completion
   ([i o]
@@ -49,10 +50,19 @@
   ([i o f]
    (lumo/get-completions i
      (fn [completions]
-       (is (f (contains? (set completions) o)))))))
+       (is (f (contains? (set completions) o)) (str i " should generate completions that contain " o))))))
+
+(defn is-empty-completion
+  [i]
+  (lumo/get-completions i
+     (fn [completions]
+       (is (empty? (set completions)) (str i "should generate no completion")))))
 
 (when test-util/lumo-env?
   (deftest test-get-completions
+    (testing "corner cases"
+      (is-completion "(" (mapv #(str "(" %) (lumo/completion-candidates true nil)))
+      (is-completion "" (lumo/completion-candidates false nil)))
     (testing "keyword completions"
       (is-completion ":" lumo/keyword-completions)
       (is-completion ":a" [":args" ":as"])
@@ -118,7 +128,11 @@
       (testing "arbitrary fully qualified keyword"
         (s/def :arbitrary/a-spec string?)
         (is-contains-completion ":arbitrary/" ":arbitrary/a-spec")
-        (reset! s/registry-ref {})))))
+        (reset! s/registry-ref {})))
+    (testing "prefix filtering"
+      (with-redefs [lumo/get-namespace (fn []
+                                         '{:defs {red6hlolli {:name cljs.user/red6hlolli}}})]
+        (is-contains-completion "red6" "red6hlolli")))))
 
 
 
