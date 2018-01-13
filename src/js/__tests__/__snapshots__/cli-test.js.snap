@@ -3,7 +3,7 @@
 exports[`getCliOpts Socket repl throws errors if you give it a port object that isn't a number 1`] = `
 Array [
   Array [
-    "Error: \\"port\\" argument must be >= 0 and < 65536
+    "Error: Port should be > 0 and < 65536. Received NaN.
 ",
   ],
 ]
@@ -12,7 +12,7 @@ Array [
 exports[`getCliOpts Socket repl throws errors if you give it a port string that isn't a number 1`] = `
 Array [
   Array [
-    "Error: \\"port\\" argument must be >= 0 and < 65536
+    "Error: Port should be > 0 and < 65536. Received NaN.
 ",
   ],
 ]
@@ -21,7 +21,7 @@ Array [
 exports[`getCliOpts Socket repl throws errors if you give it an empty object 1`] = `
 Array [
   Array [
-    "Error: \\"port\\" argument must be >= 0 and < 65536
+    "Error: Port should be > 0 and < 65536. Received NaN.
 ",
   ],
 ]
@@ -48,7 +48,7 @@ Array [
 exports[`getCliOpts Socket repl throws errors if you give it just a host object 1`] = `
 Array [
   Array [
-    "Error: \\"port\\" argument must be >= 0 and < 65536
+    "Error: Port should be > 0 and < 65536. Received NaN.
 ",
   ],
 ]
@@ -57,7 +57,7 @@ Array [
 exports[`getCliOpts Socket repl throws errors if you give it just a host string 1`] = `
 Array [
   Array [
-    "Error: \\"port\\" argument must be >= 0 and < 65536
+    "Error: Port should be > 0 and < 65536. Received NaN.
 ",
   ],
 ]
