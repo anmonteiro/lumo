@@ -1442,15 +1442,16 @@
   (if-some [js-matches (re-find #"js/(\S*)$" line)]
     (js/$$LUMO_GLOBALS.getJSCompletions line (second js-matches) cb)
     (let [top-level? (boolean (re-find #"^\s*\(\s*[^()\s]*$" line))
+          skip-suffix-check? (or (= "(" line) (string/ends-with? line "/") (empty? line))
           ns-alias (second (re-find #"\(*(\b[a-zA-Z-.<>*=&?]+)/[a-zA-Z-]*$" line))
           line-match-suffix (first (re-find #":?([a-zA-Z-.<>*=&?]*|^\(/)$" line))
           line-prefix (subs line 0 (- (count line) (count line-match-suffix)))
-          completions (if (empty? line-match-suffix)
-                        #js []
-                       (reduce (fn [ret item]
-                                  (doto ret
-                                    (.push (str line-prefix item))))
-                                #js []
+          completions (reduce (fn [ret item]
+                                (doto ret
+                                  (.push (str line-prefix item))))
+                              #js []
+                              (if skip-suffix-check?
+                                (completion-candidates top-level? ns-alias)
                                 (filter #(is-completion? line-match-suffix %)
                                         (completion-candidates top-level? ns-alias))))]
       (cb (doto completions
