@@ -132,8 +132,20 @@
     (testing "prefix filtering"
       (with-redefs [lumo/get-namespace (fn []
                                          '{:defs {red6hlolli {:name cljs.user/red6hlolli}}})]
-        (is-contains-completion "red6" "red6hlolli")))))
-
+        (is-contains-completion "red6" "red6hlolli")))
+    (testing "LUMO-332"
+      (with-redefs [lumo/get-namespace (fn [ns]
+                                         '{:name foo-1.core
+                                           :defs {xyz {:name foo-1.core/xyz}
+                                                  bar2 {:name foo-1.core/bar2}
+                                                  baz-3 {:name foo-1.core/baz-3}}
+                                           :uses {foo-1 foo-1.core}
+                                           :requires {foo-1.core foo-1.core}})
+                    lumo/all-ns (fn []
+                                  '(foo-1.core))]
+        (is-completion "foo-1.co" ["foo-1.core"])
+        (is-completion "foo-1.core/" ["foo-1.core/baz-3" "foo-1.core/bar2" "foo-1.core/xyz"])
+        (is-completion "foo-1.core/ba" ["foo-1.core/baz-3" "foo-1.core/bar2"])))))
 
 
 (deftest test-root-resource
