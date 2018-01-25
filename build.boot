@@ -57,7 +57,7 @@
 (deftask auto-test []
   (comp
     (watch)
-    (speak)
+    (notify :audible true)
     (test :exit? false)))
 
 (deftask install-node-modules []
@@ -164,7 +164,7 @@
   (comp
     (install-node-modules)
     (watch)
-    (speak)
+    (notify :audible true)
     (compile-cljs)
     (sift-cljs-resources)
     (cache-edn->transit)
@@ -214,5 +214,5 @@
 
 (deftask release []
   (comp
-    (speak)
+    (notify :audible true)
     (release-ci)))
