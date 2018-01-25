@@ -65,7 +65,7 @@
       (is-completion "" (lumo/completion-candidates false nil)))
     (testing "keyword completions"
       (is-completion ":" lumo/keyword-completions)
-      (is-completion ":a" [":args" ":as"])
+      (is-completion ":a" [":added" ":arglists" ":args" ":as" ":author"])
       (is-completion ":ref" [":refer" ":refer-clojure" ":refer-macros"]))
     (testing "aliased namespaces completions"
       (with-redefs [lumo/current-alias-map (fn []

@@ -20,6 +20,7 @@
 - Don't look for the REPL history file in the user's home directory if one doesn't exist ([#309](https://github.com/anmonteiro/lumo/issues/309)).
 - Use `tools.reader` with the unicode literal / cljs.core/bit-or warning ([#341](https://github.com/anmonteiro/lumo/issues/341)).
 - Auto-completion fails with numbers in ns names ([#332](https://github.com/anmonteiro/lumo/issues/332))
+- Add common metadata keys to completion keywords ([#344](https://github.com/anmonteiro/lumo/issues/344)).
 
 ### Changes
 
