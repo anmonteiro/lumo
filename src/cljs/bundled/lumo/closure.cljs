@@ -1794,7 +1794,7 @@
         (when-not (fs/existsSync pkg-json)
           (spit pkg-json "{}"))
         (let [proc (try
-                     (->> (into (cond->> ["npm" "install" "@cljs-oss/module-deps"]
+                     (->> (into (cond->> ["npm" "--no-package-lock" "install" "@cljs-oss/module-deps"]
                                   util/windows? (into ["cmd" "/c"]))
                             (map (fn [[dep version]] (str (name dep) "@" version)))
                             npm-deps)

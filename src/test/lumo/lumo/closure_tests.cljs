@@ -160,7 +160,7 @@
 (deftest test-cljs-2315
   (spit "package.json" (js/JSON.stringify (clj->js {:devDependencies {"@cljs-oss/module-deps" "*"}})))
   (child_process/execSync (string/join " "
-                            (cond->> ["npm" "install"]
+                            (cond->> ["npm" "--no-package-lock" "install"]
                               util/windows? (into ["cmd" "/c"]))))
   (let [file (path/join (test/tmp-dir) "cljs-2315-inputs.js")
         _ (spit file "require('./src/test/cljs_build/json_modules_test/a.js');")
@@ -310,6 +310,18 @@
                                                "asap/browser-asap.js",
                                                "asap/browser-asap"]}))
                    modules))))
+    (fs/unlinkSync "package.json")
+    (test/delete-node-modules)
+    (test/delete-out-files out)))
+
+(deftest test-no-package-json
+  (spit "package.json" "{}")
+  (let [opts {:npm-deps {:left-pad "1.1.3"}}
+        out (util/output-directory opts)]
+    (test/delete-node-modules)
+    (test/delete-out-files out)
+    (closure/maybe-install-node-deps! opts)
+    (is (not (fs/existsSync "package-lock.json")) "Lumo should not generate any package-lock.json")
     (fs/unlinkSync "package.json")
     (test/delete-node-modules)
     (test/delete-out-files out)))
