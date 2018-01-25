@@ -483,7 +483,7 @@
 ;;   (.delete (io/file "package-lock.json"))
 ;;   (spit (io/file "package.json") (json/json-str {:dependencies {:left-pad "1.1.3"}
 ;;                                                  :devDependencies {"@cljs-oss/module-deps" "*"}}))
-;;   (apply sh/sh (cond->> ["npm" "install"]
+;;   (apply sh/sh (cond->> ["npm" "--no-package-lock" "install"]
 ;;                  util/windows? (into ["cmd" "/c"])))
 ;;   (let [ws (atom [])
 ;;         out (.getPath (io/file (test/tmp-dir) "node-modules-opt-test-out"))
