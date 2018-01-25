@@ -1444,7 +1444,7 @@
        :doc "The symbol detection regex.
 
 This was taken from the reader specification plus tests at the Clojure REPL."}
-  completion-symbol-regex "[a-zA-Z-.<>_*=&?$%!]{1}[a-zA-Z0-9-.<>_*=&?%$!']")
+  completion-symbol-regex "[a-zA-Z-.<>_*=&?$%!]{1}[a-zA-Z0-9-.<>_*=&?%$!']*")
 
 (defn ^:export get-completions
   [line cb]
@@ -1452,7 +1452,7 @@ This was taken from the reader specification plus tests at the Clojure REPL."}
     (js/$$LUMO_GLOBALS.getJSCompletions line (second js-matches) cb)
     (let [top-level? (boolean (re-find #"^\s*\(\s*[^()\s]*$" line))
           skip-suffix-check? (or (= "(" line) (string/ends-with? line "/") (empty? line))
-          ns-alias (second (re-find (js/RegExp. (str "\\(*(\\b" completion-symbol-regex "+)/"  ;; either ending in /
+          ns-alias (second (re-find (js/RegExp. (str "\\(*(\\b" completion-symbol-regex ")/"   ;; either ending in /
                                                      "|/" completion-symbol-regex "$")) line)) ;; or in /symbol
           line-match-suffix (first (re-find (js/RegExp. (str "^:$|:?(" completion-symbol-regex "|^\\(/)$")) line))
           line-prefix (subs line 0 (- (count line) (count line-match-suffix)))
