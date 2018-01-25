@@ -1336,10 +1336,13 @@
      :clj :cljs
      :default
      :else
+     :private :doc :author
      :gen-class
      :keywordize-keys
      :req :req-un :opt :opt-un
-     :args :ret :fn]))
+     :args :ret :fn
+     :const
+     :arglists :tag :static :added]))
 
 (def ^:private namespace-completion-exclusions
   (into #{} (map str)
