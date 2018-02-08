@@ -440,6 +440,87 @@
 ;; --------------------
 ;; Error handling
 
+(declare all-ns ns-syms)
+
+(defn- form-demunge-map
+  "Forms a map from munged function symbols (as they appear in stacktraces)
+  to their unmunged forms."
+  [ns]
+  {:pre [(symbol? ns)]}
+  (let [ns-str        (str ns)
+        munged-ns-str (string/escape ns-str {\- \_ \. \$})]
+    (into {} (for [sym (ns-syms ns)]
+               [(str munged-ns-str "$" (munge sym)) (symbol ns-str (str sym))]))))
+
+(def ^:private core-demunge-map
+  (delay (form-demunge-map 'cljs.core)))
+
+(defn- non-core-demunge-maps
+  []
+  (let [non-core-nss (remove #{'cljs.core 'cljs.core$macros} (all-ns))]
+    (map form-demunge-map non-core-nss)))
+
+(defn- lookup-sym
+  [demunge-maps munged-sym]
+  (some #(% munged-sym) demunge-maps))
+
+(defn- demunge-local
+  [demunge-maps munged-sym]
+  (let [[_ fn local] (re-find #"(.*)_\$_(.*)" munged-sym)]
+    (when fn
+      (when-let [fn-sym (lookup-sym demunge-maps fn)]
+        (str fn-sym " " (demunge local))))))
+
+(defn- demunge-protocol-fn
+  [demunge-maps munged-sym]
+  (let [[_ obj ns prot fn] (re-find #"(.*)\.(.*)\$(.*)\$(.*)\$arity\$.*" munged-sym)]
+    (when ns
+      (when-let [prot-sym (lookup-sym demunge-maps (str ns "$" prot))]
+        (when-let [fn-sym (lookup-sym demunge-maps (str ns "$" fn))]
+          (str fn-sym " [" prot-sym "]"))))))
+
+(defn- gensym?
+  [sym]
+  (string/starts-with? (name sym) "G__"))
+
+(defn- demunge-sym
+  [munged-sym]
+  (let [demunge-maps (cons @core-demunge-map (non-core-demunge-maps))]
+    (str (or (lookup-sym demunge-maps munged-sym)
+             (demunge-protocol-fn demunge-maps munged-sym)
+             (demunge-local demunge-maps munged-sym)
+             (if (gensym? munged-sym)
+               munged-sym
+               (demunge munged-sym))))))
+
+(defn- js-file? [file]
+  (string/ends-with? file ".js"))
+
+(defn- file->ns-sym [file]
+  (-> file
+      st/remove-ext
+      (string/replace "/" ".")
+      (string/replace "_" "-")
+      symbol))
+
+(defn- qualify [name file]
+  (cond->> name
+    (not (or (string/includes? name "/")
+             (js-file? file)))
+    (str (file->ns-sym file) "/")))
+
+(defn- mapped-stacktrace-str
+  ([stacktrace sms]
+   (mapped-stacktrace-str stacktrace sms nil))
+  ([stacktrace sms opts]
+   (apply str
+          (for [{:keys [function file line column]} (st/mapped-stacktrace stacktrace sms opts)
+                :let [demunged (-> (str (when function (demunge-sym function)))
+                                   (qualify file))]
+                :when (not= demunged "cljs.core/-invoke [cljs.core/IFn]")]
+            (str \tab demunged " (" file (when line (str ":" line))
+                 (when column (str ":" column)) ")" \newline)))))
+
 (defn- ^:boolean could-not-eval? [msg]
   (and (not (nil? msg)) (boolean (re-find could-not-eval-regex msg))))
 
@@ -471,14 +552,22 @@
   [e]
   (keyword-identical? :reader-exception (:type (ex-data e))))
 
+(defn- analysis-error?
+  [e]
+  (= :cljs/analysis-error (:tag (ex-data e))))
+
+(defn- reader-or-analysis?
+  "Indicates if an exception is a reader or analysis exception."
+  [e]
+  (or (reader-error? e)
+      (analysis-error? e)))
+
 (defn- location-info
   [error]
   (let [data (ex-data error)]
     (when (and (:line data)
                (:file data))
-      (str " at line " (:line data) " " (:file data)#_(file-path (:file data))))))
-
-(declare all-ns ns-syms)
+      (str " at line " (:line data) " " (:file data)))))
 
 (defn- print-error
   ([error stacktrace?]
@@ -490,7 +579,11 @@
             printed-message printed-message]
        (print-error-column-indicator error)
        (let [error (extract-cljs-js-error error)
-             message (ex-message error)]
+             roa? (reader-or-analysis? error)
+             staktrace? (and stacktrace? (not roa?))
+             message  (if (instance? ExceptionInfo error)
+                        (ex-message error)
+                        (.-message error))]
          (when (or (not ((fnil string/starts-with? "") printed-message message))
                    stacktrace?)
            (println (str message (when (reader-error? error)
@@ -498,16 +591,15 @@
          #_(when-let [data (and print-ex-data? (ex-data error))]
              (print-value data {::as-code? false}))
          (when stacktrace?
-           (let [canonical-stacktrace (st/parse-stacktrace
-                                       {}
-                                       (.-stack error)
-                                       {:ua-product :nodejs}
-                                       {:output-dir "file://(/goog/..)?"})]
-             (println
-              (st/mapped-stacktrace-str
+           (let [canonical-stacktrace (->> (st/parse-stacktrace
+                                            {}
+                                            (.-stack error)
+                                            {:ua-product :nodejs}
+                                            {:output-dir "file://(/goog/..)?"}))]
+             (print
+              (mapped-stacktrace-str
                canonical-stacktrace
-               {}
-               nil))))
+               (or (:source-maps @st) {})))))
          (when-let [cause (.-cause error)]
            (recur cause stacktrace? message)))))))
 
@@ -588,11 +680,17 @@
     (into {}
       (merge (get-in @st [::ana/namespaces cur-ns :requires])
              (get-in @st [::ana/namespaces cur-ns :require-macros])))))
+
 (defn- ns-syms
-  [nsname pred]
-  (into []
-    (comp (filter pred) (map key))
-    (:defs (get-namespace nsname))))
+  "Returns a sequence of the symbols in a namespace."
+  ([ns]
+   (ns-syms ns (constantly true)))
+  ([ns pred]
+   {:pre [(symbol? ns)]}
+   (->> (get-namespace ns)
+     :defs
+     (filter pred)
+     (map key))))
 
 (defn- public-syms
   "Returns a sequence of the public symbols in a namespace."
