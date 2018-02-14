@@ -141,7 +141,8 @@
                      #"^cljs[\\\/](core[\\\/]macros|compiler[\\\/]api|repl([\\\/].*|(.cljc))|source_map.*clj$)"
                      #"^cljs[\\\/](externs\.clj|util|js_deps)"
                      #"^cljs_deps.js$"
-                     #"^goog[\\\/](test_module.*?|transpile).js"}
+                     #"^goog[\\\/](test_module.*?|transpile).js"
+                     #"cljsc_opts.edn"}
       :invert true)))
 
 (def lumo-version
