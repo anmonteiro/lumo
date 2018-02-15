@@ -1,12 +1,16 @@
 # Changelog
 
-## [master](https://github.com/anmonteiro/lumo/compare/1.8.0-beta...HEAD) (unreleased)
+## [master](https://github.com/anmonteiro/lumo/compare/1.8.0...HEAD) (unreleased)
+
+## [1.8.0](https://github.com/anmonteiro/lumo/compare/1.8.0-beta...1.8.0) (2018-02-15)
 
 ### New features
 
 - Remove #_=> from pasted code ([#261](https://github.com/anmonteiro/lumo/issues/261)).
 - Allow CLJS require from `node_modules` ([#130](https://github.com/anmonteiro/lumo/issues/130)).
 - Make `dir` work on aliases.
+- Add spec completions ([#279](https://github.com/anmonteiro/lumo/pull/279)).
+- Handle scoped packages when loading Cljs from node dirs ([#300](https://github.com/anmonteiro/lumo/pull/300)).
 - Added `lumo.build.api/watch` ([#321](https://github.com/anmonteiro/lumo/issues/321)).
 
 ### Bug fixes
@@ -20,6 +24,7 @@
 - Don't look for the REPL history file in the user's home directory if one doesn't exist ([#309](https://github.com/anmonteiro/lumo/issues/309)).
 - Use `tools.reader` with the unicode literal / cljs.core/bit-or warning ([#341](https://github.com/anmonteiro/lumo/issues/341)).
 - Auto-completion fails with numbers in ns names ([#332](https://github.com/anmonteiro/lumo/issues/332))
+- WARNING: cljs.core/bit-or, all arguments must be numbers ([#341](https://github.com/anmonteiro/lumo/issues/341)).
 - Add common metadata keys to completion keywords ([#344](https://github.com/anmonteiro/lumo/issues/344)).
 
 ### Changes
