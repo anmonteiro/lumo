@@ -17,6 +17,7 @@ before_install:
 - sudo swapon /swapfile
 - sudo sysctl vm.swappiness=10
 - npm install -g yarn
+- curl -sSL https://raw.githubusercontent.com/cljs-oss/canary/master/scripts/install-canary.sh | bash
 - wget https://github.com/boot-clj/boot-bin/releases/download/latest/boot.sh
 - mv boot.sh boot && chmod a+x boot && sudo mv boot /usr/local/bin
 install:
