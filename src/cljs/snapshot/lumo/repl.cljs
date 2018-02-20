@@ -572,6 +572,11 @@
                (:file data))
       (str " at line " (:line data) " " (:file data)))))
 
+(defn ensure-newline
+  "Ensure that s terminates by \n, adding it if necessary."
+  [s]
+  (str s (when-not (= \newline (last s)) \newline)))
+
 (defn- print-error
   ([error stacktrace?]
    (print-error error stacktrace? nil))
@@ -589,8 +594,10 @@
                         (.-message error))]
          (when (or (not ((fnil string/starts-with? "") printed-message message))
                    stacktrace?)
-           (println (str message (when (reader-error? error)
-                                   (location-info error)))))
+           (println (-> message
+                        (str (when (reader-error? error)
+                               (location-info error)))
+                        ensure-newline)))
          #_(when-let [data (and print-ex-data? (ex-data error))]
              (print-value data {::as-code? false}))
          (when stacktrace?
