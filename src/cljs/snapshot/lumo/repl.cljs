@@ -493,6 +493,9 @@
                munged-sym
                (demunge munged-sym))))))
 
+(def ^:private demunge-sym-memo
+  (memoize demunge-sym))
+
 (defn- js-file? [file]
   (string/ends-with? file ".js"))
 
@@ -515,7 +518,7 @@
   ([stacktrace sms opts]
    (apply str
           (for [{:keys [function file line column]} (st/mapped-stacktrace stacktrace sms opts)
-                :let [demunged (-> (str (when function (demunge-sym function)))
+                :let [demunged (-> (str (when function (demunge-sym-memo function)))
                                    (qualify file))]
                 :when (not= demunged "cljs.core/-invoke [cljs.core/IFn]")]
             (str \tab demunged " (" file (when line (str ":" line))
