@@ -122,6 +122,9 @@
           (-> fileset (add-resource tmp) commit!)))
       (sift :include #{core-caches-re} :invert true))))
 
+(deftask sift-optional-cljs-sources []
+  (sift :add-jar {'org.clojure/clojurescript #"^cljs[\\\/]core[\\\/]specs.*"}))
+
 (deftask sift-cljs-resources []
   (comp
     (sift :add-jar
@@ -202,6 +205,7 @@
 (deftask release-ci []
   (comp
     (install-node-modules)
+    (sift-optional-cljs-sources)
     (compile-cljs)
     (sift-cljs-resources)
     (cache-edn->transit)
