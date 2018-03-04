@@ -483,28 +483,31 @@
    (print-error error stacktrace? nil))
   ([error stacktrace? printed-message]
    (binding [*print-fn* *print-err-fn*]
-     (print-error-column-indicator error)
-     (let [error (extract-cljs-js-error error)
-           message (ex-message error)]
-       (when (or (not ((fnil string/starts-with? "") printed-message message))
-                 stacktrace?)
-         (println (str message (when (reader-error? error)
-                                 (location-info error)))))
-       #_(when-let [data (and print-ex-data? (ex-data error))]
-         (print-value data {::as-code? false}))
-       (when stacktrace?
-         (let [canonical-stacktrace (st/parse-stacktrace
-                                      {}
-                                      (.-stack error)
-                                      {:ua-product :nodejs}
-                                      {:output-dir "file://(/goog/..)?"})]
-           (println
-             (st/mapped-stacktrace-str
+     (loop [error error
+            stacktrace? stacktrace?
+            printed-message printed-message]
+       (print-error-column-indicator error)
+       (let [error (extract-cljs-js-error error)
+             message (ex-message error)]
+         (when (or (not ((fnil string/starts-with? "") printed-message message))
+                   stacktrace?)
+           (println (str message (when (reader-error? error)
+                                   (location-info error)))))
+         #_(when-let [data (and print-ex-data? (ex-data error))]
+             (print-value data {::as-code? false}))
+         (when stacktrace?
+           (let [canonical-stacktrace (st/parse-stacktrace
+                                       {}
+                                       (.-stack error)
+                                       {:ua-product :nodejs}
+                                       {:output-dir "file://(/goog/..)?"})]
+             (println
+              (st/mapped-stacktrace-str
                canonical-stacktrace
                {}
                nil))))
-       (when-let [cause (.-cause error)]
-         (recur cause stacktrace? message))))))
+         (when-let [cause (.-cause error)]
+           (recur cause stacktrace? message)))))))
 
 (defn- handle-error [error stacktrace?]
   (print-error error stacktrace?)
