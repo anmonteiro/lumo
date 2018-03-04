@@ -1444,7 +1444,7 @@
        :doc "The symbol detection regex.
 
 This was taken from the reader specification plus tests at the Clojure REPL."}
-  completion-symbol-regex "[a-zA-Z-.<>_*=&?$%!]{1}[a-zA-Z0-9-.<>_*=&?%$!']*")
+  completion-symbol-regex "[a-zA-Z-.<>_*+=&?$%!]{1}[a-zA-Z0-9-.<>_*+=&?%$!']*")
 
 (defn ^:export get-completions
   [line cb]
