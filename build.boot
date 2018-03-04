@@ -1,5 +1,6 @@
 (def +clojurescript-version+ (or (System/getenv "CANARY_CLOJURESCRIPT_VERSION")
                                  "1.9.946"))
+(def +node-version+ "9.2.0")
 
 (set-env!
  :source-paths #{"src/cljs/snapshot"}
@@ -182,7 +183,7 @@
 
 (deftask package-executable []
   (with-pass-thru _
-    (dosh "node" "scripts/package.js")))
+    (dosh "node" "scripts/package.js" +node-version+)))
 
 (deftask backup-resources
   "Backup resources to be gzipped in the 2nd stage binary
