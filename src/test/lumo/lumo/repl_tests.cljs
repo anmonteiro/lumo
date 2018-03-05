@@ -42,7 +42,7 @@
   (lumo/get-completions i
     (fn [completions]
       (let [sorted (sort (into [] (map str) o))]
-        (is (= (js->clj completions) sorted) (str i " should generate the " sorted " completion"))))))
+        (is (= (js->clj completions) sorted) (str i " should generate the " sorted " completion, instead we got " (or completions "nothing")))))))
 
 (defn is-contains-completion
   ([i o]
@@ -50,7 +50,7 @@
   ([i o f]
    (lumo/get-completions i
      (fn [completions]
-       (is (f (contains? (set completions) o)) (str i " should generate completions that contain " o))))))
+       (is (f (contains? (set completions) o)) (str i " should generate completions that contain " o " completion, instead we got " (or completions "nothing")))))))
 
 (defn is-empty-completion
   [i]
@@ -145,7 +145,9 @@
                                   '(foo-1.core))]
         (is-completion "foo-1.co" ["foo-1.core"])
         (is-completion "foo-1.core/" ["foo-1.core/baz-3" "foo-1.core/bar2" "foo-1.core/xyz"])
-        (is-completion "foo-1.core/ba" ["foo-1.core/baz-3" "foo-1.core/bar2"])))))
+        (is-completion "foo-1.core/ba" ["foo-1.core/baz-3" "foo-1.core/bar2"])))
+    (testing "LUMO-362"
+      (is-contains-completion "(+" "(+"))))
 
 
 (deftest test-root-resource
