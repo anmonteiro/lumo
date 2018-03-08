@@ -35,8 +35,8 @@ Before you submit your Pull Request (PR) consider the following guidelines:
   scripts/test-build.bat
   ```
 
-* Add your PR changes to the
-  [CHANGELOG.md](https://github.com/anmonteiro/lumo/blob/master/CHANGELOG.md),
+* Add your PR changes to 
+  [CHANGELOG.md](./CHANGELOG.md),
   including the relevant link to either the issue or the PR itself.
 
 * In GitHub, open a pull request to `lumo:master`.
