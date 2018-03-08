@@ -1,5 +1,5 @@
 (ns lumo.util-tests
-  (:require [clojure.test :refer [deftest testing is]]
+  (:require [clojure.test :as t :refer [deftest testing is]]
             [lumo.util :as util]
             path))
 

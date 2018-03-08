@@ -1,5 +1,5 @@
 (ns lumo.closure-tests
-  (:require [clojure.test :refer [deftest is testing]]
+  (:require [clojure.test :as t :refer [deftest is testing]]
             [lumo.build.api :as build]
             [lumo.closure :as closure]
             [lumo.cljs-deps :as deps]

@@ -119,6 +119,10 @@ To build Lumo from source:
 3. The resulting binary can be found in `build/lumo` (or `build\lumo.exe` if you're
 on Windows).
 
+## Contributing
+
+See [CONTRIBUTING.md](https://raw.githubusercontent.com/anmonteiro/lumo/master/CONTRIBUTING.md).
+
 ## Backers
 
 Support us with a monthly donation and help us continue our activities. [[Become a backer](https://opencollective.com/lumo#backer)]

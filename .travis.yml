@@ -29,7 +29,7 @@ script:
 - yarn test
 - boot test
 - boot release-ci
-- ./build/lumo -c src/test/cljs:src/test/lumo:src/test/cljs_cp -D org.clojure/test.check:0.10.0-alpha2 scripts/lumo_test.cljs --test-cli-option true
+- ./scripts/test-build
 after_success:
 - chmod a+x build/lumo
 - zip -j build/lumo.zip build/lumo

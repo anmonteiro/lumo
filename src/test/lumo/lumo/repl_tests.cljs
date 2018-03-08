@@ -1,6 +1,6 @@
 (ns lumo.repl-tests
   (:require [cljs.nodejs :as node]
-            [cljs.test :refer [deftest is testing use-fixtures]]
+            [cljs.test :as t :refer [deftest is testing use-fixtures]]
             [cljs.spec.alpha :as s]
             [lumo.repl :as lumo]
             [lumo.common :as common]
