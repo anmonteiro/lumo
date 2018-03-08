@@ -1,5 +1,5 @@
 (ns lumo.js-deps-tests
-  (:require [cljs.test :refer [deftest is testing are]]
+  (:require [cljs.test :as t :refer [deftest is testing are]]
             [lumo.js-deps :as deps]))
 
 (deftest topo-sort-test

@@ -1,7 +1,7 @@
 (ns lumo.build-api-tests
   (:require-macros [cljs.env.macros :as env]
                    [cljs.analyzer.macros :as ana])
-  (:require [clojure.test :refer [deftest is testing async]]
+  (:require [clojure.test :as t :refer [deftest is testing async]]
             [cljs.env :as env]
             [cljs.analyzer :as ana]
             [lumo.io :refer [spit slurp]]
