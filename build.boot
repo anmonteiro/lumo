@@ -1,6 +1,6 @@
 (def +clojurescript-version+ (or (System/getenv "CANARY_CLOJURESCRIPT_VERSION")
                                  "1.9.946"))
-(def +node-version+ "9.2.0")
+(def +node-version+ "9.8.0")
 
 (set-env!
  :source-paths #{"src/cljs/snapshot"}
