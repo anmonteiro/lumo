@@ -36,7 +36,7 @@ Before you submit your Pull Request (PR) consider the following guidelines:
   ```
 
 * Add your PR changes to the
-  [CHANGELOG.md](https://raw.githubusercontent.com/anmonteiro/lumo/master/CHANGELOG.md),
+  [CHANGELOG.md](https://github.com/anmonteiro/lumo/blob/master/CHANGELOG.md),
   including the relevant link to either the issue or the PR itself.
 
 * In GitHub, open a pull request to `lumo:master`.

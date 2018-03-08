@@ -121,7 +121,7 @@ on Windows).
 
 ## Contributing
 
-See [CONTRIBUTING.md](https://raw.githubusercontent.com/anmonteiro/lumo/master/CONTRIBUTING.md).
+See [CONTRIBUTING.md](https://github.com/anmonteiro/lumo/blob/master/CONTRIBUTING.md).
 
 ## Backers
 
