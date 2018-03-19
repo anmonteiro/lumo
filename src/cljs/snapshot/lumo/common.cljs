@@ -1,5 +1,6 @@
 (ns lumo.common
-  (:require [cognitect.transit :as transit]
+  (:require [clojure.walk :as walk]
+            [cognitect.transit :as transit]
             [lazy-map.core :refer [lazy-map]]
             [cljs.js :as cljs]))
 
@@ -16,7 +17,11 @@
 (defn cljs->transit-json
   [x]
   (let [wtr (transit/writer :json)]
-    (transit/write wtr x)))
+    ;; postwalk identity converts map entries to work around
+    ;; https://github.com/cognitect/transit-cljs/issues/33
+    (->> x
+         (walk/postwalk identity)
+         (transit/write wtr))))
 
 (defn- load-core-analysis-cache
   [state eager? ns-sym file-prefix]
