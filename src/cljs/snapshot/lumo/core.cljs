@@ -1,4 +1,5 @@
 (ns lumo.core
+  (:refer-clojure :exclude [eval])
   (:require [lumo.repl :as repl]))
 
 (goog-define
@@ -8,7 +9,7 @@
 (defn eval
   "Evaluates the form data structure (not text!) and returns the result."
   [form]
-  (repl/eval form))
+  (cljs.core/eval form))
 
 (defn exit
   "Causes Lumo to exit with the supplied exit code. If no exit code is

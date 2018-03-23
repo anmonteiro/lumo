@@ -1,5 +1,5 @@
 (ns lumo.repl
-  (:refer-clojure :exclude [load-file*])
+  (:refer-clojure :exclude [load-file* eval])
   (:require-macros [cljs.env.macros :as env]
                    [cljs.analyzer.macros :refer [no-warn]]
                    [lumo.repl :refer [with-err-str]])
@@ -202,8 +202,6 @@
       name)
      (ana/node-module-dep? name))))
 
-(declare inject-lumo-eval)
-
 (defn- run-sync!
   "Like cljs.js/run-async!, but with the expectation that cb will be called
   synchronously within proc. When callbacks are done synchronously, run-async!
@@ -228,8 +226,6 @@
     (cb {:source source
          :lang :js
          :cache (common/transit-json->cljs cache-json)})
-    (when (symbol-identical? name 'cljs.spec.test.alpha$macros)
-      (inject-lumo-eval 'cljs.spec.test.alpha$macros))
     :loaded))
 
 ;; TODO: we could be smarter and only load the libs that we haven't already loaded
@@ -839,42 +835,6 @@
           (distinct))
         (all-ns)))))
 
-;; Taken from planck eval implementation
-;; The following atoms and fns set up a scheme to
-;; emit function values into JavaScript as numeric
-;; references that are looked up.
-
-(defonce ^:private fn-index (volatile! 0))
-(defonce ^:private fn-refs (volatile! {}))
-
-(defn- clear-fns!
-  "Clears saved functions."
-  []
-  (vreset! fn-refs {}))
-
-(defn- put-fn
-  "Saves a function, returning a numeric representation."
-  [f]
-  (let [n (vswap! fn-index inc)]
-    (vswap! fn-refs assoc n f)
-    n))
-
-(defn- get-fn
-  "Gets a function, given its numeric representation."
-  [n]
-  (get @fn-refs n))
-
-(defn- emit-fn [f]
-  (print "lumo.repl.get_fn(" (put-fn f) ")"))
-
-(defmethod comp/emit-constant js/Function
-  [f]
-  (emit-fn f))
-
-(defmethod comp/emit-constant cljs.core/Var
-  [f]
-  (emit-fn f))
-
 (defn eval
   ([form]
    (eval form (.-name *ns*)))
@@ -898,10 +858,6 @@
   ([ns name val]
    (when-let [the-ns (find-ns (cond-> ns (instance? Namespace ns) ns-name))]
      (eval `(def ~name ~val) (ns-name the-ns)))))
-
-(defn- inject-lumo-eval
-  [target-ns]
-  (intern target-ns 'eval eval))
 
 ;; --------------------
 ;; Code evaluation
@@ -1172,7 +1128,6 @@
 
 (defn- ^:export execute
   [type source-or-path expression? print-nil-result? setNS session-id]
-  (clear-fns!)
   (when setNS
     (vreset! current-ns (symbol setNS)))
   (execute-source source-or-path {:type type

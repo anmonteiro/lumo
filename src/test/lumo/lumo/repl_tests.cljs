@@ -2,6 +2,7 @@
   (:require [cljs.nodejs :as node]
             [cljs.test :as t :refer [deftest is testing use-fixtures]]
             [cljs.spec.alpha :as s]
+            [lumo.core :as core]
             [lumo.repl :as lumo]
             [lumo.common :as common]
             [lumo.test-util :as test-util]))
@@ -196,3 +197,11 @@ Special Form
     (is (not-any? #(= (.-execPath js/process) %1) cljs.core/*command-line-args*) "It should not contain process.execPath")
     (is (not-any? #(= "nexe.js" %1) cljs.core/*command-line-args*) "It should not contain the path to the JavaScript file being executed")
     (is (= ["--test-cli-option" "true"] cljs.core/*command-line-args*) "It should contained the expected options (in order)")))
+
+(when test-util/lumo-env?
+  (deftest test-eval
+    (is (= 1 (core/eval 1)))
+    (is (= 3 (core/eval '(+ 1 2))))
+    (is (= 3 (core/eval (list + 1 2))))
+    (is (= 17 (core/eval '(let [a 10] (+ 3 4 a)))))
+    (is (= 5 ((eval (eval '+)) 2 3)))))
