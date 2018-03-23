@@ -27,6 +27,9 @@ $(pwd)/build/lumo --quiet -c target -sfdk lumo-cljs/out/macros-tmp <<REPL_INPUT
          'clojure.core.reducers
          'clojure.zip
          'clojure.data
+         'clojure.reflect
+         'clojure.browser.net
+         'clojure.browser.event
          'cljs.nodejs
          'cljs.test
          'cljs.analyzer.api
@@ -51,6 +54,12 @@ mv lumo-cljs/out/macros-tmp/clojure_SLASH_core_SLASH_reducers.js target/clojure/
 mv lumo-cljs/out/macros-tmp/clojure_SLASH_core_SLASH_reducers.cache.json target/clojure/core/reducers.cache.json
 mv lumo-cljs/out/macros-tmp/clojure_SLASH_data.js target/clojure/data.js
 mv lumo-cljs/out/macros-tmp/clojure_SLASH_data.cache.json target/clojure/data.cache.json
+mv lumo-cljs/out/macros-tmp/clojure_SLASH_reflect.js target/clojure/reflect.js
+mv lumo-cljs/out/macros-tmp/clojure_SLASH_reflect.cache.json target/clojure/reflect.cache.json
+mv lumo-cljs/out/macros-tmp/clojure_SLASH_browser_SLASH_net.js target/clojure/browser/net.js
+mv lumo-cljs/out/macros-tmp/clojure_SLASH_browser_SLASH_net.cache.json target/clojure/browser/net.cache.json
+mv lumo-cljs/out/macros-tmp/clojure_SLASH_browser_SLASH_event.js target/clojure/browser/event.js
+mv lumo-cljs/out/macros-tmp/clojure_SLASH_browser_SLASH_event.cache.json target/clojure/browser/event.cache.json
 mv lumo-cljs/out/macros-tmp/clojure_SLASH_zip.js target/clojure/zip.js
 mv lumo-cljs/out/macros-tmp/clojure_SLASH_zip.cache.json target/clojure/zip.cache.json
 mv lumo-cljs/out/macros-tmp/cljs_SLASH_analyzer_SLASH_api.js target/cljs/analyzer/api.js

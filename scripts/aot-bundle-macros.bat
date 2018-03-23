@@ -11,12 +11,18 @@ echo "### Compiling Macro Namespaces"
 
 mkdir lumo-cljs\out\macros-tmp || goto :error
 
-echo (require 'lumo.build.api 'lumo.analyzer 'lumo.cljs-deps 'lumo.classpath 'lumo.closure 'lumo.compiler 'lumo.io 'lumo.json 'lumo.util 'clojure.core.reducers 'clojure.zip 'clojure.data 'cljs.nodejs 'cljs.pprint 'cljs.test 'cljs.analyzer.api 'cljs.spec.test.alpha) (require-macros 'lumo.repl 'lumo.util 'clojure.template 'cljs.pprint 'cljs.support 'cljs.spec.alpha 'cljs.spec.gen.alpha 'cljs.spec.test.alpha 'cljs.test 'cljs.reader 'cljs.env.macros 'cljs.analyzer.macros 'cljs.compiler.macros) | build\lumo.exe --quiet -c target -sfdk lumo-cljs/out/macros-tmp || goto :error
+echo (require 'lumo.build.api 'lumo.analyzer 'lumo.cljs-deps 'lumo.classpath 'lumo.closure 'lumo.compiler 'lumo.io 'lumo.json 'lumo.util 'clojure.core.reducers 'clojure.zip 'clojure.data 'clojure.reflect 'clojure.browser.net 'clojure.browser.event 'cljs.nodejs 'cljs.pprint 'cljs.test 'cljs.analyzer.api 'cljs.spec.test.alpha) (require-macros 'lumo.repl 'lumo.util 'clojure.template 'cljs.pprint 'cljs.support 'cljs.spec.alpha 'cljs.spec.gen.alpha 'cljs.spec.test.alpha 'cljs.test 'cljs.reader 'cljs.env.macros 'cljs.analyzer.macros 'cljs.compiler.macros) | build\lumo.exe --quiet -c target -sfdk lumo-cljs/out/macros-tmp || goto :error
 
 move lumo-cljs\out\macros-tmp\clojure_SLASH_core_SLASH_reducers.js target\clojure\core\reducers.js || goto :error
 move lumo-cljs\out\macros-tmp\clojure_SLASH_core_SLASH_reducers.cache.json target\clojure\core\reducers.cache.json || goto :error
 move lumo-cljs\out\macros-tmp\clojure_SLASH_data.js target\clojure\data.js || goto :error
 move lumo-cljs\out\macros-tmp\clojure_SLASH_data.cache.json target\clojure\data.cache.json || goto :error
+move lumo-cljs\out\macros-tmp\clojure_SLASH_reflect.js target\clojure\reflect.js || goto :error
+move lumo-cljs\out\macros-tmp\clojure_SLASH_reflect.cache.json target\clojure\reflect.cache.json || goto :error
+move lumo-cljs\out\macros-tmp\clojure_SLASH_browser_SLASH_net.js target\clojure\browser\net.js || goto :error
+move lumo-cljs\out\macros-tmp\clojure_SLASH_browser_SLASH_net.cache.json target\clojure\browser\net.cache.json || goto :error
+move lumo-cljs\out\macros-tmp\clojure_SLASH_browser_SLASH_event.js target\clojure\browser\event.js || goto :error
+move lumo-cljs\out\macros-tmp\clojure_SLASH_browser_SLASH_event.cache.json target\clojure\browser\event.cache.json || goto :error
 move lumo-cljs\out\macros-tmp\clojure_SLASH_zip.js target\clojure\zip.js || goto :error
 move lumo-cljs\out\macros-tmp\clojure_SLASH_zip.cache.json target\clojure\zip.cache.json || goto :error
 move lumo-cljs\out\macros-tmp\cljs_SLASH_analyzer_SLASH_api.js target\cljs\analyzer\api.js || goto :error
