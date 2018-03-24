@@ -2,6 +2,10 @@
 
 ## [master](https://github.com/anmonteiro/lumo/compare/1.8.0...HEAD) (unreleased)
 
+### Bug fixes
+
+- `clojure.reflect` not bundled ([#369](https://github.com/anmonteiro/lumo/issues/369)).
+
 ## [1.8.0](https://github.com/anmonteiro/lumo/compare/1.8.0-beta...1.8.0) (2018-02-15)
 
 ### New features
