@@ -27,7 +27,7 @@
   },
   "main": "./src/js/index.js",
   "dependencies": {
-    "google-closure-compiler-js": "20170910.0.1",
+    "google-closure-compiler-js": "20180204.0.0",
     "jszip": "2.6.1",
     "paredit.js": "0.3.2",
     "posix-getopt": "github:anmonteiro/node-getopt#master"
