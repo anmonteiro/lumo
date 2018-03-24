@@ -8,6 +8,8 @@
             path)
   (:require-macros [cljs.env.macros :as env]))
 
+(def ^:dynamic *print-stack-traces* true)
+
 (def lumo-env? (exists? js/$$LUMO_GLOBALS))
 
 (defn with-lumo-globals [f]

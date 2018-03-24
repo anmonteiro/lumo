@@ -1,5 +1,9 @@
-(ns lumo.closure-tests
-  (:require [clojure.test :as t :refer [deftest is testing]]
+(ns ^{:doc "For importing a new test make sure that:
+ - you get rid of all the io/file, in lumo you can pass the string path directly
+ - you transform .getAbsolutePath to path/resolve
+ - you transform .delete to fs/unlinkSync"}
+    lumo.closure-tests
+  (:require [clojure.test :as t :refer [deftest is testing use-fixtures]]
             [lumo.build.api :as build]
             [lumo.closure :as closure]
             [lumo.cljs-deps :as deps]
@@ -10,6 +14,12 @@
             child_process
             fs
             path))
+
+(use-fixtures :once
+  ;; backup and restore package.json cause we are executing these in the lumo
+  ;; folder.
+  {:before (fn [] (fs/copyFileSync "package.json" "package.json.bak"))
+   :after  (fn [] (fs/copyFileSync "package.json.bak" "package.json"))})
 
 (deftest test-make-preamble
   (testing "no options"
@@ -82,6 +92,7 @@
     (is (= (closure/lib-rel-path ijs) "tabby.js"))))
 
 (deftest test-index-node-modules-module-deps-js
+  (spit "package.json" "{}")
   (let [opts {:npm-deps {:left-pad "1.1.3"}}
         out (util/output-directory opts)]
     (test/delete-node-modules)
@@ -95,6 +106,7 @@
                                              "left-pad/index"]}))
                  (closure/index-node-modules ["left-pad"] opts))))
     (test/delete-node-modules)
+    (spit "package.json" "{}")
     (test/delete-out-files out)
     (let [opts {:npm-deps {:react "15.6.1"
                            :react-dom "15.6.1"}}
@@ -118,6 +130,7 @@
                                     :provides ["react-dom/server.js" "react-dom/server"]}))
                    modules))))
     (test/delete-node-modules)
+    (spit "package.json" "{}")
     (test/delete-out-files out)
     (let [opts {:npm-deps {:node-fetch "1.7.1"}
                 :target :nodejs}]
@@ -313,6 +326,63 @@
     (fs/unlinkSync "package.json")
     (test/delete-node-modules)
     (test/delete-out-files out)))
+
+(deftest test-cljs-2580
+  (spit "package.json" "{}")
+  (let [opts {:npm-deps {"npm-package-with-main-entry-pointing-to-folder" "1.0.0"}
+              :target :nodejs}
+        out (util/output-directory opts)]
+    (test/delete-node-modules)
+    (test/delete-out-files out)
+    (closure/maybe-install-node-deps! opts)
+    (let [modules (closure/index-node-modules ["npm-package-with-main-entry-pointing-to-folder"] opts)]
+      (is (true? (some (fn [module]
+                         (= module {:module-type :es6
+                                    :file (path/resolve (path/join "node_modules" "npm-package-with-main-entry-pointing-to-folder" "folder" "index.js"))
+                                    :provides ["npm-package-with-main-entry-pointing-to-folder"
+                                               "npm-package-with-main-entry-pointing-to-folder/folder/index.js"
+                                               "npm-package-with-main-entry-pointing-to-folder/folder/index"
+                                               "npm-package-with-main-entry-pointing-to-folder/folder"]}))
+                       modules))))
+    (fs/unlinkSync "package.json")
+    (test/delete-node-modules)
+    (test/delete-out-files out)))
+
+;; TODO when --package_json_entry_names will be exposed in JS GCC - Andrea Richiardi
+;; (deftest test-cljs-2592
+;;   (spit (io/file "package.json") "{}")
+;;   (let [opts {:npm-deps {:iterall "1.2.2"
+;;                          :graphql "0.13.1"}
+;;               :package-json-resolution :nodejs}
+;;         out  (util/output-directory opts)]
+;;     (test/delete-node-modules)
+;;     (test/delete-out-files out)
+;;     (closure/maybe-install-node-deps! opts)
+;;     (let [modules (closure/index-node-modules ["iterall" "graphql"] opts)]
+;;       (is (true? (some (fn [module]
+;;                          (= module {:module-type :es6
+;;                                     :file (.getAbsolutePath (io/file "node_modules/iterall/index.js"))
+;;                                     :provides ["iterall"
+;;                                                "iterall/index.js"
+;;                                                "iterall/index"]}))
+;;                        modules)))
+;;       (is (true? (some (fn [module]
+;;                          (= module {:module-type :es6
+;;                                     :file (.getAbsolutePath (io/file "node_modules/graphql/index.js"))
+;;                                     :provides ["graphql"
+;;                                                "graphql/index.js"
+;;                                                "graphql/index"]}))
+;;                        modules)))
+;;       (is (true? (some (fn [module]
+;;                          (= module {:module-type :es6
+;;                                     :file (.getAbsolutePath (io/file "node_modules/graphql/execution/index.js"))
+;;                                     :provides ["graphql/execution/index.js"
+;;                                                "graphql/execution/index"
+;;                                                "graphql/execution"]}))
+;;                        modules))))
+;;     (.delete (io/file "package.json"))
+;;     (test/delete-node-modules)
+;;     (test/delete-out-files out)))
 
 (deftest test-no-package-json
   (spit "package.json" "{}")
