@@ -16,15 +16,20 @@
             [cljs.tagged-literals :as tags]
             [clojure.string :as string]
             fs
-            path))
+            path
+            os))
+
+(def ^:dynamic *unchecked-if* false)
+(def ^:dynamic *unchecked-arrays* false)
 
 (defn gen-user-ns [src]
-  (let [full-name (str src)
-        name (.substring full-name
-               (inc (.lastIndexOf full-name "/"))
-               (.lastIndexOf full-name "."))]
-    (symbol
-      (str "cljs.user." name (util/content-sha full-name 7)))))
+  (if (sequential? src)
+       (symbol (str "cljs.user.source$form$" (util/content-sha (pr-str src) 7)))
+       (let [full-name (str src)
+             name (.substring full-name
+                    (inc (string/last-index-of full-name "/"))
+                    (string/last-index-of full-name "."))]
+         (symbol (str "cljs.user." name (util/content-sha full-name 7))))))
 
 (defn- resolve-symbol
   [sym]
@@ -99,7 +104,8 @@
       (remove nil?))
     (concat (vals uses) (vals requires))))
 
-(defn parse-ns
+;; The JVM compiler uses a binding now
+(defn ^:dynamic parse-ns
   "Helper for parsing only the essential namespace information from a
    ClojureScript source file and returning a cljs.closure/IJavaScript compatible
    map _not_ a namespace AST node.
@@ -201,14 +207,54 @@
   ([format]
    (if (= format :transit) "json" "edn")))
 
+(defn build-affecting-options [opts]
+  (select-keys opts
+    [:static-fns :fn-invoke-direct :optimize-constants :elide-asserts :target
+     :cache-key :checked-arrays :language-out]))
+
+(defn build-affecting-options-sha [path opts]
+  (let [m (assoc (build-affecting-options opts) :path path)]
+    (util/content-sha (pr-str m) 7)))
+
+(defn cache-base-path
+  ([path]
+   (cache-base-path path nil))
+  ([path opts]
+   (path/join (os/homedir)
+     ".cljs" ".aot_cache" (util/clojurescript-version)
+     (build-affecting-options-sha path opts))))
+
+(defn cacheable-files
+  ([rsrc ext]
+   (cacheable-files rsrc ext nil))
+  ([rsrc ext opts]
+   (let [{:keys [ns]} (parse-ns rsrc)
+         path (cache-base-path (util/path rsrc) opts)
+         name (util/ns->relpath ns nil path/sep)]
+     (into {}
+           (map
+            (fn [[k v]]
+              [k (path/join path
+                   (if (and (= (str "cljs" path/sep "core$macros") name)
+                            (= :source k))
+                     (str "cljs" path/sep "core.cljc")
+                     (str name v)))]))
+           {:source (str "." ext)
+            :output-file ".js"
+            :source-map ".js.map"
+            :analysis-cache-edn (str "." ext ".cache.edn")
+            :analysis-cache-json (str "." ext ".cache.json")}))))
+
 (defn cache-file
   "Given a ClojureScript source file returns the read/write path to the analysis
    cache file. Defaults to the read path which is usually also the write path."
   ([src] (cache-file src "out"))
   ([src output-dir] (cache-file src (parse-ns src) output-dir))
   ([src ns-info output-dir]
-   (cache-file src (parse-ns src) output-dir :read))
+   (cache-file src ns-info output-dir :read nil))
   ([src ns-info output-dir mode]
+   (cache-file src ns-info output-dir mode nil))
+  ([src ns-info output-dir mode opts]
    {:pre [(map? ns-info)]}
    (let [ext (cache-analysis-ext)]
      (if-let [core-cache
@@ -216,9 +262,15 @@
                 (= (:ns ns-info) 'cljs.core)
                 (io/resource (str "cljs/core.cljs.cache.aot._COLON_defs." ext)))]
        core-cache
-       (let [target-file (util/to-target-file output-dir ns-info
-                           (util/ext (:source-file ns-info)))]
-         (str target-file ".cache." ext))))))
+       (let [aot-cache-file
+             (when (util/bundled-resource? src)
+               ((keyword (str "analysis-cache-" ext))
+                (cacheable-files src (util/ext src) opts)))]
+         (if (and aot-cache-file (fs/existsSync aot-cache-file))
+           aot-cache-file
+           (let [target-file (util/to-target-file output-dir ns-info
+                               (util/ext (:source-file ns-info)))]
+             (str target-file ".cache." ext))))))))
 
 (defn requires-analysis?
   "Given a src, a resource, and output-dir, a compilation output directory
@@ -227,8 +279,10 @@
   ([src] (requires-analysis? src "out"))
   ([src output-dir]
    (let [cache (cache-file src output-dir)]
-     (requires-analysis? src cache output-dir)))
+     (requires-analysis? src cache output-dir nil)))
   ([src cache output-dir]
+   (requires-analysis? src cache output-dir nil))
+  ([src cache output-dir opts]
    (cond
      (util/bundled-resource? cache)
      (let [path (.-src cache)]
@@ -241,10 +295,12 @@
      true
 
      :else
-     (let [out-src (util/to-target-file output-dir (parse-ns src))]
-       (if (not (fs/existsSync out-src))
+     (let [out-src   (util/to-target-file output-dir (parse-ns src))
+           cache-src (:output-file (cacheable-files src (util/ext src) opts))]
+       (if (and (not (fs/existsSync out-src))
+                (not (fs/existsSync cache-src)))
          true
-         (util/changed? src cache))))))
+         (or (not cache) (util/changed? src cache)))))))
 
 (defn write-analysis-cache
   ([ns cache-file]
@@ -371,6 +427,8 @@
    (analyze-file f false opts))
   ([f skip-cache opts]
    (binding [ana/*file-defs*        (atom #{})
+             *unchecked-if*         false
+             *unchecked-arrays*     false
              ana/*cljs-warnings*    ana/*cljs-warnings*]
      (let [output-dir (util/output-directory opts)
            res        (cond
@@ -387,7 +445,7 @@
                cache   (when (:cache-analysis opts)
                          (cache-file res ns-info output-dir))]
            (when-not (get-in @env/*compiler* [::ana/namespaces (:ns ns-info) :defs])
-             (if (or skip-cache (not cache) (requires-analysis? res output-dir))
+             (if (or skip-cache (not cache) (requires-analysis? res cache output-dir opts))
                (binding [ana/*cljs-ns* 'cljs.user
                          ana/*cljs-file* path
                          reader/*alias-map* (or reader/*alias-map* {})]

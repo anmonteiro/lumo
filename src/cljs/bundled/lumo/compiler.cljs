@@ -44,7 +44,7 @@
    (str "// Compiled by ClojureScript "
      (util/clojurescript-version)
      (when opts
-       (str " " (pr-str (comp/build-affecting-options opts)))))))
+       (str " " (pr-str (lana/build-affecting-options opts)))))))
 
 (defn requires-compilation?
   "Return true if the src file requires compilation."
@@ -64,8 +64,8 @@
              (and version (not= version version')))
            (and opts
              (not (and (io/resource "cljs/core.aot.js") (= 'cljs.core ns)))
-             (not= (comp/build-affecting-options opts)
-                   (comp/build-affecting-options (util/build-options dest))))
+             (not= (lana/build-affecting-options opts)
+                   (lana/build-affecting-options (util/build-options dest))))
            (and opts (:source-map opts)
              (if (= (:optimizations opts) :none)
                ;; TODO: not sure if this is 100% correct, but the self-hosted
