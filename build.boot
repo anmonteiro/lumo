@@ -8,7 +8,7 @@
  :dependencies (into [['org.clojure/clojure       "1.9.0"]
                       ['org.clojure/clojurescript +clojurescript-version+]]
                      '[[org.clojure/tools.reader    "1.2.2"]
-                       [com.cognitect/transit-cljs  "0.8.243"]
+                       [com.cognitect/transit-cljs  "0.8.248"]
                        [malabarba/lazy-map          "1.3"]
                        [fipp                        "0.6.12"]
                        [org.clojure/test.check      "0.10.0-alpha2" :scope "test"]
