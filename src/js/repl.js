@@ -11,6 +11,7 @@ import { currentTimeMicros, isWhitespace, indentationSpaces } from './util';
 import { close as socketServerClose } from './socketRepl';
 
 import type { CLIOptsType } from './cli';
+import type { AsyncReader } from './cljs';
 
 type KeyType = {
   name: string,
@@ -23,6 +24,7 @@ type KeyType = {
 export type REPLSession = {
   id: number,
   rl: readline$Interface,
+  linecb: ?(s?: string) => string,
   isMain: boolean,
   isReverseSearch: boolean,
   reverseSearchBuffer: string,
@@ -86,7 +88,24 @@ export function processLine(replSession: REPLSession, line: string): void {
   const session = replSession;
   const { input, rl, isMain } = session;
 
-  let extraForms;
+  if (session.linecb) {
+      session.linecb(line);
+      return undefined;
+  }
+
+  let suspended;
+  function yieldControl(f: (async_reader: AsyncReader, resume_cb: ()=>void)=>void): void {
+      suspended = true;
+      const [linecb, reader] = cljs.createAsyncPipe();
+      session.linecb = linecb;
+      const bakprompt = rl._prompt;
+      rl.setPrompt('');
+      f(reader, () => {
+          session.linecb = null;
+          rl.setPrompt(bakprompt);
+          processLine(session, linecb());
+      });
+  }
 
   if (exitCommands.has(line.trim())) {
     // $FlowIssue - use of rl.output
@@ -99,6 +118,7 @@ export function processLine(replSession: REPLSession, line: string): void {
     session.input = `${input}\n${line}`;
   }
 
+  let extraForms;
   for (;;) {
     const currentInput = session.input;
     extraForms = cljs.isReadable(currentInput);
@@ -117,7 +137,15 @@ export function processLine(replSession: REPLSession, line: string): void {
       cljs.setPrintFns(rl.output);
       currentREPLInterface = rl;
 
-      cljs.execute(session.input, 'text', true, true, session.id);
+      suspended = false;
+      cljs.execute(session.input, 'text', true, true, session.id, undefined, yieldControl);
+      if (suspended) {
+          // yieldControl has been called, user code is in control
+          session.input = '';
+          // $FlowIssue: linecb is guaranteed to be defined when suspended
+          session.linecb(extraForms);
+          break;
+      }
 
       currentREPLInterface = null;
       cljs.setPrintFns();
@@ -265,6 +293,8 @@ function handleKeyPress(
   const { rl, isReverseSearch } = session;
   const isReverseSearchKey = ctrl && name === 'r';
 
+  if (session.linecb) return;
+
   // TODO: factor this out into own function
   if (isReverseSearch || isReverseSearchKey) {
     let failedSearch = false;
@@ -375,6 +405,7 @@ export function createSession(
     id: sessionCount,
     rl,
     input: '',
+    linecb: null,
     isMain,
     reverseSearchBuffer: '',
     isReverseSearch: false,

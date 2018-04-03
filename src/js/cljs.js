@@ -207,35 +207,31 @@ function setRuntimeOpts(opts: CLIOptsType): void {
   );
 }
 
-let cljsSender: stream$Writable;
-
-function printFn(...args: string[]): void {
-  if (utilBinding.watchdogHasPendingSigint()) {
-    throw interruptSentinel;
-  }
-  cljsSender.write(args.join(' '));
+function mkPrintFn(cljsSender: stream$Writable): () => void {
+    return (...args: string[]): void => {
+        if (utilBinding.watchdogHasPendingSigint()) {
+            throw interruptSentinel;
+        }
+        cljsSender.write(args.join(' '));
+    };
 }
 
-function printErrFn(...args: string[]): void {
-  if (utilBinding.watchdogHasPendingSigint()) {
-    throw interruptSentinel;
-  }
-
-  process.stderr.write(args.join(' '));
-}
+const printErrFn = mkPrintFn(process.stderr);
+const printOutFn = mkPrintFn(process.stdout);
 
 export function setPrintFns(stream?: stream$Writable): void {
   if (stream == null || stream === process.stdout) {
-    cljsSender = process.stdout;
+    // $FlowIssue: context can have globals
+    ClojureScriptContext.cljs.core.set_print_fn_BANG_(printOutFn);
     // $FlowIssue: context can have globals
     ClojureScriptContext.cljs.core.set_print_err_fn_BANG_(printErrFn);
   } else {
-    cljsSender = stream;
+    const printFn = mkPrintFn(stream);
+    // $FlowIssue: context can have globals
+    ClojureScriptContext.cljs.core.set_print_fn_BANG_(printFn);
     // $FlowIssue: context can have globals
     ClojureScriptContext.cljs.core.set_print_err_fn_BANG_(printFn);
   }
-  // $FlowIssue: context can have globals
-  ClojureScriptContext.cljs.core.set_print_fn_BANG_(printFn);
 }
 
 function initClojureScriptEngine(opts: CLIOptsType): void {
@@ -263,6 +259,8 @@ function initClojureScriptEngine(opts: CLIOptsType): void {
   setRuntimeOpts(opts);
 }
 
+export type AsyncReader = {};
+
 export function execute(
   code: string,
   type?: string = 'text',
@@ -270,6 +268,7 @@ export function execute(
   printNilResult?: boolean = true,
   sessionID?: number = 0,
   setNS?: string,
+  yieldControl?: (f: (async_reader: AsyncReader, resume_cb: ()=>void) => void) => void,
 ): void {
   // $FlowIssue: context can have globals
   return ClojureScriptContext.lumo.repl.execute(
@@ -279,6 +278,7 @@ export function execute(
     printNilResult,
     setNS,
     sessionID,
+    yieldControl,
   );
 }
 
@@ -313,6 +313,11 @@ export function isPrintingNewline(): boolean {
 export function clearREPLSessionState(sessionID: number): void {
   // $FlowIssue: context can have globals
   return ClojureScriptContext.lumo.repl.clear_state_for_session(sessionID);
+}
+
+export function createAsyncPipe(): [(s?: string)=>string, AsyncReader] {
+  // $FlowIssue: context can have globals
+  return ClojureScriptContext.lumo.repl.create_async_pipe();
 }
 
 function executeScript(

@@ -649,6 +649,57 @@
   "Wrap wfn around all (fn) values in fns hashmap."
   (into {} (for [[k v] fns] [k (wfn v)])))
 
+;; --------------------
+;; REPL upgrade
+
+(deftype ^:private SuspensionRequest [f])
+
+(defn suspension-request? [x] (instance? SuspensionRequest x))
+
+(defn suspension-request [f] (SuspensionRequest. f))
+
+(defprotocol AsyncReader
+  "Asynchronous stream of strings."
+  (read-chars [r f] "Calls f with a string or nil (EOF)")
+  (pushback [r s] "Unread s"))
+
+(defn yield-control [suspension-request async-reader resume-cb]
+  ((.-f suspension-request) async-reader resume-cb))
+
+(defn- create-async-pipe []
+  (let [front #js []
+        back #js []
+        cb (volatile! nil)
+        spill! #(when-some [s (.pop back)] (.push front s) (recur))]
+    #js [(fn line-cb
+           ([] ; 0-arg is called on resumption by repl.js to retrieve the content of the buffer
+             (spill!)
+             (when-some [last (.pop front)]
+               ; remove last newline since repl/readline assumes no trailing newline
+               (let [n (dec (.-length last))]
+                 (.push front (if (= \newline (.charAt last n)) (subs last 0 n) last))))
+             (.join front ""))
+           ([s] ; 1-arg is called by repl.js when new input is available 
+             (when (and s (not= "" s)) ; TODO handle EOF
+               (let [s (str s "\n")]
+                 (if-some [f @cb]
+                  (do (vreset! cb nil) (f s))
+                  (if (pos? (.-length front))
+                    (.push back s)
+                    (.push front s)))))))
+         (reify AsyncReader
+           (read-chars [r f]
+             (if-some [s (.pop front)]
+               (f s)
+               (do
+                 (spill!)
+                 (if-some [s (.pop front)]
+                   (f s)
+                   (vreset! cb f)))))
+           (pushback [r s]
+             (when (and s (not= "" s))
+               (.push front s))))]))
+
 (declare execute-path)
 
 (def ^:private repl-special-fns
@@ -920,7 +971,7 @@
   (let [{:keys [ex-kind]} (ex-data e)]
     (keyword-identical? ex-kind :eof)))
 
-(defn- read-chars
+(defn- read-all-chars
   [reader]
   (let [sb (StringBuffer.)]
     (loop [c (rt/read-char reader)]
@@ -985,7 +1036,7 @@
               r/*data-readers* (merge tags/*cljs-data-readers* (load-data-readers! env/*compiler*))
               r/resolve-symbol ana/resolve-symbol
               r/*alias-map* (current-alias-map)]
-      [(r/read {:read-cond :allow :features #{:cljs}} reader) (read-chars reader)])))
+      [(r/read {:read-cond :allow :features #{:cljs}} reader) (read-all-chars reader)])))
 
 (defn- ns-for-source [source]
   (let [[ns-form] (repl-read-string source)
@@ -1012,7 +1063,9 @@
    :*2 *2
    :*3 *3
    :*e *e
-   :ns @current-ns})
+   :ns @current-ns
+   :*print-fn* *print-fn*
+   :*print-err-fn* *print-err-fn*})
 
 (defn- set-session-state!
   "Sets the session state given a sesssion state map."
@@ -1027,7 +1080,9 @@
   (set! *2 (:*2 session-state))
   (set! *3 (:*3 session-state))
   (set! *e (:*e session-state))
-  (vreset! current-ns (:ns session-state)))
+  (vreset! current-ns (:ns session-state))
+  (set! *print-fn* (:*print-fn* session-state))
+  (set! *print-err-fn* (:*print-err-fn* session-state)))
 
 (def ^{:private true
        :doc "The default state used to initialize a new REPL session."}
@@ -1047,7 +1102,10 @@
 (defn- set-session-state-for-session-id!
   "Sets the session state for a given session."
   [session-id]
-  (set-session-state! (get @session-states session-id @default-session-state)))
+  (set-session-state! (or (get @session-states session-id)
+                        (assoc @default-session-state
+                          :*print-fn* *print-fn*
+                          :*print-err-fn* *print-err-fn*))))
 
 (defn- capture-session-state-for-session-id
   "Captures the session state for a given session."
@@ -1116,53 +1174,82 @@
         (handle-error (ex-info (str "Could not load file " file) {}) true)))))
 
 (defn- execute-text
-  [source {:keys [expression? print-nil-result? filename session-id] :as opts}]
-  (try
-    (set-session-state-for-session-id! session-id)
-    (binding [ana/*cljs-warning-handlers* (if expression?
-                                              [warning-handler]
-                                              [ana/default-warning-handler])
-              cljs/*eval-fn*   caching-node-eval
-              cljs/*load-fn*   load
-              ana/*cljs-ns*    @current-ns
-              *ns*             (create-ns @current-ns)
-              env/*compiler*   st
-              r/resolve-symbol ana/resolve-symbol
-              tags/*cljs-data-readers* (merge tags/*cljs-data-readers* (load-data-readers! env/*compiler*))
-              r/*alias-map*    (current-alias-map)]
-      (let [form (and expression? (first (repl-read-string source)))
-            eval-opts (merge (make-eval-opts)
-                        (when expression?
-                          {:context :expr
-                           :def-emits-var true}))]
-        (if (repl-special? form)
-          ((get repl-special-fns (first form)) form (merge opts eval-opts))
-          (cljs/eval-str
-            st
-            source
-            (cond
-              expression? source
-              filename (or (ns-for-source source) filename)
-              :else "source")
-            eval-opts
-            (fn [{:keys [ns value error] :as ret}]
-              (if-not error
-                (when expression?
-                  (when (or (true? print-nil-result?)
-                            (not (nil? value)))
-                    (js/$$LUMO_GLOBALS.doPrint print-value value))
-                  (process-1-2-3 form value)
-                  (when (def-form? form)
-                    (let [{:keys [ns name]} (meta value)]
-                      (swap! st assoc-in [::ana/namespaces ns :defs name ::repl-entered-source] source)))
-                  (vreset! current-ns ns))
-                (handle-error error true)))))))
-    (catch :default e
-      ;; `;;` and `#_`
-      (when-not (identical? (.-message e) "Unexpected EOF.")
-        (handle-error e true)))
-    (finally (capture-session-state-for-session-id session-id)))
-  nil)
+  [source {:keys [expression? print-nil-result? filename session-id host-yield-control] :as opts}]
+  (let [suspended (volatile! false)]
+    (try
+      (set-session-state-for-session-id! session-id)
+      (binding [ana/*cljs-warning-handlers* (if expression?
+                                                [warning-handler]
+                                                [ana/default-warning-handler])
+                cljs/*eval-fn*   caching-node-eval
+                cljs/*load-fn*   load
+                ana/*cljs-ns*    @current-ns
+                *ns*             (create-ns @current-ns)
+                env/*compiler*   st
+                r/resolve-symbol ana/resolve-symbol
+                tags/*cljs-data-readers* (merge tags/*cljs-data-readers* (load-data-readers! env/*compiler*))
+                r/*alias-map*    (current-alias-map)]
+        (let [form (and expression? (first (repl-read-string source)))
+              eval-opts (merge (make-eval-opts)
+                          (when expression?
+                            {:context :expr
+                             :def-emits-var true}))]
+          (if (repl-special? form)
+            ((get repl-special-fns (first form)) form (merge opts eval-opts))
+            (cljs/eval-str
+              st
+              source
+              (cond
+                expression? source
+                filename (or (ns-for-source source) filename)
+                :else "source")
+              eval-opts
+              (fn eval-cb [{:keys [ns value error] :as ret}]
+                (when @suspended
+                  (set-session-state-for-session-id! session-id))
+                (if (and expression? (suspension-request? value))
+                  (if host-yield-control
+                   (if-let [re-yield @suspended]
+                    (re-yield value)
+                    (do
+                      (capture-session-state-for-session-id session-id)
+                      ; host-yield-control is the function for readline yielding control
+                      ; this could be avoided by using .once and .pause but readline seems to have
+                      ; issues with pauses, see https://github.com/nodejs/node-v0.x-archive/issues/8340
+                      (host-yield-control
+                        (fn [async-reader done-cb]
+                          (let [resume #(try
+                                          (eval-cb %)
+                                          (finally
+                                            ; eval-cb may have resuspended (see re-yield above)
+                                            (when-not @suspended (done-cb))))]
+                            (vreset! suspended #(yield-control % async-reader resume))
+                            (yield-control value async-reader resume))))))
+                   (throw (js/Error. "This REPL can't be upgraded.")))
+                  (try
+                    (vreset! suspended false)
+                    (if-not error
+                      (when expression?
+                        (when (or (true? print-nil-result?)
+                                (not (nil? value)))
+                          (js/$$LUMO_GLOBALS.doPrint print-value value))
+                        (process-1-2-3 form value)
+                        (when (def-form? form)
+                          (let [{:keys [ns name]} (meta value)]
+                            (swap! st assoc-in [::ana/namespaces ns :defs name ::repl-entered-source] source)))
+                        (vreset! current-ns ns))
+                      (handle-error error true))
+                    (finally
+                      (when @suspended
+                        (capture-session-state-for-session-id session-id))))))))))
+      (catch :default e
+        ;; `;;` and `#_`
+        (when-not (identical? (.-message e) "Unexpected EOF.")
+          (handle-error e true)))
+      (finally
+        (when-not @suspended
+          (capture-session-state-for-session-id session-id))))
+  nil))
 
 (defn- execute-source
   [source-or-path {:keys [type] :as opts}]
@@ -1171,14 +1258,17 @@
     (execute-text source-or-path opts)))
 
 (defn- ^:export execute
-  [type source-or-path expression? print-nil-result? setNS session-id]
-  (clear-fns!)
-  (when setNS
-    (vreset! current-ns (symbol setNS)))
-  (execute-source source-or-path {:type type
-                                  :expression? expression?
-                                  :print-nil-result? print-nil-result?
-                                  :session-id session-id}))
+  ([type source-or-path expression? print-nil-result? setNS session-id]
+    (execute type source-or-path expression? print-nil-result? setNS session-id nil))
+  ([type source-or-path expression? print-nil-result? setNS session-id host-yield-control]
+    (clear-fns!)
+    (when setNS
+      (vreset! current-ns (symbol setNS)))
+    (execute-source source-or-path {:type type
+                                    :expression? expression?
+                                    :print-nil-result? print-nil-result?
+                                    :session-id session-id
+                                    :host-yield-control host-yield-control})))
 
 (defn- ^:export is-readable?
   [form]
