@@ -31,6 +31,7 @@ dependencies:
     - "/usr/local/lib/node_modules"
     - "/usr/local/Cellar"
   pre:
+    - find tmp -mindepth 2 -maxdepth 2 -and -not -name ${BUILD_NODE_VERSION} -exec rm -rv {} ';'
     - curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.33.8/install.sh | bash && export NVM_DIR="$HOME/.nvm" && [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
     - nvm install v9.2.0
     - if [[ ! -d "$HOME/.yarn" ]]; then curl -o- -L https://yarnpkg.com/install.sh | bash; fi
