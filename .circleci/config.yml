@@ -1,0 +1,197 @@
+####################################################################
+# YAML references don't merge keys so we duplicate the environment #
+####################################################################
+
+#######################################################################
+# a node_version file is created for saving/restoring the right cache #
+#######################################################################
+
+version: 2
+
+# See docs: https://circleci.com/docs/2.0/workflows/
+defaults: &defaults
+  working_directory: ~/anmonteiro/lumo
+  parallelism: 1
+  shell: /bin/bash --login -o pipefail
+
+node-version-file-cmd: &node-version-file-cmd
+  name: Node version file
+  command: node --version | tee node-version
+
+node-test-shared: &node-test-shared
+  <<: *defaults
+  steps:
+  - checkout
+  - run:
+      <<: *node-version-file-cmd
+  - run: yarn install
+  - run: yarn lint
+  - run: yarn type:check
+  - run: yarn test
+
+build-shared: &build-shared
+    <<: *defaults
+    machine: true
+    macos:
+      xcode: '8.3.3'
+    steps:
+    - run:
+        # https://discuss.circleci.com/t/how-to-change-node-version-in-circleci-2-0/17455/4
+        name: Install node
+        command: |
+          curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.33.8/install.sh | bash
+          export NVM_DIR="$HOME/.nvm"
+          [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+          nvm install $BUILD_NODE_VERSION
+          nvm alias default $BUILD_NODE_VERSION
+          # Adding to $BASH_ENV
+          echo 'export NVM_DIR="$HOME/.nvm"' >> $BASH_ENV
+          echo "[ -s \"$NVM_DIR/nvm.sh\" ] && . \"$NVM_DIR/nvm.sh\"" >> $BASH_ENV
+    - run:
+        name: Install yarn
+        command: |
+          if [[ ! -d "$HOME/.yarn" ]]; then
+            curl -o- -L https://yarnpkg.com/install.sh | bash;
+          fi
+          # Adding to $BASH_ENV
+          echo 'export PATH="$HOME/.yarn/bin:$HOME/.config/yarn/global/node_modules/.bin:$PATH"' >> $BASH_ENV
+    - run:
+        name: Install Boot
+        command: |
+         if [[ ! -e $HOME/bin/boot ]]; then
+           mkdir $HOME/bin
+           cd $HOME/bin
+           curl -fsSLo boot https://github.com/boot-clj/boot-bin/releases/download/latest/boot.sh
+           chmod 755 boot
+           echo 'export PATH="$HOME/bin:$PATH"' >> $BASH_ENV
+         fi
+    - checkout
+    - run:
+        <<: *node-version-file-cmd
+    - restore_cache:
+        keys:
+          - lumo-nogh3Eta-{{ .Branch }}-{{ checksum "node-version" }}-{{ checksum "build.boot" }}-{{ checksum "yarn.lock" }}
+          # Any branch if there are none on the default branch - this should be unnecessary if you have your default branch configured correctly
+          - v1-dep-
+    - run:
+        name: Fetch jars
+        command: 'boot > /dev/null'
+    - run: boot test
+    - run: boot release-ci
+    - save_cache:
+        key: lumo-nogh3Eta-{{ .Branch }}-{{ checksum "node-version" }}-{{ checksum "build.boot" }}-{{ checksum "yarn.lock" }}
+        paths:
+        - ~/.m2
+        - ~/bin
+        - ~/.boot/cache/lib
+        - ~/.boot/cache/bin
+        - ~/.yarn
+        - ~/.cache/yarn
+        - ~/.config/yarn
+        - ./node_modules
+        - tmp
+    - run:
+        name: Test the build artifact
+        command: './scripts/test-build'
+    - run:
+        name: Package the artifact
+        command: |
+          chmod a+x build/lumo
+          zip -j build/lumo.zip build/lumo
+          cp -v build/lumo.zip build/lumo-$BUILD_ARCH-node-v$BUILD_NODE_VERSION.zip
+          rm -v build/lumo
+    # Teardown
+    # The following line was run implicitly in your 1.0 builds based on what CircleCI inferred about the structure of your project. In 2.0 you need to be explicit about which commands should be run. In some cases you can discard inferred commands if they are not relevant to your project.
+    - run:
+        name: Save xcode logs
+        command: find $HOME/Library/Developer/Xcode/DerivedData -name '*.xcactivitylog' -exec cp {} $CIRCLE_ARTIFACTS/xcactivitylog \; || true
+    # Save artifacts
+    - store_artifacts:
+        path: build
+
+jobs:
+  test-js-8.10.0:
+    <<: *node-test-shared
+    docker:
+      - image: circleci/node:8.10.0
+    environment:
+      BUILD_NODE_VERSION: 8.10.0
+
+  test-js-8.11.1:
+    <<: *node-test-shared
+    docker:
+      - image: circleci/node:8.11.1
+    environment:
+      BUILD_NODE_VERSION: 8.11.1
+
+  test-js-9.10.1:
+    <<: *node-test-shared
+    docker:
+      - image: circleci/node:9.10.1
+    environment:
+      BUILD_NODE_VERSION: 9.10.1
+
+  build-8.10.0:
+    <<: *build-shared
+    environment:
+      XCODE_SCHEME: phony
+      XCODE_WORKSPACE: phony
+      BOOT_JVM_OPTIONS: |
+        -client
+        -XX:+TieredCompilation
+        -XX:TieredStopAtLevel=1
+        -Xmx2g
+        -XX:+UseConcMarkSweepGC
+        -XX:+CMSClassUnloadingEnabled
+        -Xverify:none
+      BUILD_ARCH: darwin
+      BUILD_NODE_VERSION: 8.10.0
+
+  build-8.11.1:
+    <<: *build-shared
+    environment:
+      XCODE_SCHEME: phony
+      XCODE_WORKSPACE: phony
+      BOOT_JVM_OPTIONS: |
+        -client
+        -XX:+TieredCompilation
+        -XX:TieredStopAtLevel=1
+        -Xmx2g
+        -XX:+UseConcMarkSweepGC
+        -XX:+CMSClassUnloadingEnabled
+        -Xverify:none
+      BUILD_ARCH: darwin
+      BUILD_NODE_VERSION: 8.11.1
+
+  build-9.10.1:
+    <<: *build-shared
+    environment:
+      XCODE_SCHEME: phony
+      XCODE_WORKSPACE: phony
+      BOOT_JVM_OPTIONS: |
+        -client
+        -XX:+TieredCompilation
+        -XX:TieredStopAtLevel=1
+        -Xmx2g
+        -XX:+UseConcMarkSweepGC
+        -XX:+CMSClassUnloadingEnabled
+        -Xverify:none
+      BUILD_ARCH: darwin
+      BUILD_NODE_VERSION: 9.10.1
+
+workflows:
+  version: 2
+  test-and-build:
+    jobs:
+      - test-js-8.10.0
+      - test-js-8.11.1
+      - test-js-9.10.1
+      - build-8.10.0:
+          requires:
+            - test-js-8.10.0
+      - build-8.11.1:
+          requires:
+            - test-js-8.11.1
+      - build-9.10.1:
+          requires:
+            - test-js-9.10.1
