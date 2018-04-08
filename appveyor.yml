@@ -1,18 +1,26 @@
 environment:
   nodejs_version: "9"
-
+  BUILD_ARCH: win
+  matrix:
+    - BUILD_NODE_VERSION: 9.10.0
+    - BUILD_NODE_VERSION: 8.11.1
+    - BUILD_NODE_VERSION: 8.10.0
 platform:
   - x64
 
 configuration:
   - Release
 
+branches:
+  only:
+    - master
+
 matrix:
   fast_finish: true
 
 cache:
   - '%UserProfile%\.m2'
-  - tmp -> scripts\package.js
+  - tmp -> appveyor.yml
   - '%APPDATA%\npm-cache -> yarn.lock'
   - node_modules -> yarn.lock
   - '%SystemRoot%\boot.exe -> boot.properties'
@@ -36,7 +44,7 @@ test_script:
 
 artifacts:
   - path: build
-    name: Lumo
+    name: lumo-$(BUILD_ARCH)-node-v$(BUILD_NODE_VERSION)
 
 # Don't actually build (MSBuild).
 build: off
