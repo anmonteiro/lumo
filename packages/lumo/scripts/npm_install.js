@@ -1,7 +1,7 @@
 var request = require('request');
 var fs = require('fs');
 var zlib = require('zlib');
-var JSZip = require('jszip');
+var yauzl = require("yauzl");
 var ProgressBar = require('progress');
 
 var platform2release = {
@@ -62,19 +62,45 @@ req.on('error', function(err) {
 
 req.on('end', function() {
   var fileContents = fs.readFileSync(platformZip);
-  var zipped = new JSZip().load(fileContents).file(executable);
 
-  try {
-    fs.mkdirSync('bin');
-  } catch (e) {
-    if (e.code !== 'EEXIST') {
-      throw e;
+  yauzl.open(platformZip, {lazyEntries: true}, function(err, zipfile) {
+    if (err) {
+      console.error('\nOpen', platformZip, 'failed.');
+      process.exit(-2);
     }
-  }
 
-  fs.writeFileSync('./bin/' + executable, zipped.asBinary(), {
-    encoding: 'binary',
-    mode: zipped.options.unixPermissions,
+    zipfile.readEntry();
+    zipfile.on("entry", function(entry) {
+      if (/\/$/.test(entry.fileName)) {
+         zipfile.readEntry();
+      } else if (executable == entry.fileName) {
+        // file entry
+        zipfile.openReadStream(entry, function(err, readStream) {
+          if (err) {
+            console.error('\nUnzip of', executable, 'failed.');
+            process.exit(-3);
+          }
+          readStream.on("end", function() {
+            zipfile.readEntry();
+          });
+          // make sure we create the bin folder
+          try {
+            fs.mkdirSync('bin');
+          } catch (e) {
+            if (e.code !== 'EEXIST') {
+              throw e;
+            }
+          }
+          // unzip the file with +x permissions
+          var opts = {
+            mode: 0o755,
+            autoClose: true,
+          };
+          var writeStream = fs.createWriteStream('./bin/' + executable, opts);
+          readStream.pipe(writeStream);
+        });
+      }
+    });
   });
 
   fs.unlinkSync(platformZip);
