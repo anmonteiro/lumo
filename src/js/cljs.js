@@ -391,6 +391,11 @@ export function runAcceptFN(
   ClojureScriptContext.lumo.repl.run_accept_fn(fn, socket, acceptArgs);
 }
 
+type ReplOptsType = {
+  host: string,
+  port: number,
+};
+
 async function initSocketRepl(
   socketReplArgs: string,
   quiet: boolean,
@@ -405,11 +410,25 @@ async function initSocketRepl(
   const [, host, port] = socketReplArgs.match(hostAndPortRegex) || [];
 
   try {
-    const replOpts = /^{/.test(socketReplArgs)
+    const parsedOpts = /^{/.test(socketReplArgs)
       ? JSON.parse(socketReplArgs)
       : { host, port };
 
-    replOpts.port = parseInt(replOpts.port, 10);
+    const replOpts: ReplOptsType = {
+      port: parseInt(parsedOpts.port, 10),
+      host: parsedOpts.host,
+    };
+
+    // This tweak is required because the thrown error varies in different node
+    // versions and jest does not allow yet to specify the snapshot name at runtime.
+    // It's been worked on though, see:
+    //   https://github.com/facebook/jest/pull/5838#issuecomment-382476612
+    const errorMsg = `Port should be > 0 and < 65536. Received ${parsedOpts.port}.`;
+    if (Number.isNaN(replOpts.port)) {
+      throw new Error(errorMsg);
+    } else if (replOpts.port < 1 || replOpts.port > 65536) {
+      throw new Error(errorMsg);
+    }
 
     // $FlowIssue: we have converted port to number
     await socketRepl.open(replOpts);
