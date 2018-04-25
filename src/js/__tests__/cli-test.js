@@ -30,7 +30,9 @@ const pathResolve = path.resolve;
 const { exit, version: nodeVersion } = process;
 
 beforeAll(() => {
-  process.version = 'X.X.X';
+  Object.defineProperty(process, 'version', {
+    value: 'X.X.X',
+  });
   process.exit = jest.fn();
 });
 
@@ -507,11 +509,15 @@ describe('print Functions', () => {
     const { stdin } = process;
 
     beforeAll(() => {
-      process.stdin = { on: jest.fn() };
+      Object.defineProperty(process, 'stdin', {
+        value: { on: jest.fn() },
+      });
     });
 
     afterAll(() => {
-      process.stdin = stdin;
+      Object.defineProperty(process, 'stdin', {
+        value: stdin,
+      });
     });
 
     it('should print the banner to stdout', () => {

@@ -1,7 +1,7 @@
 var request = require('request');
 var fs = require('fs');
 var zlib = require('zlib');
-var yauzl = require("yauzl");
+var yauzl = require('yauzl');
 var ProgressBar = require('progress');
 
 var platform2release = {
@@ -63,16 +63,16 @@ req.on('error', function(err) {
 req.on('end', function() {
   var fileContents = fs.readFileSync(platformZip);
 
-  yauzl.open(platformZip, {lazyEntries: true}, function(err, zipfile) {
+  yauzl.open(platformZip, { lazyEntries: true }, function(err, zipfile) {
     if (err) {
       console.error('\nOpen', platformZip, 'failed.');
       process.exit(-2);
     }
 
     zipfile.readEntry();
-    zipfile.on("entry", function(entry) {
+    zipfile.on('entry', function(entry) {
       if (/\/$/.test(entry.fileName)) {
-         zipfile.readEntry();
+        zipfile.readEntry();
       } else if (executable == entry.fileName) {
         // file entry
         zipfile.openReadStream(entry, function(err, readStream) {
@@ -80,7 +80,7 @@ req.on('end', function() {
             console.error('\nUnzip of', executable, 'failed.');
             process.exit(-3);
           }
-          readStream.on("end", function() {
+          readStream.on('end', function() {
             zipfile.readEntry();
           });
           // make sure we create the bin folder

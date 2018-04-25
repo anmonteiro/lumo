@@ -38,8 +38,9 @@ export type CLIOptsType = {
 
 export function createBanner(): string {
   // $FlowFixMe: we know for sure this file will exist.
+  const cljsVersion: string = lumo.load('clojurescript-version');
   return `Lumo ${lumoVersion}
-ClojureScript ${lumo.load('clojurescript-version')}
+ClojureScript ${cljsVersion}
 Node.js ${process.version}
  Docs: (doc function-name-here)
        (find-doc "part-of-name-here")

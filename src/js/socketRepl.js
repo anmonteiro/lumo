@@ -28,6 +28,7 @@ function openRepl(socket: net$Socket): void {
   socket.on('error', () => {});
 
   rl.on('line', (line: string) => {
+    // $FlowIssue: it's there
     if (!socket.destroyed) {
       processLine(session, line);
     }
