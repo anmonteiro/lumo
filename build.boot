@@ -1,6 +1,7 @@
 (def +clojurescript-version+ (or (System/getenv "CANARY_CLOJURESCRIPT_VERSION")
                                  "1.9.946"))
-(def +node-version+ "9.10.0")
+(def +node-version+ (or (System/getenv "BUILD_NODE_VERSION")
+                        "9.10.0"))
 
 (set-env!
  :source-paths #{"src/cljs/snapshot"}
@@ -181,9 +182,10 @@
   (with-pass-thru _
     (dosh "node" "scripts/prepare_snapshot.js")))
 
-(deftask package-executable []
+(deftask package-executable
+  [c ci-build bool "CI build"]
   (with-pass-thru _
-    (dosh "node" "scripts/package.js" +node-version+)))
+    (dosh "node" "scripts/package.js" +node-version+ (str ci-build))))
 
 (deftask backup-resources
   "Backup resources to be gzipped in the 2nd stage binary
@@ -212,10 +214,10 @@
     (prepare-snapshot)
     (backup-resources)
     ;; Package first stage binary
-    (package-executable)
+    (package-executable :ci-build true)
     (aot-macros)
     ;; Package final executable
-    (package-executable)))
+    (package-executable :ci-build true)))
 
 (deftask release []
   (comp

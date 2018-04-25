@@ -462,6 +462,42 @@ describe('getCliOpts', () => {
         expect(process.stderr.write).toHaveBeenCalled();
         expect(process.stderr.write.mock.calls).toMatchSnapshot();
       });
+
+      it('a port number equal to 0', async () => {
+        const args = '-n {"port":0}';
+        Object.defineProperty(process, 'argv', {
+          value: ['', ''].concat(args.split(' ')),
+        });
+
+        await startCLI();
+
+        expect(process.stderr.write).toHaveBeenCalled();
+        expect(process.stderr.write.mock.calls).toMatchSnapshot();
+      });
+
+      it('a port number less than 0', async () => {
+        const args = '-n {"port":-1000}';
+        Object.defineProperty(process, 'argv', {
+          value: ['', ''].concat(args.split(' ')),
+        });
+
+        await startCLI();
+
+        expect(process.stderr.write).toHaveBeenCalled();
+        expect(process.stderr.write.mock.calls).toMatchSnapshot();
+      });
+
+      it('a port number higher than 65536', async () => {
+        const args = '-n {"port":7753888}';
+        Object.defineProperty(process, 'argv', {
+          value: ['', ''].concat(args.split(' ')),
+        });
+
+        await startCLI();
+
+        expect(process.stderr.write).toHaveBeenCalled();
+        expect(process.stderr.write.mock.calls).toMatchSnapshot();
+      });
     });
   });
 });

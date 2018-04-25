@@ -6,7 +6,9 @@ const os = require('os');
 const zlib = require('zlib');
 const embed = require('./embed');
 
-const nodeVersion = process.argv.slice(0)[2];
+const argv = process.argv.slice(0);
+const nodeVersion = argv[2];
+const isCI = argv[3] ? true : false;
 
 function getDirContents(dir, accumPath = dir) {
   let filenames = fs.readdirSync(dir);

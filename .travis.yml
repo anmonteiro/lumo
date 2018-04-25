@@ -3,6 +3,10 @@ dist: trusty
 language: node_js
 node_js:
 - 9
+# safelist
+branches:
+  only:
+  - master
 cache:
   directories:
   - node_modules
@@ -11,6 +15,7 @@ cache:
   - "~/.boot/cache/lib"
   - "~/.boot/cache/bin"
 before_install:
+- find tmp -mindepth 2 -maxdepth 2 -and -not -name ${BUILD_NODE_VERSION} -exec rm -rv {} ';'
 - sudo fallocate -l 4G /swapfile
 - sudo chmod 600 /swapfile
 - sudo mkswap /swapfile
@@ -33,22 +38,31 @@ script:
 after_success:
 - chmod a+x build/lumo
 - zip -j build/lumo.zip build/lumo
+- cp -v build/lumo.zip build/lumo-$BUILD_ARCH-node-v$BUILD_NODE_VERSION.zip
+- rm -v build/lumo
 deploy:
   provider: s3
   bucket: lumo-linux
   skip_cleanup: true
   local_dir: build
+  output_dir: $BUILD_NODE_VERSION
   acl: public_read
   access_key_id:
     secure: Zi+VqofifktqdwBsVeaxXoEA5d4bCzM6JvMOZswkr4TrGya1AJ6RGAXH/XJoQ8i16IYOgTugnOvsyI19NcA9ZJLWGbiqNkGF2AiGpqxxk2zMnWNpXV+qnK1E7bmYgxaxyXOHmFJ78npjsBdmCuckhw3Oa7rCyEVtLUMaCADLsr6H08p2iGLDo69+3hNanZI/HEywt+R97wSiICC/Q+FEwV+QYX3SrdmNVi2okbh/vQoXHIsSrj3sS6of7WeSoHuOLmUdV86gZ0MBxIux7tH5ZB+u0OrV+v0Qo8VzOLd+hDZszpzauztMtnwtzTOUU4G9FfX1VE86MFo2Y4mtq9LlCZsVgkD3/uzqbSa/78KettCpPLGxohPa9KG5xRye3y0Fwoeo9jgBk4qzc7uG/l12uHU1CJ+DBdHdamzZ8jJmttAQg21E2npUXCzMel4V2G4y0t4pw1gEHZnOY7KcHWhcHtOS7sNcF6O8uQyKxk1zsxLH8CiWIycI0t1qexBJWdpgtaSXqC26vkzbBUigXLKHoQf2q0DPI7w+oapdkxw3S6vuymbKnm8NHCtKC8jUK5imNZE7PI04zicovPFANBejq+fLBqghMhIMzeS2hSEL02oVJhmC5M3KqXTHphArH223tch1YsSZ6kW0CaNopim81ooLc4Iy8KTOtkhyLcTTrIM=
   secret_access_key:
     secure: jRWwybBJViAVcYsDHfs8hYCizvx3xsQIDKFzlmLxEV3NeKyiUk/0FWd4/EwzlAk32l5AwoXxk8Vcc+UB4hfxJe0QX/Qa5ERks9ZS+Yusx/sCelnXRrikuw3F1v3uA0ZfH5ZOjcYEuhAJh4u1VX2cgcGpJs8l9C7ltgU5W5GOKWoFpbdWDMebuA18I1cVQ8YQIJOM9lYFWz/jSUbK8HySFpyUGrXuN6HpflcQvggqj4LrHbynua0gMWud+Vl50WankNvWJh1XdwCmc3roSR7oHYoJ0BVHd2e5xri7UL4vtPwhOIE45MmCsH9Ll+eljSkrQZGnDQnJgN5gNkcuEMEuNA+MHVV0uhUe2hPSWNqt3VMUldxgkPQgo0Ev6PdcxINlv5RWDijbDKF+YO6pP5+p+Xq0SUekMc8HqHP2Y3rBNoCBiGQNoPvKa/k0CZsCLS2Pij1i9gDqSeEMdSvOmS+VVyUEG4+FXm8+ir/wrxnA+Gp3z3hfiQZdTJLnvH/VTvpqtjnacSmkTV8/ADTqFVrNzv61iOKy8Gwr6686LwqYisU1c2hZpZvh6IeI7yGKuw7s9EFrLxXS61t4wP8JChfswooOsmnd+cSjwbiQTjADKaM6TQE4NdTzoQ4SdBbAjxSezYftvR3kfeHD25Ec1SZW1iTOpysiYKkQ7t9Bbn7fT+8=
 env:
-- BOOT_JVM_OPTIONS= |
-    -client
-    -XX:+TieredCompilation
-    -XX:TieredStopAtLevel=1
-    -Xmx2g
-    -XX:+UseConcMarkSweepGC
-    -XX:+CMSClassUnloadingEnabled
-    -Xverify:none
+  global:
+    - >
+      BOOT_JVM_OPTIONS='-client
+      -XX:+TieredCompilation
+      -XX:TieredStopAtLevel=1
+      -Xmx2g
+      -XX:+UseConcMarkSweepGC
+      -XX:+CMSClassUnloadingEnabled
+      -Xverify:none'
+      BUILD_ARCH=linux
+  matrix:
+    - BUILD_NODE_VERSION=9.10.0
+    - BUILD_NODE_VERSION=8.11.1
+    - BUILD_NODE_VERSION=8.10.0

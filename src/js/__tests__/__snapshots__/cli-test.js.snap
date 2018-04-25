@@ -1,9 +1,36 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
+exports[`getCliOpts Socket repl throws errors if you give it a port number equal to 0 1`] = `
+Array [
+  Array [
+    "Error: Port should be > 0 and < 65536. Received 0.
+",
+  ],
+]
+`;
+
+exports[`getCliOpts Socket repl throws errors if you give it a port number higher than 65536 1`] = `
+Array [
+  Array [
+    "Error: Port should be > 0 and < 65536. Received 7753888.
+",
+  ],
+]
+`;
+
+exports[`getCliOpts Socket repl throws errors if you give it a port number less than 0 1`] = `
+Array [
+  Array [
+    "Error: Port should be > 0 and < 65536. Received -1000.
+",
+  ],
+]
+`;
+
 exports[`getCliOpts Socket repl throws errors if you give it a port object that isn't a number 1`] = `
 Array [
   Array [
-    "Error: Port should be > 0 and < 65536. Received NaN.
+    "Error: Port should be > 0 and < 65536. Received foobar.
 ",
   ],
 ]
@@ -12,7 +39,7 @@ Array [
 exports[`getCliOpts Socket repl throws errors if you give it a port string that isn't a number 1`] = `
 Array [
   Array [
-    "Error: Port should be > 0 and < 65536. Received NaN.
+    "Error: Port should be > 0 and < 65536. Received undefined.
 ",
   ],
 ]
@@ -21,7 +48,7 @@ Array [
 exports[`getCliOpts Socket repl throws errors if you give it an empty object 1`] = `
 Array [
   Array [
-    "Error: Port should be > 0 and < 65536. Received NaN.
+    "Error: Port should be > 0 and < 65536. Received undefined.
 ",
   ],
 ]
@@ -48,7 +75,7 @@ Array [
 exports[`getCliOpts Socket repl throws errors if you give it just a host object 1`] = `
 Array [
   Array [
-    "Error: Port should be > 0 and < 65536. Received NaN.
+    "Error: Port should be > 0 and < 65536. Received undefined.
 ",
   ],
 ]
@@ -57,7 +84,7 @@ Array [
 exports[`getCliOpts Socket repl throws errors if you give it just a host string 1`] = `
 Array [
   Array [
-    "Error: Port should be > 0 and < 65536. Received NaN.
+    "Error: Port should be > 0 and < 65536. Received undefined.
 ",
   ],
 ]
