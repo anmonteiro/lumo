@@ -221,7 +221,7 @@
    (cache-base-path path nil))
   ([path opts]
    (path/join (os/homedir)
-     ".cljs" ".aot_cache" (util/clojurescript-version)
+     ".cljs" ".lumo_cache" (util/clojurescript-version)
      (build-affecting-options-sha path opts))))
 
 (defn cacheable-files
