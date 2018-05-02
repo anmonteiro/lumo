@@ -852,7 +852,9 @@
    (compile-sources inputs (:compiler-stats opts) opts))
   ([inputs compiler-stats opts]
    (if (:parallel-build opts)
-     nil ;; (parallel-compile-sources inputs compiler-stats opts)
+     ;; (parallel-compile-sources inputs compiler-stats opts)
+     (throw
+      (ex-info (str "Invalid option :parallel-build - not yet supported") {}))
      (util/measure compiler-stats
        "Compile sources"
        (binding [comp/*inputs* (zipmap (map :ns inputs) inputs)]
