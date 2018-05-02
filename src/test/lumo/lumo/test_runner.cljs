@@ -1,5 +1,6 @@
 (ns lumo.test-runner
-  (:require [clojure.test :refer [run-tests]]
+  (:require [clojure.test :as t :refer [run-tests]]
+            lumo.lumo-build-api-tests
             lumo.js-deps-tests
             lumo.repl-tests
             lumo.closure-tests
@@ -10,6 +11,7 @@
   (run-tests
    'lumo.repl-tests
    'lumo.js-deps-tests
+   'lumo.util-tests
    'lumo.closure-tests
    'lumo.build-api-tests
-   'lumo.util-tests))
+   'lumo.lumo-build-api-tests))
