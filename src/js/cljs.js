@@ -236,6 +236,10 @@ export function setPrintFns(stream?: stream$Writable): void {
   }
   // $FlowIssue: context can have globals
   ClojureScriptContext.cljs.core.set_print_fn_BANG_(printFn);
+
+  // https://github.com/planck-repl/planck/commit/3445dd7f9f3c3a13632bd5e92433959b7c1d2770
+  // $FlowIssue: context can have globals
+  ClojureScriptContext.cljs.core._STAR_print_newline_STAR_ = true;
 }
 
 function initClojureScriptEngine(opts: CLIOptsType): void {
