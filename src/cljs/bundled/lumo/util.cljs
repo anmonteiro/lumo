@@ -212,7 +212,7 @@
 
 (defn file-seq [dir]
   (tree-seq
-    (fn [f] (.isDirectory (fs/statSync f) ()))
+    (fn [f] (directory? f))
     (fn [d] (map #(path/join d %) (fs/readdirSync d)))
     dir))
 
@@ -329,7 +329,7 @@
   ([dir]
    (let [fseq (tree-seq
                (fn [f]
-                 (and (.isDirectory (fs/lstatSync f))
+                 (and (directory? f)
                       (not (boolean
                             (re-find #"node_modules[\\\/].*[\\\/]node_modules" f)))))
                (fn [d] (map #(path/join d %) (fs/readdirSync d)))
