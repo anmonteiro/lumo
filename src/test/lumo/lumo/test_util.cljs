@@ -22,11 +22,12 @@
 (defn read-file-sync [file-path & [encoding-or-opts]]
   (try
     (fs/readFileSync file-path encoding-or-opts)
-    (catch :default e nil)))
+    (catch :default e
+      (println (.-message e)))))
 
 ;; For the cache source folder, the test id needs to become:
 ;;   lumo_test/test_suite => test_suite.out/
-(def cljs-core-cache-path "test_suite.out/cljs/core.cljs.cache.json")
+(def cljs-core-cache-path "test_suite.out/cljs/core.cljs.cache.aot.json")
 (def cljs-core-macros-cache-path "test_suite.out/cljs/core$macros.cljc.cache.json")
 
 (defn with-cache [f]

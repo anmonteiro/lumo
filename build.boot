@@ -47,6 +47,9 @@
   (let [exit? (cond-> exit?
                 (nil? exit?) not)]
     (comp
+      (sift :add-jar
+            {'org.clojure/clojurescript #"^cljs[\\\/]core.cljs.cache.aot.json$"}
+            :move {#"^(cljs[\\\/]core.cljs.cache.aot.json)$" "lumo_test/test_suite.out/$1"})
       (testing)
       (test-cljs
         :js-env :node
@@ -55,6 +58,7 @@
                     :target :nodejs
                     :verbose true
                     :asset-path "test_suite.out"}
+        :update-fs? true
         :exit? exit?
         :ids #{"lumo_test/test_suite"}))))
 
