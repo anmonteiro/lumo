@@ -2451,13 +2451,13 @@
        (check-cache-analysis-format opts)
        (swap! compiler-env
          #(-> %
-           (update-in [:options] merge opts)
-           (assoc :target (:target opts))
-           ;; Save the current js-dependency index once we have computed opts
-           ;; or the analyzer won't be able to find upstream dependencies - Antonio
-           (assoc :js-dependency-index (deps/js-dependency-index opts))
-           ;; Save list of sources for cljs.analyzer/locate-src - Juho Teperi
-           (assoc :sources sources)))
+            (update-in [:options] merge opts)
+            (assoc :target (:target opts))
+            ;; Save the current js-dependency index once we have computed opts
+            ;; or the analyzer won't be able to find upstream dependencies - Antonio
+            (assoc :js-dependency-index (deps/js-dependency-index opts))
+            ;; Save list of sources for cljs.analyzer/locate-src - Juho Teperi
+            (assoc :sources sources)))
        (reset! cljs/*loaded* #{})
        (try
          (binding [comp/*recompiled* (when-not (false? (:recompile-dependents opts))
