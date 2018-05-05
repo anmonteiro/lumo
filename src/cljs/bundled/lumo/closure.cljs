@@ -2,6 +2,7 @@
   (:refer-clojure :exclude [compile])
   (:require-macros [cljs.env.macros :as env])
   (:require [lumo.util :as util :refer [distinct-by file-seq]]
+            [goog.math :as math]
             [goog.object :as gobj]
             [cljs.core :as cljsm]
             [cljs.compiler :as comp]
@@ -19,7 +20,6 @@
             [clojure.string :as string]
             [cljs.tools.reader :as reader]
             [cljs.tools.reader.reader-types :as readers]
-            [goog.math :as math]
             child_process
             fs
             path)
@@ -719,8 +719,10 @@
       (if (seq required-files)
         (let [next-file (first required-files)
               ns-info (lana/parse-ns (:uri next-file))
-              new-req (remove #(contains? visited %) (cljs-deps (cond-> (deps/-requires ns-info)
-                                                                  (= 'cljs.js (:ns ns-info)) (conj "cljs.core$macros"))))]
+              new-req (remove #(contains? visited %)
+                        (cljs-deps (cond-> (deps/-requires ns-info)
+                                     (= 'cljs.js (:ns ns-info))
+                                     (conj "cljs.core$macros"))))]
           (recur (into (rest required-files) new-req)
                  (into visited new-req)
                  (conj cljs-namespaces ns-info)))
@@ -1962,8 +1964,6 @@
                   [lib]))))]
     (into [] (mapcat expand-lib* libs))))
 
-(declare index-node-modules)
-
 (defn compute-upstream-npm-deps
   ([]
    (compute-upstream-npm-deps
@@ -2193,6 +2193,7 @@
     (keyword? preprocess)
     (js-transforms js-module opts)
 
+    ;; TODO: support preprocess symbols
     ;; (symbol? preprocess)
     ;; (let [preprocess-var (sym->var preprocess :preprocess {:file (:file js-module)})]
     ;;   (try
@@ -2277,50 +2278,6 @@
             opts js-modules)))
       opts)))
 
-;; (defn- load-data-reader-file [mappings ^java.net.URL url]
-;;   (with-open [rdr (readers/input-stream-push-back-reader (.openStream url))]
-;;     (binding [*file* (.getFile url)]
-;;       (let [new-mappings (reader/read {:eof nil :read-cond :allow} rdr)]
-;;         (when (not (map? new-mappings))
-;;           (throw (ex-info (str "Not a valid data-reader map")
-;;                    {:url url})))
-;;         (reduce
-;;           (fn [m [k v]]
-;;             (when (not (symbol? k))
-;;               (throw (ex-info (str "Invalid form in data-reader file")
-;;                        {:url url
-;;                         :form k})))
-;;             (when (and (contains? mappings k)
-;;                     (not= (mappings k) v))
-;;               (throw (ex-info "Conflicting data-reader mapping"
-;;                        {:url url
-;;                         :conflict k
-;;                         :mappings m})))
-;;             (assoc m k v))
-;;           mappings
-;;           new-mappings)))))
-
-;; (defn get-data-readers*
-;;   "returns a merged map containing all data readers defined by libraries
-;;    on the classpath."
-;;   ([]
-;;    (get-data-readers* (. (Thread/currentThread) (getContextClassLoader))))
-;;   ([classloader]
-;;    (let [data-reader-urls (enumeration-seq (. classloader (getResources "data_readers.cljc")))]
-;;      (reduce load-data-reader-file {} data-reader-urls))))
-
-;; (def get-data-readers (memoize get-data-readers*))
-
-;; (defn load-data-readers! [compiler]
-;;   (let [data-readers (get-data-readers)
-;;         nses (map (comp symbol namespace) (vals data-readers))]
-;;     (swap! compiler update-in [:cljs.analyzer/data-readers] merge (get-data-readers))
-;;     (doseq [ns nses]
-;;       (try
-;;         (locking ana/load-mutex
-;;           (require ns))
-;;         (catch Throwable _)))))
-
 (defn add-externs-sources [opts]
   (cond-> opts
     (:infer-externs opts)
@@ -2333,9 +2290,8 @@
   - process the JS modules (preprocess + convert to Closure JS)
   - save js-dependency-index for compilation"
   [{:keys [npm-deps target] :as opts} js-sources compiler-env]
-  ;; Find all the top-level Node packages and their files
   (let [requires (set (mapcat deps/-requires js-sources))
-        ;; Select Node files that are required by Cljs code,
+        ;; Select Node files that are required by CLJS code,
         ;; and create list of all their dependencies
         node-required (into []
                         (filter ana/node-module-dep?)
@@ -2418,8 +2374,7 @@
           (add-externs-sources (dissoc opts :foreign-libs))))))
   ([source opts compiler-env]
    (env/with-compiler-env compiler-env
-     ;; we need to preserve the runtime loaded namespace and we restore them
-     ;; in case of error, I think.
+     ;; preserve the REPL loaded namespaces and we restore them in case of errors
      (let [runtime-loaded @cljs/*loaded*
            orig-opts opts
            opts (add-implicit-options opts)
@@ -2515,8 +2470,7 @@
                                 add-goog-base
                                 (cond-> (= :nodejs (:target opts)) (concat [(-compile (io/resource "cljs/nodejscli.cljs") opts)]))
                                 (->> (map #(source-on-disk opts %)) doall)
-                                #_(compile-loader opts)
-                                )
+                                #_(compile-loader opts))
                  _ (when (:emit-constants opts)
                      (lcomp/emit-constants-table-to-file
                       (::ana/constant-table @env/*compiler*)
@@ -2564,24 +2518,7 @@
          (finally
            (reset! cljs/*loaded* runtime-loaded)))))))
 
-(comment
-  ;; testing modules
-  (build "samples/hello/src"
-    {:optimizations :advanced
-     :output-dir "samples/hello/out"
-     :source-map true
-     :modules
-     {:hello
-      {:output-to "samples/hello/out/hello.js"
-       :entries '#{cljs.reader hello.core}}}})
-
-  (require '[cljs.externs :as externs])
-
-  (externs/parse-externs
-    (js-source-file "cljs/externs.js" (io/file "src/main/cljs/cljs/externs.js")))
-  )
-
-(defn ^File target-file-for-cljs-ns
+(defn target-file-for-cljs-ns
   [ns-sym output-dir]
   (util/to-target-file
     (util/output-directory {:output-dir output-dir})
@@ -2689,19 +2626,6 @@
        (doseq [path paths]
          (watch-all path))))))
 
-(comment
-  (watch "samples/hello/src"
-    {:optimizations :none
-     :output-to "samples/hello/out/hello.js"
-     :output-dir "samples/hello/out"
-     :cache-analysis true
-     :source-map true
-     :verbose true
-     :watch-fn
-     (fn []
-       (println "Success!"))})
-  )
-
 ;; =============================================================================
 ;; Utilities
 
@@ -2760,33 +2684,3 @@
          :output-dir (str "src" File/separator "main" File/separator "cljs")})
       (ana/write-analysis-cache 'cljs.core cache src)
       (ana/write-analysis-cache 'cljs.core tcache src))))
-
-(comment
-  (time
-    (do (aot-cache-core) nil))
-
-  (time
-    (do (ana/analyze-file "cljs/core.cljs") nil))
-
-  (println (build '[(ns hello.core)
-                    (defn ^{:export greet} greet [n] (str "Hola " n))
-                    (defn ^:export sum [xs] 42)]
-                  {:optimizations :simple :pretty-print true}))
-
-  ;; build a project with optimizations
-  (build "samples/hello/src" {:optimizations :advanced})
-  (build "samples/hello/src" {:optimizations :advanced :output-to "samples/hello/hello.js"})
-  ;; open 'samples/hello/hello.html' to see the result in action
-
-  ;; build a project without optimizations
-  (build "samples/hello/src" {:output-dir "samples/hello/out" :output-to "samples/hello/hello.js"})
-  ;; open 'samples/hello/hello-dev.html' to see the result in action
-  ;; notice how each script was loaded individually
-
-  ;; build unoptimized from raw ClojureScript
-  (build '[(ns hello.core)
-           (defn ^{:export greet} greet [n] (str "Hola " n))
-           (defn ^:export sum [xs] 42)]
-         {:output-dir "samples/hello/out" :output-to "samples/hello/hello.js"})
-  ;; open 'samples/hello/hello-dev.html' to see the result in action
-  )
