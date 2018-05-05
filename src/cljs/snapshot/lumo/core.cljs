@@ -1,6 +1,5 @@
 (ns lumo.core
-  (:refer-clojure :exclude [eval])
-  (:require [lumo.repl :as repl]))
+  (:refer-clojure :exclude [eval]))
 
 (goog-define
   ^{:doc "A string containing the version of the Lumo executable."}

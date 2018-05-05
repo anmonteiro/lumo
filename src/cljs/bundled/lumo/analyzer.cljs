@@ -104,7 +104,7 @@
       (remove nil?))
     (concat (vals uses) (vals requires))))
 
-;; The JVM compiler uses a binding now
+;; We bind `parse-ns` to memoize in `lumo.closure`
 (defn ^:dynamic parse-ns
   "Helper for parsing only the essential namespace information from a
    ClojureScript source file and returning a cljs.closure/IJavaScript compatible
@@ -220,9 +220,10 @@
   ([path]
    (cache-base-path path nil))
   ([path opts]
-   (path/join (os/homedir)
-     ".cljs" ".lumo_cache" (util/clojurescript-version)
-     (build-affecting-options-sha path opts))))
+   (let [homedir (os/homedir)]
+     (path/join (if (fs/existsSync homedir) homedir "")
+       ".cljs" ".lumo_cache" (util/clojurescript-version)
+       (build-affecting-options-sha path opts)))))
 
 (defn cacheable-files
   ([rsrc ext]
@@ -263,6 +264,7 @@
                 (io/resource (str "cljs/core.cljs.cache.aot._COLON_defs." ext)))]
        core-cache
        (let [aot-cache-file
+             ;; TODO: check if what we really want is `bundled-resource?`
              (when (util/bundled-resource? src)
                ((keyword (str "analysis-cache-" ext))
                 (cacheable-files src (util/ext src) opts)))]
