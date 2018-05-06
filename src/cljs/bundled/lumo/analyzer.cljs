@@ -349,8 +349,10 @@
               :source (slurp source-file)})
          (if (and (not macros) (empty? cache))
            (let [path (path/join (util/output-directory opts) path)
-                 f (or (io/resource (str path ".cljs"))
-                     (io/resource (str path ".cljc")))]
+                 f (or (when (fs/existsSync (str path ".cljs"))
+                         (str path ".cljs"))
+                       (when (fs/existsSync (str path ".cljc"))
+                         (str path ".cljc")))]
              (try
                (read-analysis-cache
                  (when (:cache-analysis opts)
