@@ -231,8 +231,7 @@
 ;;         (build/build (build/inputs inputs) opts)
 ;;         (is (not (nil? (re-find #"foreignA[\s\S]+foreignB" (slurp (io/file out "foo.js"))))))))))
 
-;; This is failing: https://github.com/anmonteiro/lumo/issues/392
-#_(deftest test-npm-deps-simple
+(deftest test-npm-deps-simple
   (let [out (path/join (test/tmp-dir) "npm-deps-simple-test-out")
         {:keys [inputs opts]} {:inputs (path/join "src" "test" "cljs_build")
                                :opts {:main 'npm-deps-test.core
@@ -253,7 +252,7 @@
     (is (fs/existsSync (path/join out "node_modules/left-pad/index.js")))
     (is (contains? (:js-module-index @cenv) "left-pad"))))
 
-#_(deftest test-npm-deps
+(deftest test-npm-deps
   (let [cenv (env/default-compiler-env)
         out (path/join (test/tmp-dir) "npm-deps-test-out")
         {:keys [inputs opts]} {:inputs (path/join "src" "test" "cljs_build")
@@ -274,7 +273,8 @@
       (build/build (build/inputs (path/join inputs "npm_deps_test/string_requires.cljs")) opts cenv)
       (is (fs/existsSync (path/join out "node_modules/react/react.js")))
       (is (contains? (:js-module-index @cenv) "react"))
-      (is (contains? (:js-module-index @cenv) "react-dom/server")))
+      (is (contains? (:js-module-index @cenv) "react-dom/server"))
+      (is (not (nil? (re-find #"\.\.[\\/]node_modules[\\/]react-dom[\\/]server\.js" (slurp (path/join out "cljs_deps.js")))))))
 
     (testing "builds with string requires are idempotent"
       (build/build (build/inputs (path/join inputs "npm_deps_test/string_requires.cljs")) opts cenv)

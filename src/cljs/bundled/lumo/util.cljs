@@ -188,8 +188,15 @@
             (let [user-dir (path/join (js/process.cwd) path/sep)
                   s (normalize-path s)]
               (string/replace s user-dir "")))]
-    (if (string? x)
+    (cond
+      (string? x)
       (strip-user-dir (path/resolve x))
+
+      (resource? x)
+      ;; TODO: check if we need path/resolve
+      (strip-user-dir (.-src x))
+
+      :else
       (throw (js/Error. "What to do with JARs in lumo.util/relative-name?"))
       #_(let [f (URLDecoder/decode (.getFile x))]
         (if (string/includes? f ".jar!/")

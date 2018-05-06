@@ -2418,7 +2418,9 @@
          (binding [comp/*recompiled* (when-not (false? (:recompile-dependents opts))
                                        (atom #{}))
                    ana/*checked-arrays* checked-arrays
-                   lana/parse-ns (memoize lana/parse-ns)
+                   ;; TODO: investigate why this causes npm deps string requires tests
+                   ;; to fail. Disabled for now.
+                   ;; lana/parse-ns (memoize lana/parse-ns)
                    ana/*cljs-static-fns* static-fns?
                    ana/*fn-invoke-direct* (or (and static-fns?
                                                    (:fn-invoke-direct opts))
