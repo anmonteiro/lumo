@@ -50,11 +50,11 @@
         :output-dir out}
        (env/default-compiler-env))
       (build/build
-       (path/join root "instrument")
-       {:main 'instrument.core
-        :optimizations :none
-        :warning-handlers warning-handlers
-        :output-dir out}
-       (env/default-compiler-env))
+        (path/join root "instrument")
+        {:main 'instrument.core
+         :optimizations :none
+         :warning-handlers warning-handlers
+         :output-dir out}
+        (env/default-compiler-env))
       (test/delete-out-files out)
       (set! ana/*cljs-warning-handlers* ana/default-warning-handler))))
