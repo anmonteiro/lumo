@@ -19,17 +19,14 @@
             path
             os))
 
-(def ^:dynamic *unchecked-if* false)
-(def ^:dynamic *unchecked-arrays* false)
-
 (defn gen-user-ns [src]
   (if (sequential? src)
-       (symbol (str "cljs.user.source$form$" (util/content-sha (pr-str src) 7)))
-       (let [full-name (str src)
-             name (.substring full-name
-                    (inc (string/last-index-of full-name "/"))
-                    (string/last-index-of full-name "."))]
-         (symbol (str "cljs.user." name (util/content-sha full-name 7))))))
+    (symbol (str "cljs.user.source$form$" (util/content-sha (pr-str src) 7)))
+    (let [full-name (str src)
+          name (.substring full-name
+                 (inc (string/last-index-of full-name "/"))
+                 (string/last-index-of full-name "."))]
+      (symbol (str "cljs.user." name (util/content-sha full-name 7))))))
 
 (defn- resolve-symbol
   [sym]
@@ -155,7 +152,7 @@
                                :requires     (cond-> #{'cljs.core}
                                                (get-in @env/*compiler* [:options :emit-constants])
                                                (conj ana/constants-ns-sym))}
-                              (when (and dest (js/$$LUMO_GLOBALS.fs.existsSync dest))
+                              (when (and dest (fs/existsSync dest))
                                 {:lines (let [reader dest]
                                           (-> reader line-seq count))}))]
                    (if (seq forms)
@@ -184,7 +181,7 @@
                               :ast          ast
                               :macros-ns    (or (:macros-ns opts)
                                               (= 'cljs.core$macros ns-name))}
-                             (when (and dest (js/$$LUMO_GLOBALS.fs.existsSync dest))
+                             (when (and dest (fs/existsSync dest))
                                {:lines (let [reader dest]
                                          (-> reader line-seq count))})))
 
@@ -200,7 +197,11 @@
 
                          :else ret))
                      ret)))))]
-       ijs))))
+       (cond-> ijs
+         (not (contains? ijs :ns))
+         (merge
+           {:ns (gen-user-ns src)
+            :provides [(gen-user-ns src)]}))))))
 
 (defn- cache-analysis-ext
   ([] (cache-analysis-ext (get-in @env/*compiler* [:options :cache-analysis-format] :transit)))
@@ -429,8 +430,8 @@
    (analyze-file f false opts))
   ([f skip-cache opts]
    (binding [ana/*file-defs*        (atom #{})
-             *unchecked-if*         false
-             *unchecked-arrays*     false
+             ;; ana/*unchecked-if*         false
+             ;; ana/*unchecked-arrays*     false
              ana/*cljs-warnings*    ana/*cljs-warnings*]
      (let [output-dir (util/output-directory opts)
            res        (cond
