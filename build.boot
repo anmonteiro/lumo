@@ -130,11 +130,13 @@
 (deftask sift-cljs-resources []
   (comp
     (sift :add-jar
+      {'org.clojure/clojurescript #"\.class$"}
+      :invert true)
+    (sift :add-jar
       {'org.clojure/clojure #"^clojure[\\\/]template\.clj"
        'org.clojure/google-closure-library #"^goog[\\\/].*(?<!_test)\.js$"
        'org.clojure/google-closure-library-third-party #"^goog[\\\/].*(?<!_test)\.js$"
        'org.clojure/tools.reader #"^cljs.*clj$"
-       'org.clojure/clojurescript #"(cljs|clojure)[\\\/].*(\.clj.?|\.js|\.cache\.json|\.aot\.edn|\.aot\.js\.map)$"
        'org.clojure/test.check #""}
       :move {#"^main.out[\\\/]((cljs|clojure|cognitect|lumo|lazy_map|fipp|process).*)" "$1"})
     (sift :include #{#"^main.js" #"^bundle.js" #"^cljs(?!\.js)" #"core\$macros"
@@ -161,6 +163,7 @@
                            :dump-core false
                            :static-fns true
                            :optimize-constants false
+                           :npm-deps false
                            :verbose true
                            :closure-defines {'cljs.core/*target* "nodejs"
                                              'lumo.core/*lumo-version* lumo-version}
