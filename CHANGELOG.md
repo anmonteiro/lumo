@@ -5,6 +5,7 @@
 ### Bug fixes
 
 - `clojure.reflect` not bundled ([#369](https://github.com/anmonteiro/lumo/issues/369)).
+- `-e` with unfinished form hangs ([#375](https://github.com/anmonteiro/lumo/issues/375)).
 
 ### Changes
 
