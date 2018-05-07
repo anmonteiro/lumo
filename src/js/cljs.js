@@ -291,9 +291,15 @@ export function getCurrentNamespace(sessionID: number): string {
   return ClojureScriptContext.lumo.repl.get_current_ns(sessionID);
 }
 
-export function isReadable(form: string): ?string {
+export function isReadable(
+  form: string,
+  shouldThrowOnEOF?: boolean = false,
+): ?string {
   // $FlowIssue: context can have globals
-  return ClojureScriptContext.lumo.repl.is_readable_QMARK_(form);
+  return ClojureScriptContext.lumo.repl.is_readable_QMARK_(
+    form,
+    shouldThrowOnEOF,
+  );
 }
 
 export function getHighlightCoordinates(
@@ -329,7 +335,11 @@ function executeScript(
     let extraForms;
 
     for (;;) {
-      extraForms = isReadable(currentInput);
+      try {
+        extraForms = isReadable(currentInput, true);
+      } catch (_) {
+        break;
+      }
 
       if (isWhitespace(currentInput)) {
         break;

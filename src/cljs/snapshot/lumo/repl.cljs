@@ -1136,12 +1136,16 @@
                                   :session-id session-id}))
 
 (defn- ^:export is-readable?
-  [form]
-  (try
-    (second (repl-read-string form))
-    (catch :default e
-      (when-not (reader-eof? e)
-        ""))))
+  ([form] (is-readable? form false))
+  ([form throw-on-eof?]
+   (try
+     (second (repl-read-string form))
+     (catch :default e
+       (if-not (reader-eof? e)
+         ""
+         (when (and throw-on-eof? (not (string/blank? form)))
+           (handle-error e true)
+           (throw e)))))))
 
 (defn- ^:export run-main
   [main-ns & args]
