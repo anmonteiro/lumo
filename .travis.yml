@@ -1,5 +1,11 @@
 sudo: required
 dist: trusty
+addons:
+  apt:
+    sources:
+      - ubuntu-toolchain-r-test
+    packages:
+      - g++-6
 language: node_js
 node_js:
 - 9
@@ -62,6 +68,7 @@ env:
       -XX:+CMSClassUnloadingEnabled
       -Xverify:none'
       BUILD_ARCH=linux
+    - CC=gcc-6 && CXX=g++-6
   matrix:
     - BUILD_NODE_VERSION=9.10.0
     - BUILD_NODE_VERSION=8.11.1
