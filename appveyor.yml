@@ -1,5 +1,5 @@
 environment:
-  nodejs_version: "9"
+  nodejs_version: "10"
   BUILD_ARCH: win
   matrix:
     - BUILD_NODE_VERSION: 9.11.1
@@ -29,7 +29,9 @@ cache:
 
 install:
   - ps: Install-Product node $env:nodejs_version x64
+  - cmd: npm install -g npm@latest
   - cmd: npm install -g yarn
+  - set PATH=%APPDATA%\npm;%PATH%
   - cmd: yarn install
   - ps: wget 'https://github.com/boot-clj/boot-bin/releases/download/latest/boot.exe' -OutFile "$pwd\boot.exe"
   - cmd: 'move boot.exe %SystemRoot%' #set PATH=$pwd\boot.exe;%PATH%
