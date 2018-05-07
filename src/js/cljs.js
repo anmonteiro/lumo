@@ -427,7 +427,9 @@ async function initSocketRepl(
     // versions and jest does not allow yet to specify the snapshot name at runtime.
     // It's been worked on though, see:
     //   https://github.com/facebook/jest/pull/5838#issuecomment-382476612
-    const errorMsg = `Port should be > 0 and < 65536. Received ${parsedOpts.port}.`;
+    const errorMsg = `Port should be > 0 and < 65536. Received ${
+      parsedOpts.port
+    }.`;
     if (Number.isNaN(replOpts.port)) {
       throw new Error(errorMsg);
     } else if (replOpts.port < 1 || replOpts.port > 65536) {
