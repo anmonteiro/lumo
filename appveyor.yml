@@ -47,7 +47,7 @@ test_script:
   - yarn type:check
   - yarn test
   - cmd: boot test
-  - cmd: boot release-ci
+  - ps: boot release-ci
   - cmd: scripts/test-build.bat
 
 artifacts:
