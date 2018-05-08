@@ -159,7 +159,9 @@
   (cljs :compiler-options {:optimizations :simple
                            :main 'lumo.core
                            :cache-analysis true
-                           :source-map false
+                           :source-map true
+                           :source-map-timestamp false
+                           :aot-cache true
                            :dump-core false
                            :static-fns true
                            :optimize-constants false

@@ -208,3 +208,66 @@ Special Form
     (is (= 3 (core/eval (list + 1 2))))
     (is (= 17 (core/eval '(let [a 10] (+ 3 4 a)))))
     (is (= 5 ((eval (eval '+)) 2 3)))))
+
+(deftest ns->bundled-js-path-tests
+  (is (nil? (lumo/ns->bundled-js-path nil)))
+  (is (= "main.js" (lumo/ns->bundled-js-path 'cljs.core)))
+  (is (= "lazy_map/core.js" (lumo/ns->bundled-js-path 'lazy_map.core))))
+
+(deftest stacktrace-function->sym-tests
+  (is (= "cljs$core$seq" (lumo/stacktrace-function->sym "cljs.core.seq")))
+  (is (= "cljs$core$seq" (lumo/stacktrace-function->sym "Object.cljs.core.seq")) "the Object prefix should be trimmed away")
+  (is (= "cljs$core$ffirst" (lumo/stacktrace-function->sym "cljs.core.ffirst")))
+  (is (= "cljs.core.LazySeq.cljs$core$ISeqable$_seq$arity$1"
+         (lumo/stacktrace-function->sym "cljs.core.LazySeq.cljs$core$ISeqable$_seq$arity$1")) "should not convert strings representing protocols")
+  (is (nil? (lumo/stacktrace-function->sym nil))))
+
+(deftest demunge-tests
+  (is (nil? (lumo/demunge-sym "") "demunging an empty string should return nil"))
+
+  (testing "demunging a symbol"
+    (is (= '{:ns cljs.core :sym cljs.core/seq} (lumo/demunge-sym "cljs$core$seq")))
+    (is (= '{:ns cljs.core :sym cljs.core/ffirst} (lumo/demunge-sym "cljs$core$ffirst"))))
+
+  (testing "demunging a protocol"
+    (is (= '{:ns cljs.core :obj cljs.core.LazySeq :sym cljs.core/-seq :protocol cljs.core/ISeqable}
+           (lumo/demunge-sym "cljs.core.LazySeq.cljs$core$ISeqable$_seq$arity$1")))
+    (is (= '{:ns cljs.core :obj Function.cljs.core.apply :sym cljs.core/-invoke :protocol cljs.core/IFn}
+           (lumo/demunge-sym "Function.cljs.core.apply.cljs$core$IFn$_invoke$arity$2")))
+    (is (= '{:ns cljs.core :obj Function.cljs.core.trampoline :sym cljs.core/-invoke :protocol cljs.core/IFn}
+           (lumo/demunge-sym "Function.cljs.core.trampoline.cljs$core$IFn$_invoke$arity$variadic")))))
+
+(when test-util/lumo-env?
+  (deftest patch-embedded-stacktrace-tests
+    (let [st-entry {:file "vm.js" :function "Script.runInThisContext" :line 65 :column 33}]
+      (is (= st-entry (lumo/patch-embedded-stacktrace st-entry)) "it should not touch an entry that is not either <embedded> or evalmachine.<anonymous>"))
+
+    (let [st-entry {:file "<embedded>" :function "Object.cljs.core.first" :line 503 :column 213}
+          expected {:file "cljs/core.js" :function "Object.cljs.core.first" :line 503 :column 213}]
+      (is (= expected (lumo/patch-embedded-stacktrace st-entry))))
+
+    (let [st-entry {:file "evalmachine.<anonymous>" :function "Function.cljs.core.apply.cljs$core$IFn$_invoke$arity$2" :line 333 :column 444}
+          expected {:file "cljs/core.js" :function "Function.cljs.core.apply.cljs$core$IFn$_invoke$arity$2" :line 333 :column 444}]
+      (is (= expected (lumo/patch-embedded-stacktrace st-entry))))
+
+    (let [st-entry {:file "evalmachine.<anonymous>" :function "cljs.core.ffirst" :line 563 :column 448}
+          expected {:file "cljs/core.js" :function "cljs.core.ffirst" :line 563 :column 448}]
+      (is (= expected (lumo/patch-embedded-stacktrace st-entry))))))
+
+(when test-util/lumo-env?
+  (deftest ffirst-stacktrace-smoke-tests
+    (let [st-entries [{:file "evalmachine.<anonymous>" :function "Object.cljs.core.seq" :line 502 :column 410} {:file "evalmachine.<anonymous>" :function "Object.cljs.core.first" :line 503 :column 213} {:file "evalmachine.<anonymous>" :function "cljs.core.ffirst" :line 563 :column 448} {:file "evalmachine.<anonymous>" :function nil :line 1 :column 18} {:file "vm.js" :function "ContextifyScript.Script.runInContext" :line 59 :column 29} {:file "vm.js" :function "Object.runInContext" :line 120 :column 6} {:file "Object.lumoEval" :function nil :line nil :column nil} {:file "Object.lumo.repl.caching_node_eval" :function nil :line nil :column nil} {:file "evalmachine.<anonymous>" :function nil :line 5824 :column 287} {:file "evalmachine.<anonymous>" :function "z" :line 5825 :column 306}]]
+      (= (into [] lumo/stacktrace-patch-xf st-entries)
+         [{:file "cljs/core.js" :function "Object.cljs.core.seq" :line 502 :column 410}
+          {:file "cljs/core.js" :function "Object.cljs.core.first" :line 503 :column 213}
+          {:file "cljs/core.js" :function "cljs.core.ffirst" :line 563 :column 448}
+          {:file "vm.js" :function "ContextifyScript.Script.runInContext" :line 59 :column 29}
+          {:file "vm.js" :function "Object.runInContext" :line 120 :column 6}
+          {:file "Object.lumoEval" :function nil :line nil :column nil}
+          {:file "Object.lumo.repl.caching_node_eval" :function nil :line nil :column nil}]))))
+
+(when test-util/lumo-env?
+  (deftest patch-missing-function-stacktrace-tests
+    (let [st-entry {:file "Object.lumo.repl.caching_node_eval" :function nil :line nil :column nil}
+          embedded {:file "<embedded>" :function "Object.lumo.repl.caching_node_eval" :line nil :column nil}]
+      (is (= embedded (lumo/patch-missing-function-stacktrace st-entry))))))

@@ -39,7 +39,9 @@ function deflate(fname) {
 const outputPath = `build/${/^Windows/.test(os.type()) ? 'lumo.exe' : 'lumo'}`;
 const resources = getDirContents('target').filter(
   fname =>
-    fname.endsWith('.aot.js.map') ||
+    /target[\\\/]cljs[\\\/].*(\$macros)?\.js\.map/.test(fname) ||
+    /target[\\\/]lumo[\\\/]repl(\$macros)?\.js\.map/.test(fname) ||
+    /target[\\\/]main\.js\.map/.test(fname) ||
     (!fname.endsWith('main.js') &&
       !fname.endsWith('bundle.js') &&
       !fname.endsWith('bundle.min.js') &&

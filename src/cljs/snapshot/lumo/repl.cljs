@@ -221,6 +221,36 @@
 ;; Monkey-patch cljs.js/run-async! to instead be our more stack-efficient run-sync!
 (set! cljs/run-async! run-sync!)
 
+(defn ns->bundled-js-path
+  "Return the path to the bundled js expected for the input ns
+  symbol. Note that no 1:1 is guaranteed, for instance cljs.core maps to
+  main.js."
+  [ns-sym]
+  (cond
+    (nil? ns-sym) nil
+    (= ns-sym 'cljs.core) "main.js"
+    :else (str (cljs/ns->relpath ns-sym) ".js")))
+
+(defn- load-bundled-source-maps!
+  [ns-syms]
+  (let [load-source-maps (fn [ns-sym]
+                           (when-not (get-in @st [:source-maps ns-sym])
+                             (if-let [sm-text (some-> ns-sym
+                                                      ns->bundled-js-path
+                                                      (str ".map")
+                                                      js/$$LUMO_GLOBALS.load)]
+                               ;; Detect if we have source maps in need of decoding
+                               ;; or if they are AOT decoded.
+                               (if (or (string/starts-with? sm-text "{\"version\"")
+                                       (string/starts-with? sm-text "{\n\"version\""))
+                                 (cljs/load-source-map! st ns-sym sm-text)
+                                 (swap! st assoc-in [:source-maps ns-sym] (common/transit-json->cljs sm-text)))
+                               (swap! st assoc-in [:source-maps ns-sym] {}))))]
+    (run! load-source-maps ns-syms)))
+
+(defn- load-core-macros-source-maps! []
+  (load-bundled-source-maps! '[cljs.core$macros]))
+
 (defn- load-bundled [name path file-path source cb]
   (when-let [cache-json (or (js/$$LUMO_GLOBALS.load (str file-path ".cache.json"))
                             (js/$$LUMO_GLOBALS.load (str path ".cache.json")))]
@@ -449,49 +479,63 @@
   {:pre [(symbol? ns)]}
   (let [ns-str        (str ns)
         munged-ns-str (string/escape ns-str {\- \_ \. \$})]
-    (into {} (for [sym (ns-syms ns)]
-               [(str munged-ns-str "$" (munge sym)) (symbol ns-str (str sym))]))))
+    (into {munged-ns-str ns}      ;; adds the namespace itself
+          (for [sym (ns-syms ns)]
+            [(str munged-ns-str "$" (munge sym)) (symbol ns-str (str sym))]))))
 
-(def ^:private core-demunge-map
+(def core-demunge-map
   (delay (form-demunge-map 'cljs.core)))
 
-(defn- non-core-demunge-maps
+(defn non-core-demunge-maps
   []
   (let [non-core-nss (remove #{'cljs.core 'cljs.core$macros} (all-ns))]
     (map form-demunge-map non-core-nss)))
 
-(defn- lookup-sym
+(defn lookup-sym
   [demunge-maps munged-sym]
   (some #(% munged-sym) demunge-maps))
 
-(defn- demunge-local
+(defn demunge-local
   [demunge-maps munged-sym]
   (let [[_ fn local] (re-find #"(.*)_\$_(.*)" munged-sym)]
     (when fn
       (when-let [fn-sym (lookup-sym demunge-maps fn)]
-        (str fn-sym " " (demunge local))))))
+        {:sym fn-sym
+         :local (demunge local)}))))
 
-(defn- demunge-protocol-fn
+(defn demunge-protocol-fn
   [demunge-maps munged-sym]
   (let [[_ obj ns prot fn] (re-find #"(.*)\.(.*)\$(.*)\$(.*)\$arity\$.*" munged-sym)]
-    (when ns
+    (when-let [ns-sym (lookup-sym demunge-maps ns)]
       (when-let [prot-sym (lookup-sym demunge-maps (str ns "$" prot))]
         (when-let [fn-sym (lookup-sym demunge-maps (str ns "$" fn))]
-          (str fn-sym " [" prot-sym "]"))))))
+          {:obj (symbol obj)
+           :ns ns-sym
+           :sym fn-sym
+           :protocol prot-sym})))))
 
 (defn- gensym?
   [sym]
   (string/starts-with? (name sym) "G__"))
 
 (defn- demunge-sym
+  "Demunge a string to a symbol.
+
+  Note that the string has to contain dollar signs for functions and
+  vars, but no dollars for something like protocol."
   [munged-sym]
+  ;; these are two maps core first - from Planck
   (let [demunge-maps (cons @core-demunge-map (non-core-demunge-maps))]
-    (str (or (lookup-sym demunge-maps munged-sym)
-             (demunge-protocol-fn demunge-maps munged-sym)
-             (demunge-local demunge-maps munged-sym)
-             (if (gensym? munged-sym)
-               munged-sym
-               (demunge munged-sym))))))
+    (or (when-let [sym (lookup-sym demunge-maps munged-sym)]
+          {:ns (some-> sym namespace symbol)
+           :sym sym})
+        (demunge-protocol-fn demunge-maps munged-sym)
+        (demunge-local demunge-maps munged-sym)
+        (if (gensym? munged-sym)
+          {:sym munged-sym}
+          (when-let [sym (some-> munged-sym not-empty demunge symbol)]
+            (merge {:ns (some-> sym namespace symbol)
+                    :sym sym}))))))
 
 (def ^:private demunge-sym-memo
   (memoize demunge-sym))
@@ -512,16 +556,40 @@
              (js-file? file)))
     (str (file->ns-sym file) "/")))
 
+(defn stacktrace-function->sym
+  [s]
+  (let [protocol? #(re-find #"arity\$[0-9]+" %)
+        ;; the below includes function objects
+        obj? #(re-find #"Object|Function\." %)]
+    (cond
+      (string/blank? s) nil
+      (protocol? s) s
+      (obj? s) (->> (string/split s #"\.")
+                    (drop 1)
+                    (string/join "$"))
+      :else (string/escape s {\- \_ \. \$}))))
+
+(defn demunge-stacktrace-entry
+  [st-entry]
+  (let [{:keys [ns sym protocol local] :as ds} (demunge-sym-memo
+                                                (stacktrace-function->sym
+                                                 (:function st-entry)))
+        s (cond
+            protocol (str sym " [" protocol "]")
+            local (str sym " " local)
+            sym (str sym)
+            :else nil)]
+    (and s (qualify s (:file st-entry)))))
+
 (defn- mapped-stacktrace-str
   ([stacktrace sms]
    (mapped-stacktrace-str stacktrace sms nil))
   ([stacktrace sms opts]
    (apply str
-          (for [{:keys [function file line column]} (st/mapped-stacktrace stacktrace sms opts)
-                :let [demunged (-> (str (when function (demunge-sym-memo function)))
-                                   (qualify file))]
+          (for [{:keys [function file line column] :as st-entry} (st/mapped-stacktrace stacktrace sms opts)
+                :let [demunged (when function (demunge-stacktrace-entry st-entry))]
                 :when (not= demunged "cljs.core/-invoke [cljs.core/IFn]")]
-            (str \tab demunged " (" file (when line (str ":" line))
+            (str \tab (or demunged "NO_SOURCE_FILE") " (" file (when line (str ":" line))
                  (when column (str ":" column)) ")" \newline)))))
 
 (defn- ^:boolean could-not-eval? [msg]
@@ -577,6 +645,33 @@
   [s]
   (str s (when-not (= \newline (last s)) \newline)))
 
+(def lumo-embedded-string? #{"<embedded>" "evalmachine.<anonymous>"})
+
+(defn patch-missing-function-stacktrace
+  "Patch a stacktrace entry that does not have :function but has :file."
+  [{:keys [function file] :as st-entry}]
+  (if (and (not function) file)
+    (merge st-entry
+           {:function file
+            :file "<embedded>"})
+    st-entry))
+
+(defn patch-embedded-stacktrace
+  [{:keys [function file] :as st-entry}]
+  (if (and function (lumo-embedded-string? file))
+    (let [{:keys [ns]} (demunge-sym-memo (stacktrace-function->sym function))
+          bundled-js-path (ns->bundled-js-path ns)]
+      (if (and bundled-js-path (js/$$LUMO_GLOBALS.isBundled (str bundled-js-path ".map")))
+        (assoc st-entry :file (str (cljs/ns->relpath ns) ".js"))
+        st-entry))
+    st-entry))
+
+(def ^{:doc "Patch the stacktrace coming from the JS enging"}
+  stacktrace-patch-xf
+  (comp (map patch-missing-function-stacktrace)
+        (map patch-embedded-stacktrace)
+        (filter (complement (comp lumo-embedded-string? :file)))))
+
 (defn- print-error
   ([error stacktrace?]
    (print-error error stacktrace? nil))
@@ -602,11 +697,22 @@
              (print-value data {::as-code? false}))
          (when stacktrace?
            (let [opts {:output-dir "file://(/goog/..)?"}
-                 canonical-stacktrace (->> (st/parse-stacktrace
-                                            {}
-                                            (.-stack error)
-                                            {:ua-product :nodejs}
-                                            opts))]
+                 canonical-stacktrace (into []
+                                            stacktrace-patch-xf
+                                            (st/parse-stacktrace
+                                             {}
+                                             (.-stack error)
+                                             {:ua-product :nodejs}
+                                             opts))
+                 namespaces (->> canonical-stacktrace
+                                 (remove (comp lumo-embedded-string? :file))
+                                 (map (comp file->ns-sym :file))
+                                 distinct)
+                 core-ns? (some #(= 'cljs.core %) namespaces)]
+             (when core-ns?
+               (load-core-macros-source-maps!))
+             (when (seq namespaces)
+               (load-bundled-source-maps! namespaces))
              (print
               (mapped-stacktrace-str
                canonical-stacktrace

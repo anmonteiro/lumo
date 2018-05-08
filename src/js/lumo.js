@@ -143,7 +143,7 @@ type ResourceType =
       modified: number,
     |};
 
-function isBundled(filename: string): boolean {
+export function isBundled(filename: string): boolean {
   if (__DEV__) {
     return fs.existsSync(`./target/${filename}`);
   }
