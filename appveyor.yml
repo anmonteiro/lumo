@@ -1,5 +1,6 @@
 environment:
   nodejs_version: "10"
+  NASM_URL: http://www.nasm.us/pub/nasm/releasebuilds/2.12.02/win64/nasm-2.12.02-installer-x64.exe
   BUILD_ARCH: win
   matrix:
     - BUILD_NODE_VERSION: 9.11.1
@@ -28,6 +29,11 @@ cache:
   - '%UserProfile%\.boot\cache\bin -> boot.properties'
 
 install:
+  # Install NASM
+  # TODO: Remove after https://github.com/appveyor/ci/issues/1426 is fixed
+  - set "PATH=C:\Program Files\Git\mingw64\bin;%PATH%"
+  - curl -L -o nasminst.exe "%NASM_URL%"
+  - start /wait nasminst /S
   - ps: Install-Product node $env:nodejs_version x64
   - cmd: npm install -g npm@latest
   - cmd: npm install -g yarn
