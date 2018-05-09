@@ -22,7 +22,7 @@
 
 ### Changes
 
-- Upgrade Node.js to version 9.10.0.
+- Upgrade Node.js to version 10.1.0.
 - Bump ClojureScript to 1.10.X ([#379](https://github.com/anmonteiro/lumo/pull/379)).
   Plus miscellaneous fixes, most notably:
   - Use cljs.core/eval in lumo.core.
