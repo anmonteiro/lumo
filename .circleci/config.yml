@@ -110,28 +110,28 @@ build-shared: &build-shared
         path: build
 
 jobs:
-  test-js-8.10.0:
+  test-js-lambda:
     <<: *node-test-shared
     docker:
       - image: circleci/node:8.10.0
     environment:
       BUILD_NODE_VERSION: 8.10.0
 
-  test-js-8.11.1:
+  test-js-lts:
     <<: *node-test-shared
     docker:
       - image: circleci/node:8.11.1
     environment:
       BUILD_NODE_VERSION: 8.11.1
 
-  test-js-9.10.1:
+  test-js-current:
     <<: *node-test-shared
     docker:
       - image: circleci/node:9.10.1
     environment:
       BUILD_NODE_VERSION: 9.10.1
 
-  build-8.10.0:
+  build-lambda:
     <<: *build-shared
     environment:
       XCODE_SCHEME: phony
@@ -147,7 +147,7 @@ jobs:
       BUILD_ARCH: darwin
       BUILD_NODE_VERSION: 8.10.0
 
-  build-8.11.1:
+  build-lts:
     <<: *build-shared
     environment:
       XCODE_SCHEME: phony
@@ -163,7 +163,7 @@ jobs:
       BUILD_ARCH: darwin
       BUILD_NODE_VERSION: 8.11.1
 
-  build-9.10.1:
+  build-current:
     <<: *build-shared
     environment:
       XCODE_SCHEME: phony
@@ -183,15 +183,15 @@ workflows:
   version: 2
   test-and-build:
     jobs:
-      - test-js-8.10.0
-      - test-js-8.11.1
-      - test-js-9.10.1
-      - build-8.10.0:
+      - test-js-lambda
+      - test-js-lts
+      - test-js-current
+      - build-lambda:
           requires:
-            - test-js-8.10.0
-      - build-8.11.1:
+            - test-js-lambda
+      - build-lts:
           requires:
-            - test-js-8.11.1
-      - build-9.10.1:
+            - test-js-lts
+      - build-current:
           requires:
-            - test-js-9.10.1
+            - test-js-current
