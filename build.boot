@@ -57,6 +57,7 @@
         :cljs-opts {:parallel-build true
                     :target :nodejs
                     :verbose true
+                    :npm-deps false
                     :asset-path "test_suite.out"}
         :update-fs? true
         :exit? exit?

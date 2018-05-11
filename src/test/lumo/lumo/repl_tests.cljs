@@ -148,7 +148,10 @@
         (is-completion "foo-1.core/" ["foo-1.core/baz-3" "foo-1.core/bar2" "foo-1.core/xyz"])
         (is-completion "foo-1.core/ba" ["foo-1.core/baz-3" "foo-1.core/bar2"])))
     (testing "LUMO-362"
-      (is-contains-completion "(+" "(+"))))
+      (is-contains-completion "(+" "(+"))
+    (testing "LUMO-365"
+      (is-empty-completion "(require '")
+      (is-empty-completion "'"))))
 
 
 (deftest test-root-resource
