@@ -1,6 +1,8 @@
 # Changelog
 
-## [master](https://github.com/anmonteiro/lumo/compare/1.8.0...HEAD) (unreleased)
+## [master](https://github.com/anmonteiro/lumo/compare/1.9.0-alpha...HEAD) (unreleased)
+
+## [1.9.0-alpha](https://github.com/anmonteiro/lumo/compare/1.8.0...1.9.0-alpha) (2018-05-10)
 
 ### Bug fixes
 
