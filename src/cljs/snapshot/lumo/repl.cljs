@@ -1424,7 +1424,7 @@ This was taken from the reader specification plus tests at the Clojure REPL."}
                               #js []
                               (if skip-suffix-check?
                                 (completion-candidates top-level? ns-alias)
-                                (filter #(is-completion? line-match-suffix %)
+                                (filter #(some-> line-match-suffix (is-completion? %))
                                         (completion-candidates top-level? ns-alias))))]
       (cb (doto completions
             .sort)))))
