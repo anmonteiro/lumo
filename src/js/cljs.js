@@ -57,6 +57,18 @@ function lumoEval(
   }
 
   if (currentREPLInterface != null) {
+    const sigintEvents =
+      // $FlowIssue: it's there
+      typeof process._events.SIGINT === 'function'
+        ? // $FlowIssue: it's there
+          [process._events.SIGINT]
+        : // $FlowIssue: it's there
+          process._events.SIGINT;
+    const sigintHandlers = Array.isArray(sigintEvents)
+      ? Array.prototype.slice.call(sigintEvents)
+      : [];
+    process.removeAllListeners('SIGINT');
+
     utilBinding.startSigintWatchdog();
     const previouslyInRawMode = currentREPLInterface._setRawMode(false);
 
@@ -72,6 +84,11 @@ function lumoEval(
     } finally {
       currentREPLInterface._setRawMode(previouslyInRawMode);
       const hadPendingSignals = utilBinding.stopSigintWatchdog();
+
+      sigintHandlers.forEach((listener: number => void) =>
+        process.on('SIGINT', listener),
+      );
+
       if (hadPendingSignals) {
         currentREPLInterface.emit('SIGINT');
       }
