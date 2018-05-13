@@ -37,6 +37,8 @@ install:
   - set "PATH=C:\Program Files\Git\mingw64\bin;%PATH%"
   - curl -L -o nasminst.exe "%NASM_URL%"
   - start /wait nasminst /S
+  - ps: Import-Module scripts\AdjustVirtualMemoryPagingFileSize.psm1
+  - ps: Set-OSCVirtualMemory  -InitialSize 2048  -MaximumSize 4096  -DriveLetter "C:"
   - ps: Install-Product node $env:nodejs_version x64
   - cmd: npm install -g npm@latest
   - cmd: npm install -g yarn
