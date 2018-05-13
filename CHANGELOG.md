@@ -5,6 +5,7 @@
 ### Bug fixes
 
 - ctrl-c during REPL execution exits lumo ([#327](https://github.com/anmonteiro/lumo/issues/327)).
+- SIGINT cannot be caught ([#191](https://github.com/anmonteiro/lumo/issues/191)).
 
 ## [1.9.0-alpha](https://github.com/anmonteiro/lumo/compare/1.8.0...1.9.0-alpha) (2018-05-10)
 

@@ -14,16 +14,34 @@ import { isWhitespace } from './util';
 
 import type { CLIOptsType } from './cli';
 
+type sigintHandlerType = number => void;
+
 // $FlowIssue: process has a binding function
 const utilBinding = process.binding('util');
 
-let ClojureScriptContext;
+let ClojureScriptContext: vm$Context;
 
 const interruptSentinel = {};
 const scriptOptions = {
   displayErrors: true,
+};
+const interruptibleScriptOptions = {
+  ...scriptOptions,
   breakOnSigint: true,
 };
+
+function getAndRemoveSigintEventListeners(): sigintHandlerType[] {
+  const listeners = Array.prototype.slice.call(process.listeners('SIGINT'));
+  process.removeAllListeners('SIGINT');
+
+  return listeners;
+}
+
+function restoreSigintHandlers(handlers: sigintHandlerType[]): void {
+  handlers.forEach((listener: sigintHandlerType) =>
+    process.on('SIGINT', listener),
+  );
+}
 
 function lumoEval(
   source: string,
@@ -37,6 +55,27 @@ function lumoEval(
 
     module.filename = filename;
     module.paths = Module._nodeModulePaths(dirname);
+
+    if (__DEV__) {
+      const compiledWrapper = vm.runInContext(
+        Module.wrap(source),
+        ClojureScriptContext,
+        {
+          filename,
+          lineOffset: 0,
+          displayErrors: true,
+        },
+      );
+
+      return compiledWrapper.call(
+        module.exports,
+        module.exports,
+        require,
+        module,
+        filename,
+        dirname,
+      );
+    }
 
     return module._compile(source, filename);
   }
@@ -57,26 +96,18 @@ function lumoEval(
   }
 
   if (currentREPLInterface != null) {
-    const sigintEvents =
-      // $FlowIssue: it's there
-      typeof process._events.SIGINT === 'function'
-        ? // $FlowIssue: it's there
-          [process._events.SIGINT]
-        : // $FlowIssue: it's there
-          process._events.SIGINT;
-    const sigintHandlers = Array.isArray(sigintEvents)
-      ? Array.prototype.slice.call(sigintEvents)
-      : [];
-    process.removeAllListeners('SIGINT');
-
+    const sigintHandlers = getAndRemoveSigintEventListeners();
     utilBinding.startSigintWatchdog();
     const previouslyInRawMode = currentREPLInterface._setRawMode(false);
 
     try {
       ret = __DEV__
-        ? // $FlowFixMe: this type differs according to the env
-          vm.runInContext(source, ClojureScriptContext, scriptOptions)
-        : vm.runInThisContext(source, scriptOptions);
+        ? vm.runInContext(
+            source,
+            ClojureScriptContext,
+            interruptibleScriptOptions,
+          )
+        : vm.runInThisContext(source, interruptibleScriptOptions);
     } catch (e) {
       if (e.message !== 'Script execution interrupted.') {
         throw e;
@@ -84,10 +115,7 @@ function lumoEval(
     } finally {
       currentREPLInterface._setRawMode(previouslyInRawMode);
       const hadPendingSignals = utilBinding.stopSigintWatchdog();
-
-      sigintHandlers.forEach((listener: number => void) =>
-        process.on('SIGINT', listener),
-      );
+      restoreSigintHandlers(sigintHandlers);
 
       if (hadPendingSignals) {
         currentREPLInterface.emit('SIGINT');
@@ -95,8 +123,7 @@ function lumoEval(
     }
   } else {
     ret = __DEV__
-      ? // $FlowFixMe: this type differs according to the env
-        vm.runInContext(source, ClojureScriptContext, scriptOptions)
+      ? vm.runInContext(source, ClojureScriptContext, scriptOptions)
       : vm.runInThisContext(source, scriptOptions);
   }
 
@@ -112,6 +139,7 @@ function lumoEval(
 
 function doPrint(cb: (value: string) => void, arg: string): void {
   if (currentREPLInterface != null) {
+    const sigintHandlers = getAndRemoveSigintEventListeners();
     utilBinding.startSigintWatchdog();
     const previouslyInRawMode = currentREPLInterface._setRawMode(false);
 
@@ -123,8 +151,9 @@ function doPrint(cb: (value: string) => void, arg: string): void {
       }
     } finally {
       currentREPLInterface._setRawMode(previouslyInRawMode);
-
       const hadPendingSignals = utilBinding.stopSigintWatchdog();
+      restoreSigintHandlers(sigintHandlers);
+
       if (hadPendingSignals) {
         currentREPLInterface.emit('SIGINT');
       }
@@ -178,7 +207,7 @@ function newDevelopmentContext(): vm$Context {
   return ctx;
 }
 
-function newClojureScriptContext(): { [key: string]: mixed } {
+function newClojureScriptContext(): vm$Context {
   global.$$LUMO_GLOBALS = {
     crypto,
     fs,
