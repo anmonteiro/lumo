@@ -38,8 +38,7 @@ script:
 - yarn lint
 - yarn type:check
 - yarn test
-- boot test
-- boot release-ci
+- boot test release-ci
 - ./scripts/test-build
 after_success:
 - chmod a+x build/lumo

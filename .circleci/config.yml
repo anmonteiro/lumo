@@ -76,8 +76,7 @@ build-shared: &build-shared
     - run:
         name: Fetch jars
         command: 'boot > /dev/null'
-    - run: boot test
-    - run: boot release-ci
+    - boot test release-ci
     - save_cache:
         key: lumo-nogh3Eta-{{ .Branch }}-{{ checksum "node-version" }}-{{ checksum "build.boot" }}-{{ checksum "yarn.lock" }}
         paths:

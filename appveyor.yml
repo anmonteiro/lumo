@@ -38,8 +38,7 @@ test_script:
   - yarn lint
   - yarn type:check
   - yarn test
-  - cmd: boot test
-  - cmd: boot release-ci
+  - cmd: boot test release-ci
   - cmd: scripts/test-build.bat
 
 artifacts:
