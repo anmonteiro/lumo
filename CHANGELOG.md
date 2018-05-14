@@ -12,6 +12,10 @@
 - SIGINT cannot be caught ([#191](https://github.com/anmonteiro/lumo/issues/191)).
 - Correctly set `__dirname` and `__filename` when running script file ([#185](https://github.com/anmonteiro/lumo/issues/185)).
 
+### Changes
+
+- Upgrade Node.js to version 9.11.1.
+
 ## [1.9.0-alpha](https://github.com/anmonteiro/lumo/compare/1.8.0...1.9.0-alpha) (2018-05-10)
 
 ### Bug fixes
@@ -22,7 +26,7 @@
 
 ### Changes
 
-- Upgrade Node.js to version 10.1.0.
+- Upgrade Node.js to version 9.10.0.
 - Bump ClojureScript to 1.10.X ([#379](https://github.com/anmonteiro/lumo/pull/379)).
   Plus miscellaneous fixes, most notably:
   - Use cljs.core/eval in lumo.core.
