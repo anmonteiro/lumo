@@ -35,6 +35,7 @@
 
 (def ^:private ^:dynamic *loading-foreign* false)
 (def ^:private ^:dynamic *executing-path* nil)
+(def ^:private ^:dynamic *source-name* nil)
 
 (defonce ^:private st (cljs/empty-state))
 
@@ -359,13 +360,18 @@
   "Evaluates JavaScript in node, writing source and analysis cache to disk
    when desired."
   [{:keys [name source cache path]}]
-  (when-let [cache-path (and source cache path (:cache-path @app-opts))]
-    (write-cache name path source cache cache-path))
-  (let [foreign? *loading-foreign*
-        exec-path *executing-path*]
-    (set! *loading-foreign* false)
-    (set! *executing-path* nil)
-    (js/$$LUMO_GLOBALS.eval source foreign? exec-path)))
+  (when-not (string/blank? source)
+    (when-let [cache-path (and source cache path (:cache-path @app-opts))]
+      (write-cache name path source cache cache-path))
+    (let [foreign? *loading-foreign*
+          exec-path *executing-path*]
+      (set! *loading-foreign* false)
+      (when (and (some? exec-path)
+                 (some? *source-name*)
+                 (or (symbol-identical? *source-name* name)
+                     (identical? *source-name* name)))
+        (set! *executing-path* nil))
+      (js/$$LUMO_GLOBALS.eval source foreign? exec-path))))
 
 ;; =============================================================================
 ;; REPL plumbing
@@ -1044,7 +1050,7 @@
             (println (form-indicator-str column @current-ns))))
         (print warning-string)))))
 
-(declare execute-source)
+(declare execute-text)
 
 (defn- execute-path [file opts]
   (load {:file file}
@@ -1054,10 +1060,10 @@
                   cljs/*load-fn*   load
                   *executing-path* file]
           (condp keyword-identical? lang
-            :clj (execute-source source (merge opts
-                                          {:type "text"
-                                           :filename file
-                                           :expression? false}))
+            :clj (execute-text source (merge opts
+                                        {:type "text"
+                                         :filename file
+                                         :expression? false}))
             :js (cljs/process-macros-deps {:*compiler* st} cache nil
                   (fn [{:keys [error]}]
                     (if-not (nil? error)
@@ -1090,29 +1096,32 @@
             eval-opts (merge (make-eval-opts)
                         (when expression?
                           {:context :expr
-                           :def-emits-var true}))]
+                           :def-emits-var true}))
+            source-name (when (some? filename)
+                          (or (ns-for-source source) filename))]
         (if (repl-special? form)
           ((get repl-special-fns (first form)) form (merge opts eval-opts))
-          (cljs/eval-str
-            st
-            source
-            (cond
-              expression? source
-              filename (or (ns-for-source source) filename)
-              :else "source")
-            eval-opts
-            (fn [{:keys [ns value error] :as ret}]
-              (if-not error
-                (when expression?
-                  (when (or (true? print-nil-result?)
+          (binding [*source-name* source-name]
+            (cljs/eval-str
+              st
+              source
+              (cond
+                expression? source
+                (some? source-name) source-name
+                :else "source")
+              eval-opts
+              (fn [{:keys [ns value error] :as ret}]
+                (if-not error
+                  (when expression?
+                    (when (or (true? print-nil-result?)
                             (not (nil? value)))
-                    (js/$$LUMO_GLOBALS.doPrint print-value value))
-                  (process-1-2-3 form value)
-                  (when (def-form? form)
-                    (let [{:keys [ns name]} (meta value)]
-                      (swap! st assoc-in [::ana/namespaces ns :defs name ::repl-entered-source] source)))
-                  (vreset! current-ns ns))
-                (handle-error error true)))))))
+                      (js/$$LUMO_GLOBALS.doPrint print-value value))
+                    (process-1-2-3 form value)
+                    (when (def-form? form)
+                      (let [{:keys [ns name]} (meta value)]
+                        (swap! st assoc-in [::ana/namespaces ns :defs name ::repl-entered-source] source)))
+                    (vreset! current-ns ns))
+                  (handle-error error true))))))))
     (catch :default e
       ;; `;;` and `#_`
       (when-not (identical? (.-message e) "Unexpected EOF.")
