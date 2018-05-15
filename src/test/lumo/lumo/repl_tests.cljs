@@ -186,12 +186,12 @@ Special Form
   (is (empty? (with-out-str (lumo/doc every)))))
 
 (deftest test-apropos
-  (is (= '(cljs.core/ffirst) (lumo/apropos "ffirst")))
-  (is (= '(cljs.core/ffirst) (lumo/apropos 'ffirst)))
+  (is (some #{'cljs.core/ffirst} (lumo/apropos "ffirst")))
+  (is (some #{'cljs.core/ffirst} (lumo/apropos 'ffirst)))
   ;; Clojure compat
   (is (= () (lumo/apropos ffirst)))
-  (is (= '(cljs.core/ffirst cljs.core/nfirst) (lumo/apropos #"[a-z]+first")))
-  (is (= '(cljs.core/aget) (lumo/apropos "aget"))))
+  (is (some #{'cljs.core/ffirst 'cljs.core/nfirst} (lumo/apropos #"[a-z]+first")))
+  (is (some #{'cljs.core/aget} (lumo/apropos "aget"))))
 
 (when test-util/lumo-env?
   (deftest test-cli-args
