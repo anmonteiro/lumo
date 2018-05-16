@@ -208,3 +208,8 @@ Special Form
     (is (= 3 (core/eval (list + 1 2))))
     (is (= 17 (core/eval '(let [a 10] (+ 3 4 a)))))
     (is (= 5 ((eval (eval '+)) 2 3)))))
+
+(when test-util/lumo-env?
+  (deftest test-find-var
+    (is (= #'cljs.core/map (lumo/find-var 'map)) "it should find function vars")
+    (is (= #'lumo.repl/*pprint-results* (lumo/find-var 'lumo.repl/*pprint-results*)) "it should find a var in another namespace")))
