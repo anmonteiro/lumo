@@ -20,6 +20,7 @@ cache:
   - tmp
   - "~/.boot/cache/lib"
   - "~/.boot/cache/bin"
+  - yarn
 before_install:
 - find tmp -mindepth 2 -maxdepth 2 -and -not -name ${BUILD_NODE_VERSION} -exec rm -rv {} ';'
 - sudo fallocate -l 4G /swapfile
@@ -31,8 +32,8 @@ before_install:
 - curl -sSL https://raw.githubusercontent.com/cljs-oss/canary/master/scripts/install-canary.sh | bash
 - wget https://github.com/boot-clj/boot-bin/releases/download/latest/boot.sh
 - mv boot.sh boot && chmod a+x boot && sudo mv boot /usr/local/bin
+- nvm install ${BUILD_NODE_VERSION} && nvm alias default ${BUILD_NODE_VERSION}
 install:
-- boot
 - yarn install
 script:
 - yarn lint
