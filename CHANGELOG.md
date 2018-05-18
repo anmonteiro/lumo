@@ -2,6 +2,10 @@
 
 ## [master](https://github.com/anmonteiro/lumo/compare/1.9.0-alpha...HEAD) (unreleased)
 
+### New  features
+
+- Allow omitting version in -D – default to the latest locally available version ([#320](https://github.com/anmonteiro/lumo/issues/320)).
+
 ### Bug fixes
 
 - ctrl-c during REPL execution exits lumo ([#327](https://github.com/anmonteiro/lumo/issues/327)).

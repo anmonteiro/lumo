@@ -95,12 +95,22 @@ describe('isWhitespace', () => {
 
 describe('mavenCoordinatesToPath', () => {
   const osHomedir = os.homedir;
+  const { readdirSync } = fs;
+
   beforeAll(() => {
     os.homedir = jest.fn(() => '/Users/foo');
+    fs.readdirSync = jest.fn((_: string) => ['1.8', '1.9', '1.10']);
+    global.goog = {
+      string: {
+        compareVersions: () => -1,
+      },
+    };
   });
 
   afterAll(() => {
     os.homedir = osHomedir;
+    fs.readdirSync = readdirSync;
+    global.goog = undefined;
   });
 
   it('should decode a group/artifact:version encoded dep to its local path ', () => {
@@ -181,6 +191,24 @@ describe('mavenCoordinatesToPath', () => {
         'rewrite-clj',
         '0.6.0',
         'rewrite-clj-0.6.0.jar',
+      ]),
+    ]);
+  });
+
+  it('LUMO-320: default to latest available version', () => {
+    expect(
+      srcPathsFromMavenDependencies(['org.clojure/clojurescript'], '~/.m3'),
+    ).toEqual([
+      path.join.apply(null, [
+        ...(isWindows ? ['C:'] : ['/']),
+        'Users',
+        'foo',
+        '.m3',
+        'org',
+        'clojure',
+        'clojurescript',
+        '1.10',
+        'clojurescript-1.10.jar',
       ]),
     ]);
   });
