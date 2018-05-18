@@ -61,9 +61,34 @@ function mavenCoordinatesToPath(
   dependency: string,
   localRepo: string = path.join(os.homedir(), '.m2/repository'),
 ): string {
-  const parsed = dependency.split(/\/|:/);
-  const [group, artifact, version] =
-    parsed.length === 3 ? parsed : [parsed[0], ...parsed];
+  const groupArtifact = dependency.split('/');
+
+  let group;
+  let artifact;
+
+  if (groupArtifact.length === 1) {
+    // group and artifact are the same
+    const actualGroupArtifact = groupArtifact[0].split(':')[0];
+    [group, artifact] = [actualGroupArtifact, actualGroupArtifact];
+  } else {
+    [group, artifact] = [groupArtifact[0], groupArtifact[1].split(':')[0]];
+  }
+
+  let version = dependency.split(':')[1];
+
+  // we weren't passed a version, search for the latest available locally
+  if (version == null) {
+    const versions = fs.readdirSync(
+      path.join(expandPath(localRepo), ...group.split('.'), artifact),
+    );
+
+    version = versions.reduce((a: string, b: string): string => {
+      if (global.goog.string.compareVersions(a, b) < 0) {
+        return b;
+      }
+      return a;
+    });
+  }
 
   return path.join(
     expandPath(localRepo),
