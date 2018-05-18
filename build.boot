@@ -1,7 +1,7 @@
 (def +clojurescript-version+ (or (System/getenv "CANARY_CLOJURESCRIPT_VERSION")
                                  "1.10.238"))
 (def +node-version+ (or (System/getenv "BUILD_NODE_VERSION")
-                        "9.10.0"))
+                        "9.11.1"))
 (set-env!
  :source-paths #{"src/cljs/snapshot"}
  :asset-paths #{"src/js" "src/cljs/bundled"}

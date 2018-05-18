@@ -71,6 +71,6 @@ env:
       BUILD_ARCH=linux
     - CC=gcc-6 && CXX=g++-6
   matrix:
-    - BUILD_NODE_VERSION=9.10.0
+    - BUILD_NODE_VERSION=9.11.1
     - BUILD_NODE_VERSION=8.11.1
     - BUILD_NODE_VERSION=8.10.0

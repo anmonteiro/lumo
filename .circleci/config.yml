@@ -127,9 +127,9 @@ jobs:
   test-js-current:
     <<: *node-test-shared
     docker:
-      - image: circleci/node:9.10.1
+      - image: circleci/node:9.11.1
     environment:
-      BUILD_NODE_VERSION: 9.10.1
+      BUILD_NODE_VERSION: 9.11.1
 
   build-lambda:
     <<: *build-shared
@@ -177,7 +177,7 @@ jobs:
         -XX:+CMSClassUnloadingEnabled
         -Xverify:none
       BUILD_ARCH: darwin
-      BUILD_NODE_VERSION: 9.10.1
+      BUILD_NODE_VERSION: 9.11.1
 
 workflows:
   version: 2
