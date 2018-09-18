@@ -1,5 +1,9 @@
+image:
+- Visual Studio 2017
 environment:
-  nodejs_version: "9"
+  nodejs_version: "10"
+  appveyor_build_worker_cloud: gce
+  NASM_URL: http://www.nasm.us/pub/nasm/releasebuilds/2.12.02/win64/nasm-2.12.02-installer-x64.exe
   BUILD_ARCH: win
   matrix:
     - BUILD_NODE_VERSION: 9.11.1
@@ -27,9 +31,31 @@ cache:
   - '%UserProfile%\.boot\cache\lib -> boot.properties'
   - '%UserProfile%\.boot\cache\bin -> boot.properties'
 
+# init:
+#   - wmic computersystem set AutomaticManagedPagefile=False
+#   - wmic pagefile list /format:list
+# #  - wmic pagefileset create name="C:\pagefile.sys"
+#   - wmic pagefileset where name="C:\\pagefile.sys" set InitialSize=8192,MaximumSize=8192
+#   - wmic pagefileset list /format:list
+#   - ps: write-host "Restarting..."
+#   - ps: sleep 5
+#   - ps: restart-computer -f
+#   - ps: sleep 5
+#   - ps: write-host "Restarted."
+#   - wmic pagefile list /format:list
+
 install:
+  # Install NASM
+  # TODO: Remove after https://github.com/appveyor/ci/issues/1426 is fixed
+  - set "PATH=C:\Program Files\Git\mingw64\bin;%PATH%"
+  - curl -L -o nasminst.exe "%NASM_URL%"
+  - start /wait nasminst /S
+  # - ps: Import-Module "C:\projects\lumo\scripts\AdjustVirtualMemoryPagingFileSize.psm1"
+  # - ps: Set-OSCVirtualMemory  -InitialSize 2048  -MaximumSize 4096  -DriveLetter "C:"
   - ps: Install-Product node $env:nodejs_version x64
+  - cmd: npm install -g npm@latest
   - cmd: npm install -g yarn
+  - set PATH=%APPDATA%\npm;%PATH%
   - cmd: yarn install
   - ps: wget 'https://github.com/boot-clj/boot-bin/releases/download/latest/boot.exe' -OutFile "$pwd\boot.exe"
   - cmd: 'move boot.exe %SystemRoot%' #set PATH=$pwd\boot.exe;%PATH%

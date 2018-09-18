@@ -4,7 +4,7 @@ const fs = require('fs');
 function accessor(key) {
   var resource = lumo.internal.embedded.resources[key];
   if (resource != null) {
-    return new Buffer(resource, 'base64');
+    return Buffer.from(resource, 'base64');
   }
 }
 
