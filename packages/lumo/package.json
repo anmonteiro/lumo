@@ -21,9 +21,9 @@
     "install": "node scripts/npm_install.js || nodejs scripts/npm_install.js"
   },
   "dependencies": {
-    "yauzl": "2.9.1",
     "progress": "^2.0.0",
-    "request": "2.81.0"
+    "request": "2.88.0",
+    "yauzl": "2.10.0"
   },
   "bin": {
     "lumo": "./bin/lumo.js"
