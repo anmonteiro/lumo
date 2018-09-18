@@ -118,7 +118,7 @@ describe('mavenCoordinatesToPath', () => {
       srcPathsFromMavenDependencies(['org.clojure/clojurescript:1.9.562']),
     ).toEqual([
       path.join.apply(null, [
-        ...(isWindows ? ['C:'] : ['/']),
+        ...(isWindows ? ['D:'] : ['/']),
         'Users',
         'foo',
         '.m2',
@@ -137,7 +137,7 @@ describe('mavenCoordinatesToPath', () => {
       ]),
     ).toEqual([
       path.join.apply(null, [
-        ...(isWindows ? ['C:'] : ['/']),
+        ...(isWindows ? ['D:'] : ['/']),
         'Users',
         'foo',
         '.m2',
@@ -149,7 +149,7 @@ describe('mavenCoordinatesToPath', () => {
         'clojurescript-1.9.562.jar',
       ]),
       path.join.apply(null, [
-        ...(isWindows ? ['C:'] : ['/']),
+        ...(isWindows ? ['D:'] : ['/']),
         'Users',
         'foo',
         '.m2',
@@ -168,7 +168,7 @@ describe('mavenCoordinatesToPath', () => {
       ),
     ).toEqual([
       path.join.apply(null, [
-        ...(isWindows ? ['C:'] : ['/']),
+        ...(isWindows ? ['D:'] : ['/']),
         'Users',
         'foo',
         '.m3',
@@ -182,7 +182,7 @@ describe('mavenCoordinatesToPath', () => {
 
     expect(srcPathsFromMavenDependencies(['rewrite-clj:0.6.0'])).toEqual([
       path.join.apply(null, [
-        ...(isWindows ? ['C:'] : ['/']),
+        ...(isWindows ? ['D:'] : ['/']),
         'Users',
         'foo',
         '.m2',
@@ -200,7 +200,7 @@ describe('mavenCoordinatesToPath', () => {
       srcPathsFromMavenDependencies(['org.clojure/clojurescript'], '~/.m3'),
     ).toEqual([
       path.join.apply(null, [
-        ...(isWindows ? ['C:'] : ['/']),
+        ...(isWindows ? ['D:'] : ['/']),
         'Users',
         'foo',
         '.m3',
