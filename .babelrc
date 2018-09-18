@@ -1,14 +1,16 @@
 {
-  "presets": ["stage-2"],
   "env": {
-    "test": {
-      "presets": ["es2015", "stage-2"]
-    },
     "development": {
-      "plugins": ["external-helpers"]
+      "plugins": [
+        "@babel/plugin-proposal-object-rest-spread",
+        "@babel/plugin-proposal-class-properties"
+      ]
     },
     "production": {
-      "plugins": ["external-helpers"]
+      "plugins": [
+        "@babel/plugin-proposal-object-rest-spread",
+        "@babel/plugin-proposal-class-properties"
+      ]
     }
   },
   "plugins": ["transform-flow-strip-types", "./scripts/babel/strip-dev"]

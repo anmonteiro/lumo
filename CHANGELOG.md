@@ -6,6 +6,10 @@
 
 - Allow omitting version in -D – default to the latest locally available version ([#320](https://github.com/anmonteiro/lumo/issues/320)).
 
+### Changes
+
+- Upgrade ClojureScript to version 1.10.339.
+
 ### Bug fixes
 
 - ctrl-c during REPL execution exits lumo ([#327](https://github.com/anmonteiro/lumo/issues/327)).
@@ -27,7 +31,7 @@
 ### Changes
 
 - Upgrade Node.js to version 9.10.0.
-- Bump ClojureScript to 1.10.X ([#379](https://github.com/anmonteiro/lumo/pull/379)).
+- Bump ClojureScript to 1.10.238 ([#379](https://github.com/anmonteiro/lumo/pull/379)).
   Plus miscellaneous fixes, most notably:
   - Use cljs.core/eval in lumo.core.
   - Bundle `cljs.core.specs.alpha`.

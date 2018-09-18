@@ -1,20 +1,18 @@
 {
   "parser": "babel-eslint",
-  "extends": [
-    "airbnb"
-  ],
+  "extends": ["airbnb"],
   "env": {
     "jest": true
   },
-  "globals" : {
+  "globals": {
     "__DEV__": true,
     "lumo": true
   },
-  "plugins" : ["flowtype", "import", "babel"],
-  "rules" : {
+  "plugins": ["flowtype", "import", "babel"],
+  "rules": {
     "indent": 0,
     "function-paren-newline": 0,
-    "keyword-spacing": [2, {"before": true, "after": true}],
+    "keyword-spacing": [2, { "before": true, "after": true }],
     "linebreak-style": 0,
     "no-cond-assign": [2, "except-parens"],
     "no-restricted-syntax": 0,
@@ -22,6 +20,8 @@
     "no-unused-vars": ["error", { "args": "none" }],
     "object-curly-newline": 0,
     "babel/array-bracket-spacing": 2,
+    "implicit-arrow-linebreak": 0,
+    "operator-linebreak": 0,
     "import/no-duplicates": 2,
     "flowtype/boolean-style": 2,
     "flowtype/define-flow-type": 2,
@@ -38,10 +38,14 @@
     "flowtype/no-dupe-keys": 2,
     "flowtype/no-weak-types": 2,
     "flowtype/object-type-delimiter": 2,
-    "flowtype/require-return-type": [2, "always", {
-      "annotateUndefined" : "always",
-      "excludeArrowFunctions": true
-    }],
+    "flowtype/require-return-type": [
+      2,
+      "always",
+      {
+        "annotateUndefined": "always",
+        "excludeArrowFunctions": true
+      }
+    ],
     "flowtype/semi": 2
   }
 }

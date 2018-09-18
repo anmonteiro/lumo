@@ -82,12 +82,14 @@ function mavenCoordinatesToPath(
       path.join(expandPath(localRepo), ...group.split('.'), artifact),
     );
 
-    version = versions.reduce((a: string, b: string): string => {
-      if (global.goog.string.compareVersions(a, b) < 0) {
-        return b;
-      }
-      return a;
-    });
+    version = versions.reduce(
+      (a: string, b: string): string => {
+        if (global.goog.string.compareVersions(a, b) < 0) {
+          return b;
+        }
+        return a;
+      },
+    );
   }
 
   return path.join(

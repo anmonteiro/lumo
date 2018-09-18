@@ -292,7 +292,9 @@ function handleKeyPress(
         }
 
         return;
-      } else if ((!ctrl && !meta) || isReverseSearchKey) {
+      }
+
+      if ((!ctrl && !meta) || isReverseSearchKey) {
         // not a special character
         if (
           name != null &&

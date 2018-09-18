@@ -15,10 +15,12 @@ export default class ArrayStream extends Stream {
   }
 
   readable = true;
+
   writable = true;
 
   /* eslint-disable class-methods-use-this */
   resume(): void {}
+
   write(): void {}
   /* eslint-enable class-methods-use-this */
 }
