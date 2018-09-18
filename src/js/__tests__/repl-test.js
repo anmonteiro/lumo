@@ -255,8 +255,19 @@ describe('startREPL', () => {
       const originalObjectKeys = Object.keys;
       let sessions;
       Object.keys = jest.fn((x: { [key: mixed]: mixed }) => {
-        sessions = x;
-        return originalObjectKeys(x);
+        const result = originalObjectKeys(x);
+        const everyNumber = result.every((k: string) => {
+          try {
+            return !Number.isNaN(parseInt(k, 10));
+          } catch (_) {
+            return false;
+          }
+        });
+
+        if (everyNumber) {
+          sessions = x;
+        }
+        return result;
       });
 
       startREPL({});
