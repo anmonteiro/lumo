@@ -4,11 +4,12 @@
 import os from 'os';
 import path, { delimiter as delim } from 'path';
 
+let v8 = require('v8');
+
 let lumo = require('../lumo');
 let startCLI = require('../cli').default;
 let socketRepl = require('../socketRepl');
 let cljs = require('../cljs').default;
-let v8 = require('v8');
 
 jest.mock('v8');
 jest.mock('../socketRepl');
@@ -37,7 +38,9 @@ beforeAll(() => {
 });
 
 afterAll(() => {
-  process.version = nodeVersion;
+  Object.defineProperty(process, 'version', {
+    value: nodeVersion,
+  });
   process.exit = exit;
 });
 

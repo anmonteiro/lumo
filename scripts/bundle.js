@@ -15,21 +15,19 @@ function writeClojureScriptVersion() {
   let pos = 0;
   let index = 0;
   let acc = '';
-  rs
-    .on('data', chunk => {
-      index = chunk.indexOf('\n');
-      acc += chunk;
-      if (index !== -1) {
-        rs.close();
-      } else {
-        pos += chunk.length;
-      }
-    })
-    .on('close', () => {
-      const line = acc.slice(0, pos + index);
-      const cljsVersion = /ClojureScript\s([0-9.]+)/.exec(line)[1];
-      fs.writeFileSync('target/clojurescript-version', cljsVersion, 'utf8');
-    });
+  rs.on('data', chunk => {
+    index = chunk.indexOf('\n');
+    acc += chunk;
+    if (index !== -1) {
+      rs.close();
+    } else {
+      pos += chunk.length;
+    }
+  }).on('close', () => {
+    const line = acc.slice(0, pos + index);
+    const cljsVersion = /ClojureScript\s([0-9.]+)/.exec(line)[1];
+    fs.writeFileSync('target/clojurescript-version', cljsVersion, 'utf8');
+  });
 }
 
 writeClojureScriptVersion();

@@ -1,9 +1,9 @@
 /* @flow */
 /* eslint-disable global-require */
 
+let vm = require('vm');
 let startREPL = require('../repl').default;
 let { default: startCLJS, ...cljs } = require('../cljs');
-let vm = require('vm');
 
 jest.mock('../repl');
 jest.mock('../lumo', () => ({
