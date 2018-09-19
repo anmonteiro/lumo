@@ -1,0 +1,66 @@
+resources:
+- repo: self
+  fetchDepth: 5
+
+queue:
+  name: Hosted VS2017
+  demands:
+  - Cmd
+
+steps:
+
+- task: NodeTool@0
+  displayName: 'Use Node 8.11.1'
+  inputs:
+    versionSpec: 8.11.1
+
+- task: geeklearningio.gl-vsts-tasks-yarn.yarn-installer-task.YarnInstaller@2
+  displayName: 'Use Yarn 1.x'
+
+- task: UsePythonVersion@0
+  displayName: 'Use Python 2.x'
+  inputs:
+    versionSpec: 2.x
+
+- task: geeklearningio.gl-vsts-tasks-yarn.yarn-task.Yarn@2
+  displayName: 'Yarn install'
+  inputs:
+    Arguments: install
+
+- powershell: 'wget https://github.com/boot-clj/boot-bin/releases/download/latest/boot.exe -OutFile "$pwd\boot.exe"' 
+  displayName: 'Install boot'
+
+- script: 'move boot.exe %SystemRoot%' 
+  displayName: 'move boot.exe %SystemRoot%'
+
+- task: geeklearningio.gl-vsts-tasks-yarn.yarn-task.Yarn@2
+  displayName: 'Yarn lint'
+  inputs:
+    Arguments: lint
+
+- task: geeklearningio.gl-vsts-tasks-yarn.yarn-task.Yarn@2
+  displayName: 'Yarn type:check'
+  inputs:
+    Arguments: 'type:check'
+
+- task: geeklearningio.gl-vsts-tasks-yarn.yarn-task.Yarn@2
+  displayName: 'Yarn test'
+  inputs:
+    Arguments: test
+
+- script: 'boot test' 
+  displayName: 'boot test'
+
+- script: 'boot release-ci' 
+  displayName: 'boot release-ci'
+
+- task: BatchScript@1
+  displayName: 'Run script: scripts/test-build.bat'
+  inputs:
+    filename: 'scripts/test-build.bat'
+
+- task: PublishBuildArtifacts@1
+  displayName: 'Publish Artifact: build'
+  inputs:
+    PathtoPublish: build
+    ArtifactName: build
