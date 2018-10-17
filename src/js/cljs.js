@@ -480,6 +480,7 @@ async function initSocketRepl(
     const replOpts: ReplOptsType = {
       port: parseInt(parsedOpts.port, 10),
       host: parsedOpts.host,
+      accept: parsedOpts.accept,
     };
 
     // This tweak is required because the thrown error varies in different node
