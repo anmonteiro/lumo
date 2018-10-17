@@ -457,6 +457,7 @@ export function runAcceptFN(
 type ReplOptsType = {
   host: string,
   port: number,
+  accept?: string,
 };
 
 async function initSocketRepl(
@@ -475,7 +476,7 @@ async function initSocketRepl(
   try {
     const parsedOpts = /^{/.test(socketReplArgs)
       ? JSON.parse(socketReplArgs)
-      : { host, port };
+      : { host, port, accept: undefined };
 
     const replOpts: ReplOptsType = {
       port: parseInt(parsedOpts.port, 10),
