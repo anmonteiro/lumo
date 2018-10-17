@@ -16,6 +16,7 @@
 - ctrl-c during REPL execution exits lumo ([#327](https://github.com/anmonteiro/lumo/issues/327)).
 - SIGINT cannot be caught ([#191](https://github.com/anmonteiro/lumo/issues/191)).
 - Correctly set `__dirname` and `__filename` when running script file ([#185](https://github.com/anmonteiro/lumo/issues/185)).
+- Honor the "accept" parameter of the socket repl options ([#431](https://github.com/anmonteiro/lumo/pull/432))
 
 ### Changes
 
