@@ -6,7 +6,7 @@ environment:
   NASM_URL: http://www.nasm.us/pub/nasm/releasebuilds/2.12.02/win64/nasm-2.12.02-installer-x64.exe
   BUILD_ARCH: win
   matrix:
-    - BUILD_NODE_VERSION: 9.11.1
+    - BUILD_NODE_VERSION: 10.9.0
     - BUILD_NODE_VERSION: 8.11.1
     - BUILD_NODE_VERSION: 8.10.0
 platform:

@@ -177,7 +177,7 @@ jobs:
         -XX:+CMSClassUnloadingEnabled
         -Xverify:none
       BUILD_ARCH: darwin
-      BUILD_NODE_VERSION: 9.11.1
+      BUILD_NODE_VERSION: 10.9.0
 
 workflows:
   version: 2
