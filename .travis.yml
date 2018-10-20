@@ -2,6 +2,7 @@ os:
   - linux
   - windows
 sudo: required
+python: "2.7"
 dist: trusty
 addons:
   apt:
@@ -25,6 +26,8 @@ cache:
   - "~/.boot/cache/bin"
   - yarn
 before_install:
+- if [[ "$TRAVIS_OS_NAME" = 'windows' ]]; then choco install python2; fi
+- if [[ "$TRAVIS_OS_NAME" = 'windows' ]]; then export PATH="/c/Python27:/c/Python27/Scripts:$PATH"; fi
 - if [[ "$TRAVIS_OS_NAME" != 'windows' ]]; then find tmp -mindepth 2 -maxdepth 2 -and -not -name ${BUILD_NODE_VERSION} -exec rm -rv {} ';'; fi
 - if [[ "$TRAVIS_OS_NAME" != 'windows' ]]; then sudo fallocate -l 4G /swapfile; fi
 - if [[ "$TRAVIS_OS_NAME" != 'windows' ]]; then sudo chmod 600 /swapfile; fi
