@@ -22,12 +22,12 @@ cache:
   - "~/.boot/cache/bin"
   - yarn
 before_install:
-- find tmp -mindepth 2 -maxdepth 2 -and -not -name ${BUILD_NODE_VERSION} -exec rm -rv {} ';'
-- sudo fallocate -l 4G /swapfile
-- sudo chmod 600 /swapfile
-- sudo mkswap /swapfile
-- sudo swapon /swapfile
-- sudo sysctl vm.swappiness=10
+- if [[ "$TRAVIS_OS_NAME" != 'windows' ]]; then find tmp -mindepth 2 -maxdepth 2 -and -not -name ${BUILD_NODE_VERSION} -exec rm -rv {} ';'; fi
+- if [[ "$TRAVIS_OS_NAME" != 'windows' ]]; then sudo fallocate -l 4G /swapfile; fi
+- if [[ "$TRAVIS_OS_NAME" != 'windows' ]]; then sudo chmod 600 /swapfile; fi
+- if [[ "$TRAVIS_OS_NAME" != 'windows' ]]; then sudo mkswap /swapfile; fi
+- if [[ "$TRAVIS_OS_NAME" != 'windows' ]]; then sudo swapon /swapfile; fi
+- if [[ "$TRAVIS_OS_NAME" != 'windows' ]]; then sudo sysctl vm.swappiness=10; fi
 - npm install -g yarn
 - curl -sSL https://raw.githubusercontent.com/cljs-oss/canary/master/scripts/install-canary.sh | bash
 - wget https://github.com/boot-clj/boot-bin/releases/download/latest/boot.sh
