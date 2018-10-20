@@ -1,3 +1,6 @@
+os:
+  - linux
+  - windows
 sudo: required
 dist: trusty
 addons:
@@ -30,9 +33,9 @@ before_install:
 - if [[ "$TRAVIS_OS_NAME" != 'windows' ]]; then sudo sysctl vm.swappiness=10; fi
 - npm install -g yarn
 - curl -sSL https://raw.githubusercontent.com/cljs-oss/canary/master/scripts/install-canary.sh | bash
-- wget https://github.com/boot-clj/boot-bin/releases/download/latest/boot.sh
-- mv boot.sh boot && chmod a+x boot && sudo mv boot /usr/local/bin
-- nvm install ${BUILD_NODE_VERSION} && nvm alias default ${BUILD_NODE_VERSION}
+- if [[ "$TRAVIS_OS_NAME" != 'windows' ]]; then wget https://github.com/boot-clj/boot-bin/releases/download/latest/boot.sh; else choco install boot-clj; fi
+- if [[ "$TRAVIS_OS_NAME" != 'windows' ]]; then mv boot.sh boot && chmod a+x boot && sudo mv boot /usr/local/bin; fi
+- if [[ "$TRAVIS_OS_NAME" != 'windows' ]]; then nvm install ${BUILD_NODE_VERSION} && nvm alias default ${BUILD_NODE_VERSION}; else nvs add $BUILD_NODE_VERSION && nvs use $BUILD_NODE_VERSION; fi
 install:
 - yarn install
 script:
