@@ -75,7 +75,11 @@ async function patchNodeGyp(compiler, callback) {
 }
 
 resources.then(resources =>
-  Promise.all(resources.map(deflate)).then(() => {
+  Promise.all(resources.map(deflate)).then(async () => {
+    try {
+      await fs.mkdir('build');
+    } catch(_) {}
+
     nexe.compile(
       {
         input: path.resolve(`${lumoInternalDir}/bundle.min.js`),
