@@ -195,7 +195,7 @@
   (with-pass-thru _
     (let [lumo-internal-classpath "LUMO__INTERNAL__CLASSPATH"
           cleanup-cmd (if windows?
-                        ["cmd" "/c" "rd" lumo-internal-classpath "/s"]
+                        ["cmd" "/c" "echo" "y" "|" "rd" lumo-internal-classpath "/s"]
                         ["rm" "-rf" lumo-internal-classpath])]
     (apply dosh cleanup-cmd)
     (if windows?
