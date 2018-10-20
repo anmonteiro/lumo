@@ -197,7 +197,7 @@
           cleanup-cmd (if windows?
                         ["cmd" "/c" "echo" "y" "|" "rd" lumo-internal-classpath "/s"]
                         ["rm" "-rf" lumo-internal-classpath])]
-    (apply dosh cleanup-cmd)
+    (try (apply dosh cleanup-cmd) (catch Exception _))
     (if windows?
       (dosh "cmd" "/c" "move" "target" lumo-internal-classpath)
       (dosh "mv" "target" lumo-internal-classpath))
