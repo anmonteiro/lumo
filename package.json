@@ -12,6 +12,17 @@
     "url": "https://github.com/anmonteiro/lumo/issues"
   },
   "homepage": "https://github.com/anmonteiro/lumo",
+  "preferGlobal": true,
+  "config": {
+    "unsafe-perm": true
+  },
+  "bin": {
+    "lumo": "download/dist/lumo"
+  },
+  "files": [
+    "download/dist",
+    "download/install.js"
+  ],
   "scripts": {
     "type:check": "flow check",
     "lint": "eslint src/js",
@@ -21,27 +32,27 @@
     "build": "cross-env NODE_ENV=production node scripts/bundle.js",
     "dev": "node target/bundle.js -k lumo-cache -c target",
     "test-dev": "node target/bundle.js -k test-lumo-cache -c target:src/test/cljs:src/test/lumo:src/test/cljs_cp -D org.clojure/test.check:0.10.0-alpha3",
-    "postinstall": "opencollective postinstall"
-  },
-  "main": "./src/js/index.js",
-  "dependencies": {
-    "@babel/plugin-proposal-class-properties": "^7.1.0",
-    "@babel/plugin-proposal-object-rest-spread": "^7.0.0",
-    "google-closure-compiler-js": "20170910.0.1",
-    "jszip": "2.6.1",
-    "paredit.js": "0.3.4",
-    "posix-getopt": "github:anmonteiro/node-getopt#master"
+    "build-download": "webpack --context download --config download/webpack.config.js",
+    "prepublishOnly": "yarn build-download && cp /dev/null download/dist/lumo",
+    "postinstall": "node download/install.js || nodejs download/install.js"
   },
   "devDependencies": {
     "@babel/core": "^7.1.0",
     "@babel/plugin-external-helpers": "7.0.0",
+    "@babel/plugin-proposal-class-properties": "^7.1.0",
+    "@babel/plugin-proposal-object-rest-spread": "^7.0.0",
+    "@babel/plugin-transform-runtime": "^7.1.0",
     "@babel/preset-env": "^7.1.0",
     "@babel/preset-stage-2": "7.0.0",
+    "@babel/runtime": "^7.1.2",
+    "async-retry": "^1.2.3",
     "babel-core": "^7.0.0-bridge.0",
     "babel-eslint": "10.0.1",
     "babel-jest": "^23.6.0",
+    "babel-loader": "^8.0.4",
     "babel-plugin-transform-flow-strip-types": "6.22.0",
     "cross-env": "5.2.0",
+    "death": "^1.1.0",
     "eslint": "5.7.0",
     "eslint-config-airbnb": "17.1.0",
     "eslint-config-airbnb-base": "13.1.0",
@@ -51,16 +62,24 @@
     "eslint-plugin-jsx-a11y": "6.1.2",
     "eslint-plugin-react": "7.11.1",
     "flow-bin": "0.83.0",
+    "google-closure-compiler-js": "20170910.0.1",
     "jest-cli": "23.6.0",
+    "jszip": "2.6.1",
     "nexe": "next",
-    "opencollective": "1.0.3",
+    "node-fetch": "^2.2.0",
+    "paredit.js": "0.3.4",
+    "posix-getopt": "github:anmonteiro/node-getopt#master",
     "prettier": "1.14.3",
+    "progress": "^2.0.0",
     "rollup": "0.66.6",
     "rollup-plugin-babel": "4.0.3",
     "rollup-plugin-babel-minify": "6.1.1",
     "rollup-plugin-commonjs": "9.2.0",
     "rollup-plugin-node-resolve": "3.4.0",
-    "rollup-plugin-replace": "2.1.0"
+    "rollup-plugin-replace": "2.1.0",
+    "webpack": "^4.22.0",
+    "webpack-cli": "^3.1.2",
+    "which-promise": "^1.0.0"
   },
   "jest": {
     "verbose": true,
