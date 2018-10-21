@@ -20,7 +20,7 @@
     "bundle": "node scripts/bundle.js --dev",
     "build": "cross-env NODE_ENV=production node scripts/bundle.js",
     "dev": "node target/bundle.js -k lumo-cache -c target",
-    "test-dev": "node target/bundle.js -k test-lumo-cache -c target:src/test/cljs:src/test/lumo:src/test/cljs_cp -D org.clojure/test.check:0.10.0-alpha2",
+    "test-dev": "node target/bundle.js -k test-lumo-cache -c target:src/test/cljs:src/test/lumo:src/test/cljs_cp -D org.clojure/test.check:0.10.0-alpha3",
     "postinstall": "opencollective postinstall"
   },
   "main": "./src/js/index.js",
