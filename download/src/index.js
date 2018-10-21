@@ -80,7 +80,7 @@ async function download() {
 
     try {
       const name = platformToName[platform]
-      const url = `https://github.com/anmonteiro/lumo/releases/download/${packageJSON.version}/${name}.zip`
+      const url = `https://github.com/anmonteiro/lumo/releases/download/${packageJSON.version}/${name}.gz`
       const resp = await fetch(url, { compress: false })
 
       if (resp.status !== 200) {
