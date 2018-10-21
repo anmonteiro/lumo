@@ -40,6 +40,7 @@ script:
 - yarn type:check
 - yarn test
 - boot test
+- nvm install node && nvm alias default node
 - boot release-ci
 - ./scripts/test-build
 after_success:
@@ -70,8 +71,12 @@ env:
       -Xverify:none'
       BUILD_ARCH=linux
     - CC=gcc-6 && CXX=g++-6
-  matrix:
-    fast_finish: true
-    - BUILD_NODE_VERSION=10.9.0
-    - BUILD_NODE_VERSION=8.11.1
-    - BUILD_NODE_VERSION=8.10.0
+matrix:
+  fast_finish: true
+  include:
+    - env:
+      - BUILD_NODE_VERSION=10.9.0
+    - env:
+      - BUILD_NODE_VERSION=8.11.1
+    - env:
+      - BUILD_NODE_VERSION=8.10.0
