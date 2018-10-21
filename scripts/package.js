@@ -98,7 +98,7 @@ resources.then(resources =>
           '--with-snapshot',
         ],
         make: ['-j', '8'],
-        vcBuild: ['nosign', 'x64', 'noetw', 'noperfctr', 'no-cctest'],
+        vcBuild: ['nosign', 'x64', 'noetw', 'noperfctr', 'ltcg', 'pch'],
         name: 'Lumo',
         resources,
         enableNodeCli: false,

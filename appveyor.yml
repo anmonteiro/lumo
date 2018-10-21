@@ -7,8 +7,8 @@ environment:
   BUILD_ARCH: win
   matrix:
     - BUILD_NODE_VERSION: 10.9.0
-    - BUILD_NODE_VERSION: 8.11.1
-    - BUILD_NODE_VERSION: 8.10.0
+    # - BUILD_NODE_VERSION: 8.11.1
+    # - BUILD_NODE_VERSION: 8.10.0
 platform:
   - x64
 
