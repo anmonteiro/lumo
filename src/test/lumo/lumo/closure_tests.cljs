@@ -339,17 +339,10 @@
       (is (true? (some (fn [module]
                          (= module {:module-type :es6
                                     :file (path/resolve (path/join "node_modules" "npm-package-with-main-entry-pointing-to-folder" "folder" "index.js"))
-                                    :provides (if util/windows?
-                                                ;; TODO: remove this `if` after
-                                                ;; the following commit is released:
-                                                ;; https://github.com/clojure/clojurescript/commit/8bc9b985
-                                                ["npm-package-with-main-entry-pointing-to-folder/folder/index.js"
-                                                 "npm-package-with-main-entry-pointing-to-folder/folder/index"
-                                                 "npm-package-with-main-entry-pointing-to-folder/folder"]
-                                                ["npm-package-with-main-entry-pointing-to-folder"
-                                                 "npm-package-with-main-entry-pointing-to-folder/folder/index.js"
-                                                 "npm-package-with-main-entry-pointing-to-folder/folder/index"
-                                                 "npm-package-with-main-entry-pointing-to-folder/folder"])}))
+                                    :provides ["npm-package-with-main-entry-pointing-to-folder"
+                                               "npm-package-with-main-entry-pointing-to-folder/folder/index.js"
+                                               "npm-package-with-main-entry-pointing-to-folder/folder/index"
+                                               "npm-package-with-main-entry-pointing-to-folder/folder"]}))
                        modules))))
     (fs/unlinkSync "package.json")
     (test/delete-node-modules)
