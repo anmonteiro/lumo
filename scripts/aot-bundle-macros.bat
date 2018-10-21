@@ -1,5 +1,5 @@
 REM remove the target dir
-echo y | rd target /s || goto :error
+echo y | rd target /s
 
 REM remove possible artifacts of failed compilations
 echo y | rd lumo-cljs /s

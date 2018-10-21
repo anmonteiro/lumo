@@ -32,7 +32,7 @@
   [sym]
   (if (string/starts-with? (str sym) ".")
     sym
-    (cljs/elide-macros-suffix (ana/resolve-symbol sym))))
+    (#'cljs/elide-macros-suffix (ana/resolve-symbol sym))))
 
 (defn locate-src
   "Given a namespace return the corresponding ClojureScript (.cljs or .cljc)

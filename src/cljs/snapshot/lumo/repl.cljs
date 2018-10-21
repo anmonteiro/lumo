@@ -730,7 +730,7 @@
   ;; after newlines with two.
   (when-not (nil? s)
     (if (re-find #"[^\n]*\n\n?\s{5,6}\S.*" s)
-      (string/replace-all s #"\n      ?" "\n  ")
+      (string/replace s #"\n      ?" "\n  ")
       s)))
 
 ;; TODO: proper spec support (due to $macros), need to write own print-doc fn
@@ -944,7 +944,7 @@
     (binding [ana/*cljs-ns* cur-ns
               *ns* (create-ns cur-ns)
               env/*compiler* st
-              r/*data-readers* (merge tags/*cljs-data-readers* (load-data-readers! env/*compiler*))
+              r/*data-readers* (merge tags/*cljs-data-readers* (load-data-readers! st))
               r/resolve-symbol ana/resolve-symbol
               r/*alias-map* (current-alias-map)]
       [(r/read {:read-cond :allow :features #{:cljs}} reader) (read-chars reader)])))
@@ -1064,11 +1064,11 @@
                                         {:type "text"
                                          :filename file
                                          :expression? false}))
-            :js (cljs/process-macros-deps {:*compiler* st} cache nil
+            :js (#'cljs/process-macros-deps {:*compiler* st} cache nil
                   (fn [{:keys [error]}]
                     (if-not (nil? error)
                       (handle-error error false)
-                      (cljs/process-libs-deps {:*compiler* st} cache nil
+                      (#'cljs/process-libs-deps {:*compiler* st} cache nil
                         (fn [{:keys [error]}]
                           (if-not (nil? error)
                             (handle-error error false)
@@ -1090,7 +1090,7 @@
               *ns*             (create-ns @current-ns)
               env/*compiler*   st
               r/resolve-symbol ana/resolve-symbol
-              tags/*cljs-data-readers* (merge tags/*cljs-data-readers* (load-data-readers! env/*compiler*))
+              tags/*cljs-data-readers* (merge tags/*cljs-data-readers* (load-data-readers! st))
               r/*alias-map*    (current-alias-map)]
       (let [form (and expression? (first (repl-read-string source)))
             eval-opts (merge (make-eval-opts)

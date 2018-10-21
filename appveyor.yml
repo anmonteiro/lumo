@@ -6,9 +6,9 @@ environment:
   NASM_URL: http://www.nasm.us/pub/nasm/releasebuilds/2.12.02/win64/nasm-2.12.02-installer-x64.exe
   BUILD_ARCH: win
   matrix:
-    - BUILD_NODE_VERSION: 9.11.1
-    - BUILD_NODE_VERSION: 8.11.1
-    - BUILD_NODE_VERSION: 8.10.0
+    - BUILD_NODE_VERSION: 10.9.0
+    # - BUILD_NODE_VERSION: 8.11.1
+    # - BUILD_NODE_VERSION: 8.10.0
 platform:
   - x64
 
@@ -49,7 +49,8 @@ install:
   # TODO: Remove after https://github.com/appveyor/ci/issues/1426 is fixed
   - set "PATH=C:\Program Files\Git\mingw64\bin;%PATH%"
   - curl -L -o nasminst.exe "%NASM_URL%"
-  - start /wait nasminst /S
+  - start /wait nasminst.exe /S
+  - ps: $env:path="C:\Program Files (x86)\nasm;$($env:path)"
   # - ps: Import-Module "C:\projects\lumo\scripts\AdjustVirtualMemoryPagingFileSize.psm1"
   # - ps: Set-OSCVirtualMemory  -InitialSize 2048  -MaximumSize 4096  -DriveLetter "C:"
   - ps: Install-Product node $env:nodejs_version x64

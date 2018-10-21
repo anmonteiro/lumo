@@ -2,7 +2,7 @@
                                  "1.10.339"))
 
 (def +node-version+ (or (System/getenv "BUILD_NODE_VERSION")
-                      "9.11.1"))
+                        "10.9.0"))
 
 (set-env!
  :source-paths #{"src/cljs/snapshot"}
@@ -191,9 +191,18 @@
     (dosh "node" "scripts/prepare_snapshot.js")))
 
 (deftask package-executable
-  [c ci-build bool "CI build"]
+  []
   (with-pass-thru _
-    (dosh "node" "scripts/package.js" +node-version+)))
+    (let [lumo-internal-classpath "LUMO__INTERNAL__CLASSPATH"
+          cleanup-cmd (if windows?
+                        ["cmd" "/c" "echo" "y" "|" "rd" lumo-internal-classpath "/s"]
+                        ["rm" "-rf" lumo-internal-classpath])]
+    (try (apply dosh cleanup-cmd) (catch Exception _))
+    (if windows?
+      (dosh "cmd" "/c" "move" "target" lumo-internal-classpath)
+      (dosh "mv" "target" lumo-internal-classpath))
+    (dosh "node" "scripts/package.js" +node-version+)
+    (apply dosh cleanup-cmd))))
 
 (deftask backup-resources
   "Backup resources to be gzipped in the 2nd stage binary
@@ -222,10 +231,10 @@
     (prepare-snapshot)
     (backup-resources)
     ;; Package first stage binary
-    (package-executable :ci-build true)
+    (package-executable)
     (aot-macros)
     ;; Package final executable
-    (package-executable :ci-build true)))
+    (package-executable)))
 
 (deftask release []
   (comp

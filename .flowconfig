@@ -1,7 +1,7 @@
 [ignore]
 # <PROJECT_ROOT>/node_modules/.*
-<PROJECT_ROOT>/node_modules/eslint-plugin-jsx-a11y
 <PROJECT_ROOT>/target/.*
+<PROJECT_ROOT>/LUMO__INTERNAL__CLASSPATH/.*
 <PROJECT_ROOT>/tmp/.*
 <PROJECT_ROOT>/scripts/.*
 <PROJECT_ROOT>/.*/__tests__/.*
@@ -15,4 +15,4 @@ suppress_comment=\\(.\\|\n\\)*\\$FlowFixMe
 suppress_comment=\\(.\\|\n\\)*\\$FlowExpectedError
 
 [version]
-^0.81.0
+^0.83.0
