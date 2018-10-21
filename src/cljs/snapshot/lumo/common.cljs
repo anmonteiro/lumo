@@ -42,6 +42,6 @@
              :cljs.analyzer/constants (load-key :cljs.analyzer/constants)
              :doc                     (load-key :doc)}))))))
 
-(defn- load-core-analysis-caches [state eager?]
+(defn load-core-analysis-caches [state eager?]
   (load-core-analysis-cache state eager? 'cljs.core "cljs/core.cljs.cache.aot.")
   (load-core-analysis-cache state eager? 'cljs.core$macros "cljs/core$macros.cljc.cache."))

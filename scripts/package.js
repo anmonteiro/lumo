@@ -78,7 +78,7 @@ resources.then(resources =>
   Promise.all(resources.map(deflate)).then(async () => {
     try {
       await fs.mkdir('build');
-    } catch(_) {}
+    } catch (_) {}
 
     nexe.compile(
       {

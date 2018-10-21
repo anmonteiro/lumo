@@ -3,7 +3,7 @@
             [clojure.string :as string]
             [lumo.common :as common]))
 
-(defonce ^:private js-lib-index (volatile! {}))
+(defonce js-lib-index (volatile! {}))
 
 (defn add-js-lib
   "Adds a js lib to the index."
