@@ -1,4 +1,3 @@
-// Packages
 import assert from 'assert'
 import chalk from 'chalk'
 import Progress from 'progress'

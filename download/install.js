@@ -1,3 +1,4 @@
+// Installation code adapted from https://github.com/zeit/now-cli/
 var path = require('path')
 var fs = require('fs')
 
@@ -6,7 +7,6 @@ var src = path.join(__dirname, 'src')
 
 // Don't install when developing locally
 if (fs.existsSync(src)) {
-  // eslint-disable-next-line unicorn/no-process-exit
   process.exit(0)
 }
 
