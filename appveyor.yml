@@ -24,7 +24,7 @@ matrix:
 
 cache:
   - '%UserProfile%\.m2'
-  - tmp -> appveyor.yml
+  - tmp -> appveyor.yml, build.boot, src\cljs\snapshot
   - '%APPDATA%\npm-cache -> yarn.lock'
   - node_modules -> yarn.lock
   - '%SystemRoot%\boot.exe -> boot.properties'
