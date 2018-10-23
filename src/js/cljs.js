@@ -457,7 +457,8 @@ export function runAcceptFN(
 type ReplOptsType = {
   host: string,
   port: number,
-  accept?: string,
+  accept: ?string,
+  args: ?(string[]),
 };
 
 async function initSocketRepl(
@@ -476,12 +477,13 @@ async function initSocketRepl(
   try {
     const parsedOpts = /^{/.test(socketReplArgs)
       ? JSON.parse(socketReplArgs)
-      : { host, port, accept: undefined };
+      : { host, port, accept: undefined, args: undefined };
 
     const replOpts: ReplOptsType = {
       port: parseInt(parsedOpts.port, 10),
       host: parsedOpts.host,
       accept: parsedOpts.accept,
+      args: parsedOpts.args,
     };
 
     // This tweak is required because the thrown error varies in different node
