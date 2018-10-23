@@ -111,8 +111,7 @@
       (is-contains-completion "(&" "(&merge" not)
       (is-contains-completion "(?" "(?merge" not)
       (is-contains-completion "(/" "(/merge" not)
-      (is-contains-completion "(?" "(?merge" not)
-      (is-contains-completion "(MER" "(merge"))
+      (is-contains-completion "(?" "(?merge" not))
     (testing "JS completions"
       (is-contains-completion "(require 'goog.m" "(require 'goog.math")
       (is-contains-completion "g/isF" "g/isFunction"))
@@ -151,7 +150,17 @@
       (is-contains-completion "(+" "(+"))
     (testing "LUMO-365"
       (is-empty-completion "(require '")
-      (is-empty-completion "'"))))
+      (is-empty-completion "'"))
+    (testing "LUMO-465"
+      (with-redefs [lumo/get-namespace (fn [ns]
+                                         '{:name foo-1.core
+                                           :defs {camelCase {:name foo-1.core/camelCase}}
+                                           :uses {foo-1 foo-1.core}
+                                           :requires {foo-1.core foo-1.core}})
+                    lumo/all-ns (fn []
+                                  '(foo-1.core))]
+        (is-completion "foo-1.core/cam" ["foo-1.core/camelCase"])
+        (is-empty-completion "foo-1.core/camelc")))))
 
 
 (deftest test-root-resource

@@ -1293,7 +1293,7 @@
 (defn- is-completion?
   [match-suffix candidate]
   (let [escaped-suffix (string/replace match-suffix #"[-\/\\^$*+?.()|\[\]{}]" "\\$&")]
-    (re-find (js/RegExp. (str "^" escaped-suffix) "i") candidate)))
+    (re-find (js/RegExp. (str "^" escaped-suffix)) candidate)))
 
 (def ^:private keyword-completions
   (into #{} (map str)
