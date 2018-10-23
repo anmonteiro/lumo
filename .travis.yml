@@ -22,7 +22,6 @@ cache:
   - "~/.boot/cache/bin"
   - yarn
 before_install:
-- find tmp -mindepth 2 -maxdepth 2 -and -not -name ${BUILD_NODE_VERSION} -exec rm -rv {} ';'
 - sudo fallocate -l 4G /swapfile
 - sudo chmod 600 /swapfile
 - sudo mkswap /swapfile
