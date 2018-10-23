@@ -44,7 +44,7 @@ function openRepl(socket: net$Socket): void {
 function handleConnection(
   socket: net$Socket,
   accept: AcceptFn,
-  args: Array<mixed>,
+  args: Array<mixed> = [],
 ): number {
   if (typeof accept === 'string') {
     runAcceptFN(accept, socket, args);
@@ -90,7 +90,7 @@ export function open({
 }): Promise<mixed> {
   return new Promise((resolve: mixed => void, reject: Error => void) => {
     socketServer = net.createServer((socket: net$Socket) =>
-      handleConnection(socket, accept, args || []),
+      handleConnection(socket, accept, args),
     );
 
     // $FlowIssue - wrong type definitions for `listen`
