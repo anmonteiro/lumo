@@ -65,7 +65,7 @@
     "flow-bin": "0.83.0",
     "google-closure-compiler-js": "20170910.0.1",
     "jest-cli": "23.6.0",
-    "jszip": "2.6.1",
+    "jszip": "github:anmonteiro/jszip#patch-1",
     "nexe": "next",
     "node-fetch": "^2.2.0",
     "paredit.js": "0.3.4",
