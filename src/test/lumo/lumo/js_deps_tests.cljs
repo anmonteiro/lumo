@@ -28,11 +28,16 @@
                  {:provides ["react.dom.server"]
                   :requires ["react" "react.dom"]}]]
     (is (= (deps/add-js-libs {} js-libs)
-          '{react            {:provides ["react"]}
-            react.dom        {:provides ["react.dom"]
-                              :requires ["react"]}
-            react.dom.server {:provides ["react.dom.server"]
-                              :requires ["react" "react.dom"]}}))))
+          '{react              {:provides ["react"]}
+            "react"            {:provides ["react"]}
+            react.dom          {:provides ["react.dom"]
+                                :requires ["react"]}
+            "react.dom"        {:provides ["react.dom"]
+                                :requires ["react"]}
+            react.dom.server   {:provides ["react.dom.server"]
+                                :requires ["react" "react.dom"]}
+            "react.dom.server" {:provides ["react.dom.server"]
+                                :requires ["react" "react.dom"]}}))))
 
 (deftest js-libs-to-load-test
   (with-redefs [deps/js-lib-index
