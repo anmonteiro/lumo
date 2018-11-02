@@ -11,33 +11,33 @@
   (use-fixtures :once test-util/with-lumo-globals test-util/with-cache))
 
 (deftest test-is-readable?
-  (is (nil? (lumo/is-readable? "(")))
-  (is (= (lumo/is-readable? "(+ 1 2)") ""))
-  (is (= (lumo/is-readable? "(+ 1 2) :foo") " :foo"))
-  (is (nil? (lumo/is-readable? "")))
-  (is (= (lumo/is-readable? ")") "")))
+  (is (nil? (#'lumo/is-readable? "(")))
+  (is (= (#'lumo/is-readable? "(+ 1 2)") ""))
+  (is (= (#'lumo/is-readable? "(+ 1 2) :foo") " :foo"))
+  (is (nil? (#'lumo/is-readable? "")))
+  (is (= (#'lumo/is-readable? ")") "")))
 
 (deftest test-form-start
-  (is (= (lumo/form-start "( )" 2) 0))
-  (is (= (lumo/form-start "(let [a 1\nb 2])" 13) 5))
-  (is (= (lumo/form-start "#{1 2 3}" 7) 1))
-  (is (= (lumo/form-start "(+ 1 2" 5) nil))
-  (is (= (lumo/form-start "(let [a 1\n      b 2\n      c 3]" 29) 5))
-  (is (= (lumo/form-start "(())" 3) 0)))
+  (is (= (#'lumo/form-start "( )" 2) 0))
+  (is (= (#'lumo/form-start "(let [a 1\nb 2])" 13) 5))
+  (is (= (#'lumo/form-start "#{1 2 3}" 7) 1))
+  (is (= (#'lumo/form-start "(+ 1 2" 5) nil))
+  (is (= (#'lumo/form-start "(let [a 1\n      b 2\n      c 3]" 29) 5))
+  (is (= (#'lumo/form-start "(())" 3) 0)))
 
 (deftest test-get-highlight-coords
-  (is (= (js->clj (lumo/get-highlight-coordinates #js ["(+ 1 2)"] 6)) [0 0]))
-  (is (= (js->clj (lumo/get-highlight-coordinates #js ["(+ 1 2"] 5)) [-1 -1]))
-  (is (= (js->clj (lumo/get-highlight-coordinates #js ["(+ 1 2" ")"] 0)) [0 1]))
-  (is (= (js->clj (lumo/get-highlight-coordinates
+  (is (= (js->clj (#'lumo/get-highlight-coordinates #js ["(+ 1 2)"] 6)) [0 0]))
+  (is (= (js->clj (#'lumo/get-highlight-coordinates #js ["(+ 1 2"] 5)) [-1 -1]))
+  (is (= (js->clj (#'lumo/get-highlight-coordinates #js ["(+ 1 2" ")"] 0)) [0 1]))
+  (is (= (js->clj (#'lumo/get-highlight-coordinates
                     #js ["(let [a 1" "      b 2" "      c 3]"] 9))
          [5 2]))
-  (is (= (js->clj (lumo/get-highlight-coordinates #js ["(let [a 1)"] 9)) [-1 -1]))
-  (is (= (js->clj (lumo/get-highlight-coordinates #js ["(let [a 1])"] 9)) [5 0]))
-  (is (= (js->clj (lumo/get-highlight-coordinates
+  (is (= (js->clj (#'lumo/get-highlight-coordinates #js ["(let [a 1)"] 9)) [-1 -1]))
+  (is (= (js->clj (#'lumo/get-highlight-coordinates #js ["(let [a 1])"] 9)) [5 0]))
+  (is (= (js->clj (#'lumo/get-highlight-coordinates
                     #js ["(let [a 1" "" "      b 2" "      c 3]"] 9))
          [5 3]))
-  (is (= (js->clj (lumo/get-highlight-coordinates #js ["(())"] 3)) [0 0])))
+  (is (= (js->clj (#'lumo/get-highlight-coordinates #js ["(())"] 3)) [0 0])))
 
 (defn is-completion [i o]
   (lumo/get-completions i
@@ -62,10 +62,10 @@
 (when test-util/lumo-env?
   (deftest test-get-completions
     (testing "corner cases"
-      (is-completion "(" (mapv #(str "(" %) (lumo/completion-candidates true nil)))
-      (is-completion "" (lumo/completion-candidates false nil)))
+      (is-completion "(" (mapv #(str "(" %) (#'lumo/completion-candidates true nil)))
+      (is-completion "" (#'lumo/completion-candidates false nil)))
     (testing "keyword completions"
-      (is-completion ":" lumo/keyword-completions)
+      (is-completion ":" @#'lumo/keyword-completions)
       (is-completion ":a" [":added" ":arglists" ":args" ":as" ":author"])
       (is-completion ":ref" [":refer" ":refer-clojure" ":refer-macros"]))
     (testing "aliased namespaces completions"
@@ -119,16 +119,16 @@
       (testing "namespace fully qualified completion"
         (s/def ::a-spec string?)
         (is-contains-completion ":lumo.repl-tests/" ":lumo.repl-tests/a-spec")
-        (reset! s/registry-ref {}))
+        (reset! @#'s/registry-ref {}))
       (with-redefs [lumo/current-alias-map (constantly '{common lumo.common})]
         (testing "namespace fully qualified completion - alias"
           (s/def ::common/a-spec string?)
           (is-contains-completion "::common/" "::common/a-spec")
-          (reset! s/registry-ref {})))
+          (reset! @#'s/registry-ref {})))
       (testing "arbitrary fully qualified keyword"
         (s/def :arbitrary/a-spec string?)
         (is-contains-completion ":arbitrary/" ":arbitrary/a-spec")
-        (reset! s/registry-ref {})))
+        (reset! @#'s/registry-ref {})))
     (testing "prefix filtering"
       (with-redefs [lumo/get-namespace (fn []
                                          '{:defs {red6hlolli {:name cljs.user/red6hlolli}}})]
@@ -164,8 +164,8 @@
 
 
 (deftest test-root-resource
-  (is (= (lumo/root-resource 'foo-bar-baz) "/foo_bar_baz"))
-  (is (= (lumo/root-resource 'foo.bar.baz) "/foo/bar/baz")))
+  (is (= (#'lumo/root-resource 'foo-bar-baz) "/foo_bar_baz"))
+  (is (= (#'lumo/root-resource 'foo.bar.baz) "/foo/bar/baz")))
 
 (deftest test-get-arglists
   (is (= (lumo/get-arglists "whatever") nil))

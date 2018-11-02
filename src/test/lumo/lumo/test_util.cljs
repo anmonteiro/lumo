@@ -40,7 +40,7 @@
                                (-> cljs-core-macros-cache-path
                                    read-file-sync
                                    common/transit-json->cljs))
-    (reset! lumo.repl/st @st)
+    (reset! @#'lumo.repl/st @st)
     (env/with-compiler-env st
       (f))))
 

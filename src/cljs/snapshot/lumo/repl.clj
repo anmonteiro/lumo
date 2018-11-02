@@ -3,12 +3,12 @@
 (defmacro dir
   "Prints a sorted directory of public vars in a namespace"
   [nsname]
-  `(lumo.repl/dir* '~nsname))
+  `(#'lumo.repl/dir* '~nsname))
 
 (defmacro doc
   "Prints documentation for a var or special form given its name"
   [name]
-  `(lumo.repl/doc* '~name))
+  `(#'lumo.repl/doc* '~name))
 
 (defmacro source
   "Prints the source code for the given symbol, if it can find it.
@@ -17,7 +17,7 @@
 
   Example: (source filter)"
   [n]
-  `(lumo.repl/source* '~n))
+  `(#'lumo.repl/source* '~n))
 
 (defmacro ^:private with-err-str
   "Evaluates exprs in a context in which *print-err-fn* is bound to .append
