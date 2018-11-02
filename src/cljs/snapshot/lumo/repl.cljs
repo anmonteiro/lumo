@@ -195,7 +195,8 @@
      (contains?
        (set/union
          @goog-loaded
-         '#{cljs.core
+         '#{goog
+            cljs.core
             com.cognitect.transit
             com.cognitect.transit.delimiters
             com.cognitect.transit.handlers
@@ -1132,7 +1133,7 @@
                 (let [cenv @st]
             ;; TODO: change name later, `print-nil-result?` is only for initialization
             (when-not print-nil-result?
-              (apply swap! cljs/*loaded* disj @goog-loaded)))
+              (swap! cljs/*loaded* set/difference @goog-loaded)))
                 (if-not error
                   (when expression?
                     (when (or (true? print-nil-result?)
