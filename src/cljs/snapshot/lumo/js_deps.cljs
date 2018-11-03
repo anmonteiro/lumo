@@ -8,11 +8,10 @@
 (defn add-js-lib
   "Adds a js lib to the index."
   [index {:keys [provides] :as js-lib}]
-  (into index
-        (mapcat (fn [provided-lib]
-                  [[(symbol provided-lib) js-lib]
-                   [provided-lib js-lib]]))
-        provides))
+  (reduce (fn [index provided-lib]
+            (assoc index (symbol provided-lib) js-lib))
+          index
+          provides))
 
 (defn add-js-libs
   "Adds multiple js libs to the index."
