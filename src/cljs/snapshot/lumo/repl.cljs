@@ -13,7 +13,6 @@
             [cljs.tagged-literals :as tags]
             [cljs.tools.reader :as r]
             [cljs.tools.reader.reader-types :as rt]
-            [clojure.set :as set]
             [clojure.string :as string]
             [cljs.spec.alpha :as spec]
             [cognitect.transit :as transit]
@@ -89,20 +88,12 @@
                 (map second
                   (re-seq #"'(.*?)'" requires))])
           (re-seq #"\ngoog\.addDependency\('(.*)', \[(.*?)\], \[(.*?)\].*"
-            (js/$$LUMO_GLOBALS.load "goog/deps.js")))
-        index (into {}
-                cat
-                (for [[path provides requires] paths-to-deps
-                      provide provides]
-                  (let [info {:path (str "goog/" (second (re-find #"(.*)\.js$" path)))
-                              :requires requires
-                              :group :goog}]
-
-                    [[provide info]
-                     [(symbol provide) info]])))]
-    ;; this is fine because we only use the memoized version
-    (swap! st update-in [:js-dependency-index] merge index)
-    index))
+            (js/$$LUMO_GLOBALS.load "goog/deps.js")))]
+    (into {}
+      (for [[path provides requires] paths-to-deps
+            provide provides]
+        [(symbol provide) {:path (str "goog/" (second (re-find #"(.*)\.js$" path)))
+                           :requires requires}]))))
 
 (def ^:private closure-index (memoize closure-index*))
 
@@ -112,18 +103,16 @@
                 goog.string.StringBuffer
                 goog.array
                 goog.crypt.base64
-                goog.math.Long
-                goog.Uri}))
+                goog.math.Long}))
 
-(defn- goog-dep-source [dep-name]
-  (let [index (closure-index)
-        name (name dep-name)]
-    (when-let [{:keys [path] :as f} (get index name)]
-      (let [sorted-deps (remove (comp @goog-loaded symbol) (deps/topo-sort index name))]
-        (vswap! goog-loaded into (map symbol) sorted-deps)
+(defn- goog-dep-source [name]
+  (let [index (closure-index)]
+    (when-let [{:keys [path]} (get index name)]
+      (let [sorted-deps (remove @goog-loaded (deps/topo-sort index name))]
+        (vswap! goog-loaded into sorted-deps)
         (reduce str
           (map (fn [dep-name]
-                 (let [{:keys [path]} (get index (cljs.core/name dep-name))]
+                 (let [{:keys [path]} (get index dep-name)]
                    (js/$$LUMO_GLOBALS.load (str path JS_EXT)))) sorted-deps))))))
 
 (defn- load-goog
@@ -193,20 +182,24 @@
      name)
     (or
      (contains?
-       (set/union
-         @goog-loaded
-         '#{goog
-            cljs.core
-            com.cognitect.transit
-            com.cognitect.transit.delimiters
-            com.cognitect.transit.handlers
-            com.cognitect.transit.util
-            com.cognitect.transit.caching
-            com.cognitect.transit.types
-            com.cognitect.transit.eq
-            com.cognitect.transit.impl.decoder
-            com.cognitect.transit.impl.reader
-            com.cognitect.transit.impl.writer})
+      '#{goog
+         goog.object
+         goog.string
+         goog.string.StringBuffer
+         goog.array
+         goog.crypt.base64
+         goog.math.Long
+         cljs.core
+         com.cognitect.transit
+         com.cognitect.transit.delimiters
+         com.cognitect.transit.handlers
+         com.cognitect.transit.util
+         com.cognitect.transit.caching
+         com.cognitect.transit.types
+         com.cognitect.transit.eq
+         com.cognitect.transit.impl.decoder
+         com.cognitect.transit.impl.reader
+         com.cognitect.transit.impl.writer}
       name)
      (ana/node-module-dep? name))))
 
@@ -330,31 +323,19 @@
     (when-not (load-and-cb! nil path filename false cb)
       (cb nil))))
 
-(defn- load [{:keys [name macros path file dump-index?]
-              :as m
-              :or {dump-index? true}} cb]
-  (if-not (nil? file)
+(defn- load [{:keys [name macros path file] :as m} cb]
+  (cond
+    file
     (load-file* file cb)
-    (let [goog-lib? (re-matches #"^goog/.*" path)]
-      (cond
-        (skip-load? name macros)
-        (let [cenv @env/*compiler*]
-          (when (and goog-lib? dump-index?
-                     ;; `goog.string` is part of the Google Closure Library
-                     ;; set of namespaces. This way we avoid searching the
-                     ;; JS dependency index for a library with :group :goog
-                     (nil? (get-in cenv [:js-dependency-index "goog.string"])))
-            (swap! env/*compiler* update-in [:js-dependency-index] merge (closure-index)))
-          (cb {:source ""
-               :lang :js}))
 
-        goog-lib?
-        (load-goog name cb)
+    (skip-load? name macros)
+    (cb {:source ""
+         :lang :js})
 
-        :else (load-other m cb)))))
+    (re-matches #"^goog/.*" path)
+    (load-goog name cb)
 
-(defn- load-no-dump-index [m cb]
-  (load (assoc m :dump-index? false) cb))
+    :else (load-other m cb)))
 
 (defn- macros-cache? [cache]
   (.endsWith (str (:name cache)) MACROS_SUFFIX))
@@ -1104,7 +1085,7 @@
                                               [warning-handler]
                                               [ana/default-warning-handler])
               cljs/*eval-fn*   caching-node-eval
-              cljs/*load-fn*   (if print-nil-result? load load-no-dump-index)
+              cljs/*load-fn*   load
               ana/*cljs-ns*    @current-ns
               *ns*             (create-ns @current-ns)
               env/*compiler*   st
@@ -1130,10 +1111,6 @@
                 :else "source")
               eval-opts
               (fn [{:keys [ns value error] :as ret}]
-                (let [cenv @st]
-            ;; TODO: change name later, `print-nil-result?` is only for initialization
-            (when-not print-nil-result?
-              (swap! cljs/*loaded* set/difference @goog-loaded)))
                 (if-not error
                   (when expression?
                     (when (or (true? print-nil-result?)
@@ -1159,14 +1136,13 @@
     (execute-text source-or-path opts)))
 
 (defn- ^:export execute
-  [type source-or-path expression? print-nil-result? setNS session-id dump-js-index?]
+  [type source-or-path expression? print-nil-result? setNS session-id]
   (when setNS
     (vreset! current-ns (symbol setNS)))
   (execute-source source-or-path {:type type
                                   :expression? expression?
                                   :print-nil-result? print-nil-result?
-                                  :session-id session-id
-                                  :dump-js-index? dump-js-index?}))
+                                  :session-id session-id}))
 
 (defn- ^:export is-readable?
   ([form] (is-readable? form false))
@@ -1235,7 +1211,11 @@
   (setup-assert! elide-asserts)
   (setup-print-namespace-maps! repl?)
   (common/load-core-analysis-caches st repl?)
-  (swap! st assoc :js-dependency-index (deps/index-js-libs)))
+  (deps/index-js-libs)
+  (let [index @deps/js-lib-index]
+    (swap! st assoc :js-dependency-index (into index
+                                           (map (fn [[k v]] [(str k) v]))
+                                           index))))
 
 ;; --------------------
 ;; Introspection
