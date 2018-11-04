@@ -341,9 +341,9 @@
       ;; wasn't processed by Closure
       (is (not (fs/existsSync (path/join out "node_modules/react/react.js"))))
       (is (fs/existsSync (path/join out "emit_node_requires_test/core.js")))
-      (is (true? (boolean (re-find #"emit_node_requires_test\.core\.node\$module\$react_dom_BSLASH_\$server = require\('react-dom/server'\);"
+      (is (true? (boolean (re-find #"emit_node_requires_test\.core\.node\$module\$react_dom\$server = require\('react-dom/server'\);"
                             (slurp (path/join out "emit_node_requires_test/core.js"))))))
-      (is (true? (boolean (re-find #"emit_node_requires_test\.core\.node\$module\$react_dom_BSLASH_\$server\.renderToString"
+      (is (true? (boolean (re-find #"emit_node_requires_test\.core\.node\$module\$react_dom\$server\.renderToString"
                             (slurp (path/join out "emit_node_requires_test/core.js"))))))
       (is (empty? @ws))))
   (testing "Node native modules, CLJS-2218"

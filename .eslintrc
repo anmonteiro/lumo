@@ -37,7 +37,6 @@
     "flowtype/use-flow-type": 2,
     "flowtype/valid-syntax": 2,
     "flowtype/no-dupe-keys": 2,
-    "flowtype/no-weak-types": [2, { "mixed": false }],
     "flowtype/object-type-delimiter": 2,
     "flowtype/require-return-type": [
       2,
