@@ -1,6 +1,8 @@
 # Changelog
 
-## [master](https://github.com/anmonteiro/lumo/compare/1.9.0-alpha...HEAD) (unreleased)
+## [master](https://github.com/anmonteiro/lumo/compare/1.9.0...HEAD) (unreleased)
+
+## [1.9.0](https://github.com/anmonteiro/lumo/compare/1.9.0-alpha...1.9.0) (2018-11-08)
 
 ### New features
 
@@ -18,10 +20,6 @@
 - Correctly set `__dirname` and `__filename` when running script file ([#185](https://github.com/anmonteiro/lumo/issues/185)).
 - Honor the "accept" parameter of the socket repl options ([#431](https://github.com/anmonteiro/lumo/issues/431))
 - Autocompletion should be case sensitive ([#435](https://github.com/anmonteiro/lumo/issues/435))
-
-### Changes
-
-- Upgrade Node.js to version 9.11.1.
 
 ## [1.9.0-alpha](https://github.com/anmonteiro/lumo/compare/1.8.0...1.9.0-alpha) (2018-05-10)
 
