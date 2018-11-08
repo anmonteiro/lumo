@@ -7,7 +7,7 @@
 (set-env!
  :source-paths #{"src/cljs/snapshot"}
  :asset-paths #{"src/js" "src/cljs/bundled"}
- :dependencies (into [['org.clojure/clojure       "1.10.0-beta3"]
+ :dependencies (into [['org.clojure/clojure       "1.10.0-beta5"]
                       ['org.clojure/clojurescript +clojurescript-version+]]
                      '[[org.clojure/tools.reader    "1.3.2"]
                        [com.cognitect/transit-cljs  "0.8.256"]
