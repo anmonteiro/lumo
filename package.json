@@ -1,5 +1,5 @@
 {
-  "name": "lumo",
+  "name": "lumo-cljs",
   "version": "1.9.0",
   "description": "Fast, cross-platform, standalone ClojureScript REPL",
   "author": "António Nuno Monteiro <anmonteiro@gmail.com> (https://anmonteiro.com)",
