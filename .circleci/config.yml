@@ -70,7 +70,7 @@ build-shared: &build-shared
         <<: *node-version-file-cmd
     - restore_cache:
         keys:
-          - lumo-nogh3Eta-{{ .Branch }}-{{ checksum "node-version" }}-{{ checksum "build.boot" }}-{{ checksum "yarn.lock" }}-{{ checksum "src/cljs/snapshot/lumo/repl.cljs" }}
+          - lumo-nogh3Eta-{{ .Branch }}-{{ checksum "node-version" }}-{{ checksum "build.boot" }}-{{ checksum "yarn.lock" }}
           # Any branch if there are none on the default branch - this should be unnecessary if you have your default branch configured correctly
           - v1-dep-
     - run:
@@ -79,13 +79,14 @@ build-shared: &build-shared
     - run: boot test
     - run: boot release-ci
     - save_cache:
-        key: lumo-nogh3Eta-{{ .Branch }}-{{ checksum "node-version" }}-{{ checksum "build.boot" }}-{{ checksum "yarn.lock" }}-{{ checksum "src/cljs/snapshot/lumo/repl.cljs" }}
+        key: lumo-nogh3Eta-{{ .Branch }}-{{ checksum "node-version" }}-{{ checksum "build.boot" }}-{{ checksum "yarn.lock" }}
         paths:
         - ~/.m2
         - ~/bin
         - ~/.boot/cache/lib
         - ~/.boot/cache/bin
         - ~/.yarn
+        - ~/Library/Caches/Yarn
         - ~/.cache/yarn
         - ~/.config/yarn
         - ./node_modules
