@@ -191,18 +191,9 @@
     (dosh "node" "scripts/prepare_snapshot.js")))
 
 (deftask package-executable
-  []
+  [c ci-build bool "CI build"]
   (with-pass-thru _
-    (let [lumo-internal-classpath "LUMO__INTERNAL__CLASSPATH"
-          cleanup-cmd (if windows?
-                        ["cmd" "/c" "echo" "y" "|" "rd" lumo-internal-classpath "/s"]
-                        ["rm" "-rf" lumo-internal-classpath])]
-    (try (apply dosh cleanup-cmd) (catch Exception _))
-    (if windows?
-      (dosh "cmd" "/c" "move" "target" lumo-internal-classpath)
-      (dosh "mv" "target" lumo-internal-classpath))
-    (dosh "node" "scripts/package.js" +node-version+)
-    (apply dosh cleanup-cmd))))
+    (dosh "node" "scripts/package.js" +node-version+)))
 
 (deftask backup-resources
   "Backup resources to be gzipped in the 2nd stage binary
@@ -231,10 +222,10 @@
     (prepare-snapshot)
     (backup-resources)
     ;; Package first stage binary
-    (package-executable)
+    (package-executable :ci-build true)
     (aot-macros)
     ;; Package final executable
-    (package-executable)))
+    (package-executable :ci-build true)))
 
 (deftask release []
   (comp

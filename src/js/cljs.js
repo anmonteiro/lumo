@@ -208,9 +208,6 @@ function newDevelopmentContext(): vm$Context {
 }
 
 function newClojureScriptContext(): vm$Context {
-  global.module = module;
-  global.exports = exports;
-  global.require = require;
   global.$$LUMO_GLOBALS = {
     crypto,
     fs,
