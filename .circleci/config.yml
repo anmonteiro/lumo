@@ -138,7 +138,7 @@ workflows:
   version: 2
   test-and-build:
     jobs:
-      - test-js-lambda
+      - test-js-current
       - build-current:
           requires:
             - test-js-current
