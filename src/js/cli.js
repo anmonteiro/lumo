@@ -116,7 +116,7 @@ Usage:  lumo [init-opt*] [main-opt] [arg*]
 }
 
 function getCLIOpts(): CLIOptsType {
-  const argv = process.argv.slice(2);
+  const argv = process.argv.slice(__DEV__ ? 2 : 1);
   const argc = argv.length;
   const optstr = [
     'h(help)?',

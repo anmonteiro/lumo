@@ -75,7 +75,3 @@ matrix:
   include:
     - env:
       - BUILD_NODE_VERSION=10.9.0
-    - env:
-      - BUILD_NODE_VERSION=8.11.1
-    - env:
-      - BUILD_NODE_VERSION=8.10.0

@@ -17,8 +17,6 @@ type PackageJsonType = {
   },
 };
 
-const lumoInternalDir = 'LUMO__INTERNAL__CLASSPATH';
-
 function packageJson(nodeDir: string, moduleName: string): ?PackageJsonType {
   let pkgJson = null;
 
@@ -150,10 +148,9 @@ function isBundled(filename: string): boolean {
     return fs.existsSync(`./target/${filename}`);
   }
 
-  const fullName = `${lumoInternalDir}/${filename}`;
-  const fname = util.isWindows ? fullName.replace(/\//g, '\\') : fullName;
+  const fname = util.isWindows ? filename.replace(/\//g, '\\') : filename;
 
-  return fs.existsSync(fname);
+  return lumo.internal.embedded.resources[fname] != null;
 }
 
 export function load(filename: string): ?string {
@@ -165,14 +162,13 @@ export function load(filename: string): ?string {
     }
   }
 
-  const fullPath = `${lumoInternalDir}/${filename}`;
-  const fname = util.isWindows ? fullPath.replace(/\//g, '\\') : fullPath;
-  try {
-    const gzipped = fs.readFileSync(fname);
+  const fname = util.isWindows ? filename.replace(/\//g, '\\') : filename;
+  const gzipped = lumo.internal.embedded.get(fname);
+  if (gzipped != null) {
     return zlib.inflateSync(gzipped).toString();
-  } catch (e) {
-    return null;
   }
+
+  return null;
 }
 
 // eslint-disable-next-line flowtype/no-weak-types
@@ -220,9 +216,9 @@ export function readFile(filename: string): ?SourceType {
       source: fs.readFileSync(filename, 'utf8'),
       modified: fs.statSync(filename).mtimeMs,
     };
-  } catch (_) {
-    return null;
-  }
+  } catch (_) {} // eslint-disable-line no-empty
+
+  return null;
 }
 
 export function readCache(filename: string): ?SourceType {
@@ -376,20 +372,15 @@ export function readDirFromJar(jarPath: string, dir: string): string[] {
 
 export function dumpSDK(outdir: string): void {
   if (!__DEV__) {
-    // $FlowFixMe: it's there, perhaps we should add a type annotation somewhere
-    const resources = Object.keys(process.__nexe.resources).filter(
-      (x: string) => x.startsWith('./'),
-    );
-    resources.forEach((res: string) => {
-      const filePath = res.replace(lumoInternalDir, '');
-      const idx = filePath.lastIndexOf('/');
+    lumo.internal.embedded.keys().forEach((res: string) => {
+      const idx = res.lastIndexOf('/');
 
       if (idx !== -1) {
-        util.ensureDir(path.join(outdir, filePath.slice(0, idx)));
+        util.ensureDir(path.join(outdir, res.slice(0, idx)));
       }
 
       // $FlowFixMe: need to check result of res, but bundled resources will be
-      fs.writeFileSync(path.join(outdir, filePath), load(res), 'utf8');
+      fs.writeFileSync(path.join(outdir, res), load(res), 'utf8');
     });
   }
 }

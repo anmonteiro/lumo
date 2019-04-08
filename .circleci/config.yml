@@ -111,58 +111,12 @@ build-shared: &build-shared
         path: build
 
 jobs:
-  test-js-lambda:
-    <<: *node-test-shared
-    docker:
-      - image: circleci/node:8.10.0
-    environment:
-      BUILD_NODE_VERSION: 8.10.0
-
-  test-js-lts:
-    <<: *node-test-shared
-    docker:
-      - image: circleci/node:8.11.1
-    environment:
-      BUILD_NODE_VERSION: 8.11.1
-
   test-js-current:
     <<: *node-test-shared
     docker:
       - image: circleci/node:10.9.0
     environment:
       BUILD_NODE_VERSION: 10.9.0
-
-  build-lambda:
-    <<: *build-shared
-    environment:
-      XCODE_SCHEME: phony
-      XCODE_WORKSPACE: phony
-      BOOT_JVM_OPTIONS: |
-        -client
-        -XX:+TieredCompilation
-        -XX:TieredStopAtLevel=1
-        -Xmx2g
-        -XX:+UseConcMarkSweepGC
-        -XX:+CMSClassUnloadingEnabled
-        -Xverify:none
-      BUILD_ARCH: darwin
-      BUILD_NODE_VERSION: 8.10.0
-
-  build-lts:
-    <<: *build-shared
-    environment:
-      XCODE_SCHEME: phony
-      XCODE_WORKSPACE: phony
-      BOOT_JVM_OPTIONS: |
-        -client
-        -XX:+TieredCompilation
-        -XX:TieredStopAtLevel=1
-        -Xmx2g
-        -XX:+UseConcMarkSweepGC
-        -XX:+CMSClassUnloadingEnabled
-        -Xverify:none
-      BUILD_ARCH: darwin
-      BUILD_NODE_VERSION: 8.11.1
 
   build-current:
     <<: *build-shared
@@ -184,15 +138,7 @@ workflows:
   version: 2
   test-and-build:
     jobs:
-      - test-js-lambda
-      - test-js-lts
       - test-js-current
-      - build-lambda:
-          requires:
-            - test-js-lambda
-      - build-lts:
-          requires:
-            - test-js-lts
       - build-current:
           requires:
             - test-js-current
