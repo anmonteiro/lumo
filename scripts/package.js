@@ -51,35 +51,6 @@ const resources = getDirContents('target').filter(
         !fname.endsWith('.map')),
   );
 
-function moveLibs(compiler, options, callback) {
-  fs.writeFileSync(
-    `${compiler.dir}/google-closure-compiler-js.js`,
-    fs.readFileSync(`target/google-closure-compiler-js.js`),
-  );
-
-  callback(null, compiler, options);
-}
-
-function patchNodeGyp(compiler, options, complete) {
-  const gypPath = path.join(compiler.dir, 'node.gyp');
-
-  monkeyPatch(
-    gypPath,
-    function(content) {
-      return ~content.indexOf('google-closure-compiler-js.js');
-    },
-    function(content, next) {
-      const newContent = content.replace(
-        "'deps/node-inspect/lib/internal/inspect_repl.js',",
-        `'deps/node-inspect/lib/internal/inspect_repl.js',
-      'google-closure-compiler-js.js',`,
-      );
-      next(null, newContent);
-    },
-    complete,
-  );
-}
-
 Promise.all(resources.map(deflate)).then(() => {
   embed(resources, 'target');
 
@@ -88,7 +59,6 @@ Promise.all(resources.map(deflate)).then(() => {
       input: 'target/bundle.min.js',
       output: outputPath,
       nodeTempDir: 'tmp',
-      patchFns: [moveLibs, patchNodeGyp],
       nodeConfigureArgs: [
         '--without-dtrace',
         '--without-npm',

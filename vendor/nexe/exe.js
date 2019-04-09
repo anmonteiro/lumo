@@ -178,11 +178,14 @@ new Module(process.execPath, null)._compile(${JSON.stringify(source)}, process.e
       }
     },
 
-    /**
-     * User custom monkeypatching hook
-     **/
-    function customMonkeyPatching(next) {
-      _userDefinedMonkeyPatching(nodeCompiler, options, next);
+
+    function moveLibs(next) {
+      fs.writeFileSync(
+        `${nodeCompiler.dir}/google-closure-compiler-js.js`,
+        fs.readFileSync(`target/google-closure-compiler-js.js`),
+      );
+
+      next();
     },
 
     /**
@@ -703,7 +706,14 @@ function _monkeyPatchGyp(compiler, options, complete) {
       return ~content.indexOf("lib/_third_party_main.js");
     },
     function(content, next) {
-      next(null, content.replace("'lib/fs.js',", replacementString))
+      content = content.replace("'lib/fs.js',", replacementString);
+      content = content.replace(
+        "'deps/node-inspect/lib/internal/inspect_repl.js',",
+        `'deps/node-inspect/lib/internal/inspect_repl.js',
+      'google-closure-compiler-js.js',`,
+      );
+
+      next(null, content)
     },
     complete
   )
