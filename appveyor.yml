@@ -3,7 +3,7 @@ image:
 environment:
   nodejs_version: "11"
   appveyor_build_worker_cloud: gce
-  NASM_URL: http://www.nasm.us/pub/nasm/releasebuilds/2.12.02/win64/nasm-2.12.02-installer-x64.exe
+  NASM_URL: https://www.nasm.us/pub/nasm/releasebuilds/2.14.02/win64/nasm-2.14.02-installer-x64.exe
   BUILD_ARCH: win
   matrix:
     - BUILD_NODE_VERSION: 11.13.0
