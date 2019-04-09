@@ -74,7 +74,7 @@ if (!isDevBuild) {
   plugins.push(
     babelMinify({
       comments: false,
-      removeConsole: true,
+      // removeConsole: true,
       removeDebugger: true,
     }),
   );

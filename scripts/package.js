@@ -1,5 +1,7 @@
-const nexe = require('nexe');
-const fs = require('fs').promises;
+const async = require("async");
+const nexe = require('../vendor/nexe');
+const monkeyPatch = require('../vendor/nexe/monkeypatch');
+const fs = require('fs');
 const path = require('path');
 const os = require('os');
 const zlib = require('zlib');
@@ -57,58 +59,81 @@ async function moveLibs(compiler, callback) {
   return callback();
 }
 
-async function patchNodeGyp(compiler, callback) {
-  await compiler.replaceInFileAsync(
-    'node.gyp',
-    "'deps/node-inspect/lib/internal/inspect_repl.js',",
-    `'deps/node-inspect/lib/internal/inspect_repl.js',
-   'google-closure-compiler-js.js',`,
+function patchNodeFlags(compiler, options, callback) {
+  const nodeCCPath = path.join(compiler.dir, 'src/node.cc');
+
+  monkeyPatch(
+    nodeCCPath,
+    function(content) {
+      return ~content.indexOf('//ProcessGlobalArgs');
+    },
+    function(content, next) {
+      const newContent = content.replace(
+        /(?<!int )ProcessGlobalArgs\(/g,
+        '0;//ProcessGlobalArgs(',
+      );
+
+      next(null, newContent);
+    },
+    callback,
+  );
+}
+
+function patchNodeGyp(compiler, options, callback) {
+  const gypPath = path.join(compiler.dir, 'node.gyp');
+
+  monkeyPatch(
+    gypPath,
+    function(content) {
+      return ~content.indexOf('google-closure-compiler-js.js');
+    },
+    function(content, next) {
+      const newContent = content.replace(
+        "'deps/node-inspect/lib/internal/inspect_repl.js',",
+        `'deps/node-inspect/lib/internal/inspect_repl.js',
+      'google-closure-compiler-js.js',`,
+      );
+      next(null, newContent);
+    },
+    function(complete) {
+      patchNodeFlags(compiler, options, callback)
+    },
   );
 
   return callback();
 }
 
-resources.then(resources =>
-  Promise.all(resources.map(deflate)).then(async () => {
-    embed(resources, 'target');
+Promise.all(resources.map(deflate)).then(() => {
+  embed(resources, 'target');
 
-    try {
-      await fs.mkdir('build');
-    } catch (_) {}
-
-    nexe.compile(
-      {
-        input: 'target/bundle.min.js',
-        output: outputPath,
-        build: true,
-        targets: [nodeVersion],
-        bundle: false,
-        temp: 'tmp',
-        patches: [moveLibs, patchNodeGyp],
-        configure: [
-          '--without-dtrace',
-          '--without-npm',
-          '--without-inspector',
-          '--without-etw',
-          '--with-snapshot',
-        ].concat(isWindows ? ['--openssl-no-asm'] : []),
-        make: ['-j', '8'],
-        vcBuild: ['nosign', 'x64', 'noetw', 'vs2017'],
-        name: 'Lumo',
-        enableNodeCli: false,
-        snapshot: 'target/main.js',
-        warmup: 'target/main.js',
-        verbose: true,
-        fs: false,
-      },
-      err => {
-        if (err) {
-          throw err;
-        }
-        console.log(
-          `Finished bundling. Nexe binary can be found in ${outputPath}`,
-        );
-      },
-    );
-  }),
-);
+  nexe.compile(
+    {
+      input: 'target/bundle.min.js',
+      output: outputPath,
+      nodeTempDir: 'tmp',
+      patchFns: [moveLibs, patchNodeGyp],
+      nodeConfigureArgs: [
+        '--without-dtrace',
+        '--without-npm',
+        '--without-inspector',
+        '--without-etw',
+        '--with-snapshot',
+      ].concat(isWindows ? ['--openssl-no-asm'] : []),
+      nodeMakeArgs: ['-j', '8'],
+      nodeVCBuildArgs: ['nosign', 'x64', 'noetw'],
+      flags: true,
+      startupSnapshot: 'target/main.js',
+      noBundle: true,
+      framework: 'node',
+      nodeVersion,
+    },
+    err => {
+      if (err) {
+        throw err;
+      }
+      console.log(
+        `Finished bundling. Nexe binary can be found in ${outputPath}`,
+      );
+    },
+  );
+});
