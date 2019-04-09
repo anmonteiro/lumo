@@ -8,7 +8,7 @@ addons:
       - g++-6
 language: node_js
 node_js:
-- 11
+- 10
 # safelist
 branches:
   only:
@@ -74,4 +74,4 @@ matrix:
   fast_finish: true
   include:
     - env:
-      - BUILD_NODE_VERSION=11.13.0
+      - BUILD_NODE_VERSION=10.9.0

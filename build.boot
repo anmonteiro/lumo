@@ -2,7 +2,7 @@
                                  "1.10.520"))
 
 (def +node-version+ (or (System/getenv "BUILD_NODE_VERSION")
-                        "11.13.0"))
+                        "10.9.0"))
 
 (set-env!
  :source-paths #{"src/cljs/snapshot"}
