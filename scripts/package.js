@@ -85,13 +85,13 @@ resources.then(resources =>
         bundle: false,
         temp: 'tmp',
         patches: [moveLibs, patchNodeGyp],
-        configure: [
+        configure: Array.concat([
           '--without-dtrace',
           '--without-npm',
           '--without-inspector',
           '--without-etw',
           '--with-snapshot',
-        ],
+        ], isWindows ? ['--openssl-no-asm'] : []),
         make: ['-j', '8'],
         vcBuild: ['nosign', 'x64', 'noetw', 'noperfctr', 'vs2017'],
         name: 'Lumo',
