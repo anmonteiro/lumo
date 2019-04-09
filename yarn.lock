@@ -5336,10 +5336,9 @@ neo-async@^2.5.0, neo-async@^2.6.0:
   resolved "https://registry.yarnpkg.com/neo-async/-/neo-async-2.6.0.tgz#b9d15e4d71c6762908654b5183ed38b753340835"
   integrity sha512-MFh0d/Wa7vkKO3Y3LlacqAEeHK0mckVqzDieUKTT+KGxi+zIpeVsFxymkIiRpbpDziHc290Xr9A1O4Om7otoRA==
 
-nexe@^3.0.5:
-  version "3.0.5"
-  resolved "https://registry.yarnpkg.com/nexe/-/nexe-3.0.5.tgz#616f69c7a875ccb1104951065b07b0b5567e10de"
-  integrity sha512-aEuzmSQ8NplQXoinZwethWgUF22ssJrmc/FOx0jImMxPT4GmRWLTBx8Te3ZemaE7XN0Y+v2Mz3F7i97jhYjHMw==
+"nexe@github:anmonteiro/nexe#anmonteiro/fs":
+  version "3.0.3"
+  resolved "https://codeload.github.com/anmonteiro/nexe/tar.gz/eb1f0cc9227cdb87e25dc14245df774d617af903"
   dependencies:
     "@calebboyd/semaphore" "^1.3.1"
     app-builder "^5.2.0"

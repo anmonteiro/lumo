@@ -99,6 +99,7 @@ resources.then(resources =>
         snapshot: 'target/main.js',
         warmup: 'target/main.js',
         verbose: true,
+        fs: false,
       },
       err => {
         if (err) {

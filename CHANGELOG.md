@@ -2,6 +2,17 @@
 
 ## [master](https://github.com/anmonteiro/lumo/compare/1.9.0...HEAD) (unreleased)
 
+### Changes
+
+- Upgrade Node.js to version 11.13.0.
+
+### Bug fixes
+
+- Fix `fs/readdir{Sync}` not listing the correct files for `.` and `..`
+  arguments ([#463](https://github.com/anmonteiro/lumo/issues/463))
+- Fix `fs/readFile` not accepting file descriptor arguments
+  ([#462](https://github.com/anmonteiro/lumo/issues/462))
+
 ## [1.9.0](https://github.com/anmonteiro/lumo/compare/1.9.0-alpha...1.9.0) (2018-11-08)
 
 ### New features
