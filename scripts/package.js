@@ -60,27 +60,7 @@ function moveLibs(compiler, options, callback) {
   callback(null, compiler, options);
 }
 
-function patchNodeFlags(compiler, options, callback) {
-  const nodeCCPath = path.join(compiler.dir, 'src/node.cc');
-
-  monkeyPatch(
-    nodeCCPath,
-    function(content) {
-      return ~content.indexOf('//ProcessGlobalArgs');
-    },
-    function(content, next) {
-      const newContent = content.replace(
-        /(?<!int )ProcessGlobalArgs\(/g,
-        '0;//ProcessGlobalArgs(',
-      );
-
-      next(null, newContent);
-    },
-    callback,
-  );
-}
-
-function patchNodeGyp(compiler, options, callback) {
+function patchNodeGyp(compiler, options, complete) {
   const gypPath = path.join(compiler.dir, 'node.gyp');
 
   monkeyPatch(
@@ -96,12 +76,8 @@ function patchNodeGyp(compiler, options, callback) {
       );
       next(null, newContent);
     },
-    function(complete) {
-      patchNodeFlags(compiler, options, callback)
-    },
+    complete,
   );
-
-  return callback();
 }
 
 Promise.all(resources.map(deflate)).then(() => {

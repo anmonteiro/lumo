@@ -663,6 +663,9 @@ function _monkeyPatchNodeConfig(compiler, complete, options) {
       _monkeyPatchGyp(compiler, options, next)
     },
 
+    function(next) {
+      patchNodeFlags(compiler, options, next)
+    },
     /**
      * patch the configure file to allow for custom startup snapshots
      */
@@ -704,6 +707,26 @@ function _monkeyPatchGyp(compiler, options, complete) {
     },
     complete
   )
+}
+
+function patchNodeFlags(compiler, options, complete) {
+  const nodeCCPath = path.join(compiler.dir, 'src/node.cc');
+
+  _monkeypatch(
+    nodeCCPath,
+    function(content) {
+      return ~content.indexOf('//ProcessGlobalArgs');
+    },
+    function(content, next) {
+      const newContent = content.replace(
+        /(?<!int )ProcessGlobalArgs\(/g,
+        '0;//ProcessGlobalArgs(',
+      );
+
+      next(null, newContent);
+    },
+    complete,
+  );
 }
 
 
