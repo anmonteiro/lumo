@@ -74,4 +74,4 @@ matrix:
   fast_finish: true
   include:
     - env:
-      - BUILD_NODE_VERSION=10.9.0
+      - BUILD_NODE_VERSION=11.13.0
