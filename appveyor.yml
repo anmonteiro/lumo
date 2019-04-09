@@ -30,42 +30,25 @@ cache:
   - '%UserProfile%\.boot\cache\lib -> boot.properties'
   - '%UserProfile%\.boot\cache\bin -> boot.properties'
 
-# init:
-#   - wmic computersystem set AutomaticManagedPagefile=False
-#   - wmic pagefile list /format:list
-# #  - wmic pagefileset create name="C:\pagefile.sys"
-#   - wmic pagefileset where name="C:\\pagefile.sys" set InitialSize=8192,MaximumSize=8192
-#   - wmic pagefileset list /format:list
-#   - ps: write-host "Restarting..."
-#   - ps: sleep 5
-#   - ps: restart-computer -f
-#   - ps: sleep 5
-#   - ps: write-host "Restarted."
-#   - wmic pagefile list /format:list
-
 install:
-  # Install NASM
-  - ps: >-
-      if (-Not (Test-Path "C:\Program Files\NASM")) {
-        choco install nasm
-        if ($LastExitCode -ne 0) { $host.SetShouldExit($LastExitCode)  }
-      }
-  # TODO: Remove after https://github.com/appveyor/ci/issues/1426 is fixed
-  - set "PATH=C:\Program Files\Git\mingw64\bin;%PATH%"
   - ps: Install-Product node $env:nodejs_version x64
-  - cmd: npm install -g npm@latest
-  - cmd: npm install -g yarn
+  # Install NASM
+  - curl -L -o nasm.exe https://www.nasm.us/pub/nasm/releasebuilds/2.14.02/win64/nasm-2.14.02-installer-x64.exe
+  - start /wait nasm.exe /S
+  - ps: $env:path="C:\Program Files\nasm;$($env:path)"
+  - npm install -g npm@latest
+  - npm install -g yarn
   - set PATH=%APPDATA%\npm;%PATH%
-  - cmd: yarn install
+  - yarn install
   - ps: wget 'https://github.com/boot-clj/boot-bin/releases/download/latest/boot.exe' -OutFile "$pwd\boot.exe"
-  - cmd: 'move boot.exe %SystemRoot%' #set PATH=$pwd\boot.exe;%PATH%
+  - cmd: 'move boot.exe %SystemRoot%'
 
 test_script:
   - yarn lint
   - yarn type:check
   - yarn test
-  - cmd: boot test
-  - ps: boot release-ci
+  - boot test
+  - boot release-ci
   - cmd: scripts/test-build.bat
 
 artifacts:
