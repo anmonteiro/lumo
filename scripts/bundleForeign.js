@@ -10,8 +10,7 @@ rollup({
       'process.env.NODE_ENV': JSON.stringify('production'),
     }),
     resolve({
-      jsnext: true,
-      main: true,
+      mainFields: ['module', 'main', 'jsnext:main'],
     }),
     commonjs(),
   ],
