@@ -13,20 +13,14 @@
             fs
             path))
 
-(use-fixtures :once
-  ;; backup and restore package.json cause we are executing these in the lumo
-  ;; folder.
-  {:before (fn [] (fs/copyFileSync "package.json" "package.json.bak"))
-   :after  (fn [] (fs/copyFileSync "package.json.bak" "package.json"))})
-
 (deftest lumo-273-test
   (let [out (path/join (test/tmp-dir) "lumo-273-test-out")
         root "src/test/cljs_build"]
     (testing ":optimizations :none"
       (test/delete-out-files out)
       (is (build/build
-           (path/join root "test_check")
-           {:main 'hello
+           (build/inputs (path/join root "test_check"))
+           {:main 'test-check.core
             :optimizations :none
             :output-dir out}
            (env/default-compiler-env)) "It should successfully compile with :optimizations :none")
@@ -39,18 +33,18 @@
                             (when-let [w (warning-type ana/*cljs-warnings*)]
                               (let [err (ana/error-message warning-type extra)]
                                 (println "WARNING:" (ana/message env err))
-                                (is (nil? warning-type) "when compiling twice, it should not emit a WARNING for cljs.spec.test.alpha/instrument the second time"))))]]
+                                (is (not= warning-type :undeclared-var) "when compiling twice, it should not emit a WARNING for cljs.spec.test.alpha/instrument the second time"))))]]
     (testing "correctly cljs.js/ns-side-effects on read analysis cache"
       (test/delete-out-files out)
       (build/build
-       (path/join root "instrument")
+       (build/inputs (path/join root "instrument"))
        {:main 'instrument.core
         :optimizations :none
         :warning-handlers warning-handlers
         :output-dir out}
        (env/default-compiler-env))
       (build/build
-        (path/join root "instrument")
+        (build/inputs (path/join root "instrument"))
         {:main 'instrument.core
          :optimizations :none
          :warning-handlers warning-handlers

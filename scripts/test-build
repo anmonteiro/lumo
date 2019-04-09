@@ -1,5 +1,5 @@
 #!/bin/sh
 
-./build/lumo -D org.clojure/test.check:0.10.0-alpha3 \
+./build/lumo -D org.clojure/test.check:0.10.0-alpha4 \
   -c src/test/cljs:src/test/lumo:src/test/cljs_cp \
   ./scripts/lumo_test.cljs --test-cli-option true
