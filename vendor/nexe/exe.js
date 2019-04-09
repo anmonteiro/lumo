@@ -697,7 +697,7 @@ function _monkeyPatchGyp(compiler, options, complete) {
   _monkeypatch(
     gypPath,
     function(content) {
-      return ~content.indexOf("_third_party_main.js");
+      return ~content.indexOf("lib/_third_party_main.js");
     },
     function(content, next) {
       next(null, content.replace("'lib/fs.js',", replacementString))
