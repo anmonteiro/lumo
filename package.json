@@ -31,7 +31,7 @@
     "bundle": "node scripts/bundle.js --dev",
     "build": "cross-env NODE_ENV=production node scripts/bundle.js",
     "dev": "node target/bundle.js -k lumo-cache -c target",
-    "test-dev": "node target/bundle.js -k test-lumo-cache -c target:src/test/cljs:src/test/lumo:src/test/cljs_cp -D org.clojure/test.check:0.10.0-alpha3",
+    "test-dev": "node target/bundle.js -k test-lumo-cache -c target:src/test/cljs:src/test/lumo:src/test/cljs_cp -D org.clojure/test.check:0.10.0-alpha4",
     "build-download": "webpack --context download --config download/webpack.config.js",
     "prepublishOnly": "yarn build-download && cp /dev/null download/dist/lumo",
     "postinstall": "node download/install.js || nodejs download/install.js"
