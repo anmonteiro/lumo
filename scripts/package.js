@@ -93,7 +93,7 @@ resources.then(resources =>
           '--with-snapshot',
         ].concat(isWindows ? ['--openssl-no-asm'] : []),
         make: ['-j', '8'],
-        vcBuild: ['nosign', 'x64', 'noetw', 'noperfctr', 'vs2017'],
+        vcBuild: ['nosign', 'x64', 'noetw', 'vs2017'],
         name: 'Lumo',
         enableNodeCli: false,
         snapshot: 'target/main.js',
