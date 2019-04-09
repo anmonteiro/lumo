@@ -10,36 +10,36 @@ const embed = require('./embed');
 const argv = process.argv.slice(0);
 const nodeVersion = argv[2];
 
-async function getDirContents(dir, accumPath = dir) {
-  let filenames = await fs.readdir(dir);
+function getDirContents(dir, accumPath = dir) {
+  let filenames = fs.readdirSync(dir);
 
-  return filenames.reduce(async (previousPromise, filename) => {
-    const ret = await previousPromise;
+  return filenames.reduce((ret, filename) => {
     const fname = path.resolve(accumPath, filename);
-    const fStat = await fs.stat(fname);
+    const fStat = fs.statSync(fname);
 
     if (fStat.isDirectory()) {
       const newAccum = path.join(accumPath, filename);
-      return ret.concat(await getDirContents(newAccum, newAccum));
+      return ret.concat(getDirContents(newAccum, newAccum));
     }
 
     ret.push(path.join(accumPath, filename));
     return ret;
-  }, Promise.resolve([]));
+  }, []);
 }
 
-async function deflate(fname) {
-  const input = await fs.readFile(fname);
-
-  await fs.writeFile(fname, zlib.deflateSync(input));
-  return;
+function deflate(fname) {
+  return new Promise((resolve, reject) => {
+    fs.readFile(fname, (err, input) => {
+      fs.writeFileSync(fname, zlib.deflateSync(input));
+      resolve();
+    });
+  });
 }
 
 const isWindows = /^Windows/.test(os.type());
 const outputPath = `build/${isWindows ? 'lumo.exe' : 'lumo'}`;
 
-const resources = getDirContents('target').then(resources =>
-  resources.filter(
+const resources = getDirContents('target').filter(
     fname =>
       fname.endsWith('.aot.js.map') ||
       (!fname.endsWith('main.js') &&
@@ -49,14 +49,15 @@ const resources = getDirContents('target').then(resources =>
         !fname.endsWith('aot.edn') &&
         !/target[\\\/]cljs[\\/]core.js/.test(fname) &&
         !fname.endsWith('.map')),
-  ),
-);
-async function moveLibs(compiler, callback) {
-  const contents = await fs.readFile('target/google-closure-compiler-js.js');
+  );
 
-  await compiler.writeFileAsync('google-closure-compiler-js.js', contents);
+function moveLibs(compiler, options, callback) {
+  fs.writeFileSync(
+    `${compiler.dir}/google-closure-compiler-js.js`,
+    fs.readFileSync(`target/google-closure-compiler-js.js`),
+  );
 
-  return callback();
+  callback(null, compiler, options);
 }
 
 function patchNodeFlags(compiler, options, callback) {

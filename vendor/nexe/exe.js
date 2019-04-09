@@ -162,8 +162,15 @@ exports.compile = function(options, complete) {
     function combineProject(next) {
       if (options.noBundle) {
         _log("using provided bundle %s since noBundle is true", options.input);
-        const bundlePath = path.join(nodeCompiler.dir, "lib", "nexe.js");
-        fs.createReadStream(options.input).pipe(fs.createWriteStream(bundlePath));
+        const source = fs.readFileSync(options.input, 'utf8');
+        const thirdPartyMain = `
+const Module = require('module');
+new Module(process.execPath, null)._compile(${JSON.stringify(source)}, process.execPath)
+        `;
+        fs.writeFileSync(
+          path.join(nodeCompiler.dir, 'lib', '_third_party_main.js'),
+          thirdPartyMain
+        );
         next();
       } else {
         _log("bundle %s", options.input);
@@ -681,7 +688,7 @@ function _monkeyPatchNodeConfig(compiler, complete, options) {
 function _monkeyPatchGyp(compiler, options, complete) {
   const hasNexeres = options.resourceFiles.length > 0;
   const gypPath = path.join(compiler.dir, "node.gyp");
-  let replacementString = "'lib/fs.js', 'lib/nexe.js', ";
+  let replacementString = "'lib/fs.js', 'lib/_third_party_main.js', ";
 
   if (hasNexeres) {
     replacementString += "'lib/nexeres.js', ";
@@ -690,7 +697,7 @@ function _monkeyPatchGyp(compiler, options, complete) {
   _monkeypatch(
     gypPath,
     function(content) {
-      return ~content.indexOf("nexe.js");
+      return ~content.indexOf("_third_party_main.js");
     },
     function(content, next) {
       next(null, content.replace("'lib/fs.js',", replacementString))
@@ -743,15 +750,12 @@ function _monkeyPatchMainJs(compiler, complete) {
       return ~content.indexOf("nexe");
     },
     function(content, next) {
-      content = content.replace('function startup() {', `
-function startup() {
+      content = content.replace('setupProcessObject();', `
+setupProcessObject();
 if (!process.send) {
   process.argv.splice(1, 0, "nexe.js");
 }
 `);
-      content = content.replace(
-        'CJSModule.runMain();',
-        'NativeModule.require("nexe");' );
 
       next(null, content)
     },
