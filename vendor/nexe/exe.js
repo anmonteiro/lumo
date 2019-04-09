@@ -721,7 +721,7 @@ function _monkeyPatchConfigure(compiler, complete, options) {
     return _monkeypatch(
       configurePath,
       function(content) {
-        return ~content.indexOf("embed_script");
+        return ~content.indexOf("v8_embed_script");
       },
       function(content, next) {
         next(null, content.replace(
