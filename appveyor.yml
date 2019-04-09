@@ -46,10 +46,10 @@ cache:
 install:
   # Install NASM
   - ps: >-
-    if (-Not (Test-Path "C:\Program Files\NASM")) {
-      choco install nasm
-      if ($LastExitCode -ne 0) { $host.SetShouldExit($LastExitCode)  }
-    }
+      if (-Not (Test-Path "C:\Program Files\NASM")) {
+        choco install nasm
+        if ($LastExitCode -ne 0) { $host.SetShouldExit($LastExitCode)  }
+      }
   # TODO: Remove after https://github.com/appveyor/ci/issues/1426 is fixed
   - set "PATH=C:\Program Files\Git\mingw64\bin;%PATH%"
   - ps: Install-Product node $env:nodejs_version x64
