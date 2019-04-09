@@ -62,8 +62,7 @@ const plugins = [
     },
   }),
   resolve({
-    jsnext: true,
-    main: true,
+    mainFields: ['module', 'main', 'jsnext:main'],
     preferBuiltins: true,
   }),
   commonjs({
