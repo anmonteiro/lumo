@@ -50,13 +50,13 @@ install:
   - set "PATH=C:\Program Files\Git\mingw64\bin;%PATH%"
   - curl -L -o nasminst.exe "%NASM_URL%"
   - start /wait nasminst.exe /S
-  - ps: $env:path="C:\Program Files (x86)\nasm;$($env:path)"
+  - ps: $env:path="C:\Program Files (x86)\nasm;C:\Program Files\nasm;$($env:path)"
   # - ps: Import-Module "C:\projects\lumo\scripts\AdjustVirtualMemoryPagingFileSize.psm1"
   # - ps: Set-OSCVirtualMemory  -InitialSize 2048  -MaximumSize 4096  -DriveLetter "C:"
   - ps: Install-Product node $env:nodejs_version x64
   - cmd: npm install -g npm@latest
   - cmd: npm install -g yarn
-  - set PATH=%APPDATA%\npm;%PATH%
+  - set PATH=%APPDATA%\npm;C:\Program Files (x86)\nasm;C:\Program Files\nasm;%PATH%
   - cmd: yarn install
   - ps: wget 'https://github.com/boot-clj/boot-bin/releases/download/latest/boot.exe' -OutFile "$pwd\boot.exe"
   - cmd: 'move boot.exe %SystemRoot%' #set PATH=$pwd\boot.exe;%PATH%
