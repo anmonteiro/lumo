@@ -1,5 +1,5 @@
 (def +clojurescript-version+ (or (System/getenv "CANARY_CLOJURESCRIPT_VERSION")
-                                 "1.10.439"))
+                                 "1.10.520"))
 
 (def +node-version+ (or (System/getenv "BUILD_NODE_VERSION")
                         "11.13.0"))
@@ -7,13 +7,13 @@
 (set-env!
  :source-paths #{"src/cljs/snapshot"}
  :asset-paths #{"src/js" "src/cljs/bundled"}
- :dependencies (into [['org.clojure/clojure       "1.10.0-beta5"]
+ :dependencies (into [['org.clojure/clojure       "1.10.0"]
                       ['org.clojure/clojurescript +clojurescript-version+]]
                      '[[org.clojure/tools.reader    "1.3.2"]
                        [com.cognitect/transit-cljs  "0.8.256"]
                        [malabarba/lazy-map          "1.3"]
-                       [fipp                        "0.6.14"]
-                       [org.clojure/test.check      "0.10.0-alpha3" :scope "test"]
+                       [fipp                        "0.6.17"]
+                       [org.clojure/test.check      "0.10.0-alpha4" :scope "test"]
                        [com.cognitect/transit-clj   "0.8.313" :scope "test"]
                        [com.cemerick/piggieback     "0.2.2"   :scope "test"]
                        [adzerk/boot-cljs            "2.1.5"   :scope "test"]
