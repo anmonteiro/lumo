@@ -165,7 +165,9 @@ exports.compile = function(options, complete) {
         const source = fs.readFileSync(options.input, 'utf8');
         const thirdPartyMain = `
 const Module = require('module');
-new Module(process.execPath, null)._compile(${JSON.stringify(source)}, process.execPath)
+const initModule = new Module(process.execPath, null);
+initModule.paths = Module._nodeModulePaths(process.cwd());
+return initModule._compile(${JSON.stringify(source)}, process.execPath);
         `;
         fs.writeFileSync(
           path.join(nodeCompiler.dir, 'lib', '_third_party_main.js'),
