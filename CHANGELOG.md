@@ -1,6 +1,13 @@
 # Changelog
 
-## [master](https://github.com/anmonteiro/lumo/compare/1.10.0...HEAD) (unreleased)
+## [master](https://github.com/anmonteiro/lumo/compare/1.10.1...HEAD) (unreleased)
+
+## [1.10.1](https://github.com/anmonteiro/lumo/compare/1.10.0...1.10.1) (2019-04-10)
+
+### Bug fixes
+
+- Lumo 1.10.0 had a bug that made it impossible to start up. This is a recovery
+release which fixes that bug.
 
 ## [1.10.0](https://github.com/anmonteiro/lumo/compare/1.9.0...1.10.0) (2019-04-09)
 
