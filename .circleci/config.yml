@@ -70,7 +70,7 @@ build-shared: &build-shared
         <<: *node-version-file-cmd
     - restore_cache:
         keys:
-          - lumo-nogh3Eta-{{ .Branch }}-{{ checksum "node-version" }}-{{ checksum "build.boot" }}-{{ checksum "yarn.lock" }}
+          - lumo-nogh4Eta-{{ .Branch }}-{{ checksum "node-version" }}-{{ checksum "build.boot" }}-{{ checksum "yarn.lock" }}
           # Any branch if there are none on the default branch - this should be unnecessary if you have your default branch configured correctly
           - v1-dep-
     - run:

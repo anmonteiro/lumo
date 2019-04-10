@@ -1,5 +1,7 @@
-const nexe = require('nexe');
-const fs = require('fs').promises;
+const async = require("async");
+const nexe = require('../vendor/nexe');
+const monkeyPatch = require('../vendor/nexe/monkeypatch');
+const fs = require('fs');
 const path = require('path');
 const os = require('os');
 const zlib = require('zlib');
@@ -8,36 +10,36 @@ const embed = require('./embed');
 const argv = process.argv.slice(0);
 const nodeVersion = argv[2];
 
-async function getDirContents(dir, accumPath = dir) {
-  let filenames = await fs.readdir(dir);
+function getDirContents(dir, accumPath = dir) {
+  let filenames = fs.readdirSync(dir);
 
-  return filenames.reduce(async (previousPromise, filename) => {
-    const ret = await previousPromise;
+  return filenames.reduce((ret, filename) => {
     const fname = path.resolve(accumPath, filename);
-    const fStat = await fs.stat(fname);
+    const fStat = fs.statSync(fname);
 
     if (fStat.isDirectory()) {
       const newAccum = path.join(accumPath, filename);
-      return ret.concat(await getDirContents(newAccum, newAccum));
+      return ret.concat(getDirContents(newAccum, newAccum));
     }
 
     ret.push(path.join(accumPath, filename));
     return ret;
-  }, Promise.resolve([]));
+  }, []);
 }
 
-async function deflate(fname) {
-  const input = await fs.readFile(fname);
-
-  await fs.writeFile(fname, zlib.deflateSync(input));
-  return;
+function deflate(fname) {
+  return new Promise((resolve, reject) => {
+    fs.readFile(fname, (err, input) => {
+      fs.writeFileSync(fname, zlib.deflateSync(input));
+      resolve();
+    });
+  });
 }
 
 const isWindows = /^Windows/.test(os.type());
 const outputPath = `build/${isWindows ? 'lumo.exe' : 'lumo'}`;
 
-const resources = getDirContents('target').then(resources =>
-  resources.filter(
+const resources = getDirContents('target').filter(
     fname =>
       fname.endsWith('.aot.js.map') ||
       (!fname.endsWith('main.js') &&
@@ -47,68 +49,38 @@ const resources = getDirContents('target').then(resources =>
         !fname.endsWith('aot.edn') &&
         !/target[\\\/]cljs[\\/]core.js/.test(fname) &&
         !fname.endsWith('.map')),
-  ),
-);
-async function moveLibs(compiler, callback) {
-  const contents = await fs.readFile('target/google-closure-compiler-js.js');
-
-  await compiler.writeFileAsync('google-closure-compiler-js.js', contents);
-
-  return callback();
-}
-
-async function patchNodeGyp(compiler, callback) {
-  await compiler.replaceInFileAsync(
-    'node.gyp',
-    "'deps/node-inspect/lib/internal/inspect_repl.js',",
-    `'deps/node-inspect/lib/internal/inspect_repl.js',
-   'google-closure-compiler-js.js',`,
   );
 
-  return callback();
-}
+Promise.all(resources.map(deflate)).then(() => {
+  embed(resources, 'target');
 
-resources.then(resources =>
-  Promise.all(resources.map(deflate)).then(async () => {
-    embed(resources, 'target');
-
-    try {
-      await fs.mkdir('build');
-    } catch (_) {}
-
-    nexe.compile(
-      {
-        input: 'target/bundle.min.js',
-        output: outputPath,
-        build: true,
-        targets: [nodeVersion],
-        bundle: false,
-        temp: 'tmp',
-        patches: [moveLibs, patchNodeGyp],
-        configure: [
-          '--without-dtrace',
-          '--without-npm',
-          '--without-inspector',
-          '--without-etw',
-          '--with-snapshot',
-        ].concat(isWindows ? ['--openssl-no-asm'] : []),
-        make: ['-j', '8'],
-        vcBuild: ['nosign', 'x64', 'noetw', 'vs2017'],
-        name: 'Lumo',
-        enableNodeCli: false,
-        snapshot: 'target/main.js',
-        warmup: 'target/main.js',
-        verbose: true,
-        fs: false,
-      },
-      err => {
-        if (err) {
-          throw err;
-        }
-        console.log(
-          `Finished bundling. Nexe binary can be found in ${outputPath}`,
-        );
-      },
-    );
-  }),
-);
+  nexe.compile(
+    {
+      input: 'target/bundle.min.js',
+      output: outputPath,
+      nodeTempDir: 'tmp',
+      nodeConfigureArgs: [
+        '--without-dtrace',
+        '--without-npm',
+        '--without-inspector',
+        '--without-etw',
+        '--with-snapshot',
+      ].concat(isWindows ? ['--openssl-no-asm'] : []),
+      nodeMakeArgs: ['-j', '8'],
+      nodeVCBuildArgs: ['nosign', 'x64', 'noetw'],
+      flags: true,
+      startupSnapshot: 'target/main.js',
+      noBundle: true,
+      framework: 'node',
+      nodeVersion,
+    },
+    err => {
+      if (err) {
+        throw err;
+      }
+      console.log(
+        `Finished bundling. Nexe binary can be found in ${outputPath}`,
+      );
+    },
+  );
+});

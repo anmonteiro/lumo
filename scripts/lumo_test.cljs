@@ -21,13 +21,13 @@
       (do (println "expected:" (pr-str (:expected m)))
           (print "  actual:\n")
           (println (.-message actual)))
-      (cljs.test/print-comparison m))
+      (#'cljs.test/print-comparison m))
     (when lumo.test-util/*print-stack-traces*
       (println (.-stack actual)))))
 
 (defmethod cljs.test/report [:cljs.test/default :fail] [m]
   (cljs.test/inc-report-counter! :error)
-  (println "\nERROR in" (cljs.test/testing-vars-str m))
+  (println "\nFAIL in" (cljs.test/testing-vars-str m))
   (when (seq (:testing-contexts (cljs.test/get-current-env)))
     (println (cljs.test/testing-contexts-str)))
   (when-let [message (:message m)] (println message))
@@ -37,7 +37,7 @@
       (do (println "expected:" (pr-str (:expected m)))
           (print "  actual:\n")
           (println (.-message actual)))
-      (cljs.test/print-comparison m))
+      (#'cljs.test/print-comparison m))
     (when lumo.test-util/*print-stack-traces*
       (println (.-stack actual)))))
 
