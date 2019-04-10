@@ -4,6 +4,9 @@
 
 ## [1.10.0](https://github.com/anmonteiro/lumo/compare/1.9.0...1.10.0) (2019-04-09)
 
+**Important Note**: This version is broken and was released by mistake. Do not
+use.
+
 ### Changes
 
 - Upgrade Node.js to version 11.13.0.
