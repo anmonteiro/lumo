@@ -178,7 +178,7 @@ function handleSIGINT(replSession: REPLSession): void {
   const numberOfLines = Math.floor(lineLength / session.rl.output.columns);
 
   session.rl.output.write('\n'.repeat(numberOfLines + 2));
-  session.input = '';
+  clearLine(session);
 
   prompt(session);
   stopReverseSearch(replSession);
