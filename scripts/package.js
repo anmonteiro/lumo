@@ -1,4 +1,4 @@
-const async = require("async");
+const async = require('async');
 const nexe = require('../vendor/nexe');
 const monkeyPatch = require('../vendor/nexe/monkeypatch');
 const fs = require('fs');
@@ -40,16 +40,16 @@ const isWindows = /^Windows/.test(os.type());
 const outputPath = `build/${isWindows ? 'lumo.exe' : 'lumo'}`;
 
 const resources = getDirContents('target').filter(
-    fname =>
-      fname.endsWith('.aot.js.map') ||
-      (!fname.endsWith('main.js') &&
-        !fname.endsWith('bundle.js') &&
-        !fname.endsWith('bundle.min.js') &&
-        !fname.endsWith('google-closure-compiler-js.js') &&
-        !fname.endsWith('aot.edn') &&
-        !/target[\\\/]cljs[\\/]core.js/.test(fname) &&
-        !fname.endsWith('.map')),
-  );
+  fname =>
+    fname.endsWith('.aot.js.map') ||
+    (!fname.endsWith('main.js') &&
+      !fname.endsWith('bundle.js') &&
+      !fname.endsWith('bundle.min.js') &&
+      !fname.endsWith('google-closure-compiler-js.js') &&
+      !fname.endsWith('aot.edn') &&
+      !/target[\\\/]cljs[\\/]core.js/.test(fname) &&
+      !fname.endsWith('.map')),
+);
 
 Promise.all(resources.map(deflate)).then(() => {
   embed(resources, 'target');

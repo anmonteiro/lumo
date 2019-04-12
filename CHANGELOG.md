@@ -2,6 +2,11 @@
 
 ## [master](https://github.com/anmonteiro/lumo/compare/1.10.1...HEAD) (unreleased)
 
+### Bug fixes
+
+- Fix CTRL+C not clearing the input on newer Node.js versions
+  ([#472](https://github.com/anmonteiro/lumo/issues/472)).
+
 ## [1.10.1](https://github.com/anmonteiro/lumo/compare/1.10.0...1.10.1) (2019-04-10)
 
 ### Bug fixes
