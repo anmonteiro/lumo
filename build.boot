@@ -4,6 +4,8 @@
 (def +node-version+ (or (System/getenv "BUILD_NODE_VERSION")
                         "11.13.0"))
 
+(def +build-static-binary+ (-> (System/getenv "BUILD_STATIC_BINARY") boolean str))
+
 (set-env!
  :source-paths #{"src/cljs/snapshot"}
  :asset-paths #{"src/js" "src/cljs/bundled"}
@@ -193,7 +195,7 @@
 (deftask package-executable
   [c ci-build bool "CI build"]
   (with-pass-thru _
-    (dosh "node" "scripts/package.js" +node-version+)))
+    (dosh "node" "scripts/package.js" +node-version+ +build-static-binary+)))
 
 (deftask backup-resources
   "Backup resources to be gzipped in the 2nd stage binary
