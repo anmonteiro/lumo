@@ -9,6 +9,7 @@ const embed = require('./embed');
 
 const argv = process.argv.slice(0);
 const nodeVersion = argv[2];
+const staticBinary = /^true$/.test(argv[3]);
 
 function getDirContents(dir, accumPath = dir) {
   let filenames = fs.readdirSync(dir);
@@ -65,7 +66,8 @@ Promise.all(resources.map(deflate)).then(() => {
         '--without-inspector',
         '--without-etw',
         '--with-snapshot',
-      ].concat(isWindows ? ['--openssl-no-asm'] : []),
+      ]
+      .concat(isWindows ? ['--openssl-no-asm'] : (staticBinary ? ['--fully-static'] : [])),
       nodeMakeArgs: ['-j', '8'],
       nodeVCBuildArgs: ['nosign', 'x64', 'noetw'],
       flags: true,
