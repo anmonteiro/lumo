@@ -1,7 +1,7 @@
 image:
 - Visual Studio 2017
 environment:
-  nodejs_version: "12"
+  nodejs_version: "11"
   appveyor_build_worker_cloud: gce
   BUILD_ARCH: win
   matrix:
