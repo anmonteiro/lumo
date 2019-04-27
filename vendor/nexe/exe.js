@@ -25,277 +25,295 @@
 
 'use strict';
 
-const async = require("async"),
-  mkdirp    = require("mkdirp"),
-  request   = require("request"),
-  gunzip    = require("gunzip-maybe"),
-  path      = require("path"),
-  fs        = require("fs"),
+const async = require('async'),
+  mkdirp = require('mkdirp'),
+  request = require('request'),
+  gunzip = require('gunzip-maybe'),
+  path = require('path'),
+  fs = require('fs'),
   tarstream = require('tar-stream'),
-  colors    = require('colors'),
-  ncp       = require("ncp").ncp,
-  ProgressBar = require("progress"),
-  child_process = require("child_process"),
-  glob      = require("glob"),
-  bundle    = require("./bundle"),
-  embed     = require("./embed"),
-  os        = require("os"),
-  _log      = require("./log"),
-  _monkeypatch = require("./monkeypatch"),
-  spawn     = child_process.spawn;
+  colors = require('colors'),
+  ncp = require('ncp').ncp,
+  ProgressBar = require('progress'),
+  child_process = require('child_process'),
+  glob = require('glob'),
+  bundle = require('./bundle'),
+  embed = require('./embed'),
+  os = require('os'),
+  _log = require('./log'),
+  _monkeypatch = require('./monkeypatch'),
+  spawn = child_process.spawn;
 
 const isWin = /^win/.test(process.platform);
 
-let isPy,
-    framework,
-    version;
+let isPy, framework, version;
 
 /**
  * Compiliation process.
  */
 
 exports.compile = function(options, complete) {
-
   var nodeCompiler, nexeEntryPath;
 
-  async.waterfall([
-    /**
-     *check relevant options
-     */
-    function checkOpts(next) {
-      /* failsafe */
-      if (options === undefined) {
-        _log("error", "no options given to .compile()");
-        process.exit()
-      }
-
+  async.waterfall(
+    [
       /**
-       * Have we been given a custom flag for python executable?
-       **/
-      if (options.python !== 'python' && options.python !== "" && options.python !== undefined) {
-        if (isWin) {
-          isPy = options.python.replace(/\//gm, "\\"); // use windows file paths, batch is sensitive.
-        } else {
-          isPy = options.python;
+       *check relevant options
+       */
+      function checkOpts(next) {
+        /* failsafe */
+        if (options === undefined) {
+          _log('error', 'no options given to .compile()');
+          process.exit();
         }
 
-        _log("set python as " + isPy);
-      } else {
-        isPy = "python";
-      }
+        /**
+         * Have we been given a custom flag for python executable?
+         **/
+        if (
+          options.python !== 'python' &&
+          options.python !== '' &&
+          options.python !== undefined
+        ) {
+          if (isWin) {
+            isPy = options.python.replace(/\//gm, '\\'); // use windows file paths, batch is sensitive.
+          } else {
+            isPy = options.python;
+          }
 
-      // remove dots
-      options.framework = options.framework.replace(/\./g, "");
+          _log('set python as ' + isPy);
+        } else {
+          isPy = 'python';
+        }
 
-      // set outter-scope framework variable.
-      framework = options.framework;
-      _log("framework => " + framework);
+        // remove dots
+        options.framework = options.framework.replace(/\./g, '');
 
-      version = options.nodeVersion; // better framework vc
+        // set outter-scope framework variable.
+        framework = options.framework;
+        _log('framework => ' + framework);
 
-      // check iojs version
-      if (framework === "iojs" && version === "latest") {
-        _log("fetching iojs versions");
-        mkdirp(options.nodeTempDir); // make temp dir, probably repetive.
+        version = options.nodeVersion; // better framework vc
 
-        // create write stream so we have control over events
-        var output = fs.createWriteStream(path.join(options.nodeTempDir,
-          "iojs-versions.json"));
+        // check iojs version
+        if (framework === 'iojs' && version === 'latest') {
+          _log('fetching iojs versions');
+          mkdirp(options.nodeTempDir); // make temp dir, probably repetive.
 
-        request.get("https://iojs.org/dist/index.json")
-          .pipe(output);
+          // create write stream so we have control over events
+          var output = fs.createWriteStream(
+            path.join(options.nodeTempDir, 'iojs-versions.json'),
+          );
 
-        output.on('close', function() {
-          _log("done");
-          var f = fs.readFileSync(path.join(options.nodeTempDir,
-            "iojs-versions.json"));
-          f = JSON.parse(f);
-          version = f[0].version.replace("v", "");
+          request.get('https://iojs.org/dist/index.json').pipe(output);
 
-          _log("iojs latest => " + version);
+          output.on('close', function() {
+            _log('done');
+            var f = fs.readFileSync(
+              path.join(options.nodeTempDir, 'iojs-versions.json'),
+            );
+            f = JSON.parse(f);
+            version = f[0].version.replace('v', '');
 
-          // continue down along the async road
+            _log('iojs latest => ' + version);
+
+            // continue down along the async road
+            next();
+          });
+        } else {
           next();
-        });
-      } else {
-        next();
-      }
-    },
+        }
+      },
 
-    /**
-     * first download node
-     */
-    function downloadNode(next) {
-      _downloadNode(version, options.nodeTempDir, options.nodeConfigureArgs, options.nodeMakeArgs, options.nodeVCBuildArgs, next);
-    },
+      /**
+       * first download node
+       */
+      function downloadNode(next) {
+        _downloadNode(
+          version,
+          options.nodeTempDir,
+          options.nodeConfigureArgs,
+          options.nodeMakeArgs,
+          options.nodeVCBuildArgs,
+          next,
+        );
+      },
 
-    /**
-     * Embed Resources into a base64 encoded array.
-     **/
-    function embedResources(nc, next) {
-      nodeCompiler = nc;
+      /**
+       * Embed Resources into a base64 encoded array.
+       **/
+      function embedResources(nc, next) {
+        nodeCompiler = nc;
 
-      options.resourceFiles = options.resourceFiles || [];
-      options.resourceRoot = options.resourceRoot || '';
+        options.resourceFiles = options.resourceFiles || [];
+        options.resourceRoot = options.resourceRoot || '';
 
-      if (!Array.isArray(options.resourceFiles)) {
-        throw new Error("Bad Argument: resourceFiles is not an array");
-      }
+        if (!Array.isArray(options.resourceFiles)) {
+          throw new Error('Bad Argument: resourceFiles is not an array');
+        }
 
-      const resourcesBuffer = embed(options.resourceFiles, options.resourceRoot);
+        const resourcesBuffer = embed(
+          options.resourceFiles,
+          options.resourceRoot,
+        );
 
-      if (resourcesBuffer != null) {
-        const resourcePath = path.join(nodeCompiler.dir, "lib", "nexeres.js");
-        // write nexeres.js
-        _log("embedResources %s", options.resourceFiles);
-        _log("resource -> %s", resourcePath);
+        if (resourcesBuffer != null) {
+          const resourcePath = path.join(nodeCompiler.dir, 'lib', 'nexeres.js');
+          // write nexeres.js
+          _log('embedResources %s', options.resourceFiles);
+          _log('resource -> %s', resourcePath);
 
-        fs.writeFile(resourcePath, resourcesBuffer, next);
-      } else {
-        next();
-      }
-    },
+          fs.writeFile(resourcePath, resourcesBuffer, next);
+        } else {
+          next();
+        }
+      },
 
-    /**
-     * Bundle the application into one script
-     **/
-    function combineProject(next) {
-      if (options.noBundle) {
-        _log("using provided bundle %s since noBundle is true", options.input);
-        const source = fs.readFileSync(options.input, 'utf8');
-        const thirdPartyMain = `
+      /**
+       * Bundle the application into one script
+       **/
+      function combineProject(next) {
+        if (options.noBundle) {
+          _log(
+            'using provided bundle %s since noBundle is true',
+            options.input,
+          );
+          const source = fs.readFileSync(options.input, 'utf8');
+          const thirdPartyMain = `
 const Module = require('module');
 const initModule = new Module(process.execPath, null);
 initModule.paths = Module._nodeModulePaths(process.cwd());
 return initModule._compile(${JSON.stringify(source)}, process.execPath);
         `;
-        fs.writeFileSync(
-          path.join(nodeCompiler.dir, 'lib', '_third_party_main.js'),
-          thirdPartyMain
-        );
-        next();
-      } else {
-        _log("bundle %s", options.input);
-        bundle(options.input, nodeCompiler.dir, options, next);
-      }
-    },
-
-
-    function moveLibs(next) {
-      fs.writeFileSync(
-        `${nodeCompiler.dir}/google-closure-compiler-js.js`,
-        fs.readFileSync(`target/google-closure-compiler-js.js`),
-      );
-
-      next();
-    },
-
-    /**
-     * monkeypatch some files so that the nexe.js file is loaded when the app runs
-     */
-
-    function monkeyPatchNodeConfig(next) {
-      _monkeyPatchNodeConfig(nodeCompiler, next, options);
-    },
-
-    /**
-     * monkeypatch node.cc to prevent v8 and node from processing CLI flags
-     */
-    function monkeyPatchNodeCc(next) {
-      if (options.flags) {
-        _monkeyPatchMainCc(nodeCompiler, next);
-      } else {
-        next();
-      }
-    },
-
-    function monkeyPatchv8FlagsCc(next) {
-      if (options.jsFlags) {
-        return _monkeyPatchv8FlagsCc(nodeCompiler, options, next);
-      }
-
-      return next();
-    },
-
-    /**
-     * If an old compiled executable exists in the Release directory, delete it.
-     * This lets us see if the build failed by checking the existence of this file later.
-     */
-
-    function cleanUpOldExecutable(next) {
-      fs.unlink(nodeCompiler.releasePath, function(err) {
-        if (err) {
-          if (err.code === "ENOENT") {
-            next();
-          } else {
-            throw err;
-          }
-        } else {
-          next();
-        }
-      });
-    },
-
-    /**
-     * compile the node application
-     */
-
-    function makeExecutable(next) {
-      if (isWin) {
-        _log("vcbuild [make stage]");
-      } else {
-        _log("make");
-      }
-      nodeCompiler.make(next);
-    },
-
-    /**
-     * we create the output directory if needed
-     */
-
-    function makeOutputDirectory(next) {
-      mkdirp(path.dirname(options.output), function() {
-        next();
-      });
-    },
-
-    /**
-     * Verify that the executable was compiled successfully
-     */
-
-    function checkThatExecutableExists(next) {
-      fs.exists(nodeCompiler.releasePath, function(exists) {
-        if (!exists) {
-          _log("error",
-            "The release executable has not been generated. " +
-            "This indicates a failure in the build process. " +
-            "There is likely additional information above."
+          fs.writeFileSync(
+            path.join(nodeCompiler.dir, 'lib', '_third_party_main.js'),
+            thirdPartyMain,
           );
-          process.exit(1);
+          next();
+        } else {
+          _log('bundle %s', options.input);
+          bundle(options.input, nodeCompiler.dir, options, next);
+        }
+      },
+
+      function moveLibs(next) {
+        fs.writeFileSync(
+          `${nodeCompiler.dir}/google-closure-compiler-js.js`,
+          fs.readFileSync(`target/google-closure-compiler-js.js`),
+        );
+
+        next();
+      },
+
+      /**
+       * monkeypatch some files so that the nexe.js file is loaded when the app runs
+       */
+
+      function monkeyPatchNodeConfig(next) {
+        _monkeyPatchNodeConfig(nodeCompiler, next, options);
+      },
+
+      /**
+       * monkeypatch node.cc to prevent v8 and node from processing CLI flags
+       */
+      function monkeyPatchNodeCc(next) {
+        if (options.flags) {
+          _monkeyPatchMainCc(nodeCompiler, next);
         } else {
           next();
         }
-      });
-    },
+      },
 
-    /**
-     * Copy the compilied binary to the output specified.
-     */
-
-    function copyBinaryToOutput(next) {
-      _log("cp %s %s", nodeCompiler.releasePath, options.output);
-      ncp(nodeCompiler.releasePath, options.output, function(err) {
-        if (err) {
-          _log("error", "Couldn't copy binary.");
-          throw err; // dump raw error object
+      function monkeyPatchv8FlagsCc(next) {
+        if (options.jsFlags) {
+          return _monkeyPatchv8FlagsCc(nodeCompiler, options, next);
         }
-        _log('copied');
 
-        next();
-      });
-    }
-  ], complete);
-}
+        return next();
+      },
+
+      /**
+       * If an old compiled executable exists in the Release directory, delete it.
+       * This lets us see if the build failed by checking the existence of this file later.
+       */
+
+      function cleanUpOldExecutable(next) {
+        fs.unlink(nodeCompiler.releasePath, function(err) {
+          if (err) {
+            if (err.code === 'ENOENT') {
+              next();
+            } else {
+              throw err;
+            }
+          } else {
+            next();
+          }
+        });
+      },
+
+      /**
+       * compile the node application
+       */
+
+      function makeExecutable(next) {
+        if (isWin) {
+          _log('vcbuild [make stage]');
+        } else {
+          _log('make');
+        }
+        nodeCompiler.make(next);
+      },
+
+      /**
+       * we create the output directory if needed
+       */
+
+      function makeOutputDirectory(next) {
+        mkdirp(path.dirname(options.output), function() {
+          next();
+        });
+      },
+
+      /**
+       * Verify that the executable was compiled successfully
+       */
+
+      function checkThatExecutableExists(next) {
+        fs.exists(nodeCompiler.releasePath, function(exists) {
+          if (!exists) {
+            _log(
+              'error',
+              'The release executable has not been generated. ' +
+                'This indicates a failure in the build process. ' +
+                'There is likely additional information above.',
+            );
+            process.exit(1);
+          } else {
+            next();
+          }
+        });
+      },
+
+      /**
+       * Copy the compilied binary to the output specified.
+       */
+
+      function copyBinaryToOutput(next) {
+        _log('cp %s %s', nodeCompiler.releasePath, options.output);
+        ncp(nodeCompiler.releasePath, options.output, function(err) {
+          if (err) {
+            _log('error', "Couldn't copy binary.");
+            throw err; // dump raw error object
+          }
+          _log('copied');
+
+          next();
+        });
+      },
+    ],
+    complete,
+  );
+};
 
 /**
  * Download a version of node
@@ -305,167 +323,199 @@ return initModule._compile(${JSON.stringify(source)}, process.execPath);
  * @param {function} complete, callback
  */
 
-function _downloadNode(version, directory, nodeConfigureArgs, nodeMakeArgs, nodeVCBuildArgs, complete) {
+function _downloadNode(
+  version,
+  directory,
+  nodeConfigureArgs,
+  nodeMakeArgs,
+  nodeVCBuildArgs,
+  complete,
+) {
   var nodeFileDir = path.resolve(path.join(directory, framework, version)), // fixes #107, was process.cwd(), + rest.
-    nodeFilePath = path.resolve(path.join(nodeFileDir, framework + "-" + version + ".tar.gz"));
-
+    nodeFilePath = path.resolve(
+      path.join(nodeFileDir, framework + '-' + version + '.tar.gz'),
+    );
 
   // might already be downloaded, and unzipped
-  if (_getNodeCompiler(nodeFileDir, nodeConfigureArgs, nodeMakeArgs, nodeVCBuildArgs, complete)) {
+  if (
+    _getNodeCompiler(
+      nodeFileDir,
+      nodeConfigureArgs,
+      nodeMakeArgs,
+      nodeVCBuildArgs,
+      complete,
+    )
+  ) {
     return;
   }
 
+  async.waterfall(
+    [
+      /**
+       * first make the directory where the zip file will live
+       */
 
-  async.waterfall([
-
-    /**
-     * first make the directory where the zip file will live
-     */
-
-    function makeDirectory(next) {
-      mkdirp.sync(path.dirname(nodeFilePath));
-      next();
-    },
-
-    /**
-     * download node into the target directory
-     */
-
-    function downloadNode(next) {
-      if (fs.existsSync(nodeFilePath)) return next();
-
-      var uri = framework;
-
-      if (framework === "node") {
-        uri = 'nodejs'; // if node, use nodejs uri
-      } else if (framework === 'nodejs') {
-        framework = 'node'; // support nodejs, and node, as framework.
-      }
-
-      var type = global.type;
-      var url, prefix = "https://" + uri + ".org/dist";
-
-      if (version === "latest") {
-        url = prefix + "/" + framework + "-" + version + ".tar.gz";
-      } else {
-        url = prefix + "/v" + version + "/" + framework + "-v" + version + ".tar.gz";
-      }
-
-      _log("downloading %s", url);
-
-      var output = fs.createWriteStream(nodeFilePath, {
-        "flags": "w+"
-      });
-
-      // need to set user-agent to bypass some corporate firewalls
-      var requestOptions = {
-        url: url,
-        headers: {
-          "User-Agent": "Node.js"
-        }
-      }
-
-      _logProgress(request(requestOptions)).pipe(output);
-
-      output.on("close", function() {
+      function makeDirectory(next) {
+        mkdirp.sync(path.dirname(nodeFilePath));
         next();
-      });
-    },
+      },
 
-    /**
-     * unzip in the same directory
-     */
+      /**
+       * download node into the target directory
+       */
 
-    function unzipNodeTarball(next) {
-      var onError = function(err) {
-        console.log(err.stack);
-        _log("error", "failed to extract the node source");
-        process.exit(1);
-      }
+      function downloadNode(next) {
+        if (fs.existsSync(nodeFilePath)) return next();
 
-      if (isWin) {
-        _log("extracting the node source [node-tar.gz]");
+        var uri = framework;
 
-        // tar-stream method w/ gunzip-maybe
-        var read = fs.createReadStream(nodeFilePath);
-        var extract = tarstream.extract()
-        var basedir = nodeFileDir;
-
-        if (!fs.existsSync(nodeFileDir)) {
-          fs.mkdirSync(nodeFileDir);
+        if (framework === 'node') {
+          uri = 'nodejs'; // if node, use nodejs uri
+        } else if (framework === 'nodejs') {
+          framework = 'node'; // support nodejs, and node, as framework.
         }
 
-        extract.on('entry', function(header, stream, callback) {
-          // header is the tar header
-          // stream is the content body (might be an empty stream)
-          // call next when you are done with this entry
+        var type = global.type;
+        var url,
+          prefix = 'https://' + uri + '.org/dist';
 
-          var absolutepath = path.join(basedir, header.name);
-          if (header.type === 'directory') {
-            // handle directories.
-            // console.log('dir:', header.name);
-            fs.mkdirSync(absolutepath);
-            return callback();
-          } else if (header.type === 'file') {
-            // handle files
-            // console.log('file:', header.name);
-          } else {
-            console.log(header.type + ':', header.name);
-            _log('warn', 'unhandled type in tar extraction, skipping');
-            return callback();
+        if (version === 'latest') {
+          url = prefix + '/' + framework + '-' + version + '.tar.gz';
+        } else {
+          url =
+            prefix +
+            '/v' +
+            version +
+            '/' +
+            framework +
+            '-v' +
+            version +
+            '.tar.gz';
+        }
+
+        _log('downloading %s', url);
+
+        var output = fs.createWriteStream(nodeFilePath, {
+          flags: 'w+',
+        });
+
+        // need to set user-agent to bypass some corporate firewalls
+        var requestOptions = {
+          url: url,
+          headers: {
+            'User-Agent': 'Node.js',
+          },
+        };
+
+        _logProgress(request(requestOptions)).pipe(output);
+
+        output.on('close', function() {
+          next();
+        });
+      },
+
+      /**
+       * unzip in the same directory
+       */
+
+      function unzipNodeTarball(next) {
+        var onError = function(err) {
+          console.log(err.stack);
+          _log('error', 'failed to extract the node source');
+          process.exit(1);
+        };
+
+        if (isWin) {
+          _log('extracting the node source [node-tar.gz]');
+
+          // tar-stream method w/ gunzip-maybe
+          var read = fs.createReadStream(nodeFilePath);
+          var extract = tarstream.extract();
+          var basedir = nodeFileDir;
+
+          if (!fs.existsSync(nodeFileDir)) {
+            fs.mkdirSync(nodeFileDir);
           }
 
-          var write = fs.createWriteStream(absolutepath);
+          extract.on('entry', function(header, stream, callback) {
+            // header is the tar header
+            // stream is the content body (might be an empty stream)
+            // call next when you are done with this entry
 
-          stream.pipe(write);
+            var absolutepath = path.join(basedir, header.name);
+            if (header.type === 'directory') {
+              // handle directories.
+              // console.log('dir:', header.name);
+              fs.mkdirSync(absolutepath);
+              return callback();
+            } else if (header.type === 'file') {
+              // handle files
+              // console.log('file:', header.name);
+            } else {
+              console.log(header.type + ':', header.name);
+              _log('warn', 'unhandled type in tar extraction, skipping');
+              return callback();
+            }
 
-          write.on('close', function() {
-            return callback();
+            var write = fs.createWriteStream(absolutepath);
+
+            stream.pipe(write);
+
+            write.on('close', function() {
+              return callback();
+            });
+
+            stream.on('error', function(err) {
+              return onError(err);
+            });
+
+            write.on('error', function(err) {
+              return onError(err);
+            });
+
+            stream.resume(); // just auto drain the stream
           });
 
-          stream.on('error', function(err) {
-            return onError(err);
-          })
-
-          write.on('error', function(err) {
-            return onError(err);
+          extract.on('finish', function() {
+            _log('extraction finished');
+            return next();
           });
 
-          stream.resume() // just auto drain the stream
-        })
+          read.pipe(gunzip()).pipe(extract);
+        } else {
+          _log('extracting the node source [native tar]');
 
-        extract.on('finish', function() {
-          _log('extraction finished');
-          return next();
-        })
+          var cmd = ['tar', '-xf', nodeFilePath, '-C', nodeFileDir];
+          _log(cmd.join(' '));
 
-        read.pipe(gunzip()).pipe(extract);
-      } else {
-        _log("extracting the node source [native tar]");
+          var tar = spawn(cmd.shift(), cmd);
+          tar.stdout.pipe(process.stdout);
+          tar.stderr.pipe(process.stderr);
 
-        var cmd = ["tar", "-xf", nodeFilePath, "-C", nodeFileDir];
-        _log(cmd.join(" "));
+          tar.on('close', function() {
+            return next();
+          });
+          tar.on('error', onError);
+        }
+      },
 
-        var tar = spawn(cmd.shift(), cmd);
-        tar.stdout.pipe(process.stdout);
-        tar.stderr.pipe(process.stderr);
+      /**
+       * return the compiler object for the node version
+       */
 
-        tar.on("close", function() {
-          return next();
-        });
-        tar.on("error", onError);
-      }
-    },
-
-    /**
-     * return the compiler object for the node version
-     */
-
-    function(next, type) {
-      _getNodeCompiler(nodeFileDir, nodeConfigureArgs, nodeMakeArgs, nodeVCBuildArgs, next, type)
-    },
-
-  ], complete);
+      function(next, type) {
+        _getNodeCompiler(
+          nodeFileDir,
+          nodeConfigureArgs,
+          nodeMakeArgs,
+          nodeVCBuildArgs,
+          next,
+          type,
+        );
+      },
+    ],
+    complete,
+  );
 }
 
 /**
@@ -473,17 +523,24 @@ function _downloadNode(version, directory, nodeConfigureArgs, nodeMakeArgs, node
  * it.
  */
 
-function _getNodeCompiler(nodeFileDir, nodeConfigureArgs, nodeMakeArgs, nodeVCBuildArgs, complete, type) {
+function _getNodeCompiler(
+  nodeFileDir,
+  nodeConfigureArgs,
+  nodeMakeArgs,
+  nodeVCBuildArgs,
+  complete,
+  type,
+) {
   var dir = _getFirstDirectory(nodeFileDir);
 
   // standard
-  var executable = "node.exe";
-  var binary = "node";
+  var executable = 'node.exe';
+  var binary = 'node';
 
   // iojs specifics.
-  if (framework === "iojs") {
-    executable = "iojs.exe";
-    binary = "iojs";
+  if (framework === 'iojs') {
+    executable = 'iojs.exe';
+    binary = 'iojs';
   }
 
   if (dir) {
@@ -491,39 +548,39 @@ function _getNodeCompiler(nodeFileDir, nodeConfigureArgs, nodeMakeArgs, nodeVCBu
       complete(null, {
         dir: dir,
         version: path.basename(nodeFileDir),
-        releasePath: path.join(dir, "Release", executable),
+        releasePath: path.join(dir, 'Release', executable),
         make: function(next) {
           // create a new env with minimal impact on old one
-          var newEnv = process.env
+          var newEnv = process.env;
 
-          if (isPy !== "python") {
+          if (isPy !== 'python') {
             // add the dir of the suposed python exe to path
-            newEnv.path = process.env.PATH + ";" + path.dirname(isPy)
+            newEnv.path = process.env.PATH + ';' + path.dirname(isPy);
           }
 
           if (!nodeVCBuildArgs || !nodeVCBuildArgs.length) {
-            nodeVCBuildArgs = [ "nosign" ]; // "release" is already the default config value in VCBuild.bat
+            nodeVCBuildArgs = ['nosign']; // "release" is already the default config value in VCBuild.bat
           }
 
           // spawn a vcbuild process with our custom enviroment.
-          var vcbuild = spawn("vcbuild.bat", nodeVCBuildArgs, {
+          var vcbuild = spawn('vcbuild.bat', nodeVCBuildArgs, {
             cwd: dir,
-            env: newEnv
+            env: newEnv,
           });
           vcbuild.stdout.pipe(process.stdout);
           vcbuild.stderr.pipe(process.stderr);
-          vcbuild.on("close", function() {
+          vcbuild.on('close', function() {
             next();
           });
-        }
+        },
       });
     } else {
       complete(null, {
         dir: dir,
         version: path.basename(nodeFileDir),
-        releasePath: path.join(dir, "out", "Release", binary),
+        releasePath: path.join(dir, 'out', 'Release', binary),
         make: function(next) {
-          var cfg = "./configure",
+          var cfg = './configure',
             configure;
 
           var conf = [cfg];
@@ -533,7 +590,7 @@ function _getNodeCompiler(nodeFileDir, nodeConfigureArgs, nodeMakeArgs, nodeVCBu
 
           // should work for all use cases now.
           configure = spawn(isPy, conf, {
-            cwd: dir.toString('ascii')
+            cwd: dir.toString('ascii'),
           });
 
           // local function, move to top eventually
@@ -542,29 +599,28 @@ function _getNodeCompiler(nodeFileDir, nodeConfigureArgs, nodeMakeArgs, nodeVCBu
             var pdir = fs.readdirSync(dir);
 
             pdir.forEach(function(v, i) {
-              var stat = fs.statSync(dir + "/" + v);
+              var stat = fs.statSync(dir + '/' + v);
               if (stat.isFile()) {
                 // only process Makefiles and .mk targets.
-                if (v !== "Makefile" && path.extname(v) !== ".mk") {
+                if (v !== 'Makefile' && path.extname(v) !== '.mk') {
                   return;
                 }
 
-                _log("patching " + v);
+                _log('patching ' + v);
 
                 /* patch the file */
-                var py = fs.readFileSync(dir + "/" + v, {
-                  encoding: 'utf8'
+                var py = fs.readFileSync(dir + '/' + v, {
+                  encoding: 'utf8',
                 });
                 py = py.replace(/([a-z]|\/)*python(\w|)/gm, isPy); // this is definently needed
-                fs.writeFileSync(dir + "/" + v, py, {
-                  encoding: 'utf8'
+                fs.writeFileSync(dir + '/' + v, py, {
+                  encoding: 'utf8',
                 }); // write to file
-
               } else if (stat.isDirectory()) {
                 // must be dir?
                 // skip tests because we don't need them here
-                if (v !== "test") {
-                  _loop(dir + "/" + v)
+                if (v !== 'test') {
+                  _loop(dir + '/' + v);
                 }
               }
             });
@@ -574,7 +630,7 @@ function _getNodeCompiler(nodeFileDir, nodeConfigureArgs, nodeMakeArgs, nodeVCBu
           configure.stderr.pipe(process.stderr);
 
           // on error
-          configure.on("error", function(err) {
+          configure.on('error', function(err) {
             console.log('Error:', err);
             console.log('');
             console.log('Details:');
@@ -584,25 +640,31 @@ function _getNodeCompiler(nodeFileDir, nodeConfigureArgs, nodeMakeArgs, nodeVCBu
             var configure_path = path.join(dir, 'configure');
             var contains_configure = fs.existsSync(configure_path);
 
-            console.log('cwd contains configure,', (contains_configure ? colors.green('yes') : colors.red('no')));
+            console.log(
+              'cwd contains configure,',
+              contains_configure ? colors.green('yes') : colors.red('no'),
+            );
 
             var configure_size = fs.statSync(configure_path).size;
 
-            console.log('configure is non-zero size,', ((configure_size > 0) ? colors.green('yes') : colors.red('no')));
+            console.log(
+              'configure is non-zero size,',
+              configure_size > 0 ? colors.green('yes') : colors.red('no'),
+            );
 
-            _log("error", "failed to launch configure.");
+            _log('error', 'failed to launch configure.');
             process.exit(1);
           });
 
           // when it's finished
-          configure.on("close", function() {
-            if (isPy !== "python") {
+          configure.on('close', function() {
+            if (isPy !== 'python') {
               /**
                * Originally I thought this only applied to io.js,
                * however I soon found out this affects node.js,
                * so it is now mainstream.
                */
-              _log("preparing python");
+              _log('preparing python');
 
               // loop over depends
               _loop(dir);
@@ -612,26 +674,26 @@ function _getNodeCompiler(nodeFileDir, nodeConfigureArgs, nodeMakeArgs, nodeVCBu
               nodeMakeArgs = [];
             }
 
-            var platformMake = "make";
+            var platformMake = 'make';
             if (os.platform().match(/bsd$/) != null) {
-              platformMake = "gmake";
+              platformMake = 'gmake';
             }
 
             var make = spawn(platformMake, nodeMakeArgs, {
-              cwd: dir
+              cwd: dir,
             });
             make.stdout.pipe(process.stdout);
             make.stderr.pipe(process.stderr);
-            make.on("error", function(err) {
+            make.on('error', function(err) {
               console.log(err);
-              _log("error", "failed to run make.");
+              _log('error', 'failed to run make.');
               process.exit(1);
-            })
-            make.on("close", function() {
+            });
+            make.on('close', function() {
               next();
             });
-          })
-        }
+          });
+        },
       });
     }
     return true;
@@ -646,7 +708,7 @@ function _userDefinedMonkeyPatching(compiler, options, complete) {
   if (patchFns != null) {
     const fns = Array.isArray(patchFns) ? patchFns : [patchFns];
 
-    fns.unshift(function(next){
+    fns.unshift(function(next) {
       next(null, compiler, options);
     });
 
@@ -660,33 +722,35 @@ function _userDefinedMonkeyPatching(compiler, options, complete) {
  */
 
 function _monkeyPatchNodeConfig(compiler, complete, options) {
-  async.waterfall([
-    /**
-     * monkeypatch the gyp file to include the nexe.js and nexeres.js files
-     */
-    function(next) {
-      _monkeyPatchGyp(compiler, options, next)
-    },
+  async.waterfall(
+    [
+      /**
+       * monkeypatch the gyp file to include the nexe.js and nexeres.js files
+       */
+      function(next) {
+        _monkeyPatchGyp(compiler, options, next);
+      },
 
-    function(next) {
-      patchNodeFlags(compiler, options, next)
-    },
-    /**
-     * patch the configure file to allow for custom startup snapshots
-     */
+      function(next) {
+        patchNodeFlags(compiler, options, next);
+      },
+      /**
+       * patch the configure file to allow for custom startup snapshots
+       */
 
-    function(next) {
-      _monkeyPatchConfigure(compiler, next, options);
-    },
+      function(next) {
+        _monkeyPatchConfigure(compiler, next, options);
+      },
 
-    /**
-     * monkeypatch main entry point
-     */
-    function(next) {
-      _monkeyPatchMainJs(compiler, next)
-    },
-
-  ], complete);
+      /**
+       * monkeypatch main entry point
+       */
+      function(next) {
+        _monkeyPatchMainJs(compiler, next);
+      },
+    ],
+    complete,
+  );
 }
 
 /**
@@ -695,7 +759,7 @@ function _monkeyPatchNodeConfig(compiler, complete, options) {
 
 function _monkeyPatchGyp(compiler, options, complete) {
   const hasNexeres = options.resourceFiles.length > 0;
-  const gypPath = path.join(compiler.dir, "node.gyp");
+  const gypPath = path.join(compiler.dir, 'node.gyp');
   let replacementString = "'lib/fs.js', 'lib/_third_party_main.js', ";
 
   if (hasNexeres) {
@@ -705,7 +769,7 @@ function _monkeyPatchGyp(compiler, options, complete) {
   _monkeypatch(
     gypPath,
     function(content) {
-      return ~content.indexOf("lib/_third_party_main.js");
+      return ~content.indexOf('lib/_third_party_main.js');
     },
     function(content, next) {
       content = content.replace("'lib/fs.js',", replacementString);
@@ -715,10 +779,10 @@ function _monkeyPatchGyp(compiler, options, complete) {
       'google-closure-compiler-js.js',`,
       );
 
-      next(null, content)
+      next(null, content);
     },
-    complete
-  )
+    complete,
+  );
 }
 
 function patchNodeFlags(compiler, options, complete) {
@@ -741,13 +805,12 @@ function patchNodeFlags(compiler, options, complete) {
   );
 }
 
-
 /**
  * patch the configure file to allow for custom startup snapshots
  */
 
 function _monkeyPatchConfigure(compiler, complete, options) {
-  var configurePath = path.join(compiler.dir, "configure.py");
+  var configurePath = path.join(compiler.dir, 'configure.py');
   var snapshotPath = options.startupSnapshot;
 
   if (snapshotPath != null) {
@@ -756,17 +819,21 @@ function _monkeyPatchConfigure(compiler, complete, options) {
     return _monkeypatch(
       configurePath,
       function(content) {
-        return ~content.indexOf("v8_embed_script");
+        return ~content.indexOf('v8_embed_script');
       },
       function(content, next) {
-        next(null, content.replace(
-          "def configure_v8(o):",
-          `def configure_v8(o):
+        next(
+          null,
+          content.replace(
+            'def configure_v8(o):',
+            `def configure_v8(o):
   o['variables']['v8_embed_script'] = r'${snapshotPath}'
-  o['variables']['v8_warmup_script'] = r'${snapshotPath}'`));
+  o['variables']['v8_warmup_script'] = r'${snapshotPath}'`,
+          ),
+        );
       },
-      complete
-    )
+      complete,
+    );
   } else {
     _log('not  patching configure file');
   }
@@ -777,24 +844,33 @@ function _monkeyPatchConfigure(compiler, complete, options) {
 /**
  */
 function _monkeyPatchMainJs(compiler, complete) {
-  const mainPath = path.join(compiler.dir, "lib", "internal", "bootstrap", "node.js");
+  const mainPath = path.join(
+    compiler.dir,
+    'lib',
+    'internal',
+    'bootstrap',
+    'node.js',
+  );
 
   _monkeypatch(
     mainPath,
     function(content) {
-      return ~content.indexOf("nexe");
+      return ~content.indexOf('nexe');
     },
     function(content, next) {
-      content = content.replace('setupProcessObject();', `
+      content = content.replace(
+        'setupProcessObject();',
+        `
 setupProcessObject();
 if (!process.send) {
   process.argv.splice(1, 0, "nexe.js");
 }
-`);
+`,
+      );
 
-      next(null, content)
+      next(null, content);
     },
-    complete
+    complete,
   );
 }
 
@@ -805,9 +881,9 @@ if (!process.send) {
 function _monkeyPatchMainCc(compiler, complete) {
   let finalContents;
 
-  let mainPath = path.join(compiler.dir, "src", "node.cc");
+  let mainPath = path.join(compiler.dir, 'src', 'node.cc');
   let mainC = fs.readFileSync(mainPath, {
-    encoding: 'utf8'
+    encoding: 'utf8',
   });
 
   // content split, and original start/end
@@ -826,10 +902,13 @@ function _monkeyPatchMainCc(compiler, complete) {
    * This is the new method of passing the args. Tested on node.js 0.12.5
    * and iojs 2.3.1
    **/
-  if (endLine === -1 && startLine === -1) { // only if the pre-0.12.5 failed.
-    _log("using the after 0.12.5 method of ignoring flags.");
+  if (endLine === -1 && startLine === -1) {
+    // only if the pre-0.12.5 failed.
+    _log('using the after 0.12.5 method of ignoring flags.');
 
-    startLine = lines.indexOf("  while (index < nargs && argv[index][0] == '-') {"); // beginning of the function
+    startLine = lines.indexOf(
+      "  while (index < nargs && argv[index][0] == '-') {",
+    ); // beginning of the function
     endLine = lines.indexOf('  // Copy remaining arguments.');
     endLine--; // space, then it's at the }
 
@@ -843,9 +922,11 @@ function _monkeyPatchMainCc(compiler, complete) {
    * This is the method for 5.5.0
    **/
   if (endLine === -1 || startLine === -1) {
-    _log("using the after 5.5.0 method of ignoring flags.");
+    _log('using the after 5.5.0 method of ignoring flags.');
 
-    startLine = lines.indexOf("  while (index < nargs && argv[index][0] == '-' && !short_circuit) {"); // beginning of the function
+    startLine = lines.indexOf(
+      "  while (index < nargs && argv[index][0] == '-' && !short_circuit) {",
+    ); // beginning of the function
     endLine = lines.indexOf('  // Copy remaining arguments.');
     endLine--; // space, then it's at the }
 
@@ -853,9 +934,10 @@ function _monkeyPatchMainCc(compiler, complete) {
   }
 
   // other versions here.
-  if (endLine === -1 || startLine === -1) { // failsafe.
-    _log("error", "Failed to find a way to patch node.cc to ignoreFlags");
-    _log("startLine =", startLine, '| endLine =', endLine);
+  if (endLine === -1 || startLine === -1) {
+    // failsafe.
+    _log('error', 'Failed to find a way to patch node.cc to ignoreFlags');
+    _log('startLine =', startLine, '| endLine =', endLine);
     if (!/^11\./.test(compiler.version)) {
       process.exit(1);
     }
@@ -873,16 +955,21 @@ function _monkeyPatchMainCc(compiler, complete) {
   finalContents = lines.join('\n');
 
   // write the file contents
-  fs.writeFile(mainPath, finalContents, {
-    encoding: 'utf8'
-  }, function(err) {
-    if (err) {
-      _log('error', 'failed to write to', mainPath);
-      return process.exit(1);
-    }
+  fs.writeFile(
+    mainPath,
+    finalContents,
+    {
+      encoding: 'utf8',
+    },
+    function(err) {
+      if (err) {
+        _log('error', 'failed to write to', mainPath);
+        return process.exit(1);
+      }
 
-    return complete();
-  });
+      return complete();
+    },
+  );
 }
 
 /**
@@ -890,110 +977,134 @@ function _monkeyPatchMainCc(compiler, complete) {
  * this function is very closely ready to accept custom injection code.
  **/
 function _monkeyPatchv8FlagsCc(compiler, options, complete) {
-  var mainPath = path.join(compiler.dir, "deps/v8/src", "flags.cc");
+  var mainPath = path.join(compiler.dir, 'deps/v8/src', 'flags.cc');
 
-  fs.readFile(mainPath, {
-    encoding: 'utf8'
-  }, function(err, contents) {
-    if (err) {
-      return _log('error', 'failed to read', mainPath);
-    }
+  fs.readFile(
+    mainPath,
+    {
+      encoding: 'utf8',
+    },
+    function(err, contents) {
+      if (err) {
+        return _log('error', 'failed to read', mainPath);
+      }
 
-    // Super simple injection here. Perhaps make it an array at somepoint?
-    var injection = '\
+      // Super simple injection here. Perhaps make it an array at somepoint?
+      var injection =
+        '\
 const char* nexevargs = "{{args}}";\n\
 int nexevargslen = strlen(nexevargs);\n\
 SetFlagsFromString(nexevargs, nexevargslen);\n\
 ';
 
-    var injectionSplit = injection.split('\n');
-    var injectionLength = injectionSplit.length;
-    var contentsSplit = contents.split('\n');
-    var contentsLength = contentsSplit.length;
-    var lastInjectionLine = injectionSplit[injectionLength - 2];
+      var injectionSplit = injection.split('\n');
+      var injectionLength = injectionSplit.length;
+      var contentsSplit = contents.split('\n');
+      var contentsLength = contentsSplit.length;
+      var lastInjectionLine = injectionSplit[injectionLength - 2];
 
-    var lineToInjectAfter = contentsSplit.indexOf('  ComputeFlagListHash();');
-    var haveWeInjectedBefore = contentsSplit.indexOf(lastInjectionLine);
+      var lineToInjectAfter = contentsSplit.indexOf('  ComputeFlagListHash();');
+      var haveWeInjectedBefore = contentsSplit.indexOf(lastInjectionLine);
 
-    var lineInjectDifference = contentsLength - lineToInjectAfter;
+      var lineInjectDifference = contentsLength - lineToInjectAfter;
 
-    // support for 0.12.x
-    if (lineToInjectAfter === -1) {
-      _log('warn', 'Using an expiramental support patch for 0.12.x');
-      lineToInjectAfter = contentsSplit.indexOf('#undef FLAG_MODE_DEFINE_IMPLICATIONS');
-    }
-
-    // support for 0.10.x
-    if (lineToInjectAfter === -1) {
-      _log('warn', '0.12.x patch failed. Trying 0.10.0 patch');
-      lineToInjectAfter = contentsSplit.indexOf('#define FLAG_MODE_DEFINE_IMPLICATIONS') + 1;
-    }
-
-    // this is debug, comment out.
-    // _log('v8 injection is', injectionLength, 'newlines long');
-    // _log('v8 flags source is', contentsLength, 'newlines long');
-
-    // console.log(finalContents)
-
-    var finalContents,
-      dontCombine;
-
-    if (lineToInjectAfter !== -1 && haveWeInjectedBefore === -1) {
-      _log('injecting v8/flags.cc');
-
-      // super debug
-      // _log('v8 injection determined by', lastInjectionLine);
-      // _log('v8 inject after line', lineToInjectAfter);
-      // _log('v8 inject needs to shift', lineInjectDifference, 'amount of lines by', injectionLength);
-
-      // compute out the amount of space we'll need in this.
-      var startShiftLine = contentsLength - 1; // minus one to make up for 0 arg line.
-      var endShiftLine = lineToInjectAfter;
-      var injectRoom = injectionLength - 1;
-
-      injectionSplit[0] = injectionSplit[0].replace('{{args}}', options.jsFlags);
-
-      for (var i = startShiftLine; i !== endShiftLine; i--) {
-        contentsSplit[i + injectRoom] = contentsSplit[i];
-        contentsSplit[i] = '';
+      // support for 0.12.x
+      if (lineToInjectAfter === -1) {
+        _log('warn', 'Using an expiramental support patch for 0.12.x');
+        lineToInjectAfter = contentsSplit.indexOf(
+          '#undef FLAG_MODE_DEFINE_IMPLICATIONS',
+        );
       }
 
-      var injectionPos = 0;
-      for (var i = 0; i !== injectionLength - 1; i++) {
-        contentsSplit[(lineToInjectAfter + 1) + injectionPos] = injectionSplit[injectionPos];
-        injectionPos++;
+      // support for 0.10.x
+      if (lineToInjectAfter === -1) {
+        _log('warn', '0.12.x patch failed. Trying 0.10.0 patch');
+        lineToInjectAfter =
+          contentsSplit.indexOf('#define FLAG_MODE_DEFINE_IMPLICATIONS') + 1;
       }
-    } else if (lineToInjectAfter !== -1 && haveWeInjectedBefore !== -1) {
-      _log('re-injecting v8 args');
 
-      dontCombine = true;
-      finalContents = contentsSplit.join('\n');
-      finalContents = finalContents.replace(/const char\* nexevargs = "[A-Z\-\_]*";/gi,
-        'const char* nexevargs = "' + options.jsFlags + '";');
-    } else {
-      _log('error', 'failed to find a suitable injection point for v8 args.',
-        'File a bug report with the node version and log.');
+      // this is debug, comment out.
+      // _log('v8 injection is', injectionLength, 'newlines long');
+      // _log('v8 flags source is', contentsLength, 'newlines long');
 
-      _log('lineToInjectAfter=' + lineToInjectAfter, 'haveWeInjectedBefore=' + haveWeInjectedBefore);
-      return process.exit(1);
-    }
+      // console.log(finalContents)
 
-    if (!dontCombine) {
-      finalContents = contentsSplit.join('\n');
-    }
+      var finalContents, dontCombine;
 
-    // write the file contents
-    fs.writeFile(mainPath, finalContents, {
-      encoding: 'utf8'
-    }, function(err) {
-      if (err) {
-        _log('error', 'failed to write to', mainPath);
+      if (lineToInjectAfter !== -1 && haveWeInjectedBefore === -1) {
+        _log('injecting v8/flags.cc');
+
+        // super debug
+        // _log('v8 injection determined by', lastInjectionLine);
+        // _log('v8 inject after line', lineToInjectAfter);
+        // _log('v8 inject needs to shift', lineInjectDifference, 'amount of lines by', injectionLength);
+
+        // compute out the amount of space we'll need in this.
+        var startShiftLine = contentsLength - 1; // minus one to make up for 0 arg line.
+        var endShiftLine = lineToInjectAfter;
+        var injectRoom = injectionLength - 1;
+
+        injectionSplit[0] = injectionSplit[0].replace(
+          '{{args}}',
+          options.jsFlags,
+        );
+
+        for (var i = startShiftLine; i !== endShiftLine; i--) {
+          contentsSplit[i + injectRoom] = contentsSplit[i];
+          contentsSplit[i] = '';
+        }
+
+        var injectionPos = 0;
+        for (var i = 0; i !== injectionLength - 1; i++) {
+          contentsSplit[lineToInjectAfter + 1 + injectionPos] =
+            injectionSplit[injectionPos];
+          injectionPos++;
+        }
+      } else if (lineToInjectAfter !== -1 && haveWeInjectedBefore !== -1) {
+        _log('re-injecting v8 args');
+
+        dontCombine = true;
+        finalContents = contentsSplit.join('\n');
+        finalContents = finalContents.replace(
+          /const char\* nexevargs = "[A-Z\-\_]*";/gi,
+          'const char* nexevargs = "' + options.jsFlags + '";',
+        );
+      } else {
+        _log(
+          'error',
+          'failed to find a suitable injection point for v8 args.',
+          'File a bug report with the node version and log.',
+        );
+
+        _log(
+          'lineToInjectAfter=' + lineToInjectAfter,
+          'haveWeInjectedBefore=' + haveWeInjectedBefore,
+        );
         return process.exit(1);
       }
 
-      return complete();
-    })
-  });
+      if (!dontCombine) {
+        finalContents = contentsSplit.join('\n');
+      }
+
+      // write the file contents
+      fs.writeFile(
+        mainPath,
+        finalContents,
+        {
+          encoding: 'utf8',
+        },
+        function(err) {
+          if (err) {
+            _log('error', 'failed to write to', mainPath);
+            return process.exit(1);
+          }
+
+          return complete();
+        },
+      );
+    },
+  );
 }
 
 /**
@@ -1001,9 +1112,9 @@ SetFlagsFromString(nexevargs, nexevargslen);\n\
  */
 
 function _getFirstDirectory(dir) {
-  var files = glob.sync(dir + "/*");
+  var files = glob.sync(dir + '/*');
 
-  for (var i = files.length; i--;) {
+  for (var i = files.length; i--; ) {
     var file = files[i];
     if (fs.statSync(file).isDirectory()) return file;
   }
@@ -1016,25 +1127,23 @@ function _getFirstDirectory(dir) {
  */
 
 function _logProgress(req) {
-
-  req.on("response", function(resp) {
-
-    var len = parseInt(resp.headers["content-length"], 10),
-      bar = new ProgressBar("[:bar]", {
-        complete: "=",
-        incomplete: " ",
+  req.on('response', function(resp) {
+    var len = parseInt(resp.headers['content-length'], 10),
+      bar = new ProgressBar('[:bar]', {
+        complete: '=',
+        incomplete: ' ',
         total: len,
-        width: 100 // just use 100
+        width: 100, // just use 100
       });
 
-    req.on("data", function(chunk) {
+    req.on('data', function(chunk) {
       bar.tick(chunk.length);
     });
   });
 
-  req.on("error", function(err) {
+  req.on('error', function(err) {
     console.log(err);
-    _log("error", "failed to download node sources,");
+    _log('error', 'failed to download node sources,');
     process.exit(1);
   });
 
@@ -1057,54 +1166,56 @@ exports.package = function(path, options) {
 
   // check if the file exists
   if (fs.existsSync(path) === false) {
-    _log("warn", "no package.json found.");
+    _log('warn', 'no package.json found.');
   } else {
     _package = require(path);
   }
 
-  if(!_package || !_package.nexe) {
-    _log('error', 'trying to use package.json variables, but not setup to do so!');
+  if (!_package || !_package.nexe) {
+    _log(
+      'error',
+      'trying to use package.json variables, but not setup to do so!',
+    );
     process.exit(1);
   }
 
   // replace ^$ w/ os specific extension on output
   if (isWin) {
-    _package.nexe.output = _package.nexe.output.replace(/\^\$/, '.exe') // exe
+    _package.nexe.output = _package.nexe.output.replace(/\^\$/, '.exe'); // exe
   } else {
-    _package.nexe.output = _package.nexe.output.replace(/\^\$/, '') // none
+    _package.nexe.output = _package.nexe.output.replace(/\^\$/, ''); // none
   }
 
   // construct the object
   let obj = {
-    input: (_package.nexe.input || options.i),
-    output: (_package.nexe.output || options.o),
-    flags: (_package.nexe.runtime.ignoreFlags || (options.f || false)),
-    resourceFiles: (_package.nexe.resourceFiles),
-    nodeVersion: (_package.nexe.runtime.version || options.r),
-    nodeConfigureArgs: (_package.nexe.runtime.nodeConfigureArgs || []),
-    nodeMakeArgs: (_package.nexe.runtime.nodeMakeArgs || []),
-    nodeVCBuildArgs: (_package.nexe.runtime.nodeVCBuildArgs || []),
-    jsFlags: (_package.nexe.runtime['js-flags'] || options.j),
-    python: (_package.nexe.python || options.p),
-    debug: (_package.nexe.debug || options.d),
-    nodeTempDir: (_package.nexe.temp || options.t),
-    framework: (_package.nexe.runtime.framework || options.f)
-  }
+    input: _package.nexe.input || options.i,
+    output: _package.nexe.output || options.o,
+    flags: _package.nexe.runtime.ignoreFlags || (options.f || false),
+    resourceFiles: _package.nexe.resourceFiles,
+    nodeVersion: _package.nexe.runtime.version || options.r,
+    nodeConfigureArgs: _package.nexe.runtime.nodeConfigureArgs || [],
+    nodeMakeArgs: _package.nexe.runtime.nodeMakeArgs || [],
+    nodeVCBuildArgs: _package.nexe.runtime.nodeVCBuildArgs || [],
+    jsFlags: _package.nexe.runtime['js-flags'] || options.j,
+    python: _package.nexe.python || options.p,
+    debug: _package.nexe.debug || options.d,
+    nodeTempDir: _package.nexe.temp || options.t,
+    framework: _package.nexe.runtime.framework || options.f,
+  };
 
   // browserify options
-  if(_package.nexe.browserify !== undefined) {
-    obj.browserifyRequires = (_package.nexe.browserify.requires || []);
-    obj.browserifyExcludes = (_package.nexe.browserify.excludes || []);
-    obj.browserifyPaths    = (_package.nexe.browserify.paths    || []);
+  if (_package.nexe.browserify !== undefined) {
+    obj.browserifyRequires = _package.nexe.browserify.requires || [];
+    obj.browserifyExcludes = _package.nexe.browserify.excludes || [];
+    obj.browserifyPaths = _package.nexe.browserify.paths || [];
   }
 
   // TODO: get rid of this crappy code I wrote and make it less painful to read.
   Object.keys(_package.nexe).forEach(function(v, i) {
-    if (v !== "runtime" && v !== 'browserify') {
-      _log("log", v + " => '" + _package.nexe[v] + "'");
+    if (v !== 'runtime' && v !== 'browserify') {
+      _log('log', v + " => '" + _package.nexe[v] + "'");
     }
   });
 
   return obj;
-}
-
+};

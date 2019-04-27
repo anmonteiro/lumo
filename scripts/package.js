@@ -66,8 +66,13 @@ Promise.all(resources.map(deflate)).then(() => {
         '--without-inspector',
         '--without-etw',
         '--with-snapshot',
-      ]
-      .concat(isWindows ? ['--openssl-no-asm'] : (staticBinary ? ['--fully-static'] : [])),
+      ].concat(
+        isWindows
+          ? ['--openssl-no-asm']
+          : staticBinary
+          ? ['--fully-static']
+          : [],
+      ),
       nodeMakeArgs: ['-j', '8'],
       nodeVCBuildArgs: ['nosign', 'x64', 'noetw'],
       flags: true,

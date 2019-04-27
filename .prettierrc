@@ -1,0 +1,6 @@
+{
+  "trailingComma": "all",
+  "singleQuote": true,
+  "parser": "flow",
+  "printWidth": 80
+}
