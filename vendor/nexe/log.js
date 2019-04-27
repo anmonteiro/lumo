@@ -32,22 +32,21 @@ var colors = require('colors');
  * @param {any} arguments - Text to output.
  * @return undefined
  **/
-function _log () {
-
+function _log() {
   var args = Array.prototype.slice.call(arguments, 0),
-  level = args.shift();
+    level = args.shift();
 
-  if (!~["log", "error", "warn"].indexOf(level)) {
+  if (!~['log', 'error', 'warn'].indexOf(level)) {
     args.unshift(level);
-    level = "log";
+    level = 'log';
   }
 
-  if(level == "log") {
-    args[0] = "----> " + args[0];
-  } else if(level == "error") {
-    args[0] = "....> " + colors.red("ERROR: ") + args[0]
-  } else if(level == "warn") {
-    args[0] = "....> " + colors.yellow("WARNING: ") + args[0]
+  if (level == 'log') {
+    args[0] = '----> ' + args[0];
+  } else if (level == 'error') {
+    args[0] = '....> ' + colors.red('ERROR: ') + args[0];
+  } else if (level == 'warn') {
+    args[0] = '....> ' + colors.yellow('WARNING: ') + args[0];
   }
 
   console[level].apply(console, args);

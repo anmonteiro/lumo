@@ -25,8 +25,8 @@
 
 'use strict';
 
-let path = require("path"),
-  fs = require("fs");
+let path = require('path'),
+  fs = require('fs');
 
 /**
  * Accessort for embed
@@ -38,11 +38,11 @@ const accessor = function(key) {
     //file was not embedded, throw err.
     throw new Error('Embedded file not found');
   }
-}
+};
 
 const encode = function(filePath) {
   return fs.readFileSync(filePath).toString('base64');
-}
+};
 
 /**
  * Embed files.
@@ -53,13 +53,15 @@ const encode = function(filePath) {
  **/
 function embed(resourceFiles, resourceRoot) {
   if (resourceFiles.length > 0) {
-    let buffer = "var embeddedFiles = {\n";
+    let buffer = 'var embeddedFiles = {\n';
     for (let i = 0; i < resourceFiles.length; ++i) {
-      buffer += JSON.stringify(path.relative(resourceRoot, resourceFiles[i])) + ': "';
+      buffer +=
+        JSON.stringify(path.relative(resourceRoot, resourceFiles[i])) + ': "';
       buffer += encode(resourceFiles[i]) + '",\n';
     }
 
-    buffer += "\n};\n\nmodule.exports.keys = function () { return Object.keys(embeddedFiles); }\n\nmodule.exports.get = ";
+    buffer +=
+      '\n};\n\nmodule.exports.keys = function () { return Object.keys(embeddedFiles); }\n\nmodule.exports.get = ';
     buffer += accessor.toString();
 
     return buffer;

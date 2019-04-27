@@ -26,7 +26,7 @@
   "scripts": {
     "type:check": "flow check",
     "lint": "eslint src/js",
-    "prettier": "prettier --print-width 80 --single-quote --trailing-comma all --parser flow --write \"./{src,scripts,lib,packages}/**/**.js\"",
+    "prettier": "prettier --write \"./{vendor,src,scripts,lib,packages}/**/**.js\"",
     "test": "jest",
     "bundle": "node scripts/bundle.js --dev",
     "build": "cross-env NODE_ENV=production node scripts/bundle.js",

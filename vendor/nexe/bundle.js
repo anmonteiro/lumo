@@ -25,13 +25,13 @@
 
 'use strict';
 
-let browserify    = require('browserify'),
-    path          = require("path"),
-    spawn         = require('child_process').spawn,
-    insertGlobals = require('insert-module-globals'),
-    fs            = require("fs"),
-    async         = require("async"),
-    _log          = require("./log");
+let browserify = require('browserify'),
+  path = require('path'),
+  spawn = require('child_process').spawn,
+  insertGlobals = require('insert-module-globals'),
+  fs = require('fs'),
+  async = require('async'),
+  _log = require('./log');
 
 /**
  * User browserify to create a "packed" file.
@@ -42,16 +42,16 @@ let browserify    = require('browserify'),
  * @param {function} complete - next function to call (async)
  **/
 function bundle(input, nc, options, complete) {
-  const bundlePath = path.join(nc, "lib", "nexe.js");
-  const mapfile    = options.output+'.map';
-  let ws           = fs.createWriteStream(bundlePath);
+  const bundlePath = path.join(nc, 'lib', 'nexe.js');
+  const mapfile = options.output + '.map';
+  let ws = fs.createWriteStream(bundlePath);
 
   const igv = '__filename,__dirname,_process';
   let insertGlobalVars = { isNexe: true },
-      wantedGlobalVars = igv.split(',');
+    wantedGlobalVars = igv.split(',');
 
   // parse insertGlobalVars.
-  Object.keys(insertGlobals.vars).forEach(function (x) {
+  Object.keys(insertGlobals.vars).forEach(function(x) {
     if (wantedGlobalVars.indexOf(x) === -1) {
       insertGlobalVars[x] = undefined;
     }
@@ -59,10 +59,9 @@ function bundle(input, nc, options, complete) {
 
   let paths = [path.join(nc, 'lib')];
 
-  if(options.browserifyPaths) {
+  if (options.browserifyPaths) {
     paths = paths.concat(options.browserifyPaths);
   }
-
 
   _log('executing browserify via API');
   let bproc = browserify([input], {
@@ -72,13 +71,13 @@ function bundle(input, nc, options, complete) {
     builtins: false,
     insertGlobalVars: insertGlobalVars,
     detectGlobals: true,
-    browserField: false
+    browserField: false,
   });
 
   if (options.browserifyExcludes && Array.isArray(options.browserifyExcludes)) {
     for (let i = 0; i < options.browserifyExcludes.length; i++) {
       let lib = options.browserifyExcludes[i];
-      _log('Excluding \'%s\' from browserify bundle', lib);
+      _log("Excluding '%s' from browserify bundle", lib);
       bproc.exclude(lib);
     }
   }
@@ -90,37 +89,42 @@ function bundle(input, nc, options, complete) {
       let name = lib.file || lib; // for  object format.
       // if `lib` is object then fetch all params without `file`
       // otherwise returns empty object
-      let opts = (lib instanceof Object) && Object.keys(lib)
-        .filter((key) => key !== 'file')
-        .reduce((acc, key) => { return acc[key] = lib[key], acc }, {})
-        || {};
+      let opts =
+        (lib instanceof Object &&
+          Object.keys(lib)
+            .filter(key => key !== 'file')
+            .reduce((acc, key) => {
+              return (acc[key] = lib[key]), acc;
+            }, {})) ||
+        {};
 
-      _log('Force including \'%s\' in browserify bundle', name);
+      _log("Force including '%s' in browserify bundle", name);
       bproc.require(lib, opts);
     }
   }
 
-  if(options.debug) {
-    bproc.require(require.resolve('source-map-support'))
+  if (options.debug) {
+    bproc.require(require.resolve('source-map-support'));
   }
 
-  let bprocbun = bproc.bundle() // bundle
-      .pipe(ws) // pipe to file
+  let bprocbun = bproc
+    .bundle() // bundle
+    .pipe(ws); // pipe to file
 
   // error on require errors, still can't contionue. ffs browserify
   bprocbun.on('error', function(err) {
-    _log('error', '[browserify] '+err);
+    _log('error', '[browserify] ' + err);
   });
 
   ws.on('error', function(err) {
     console.log(err);
     _log('error', 'Failed to save stdout to disk');
     process.exit(1);
-  })
+  });
 
   ws.on('close', function() {
     var source = fs.readFileSync(bundlePath, 'utf8');
-    source = source.replace(/[^\x00-\x7F]/g, "");
+    source = source.replace(/[^\x00-\x7F]/g, '');
 
     // write the source modified to nexe.js
     fs.writeFile(bundlePath, source, 'utf8', function(err) {
