@@ -180,6 +180,11 @@ exports.compile = function(options, complete) {
           );
           const source = fs.readFileSync(options.input, 'utf8');
           const thirdPartyMain = `
+if (!process.send) {
+  console.log('toine', global.process.argv);
+  process.argv.splice(1, 0, 'nexe.js');
+}
+
 const Module = require('module');
 const initModule = new Module(process.execPath, null);
 initModule.paths = Module._nodeModulePaths(process.cwd());
@@ -741,13 +746,6 @@ function _monkeyPatchNodeConfig(compiler, complete, options) {
       function(next) {
         _monkeyPatchConfigure(compiler, next, options);
       },
-
-      /**
-       * monkeypatch main entry point
-       */
-      function(next) {
-        _monkeyPatchMainJs(compiler, next);
-      },
     ],
     complete,
   );
@@ -842,39 +840,6 @@ function _monkeyPatchConfigure(compiler, complete, options) {
 }
 
 /**
- */
-function _monkeyPatchMainJs(compiler, complete) {
-  const mainPath = path.join(
-    compiler.dir,
-    'lib',
-    'internal',
-    'bootstrap',
-    'node.js',
-  );
-
-  _monkeypatch(
-    mainPath,
-    function(content) {
-      return ~content.indexOf('nexe');
-    },
-    function(content, next) {
-      content = content.replace(
-        'setupProcessObject();',
-        `
-setupProcessObject();
-if (!process.send) {
-  process.argv.splice(1, 0, "nexe.js");
-}
-`,
-      );
-
-      next(null, content);
-    },
-    complete,
-  );
-}
-
-/**
  * Patch node.cc to not check the internal arguments.
  */
 
@@ -938,7 +903,7 @@ function _monkeyPatchMainCc(compiler, complete) {
     // failsafe.
     _log('error', 'Failed to find a way to patch node.cc to ignoreFlags');
     _log('startLine =', startLine, '| endLine =', endLine);
-    if (!/^11\./.test(compiler.version)) {
+    if (!/^1(1|2)\./.test(compiler.version)) {
       process.exit(1);
     }
   }
@@ -1002,7 +967,6 @@ SetFlagsFromString(nexevargs, nexevargslen);\n\
       var contentsSplit = contents.split('\n');
       var contentsLength = contentsSplit.length;
       var lastInjectionLine = injectionSplit[injectionLength - 2];
-
       var lineToInjectAfter = contentsSplit.indexOf('  ComputeFlagListHash();');
       var haveWeInjectedBefore = contentsSplit.indexOf(lastInjectionLine);
 

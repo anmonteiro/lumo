@@ -17,7 +17,7 @@ import type { CLIOptsType } from './cli';
 type sigintHandlerType = number => void;
 
 // $FlowIssue: process has a binding function
-const utilBinding = process.binding('util');
+const contextifyBinding = process.binding('contextify');
 
 let ClojureScriptContext: vm$Context;
 
@@ -97,7 +97,7 @@ function lumoEval(
 
   if (currentREPLInterface != null) {
     const sigintHandlers = getAndRemoveSigintEventListeners();
-    utilBinding.startSigintWatchdog();
+    contextifyBinding.startSigintWatchdog();
     const previouslyInRawMode = currentREPLInterface._setRawMode(false);
 
     try {
@@ -114,7 +114,7 @@ function lumoEval(
       }
     } finally {
       currentREPLInterface._setRawMode(previouslyInRawMode);
-      const hadPendingSignals = utilBinding.stopSigintWatchdog();
+      const hadPendingSignals = contextifyBinding.stopSigintWatchdog();
       restoreSigintHandlers(sigintHandlers);
 
       if (hadPendingSignals) {
@@ -140,7 +140,7 @@ function lumoEval(
 function doPrint(cb: (value: string) => void, arg: string): void {
   if (currentREPLInterface != null) {
     const sigintHandlers = getAndRemoveSigintEventListeners();
-    utilBinding.startSigintWatchdog();
+    contextifyBinding.startSigintWatchdog();
     const previouslyInRawMode = currentREPLInterface._setRawMode(false);
 
     try {
@@ -151,7 +151,7 @@ function doPrint(cb: (value: string) => void, arg: string): void {
       }
     } finally {
       currentREPLInterface._setRawMode(previouslyInRawMode);
-      const hadPendingSignals = utilBinding.stopSigintWatchdog();
+      const hadPendingSignals = contextifyBinding.stopSigintWatchdog();
       restoreSigintHandlers(sigintHandlers);
 
       if (hadPendingSignals) {
@@ -259,14 +259,14 @@ function setRuntimeOpts(opts: CLIOptsType): void {
 let cljsSender: stream$Writable;
 
 function printFn(...args: string[]): void {
-  if (utilBinding.watchdogHasPendingSigint()) {
+  if (contextifyBinding.watchdogHasPendingSigint()) {
     throw interruptSentinel;
   }
   cljsSender.write(args.join(' '));
 }
 
 function printErrFn(...args: string[]): void {
-  if (utilBinding.watchdogHasPendingSigint()) {
+  if (contextifyBinding.watchdogHasPendingSigint()) {
     throw interruptSentinel;
   }
 
