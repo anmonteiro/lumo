@@ -5,13 +5,16 @@ import fs from 'fs';
 
 type replHistory$Opts = {
   input: stream$Readable,
-  output?: stream$Stream,
+  output?: ?stream$Stream,
   // $FlowIssue: completer type definition is wrong
   completer?: (line: string, cb: (?Error, [string[], string]) => void) => void,
   terminal?: boolean,
   historySize?: number,
+  prompt?: string,
+  crlfDelay?: number,
   path: string,
   removeHistoryDuplicates?: boolean,
+  escapeCodeTimeout?: number,
 };
 
 const maxDiskSize = 0x1000000;
