@@ -464,7 +464,7 @@ type ReplOptsType = {
 async function initSocketRepl(
   socketReplArgs: string,
   quiet: boolean,
-): Promise<mixed> {
+): Promise<void> {
   // Possible socketrepl format
   //  port OR host:port OR
   // {"host": "localhost", ;; Defaults to localhost
@@ -516,7 +516,7 @@ async function initSocketRepl(
   }
 }
 
-async function startClojureScriptEngine(opts: CLIOptsType): Promise<mixed> {
+async function startClojureScriptEngine(opts: CLIOptsType): Promise<void> {
   const { args, mainNsName, mainScript, repl, scripts, quiet } = opts;
   const socketReplArgs = opts['socket-repl'];
 
