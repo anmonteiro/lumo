@@ -2,6 +2,10 @@
 
 ## [master](https://github.com/anmonteiro/lumo/compare/1.10.1...HEAD) (unreleased)
 
+### Changes
+
+- Upgrade Node.js to version 12.0.0.
+
 ### Bug fixes
 
 - Fix CTRL+C not clearing the input on newer Node.js versions
