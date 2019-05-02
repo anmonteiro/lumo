@@ -536,7 +536,7 @@
   [sym]
   (symbol (str (name sym) MACROS_SUFFIX)))
 
-(defn- all-ns
+(defn all-ns
   "Returns a sequence of all namespaces."
   []
   (keys (::ana/namespaces @st)))
@@ -588,6 +588,7 @@
     (into {}
       (merge (get-in @st [::ana/namespaces cur-ns :requires])
              (get-in @st [::ana/namespaces cur-ns :require-macros])))))
+
 (defn- ns-syms
   [nsname pred]
   (into []
@@ -858,12 +859,68 @@
            (vreset! result value))))
      @result)))
 
+(defn- ns-resolve
+  [ns sym]
+  (let [result (atom nil)]
+    (binding [ana/*cljs-warnings* (zipmap (keys ana/*cljs-warnings*) (repeat false))]
+      (cljs/eval st `(~'var ~sym)
+        {:ns      ns
+         :context :expr}
+        (fn [{:keys [value error]}]
+          (when-not error
+            (reset! result value)))))
+    @result))
+
 (defn- intern
   ([ns name]
    (intern ns name nil))
   ([ns name val]
    (when-let [the-ns (find-ns (cond-> ns (instance? Namespace ns) ns-name))]
      (eval `(def ~name ~val) (ns-name the-ns)))))
+
+(defn ns-aliases
+  "Returns a map of the aliases for the namespace."
+  [ns]
+  (if-some [the-ns (find-ns (cond-> ns (instance? Namespace ns) ns-name))]
+    (->> (get-in @st [::ana/namespaces (ns-name the-ns) :requires])
+      (keep (fn [[k v]]
+              (when (not= k v)
+                [k (find-ns v)])))
+      (into {}))
+    (throw (ex-info (str "No namespace " ns " found.") {}))))
+
+(defn ns-refers*
+  [the-ns]
+  (merge
+   (apply dissoc (ns-publics 'cljs.core)
+          (get-in @st [::ana/namespaces (ns-name the-ns) :excludes]))
+   (->> (get-in @st [::ana/namespaces (ns-name the-ns) :uses])
+        (map (fn [[k v]] [k (ns-resolve v k)]))
+        (into {}))))
+
+(defn ns-refers
+  "Returns a map of the refer mappings for the namespace."
+  [ns]
+  (if-some [the-ns (find-ns (cond-> ns (instance? Namespace ns) ns-name))]
+    (ns-refers* the-ns)
+    (throw (ex-info (str "No namespace " ns " found.") {}))))
+
+(defn ns-map
+  "Returns a map of the refer mappings for the namespace."
+  [ns]
+  (if-some [the-ns (find-ns (cond-> ns (instance? Namespace ns) ns-name))]
+    (let [ns-name (ns-name the-ns)]
+      (merge
+       (ns-refers* the-ns)
+       (into {}
+             (comp
+              (filter #(not (:private (val %))))
+              (remove #(:anonymous (val %)))
+              (map (fn [[k v]] [k (ns-resolve ns-name k)])))
+             (apply merge
+                    ((juxt :defs :macros)
+                     (get-in @st [::ana/namespaces ns-name]))))))
+    (throw (ex-info (str "No namespace " ns " found.") {}))))
 
 ;; --------------------
 ;; Code evaluation
