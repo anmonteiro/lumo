@@ -54,33 +54,36 @@ const resources = getDirContents('target').filter(
 
 Promise.all(resources.map(deflate)).then(() => {
   embed(resources, 'target');
+  const options = {
+    input: 'target/bundle.min.js',
+    output: outputPath,
+    nodeTempDir: 'tmp',
+    nodeConfigureArgs: [
+      '--without-dtrace',
+      '--without-npm',
+      '--without-inspector',
+      '--without-etw',
+      '--with-snapshot',
+    ].concat(
+      isWindows
+        ? ['--openssl-no-asm']
+        : staticBinary
+        ? ['--fully-static']
+        : [],
+    ),
+    nodeMakeArgs: ['-j', '8'],
+    nodeVCBuildArgs: ['nosign', 'x64', 'noetw'],
+    flags: true,
+    startupSnapshot: 'target/main.js',
+    noBundle: true,
+    framework: 'node',
+    nodeVersion,
+  };
+
+  console.dir(options);
 
   nexe.compile(
-    {
-      input: 'target/bundle.min.js',
-      output: outputPath,
-      nodeTempDir: 'tmp',
-      nodeConfigureArgs: [
-        '--without-dtrace',
-        '--without-npm',
-        '--without-inspector',
-        '--without-etw',
-        '--with-snapshot',
-      ].concat(
-        isWindows
-          ? ['--openssl-no-asm']
-          : staticBinary
-          ? ['--fully-static']
-          : [],
-      ),
-      nodeMakeArgs: ['-j', '8'],
-      nodeVCBuildArgs: ['nosign', 'x64', 'noetw'],
-      flags: true,
-      startupSnapshot: 'target/main.js',
-      noBundle: true,
-      framework: 'node',
-      nodeVersion,
-    },
+    options,
     err => {
       if (err) {
         throw err;
