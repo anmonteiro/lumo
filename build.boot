@@ -2,7 +2,7 @@
                                  "1.10.520"))
 
 (def +node-version+ (or (System/getenv "BUILD_NODE_VERSION")
-                        "12.0.0"))
+                        "12.2.0"))
 
 (def +build-static-binary+ (-> (System/getenv "BUILD_STATIC_BINARY") boolean str))
 
@@ -14,7 +14,7 @@
                      '[[org.clojure/tools.reader    "1.3.2"]
                        [com.cognitect/transit-cljs  "0.8.256"]
                        [malabarba/lazy-map          "1.3"]
-                       [fipp                        "0.6.17"]
+                       [fipp                        "0.6.18"]
                        [org.clojure/test.check      "0.10.0-alpha4" :scope "test"]
                        [com.cognitect/transit-clj   "0.8.313" :scope "test"]
                        [com.cemerick/piggieback     "0.2.2"   :scope "test"]
