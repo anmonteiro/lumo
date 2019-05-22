@@ -114,7 +114,7 @@ jobs:
   test-js-current:
     <<: *node-test-shared
     docker:
-      - image: circleci/node:12.3.0
+      - image: circleci/node:12.2.0
     environment:
       BUILD_NODE_VERSION: 12.3.0
 
