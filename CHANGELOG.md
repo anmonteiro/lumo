@@ -4,7 +4,7 @@
 
 ### Changes
 
-- Upgrade Node.js to version 12.0.0.
+- Upgrade Node.js to version 12.2.0.
 
 ### Bug fixes
 

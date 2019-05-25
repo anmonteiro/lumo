@@ -42,8 +42,8 @@ build-shared: &build-shared
           curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.33.8/install.sh | bash
           export NVM_DIR="$HOME/.nvm"
           [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-          nvm install 12.0.0
-          nvm alias default 12.0.0
+          nvm install 12.2.0
+          nvm alias default 12.2.0
           # Adding to $BASH_ENV
           echo 'export NVM_DIR="$HOME/.nvm"' >> $BASH_ENV
           echo "[ -s \"$NVM_DIR/nvm.sh\" ] && . \"$NVM_DIR/nvm.sh\"" >> $BASH_ENV
@@ -114,9 +114,9 @@ jobs:
   test-js-current:
     <<: *node-test-shared
     docker:
-      - image: circleci/node:12.0.0
+      - image: circleci/node:12.2.0
     environment:
-      BUILD_NODE_VERSION: 12.0.0
+      BUILD_NODE_VERSION: 12.2.0
 
   build-current:
     <<: *build-shared
