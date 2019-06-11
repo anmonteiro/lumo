@@ -42,6 +42,7 @@ use.
 ### New features
 
 - Allow omitting version in -D – default to the latest locally available version ([#320](https://github.com/anmonteiro/lumo/issues/320)).
+- Add `find-var` to `lumo` ([#406](https://github.com/anmonteiro/lumo/pull/406)).
 
 ### Changes
 
