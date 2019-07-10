@@ -551,7 +551,9 @@ async function startClojureScriptEngine(opts: CLIOptsType): Promise<void> {
       }
 
       execute(
-        "(require '[lumo.repl :refer [apropos find-doc] :refer-macros [dir doc source]])",
+        `(require '[lumo.repl
+                    :refer [apropos find-doc all-ns ns-aliases ns-refers ns-map]
+                    :refer-macros [dir doc source]])`,
         'text',
         true,
         false,

@@ -181,7 +181,6 @@ exports.compile = function(options, complete) {
           const source = fs.readFileSync(options.input, 'utf8');
           const thirdPartyMain = `
 if (!process.send) {
-  console.log('toine', global.process.argv);
   process.argv.splice(1, 0, 'nexe.js');
 }
 
