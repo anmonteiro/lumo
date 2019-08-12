@@ -42,7 +42,7 @@ If you enjoy Lumo, consider backing or sponsoring the project on
 
 ### Via [NPX](https://blog.npmjs.org/post/162869356040/introducing-npx-an-npm-package-runner)
 
-npm is a package runner that comes with node6+. You can try lumo "without install" with:
+npx is a package runner that comes with node6+. You can try lumo "without install" with:
 
 ```shell
 npx -p lumo-cljs lumo
