@@ -5,8 +5,8 @@
 [![Sponsors on Open Collective](https://opencollective.com/lumo/sponsors/badge.svg)](#sponsors)
 
 Lumo is a standalone ClojureScript environment that runs on Node.js and the V8
-JavaScript engine. It starts up instantaneously and has out-of-the-box access to
-the entire Node.js ecosystem.
+JavaScript engine. It starts up instantaneously and provides out-of-the-box access to
+the entire Node.js ecosystem, including a ClojureScript REPL.
 
 Lumo also provides a ClojureScript build API, making it possible to
 [compile ClojureScript projects entirely without the JVM](https://anmonteiro.com/2017/02/compiling-clojurescript-projects-without-the-jvm/),
@@ -85,9 +85,28 @@ $ docker run -it anmonteiro/lumo
 
 ## Using Lumo
 
-Enter `lumo` at the command line to launch it.
+### Interactive ClojureScript REPL
+
+Enter `lumo` at the command line to launch the ClojureScript REPL.
+
+```clojure
+$ npm init -y && npm i bcryptjs
+$ lumo
+Lumo 1.10.1
+ClojureScript 1.10.520
+...
+cljs.user=> (require '[bcryptjs :as bcrypt])
+cljs.user=> (def my-password "P4ssw0rd!")
+cljs.user=> (-> (.hash bcrypt my-password 11)
+       #_=> (.then #(.compare bcrypt my-password %))
+       #_=> (.then #(println "Passwords" (if % "DO" "DON'T") "match!"))
+       #_=> (.catch #(println "failed to verify:" %)))
+cljs.user=> Passwords DO match!
+cljs.user=>
+```
 
 Check out `lumo -h` for usage instructions and supported command line options.
+Also, see the [announcement blog post](https://anmonteiro.com/2016/11/the-fastest-clojure-repl-in-the-world/).
 
 ### Compile ClojureScript
 
