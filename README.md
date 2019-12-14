@@ -90,19 +90,25 @@ $ docker run -it anmonteiro/lumo
 Enter `lumo` at the command line to launch the ClojureScript REPL.
 
 ```clojure
-$ npm init -y && npm i bcryptjs
+$ npm init -y && npm i express request request-promise
 $ lumo
 Lumo 1.10.1
 ClojureScript 1.10.520
 ...
-cljs.user=> (require '[bcryptjs :as bcrypt])
-cljs.user=> (def my-password "P4ssw0rd!")
-cljs.user=> (-> (.hash bcrypt my-password 11)
-       #_=> (.then #(.compare bcrypt my-password %))
-       #_=> (.then #(println "Passwords" (if % "DO" "DON'T") "match!"))
-       #_=> (.catch #(println "failed to verify:" %)))
-cljs.user=> Passwords DO match!
-cljs.user=>
+cljs.user=> (require 'express)
+cljs.user=> (require '[request-promise :as rp])
+cljs.user=> (def port 3000)
+#'cljs.user/port
+cljs.user=> (-> (express)
+       #_=>     (.get "/" (fn [req res] (.send res "Hello Lumo")))
+       #_=>     (.listen port))
+#object[Server [object Object]]
+cljs.user=> (-> (str "http://localhost:" port)
+       #_=>     rp
+       #_=>     (.then (fn [body] (println "\nReceived:" body)))
+       #_=>     (.catch (fn [err] (println "\nOops:" (.-stack err)))))
+#object[Promise [object Promise]]
+Received: Hello Lumo
 ```
 
 Check out `lumo -h` for usage instructions and supported command line options.
