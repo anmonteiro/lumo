@@ -90,7 +90,7 @@ $ docker run -it anmonteiro/lumo
 Enter `lumo` at the command line to launch the ClojureScript REPL.
 
 ```clojure
-$ npm init -y && npm i express request request-promise
+$ npm init -y && npm install express request request-promise
 $ lumo
 Lumo 1.10.1
 ClojureScript 1.10.520
