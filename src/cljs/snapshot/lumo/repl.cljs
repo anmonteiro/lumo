@@ -221,6 +221,36 @@
 ;; Monkey-patch cljs.js/run-async! to instead be our more stack-efficient run-sync!
 (set! cljs/run-async! run-sync!)
 
+(defn ns->bundled-js-path
+  "Return the path to the bundled js expected for the input ns
+  symbol. Note that no 1:1 is guaranteed, for instance cljs.core maps to
+  main.js."
+  [ns-sym]
+  (cond
+    (nil? ns-sym) nil
+    (= ns-sym 'cljs.core) "main.js"
+    :else (str (cljs/ns->relpath ns-sym) ".js")))
+
+(defn- load-bundled-source-maps!
+  [ns-syms]
+  (let [load-source-maps (fn [ns-sym]
+                           (when-not (get-in @st [:source-maps ns-sym])
+                             (if-let [sm-text (some-> ns-sym
+                                                      ns->bundled-js-path
+                                                      (str ".map")
+                                                      js/$$LUMO_GLOBALS.load)]
+                               ;; Detect if we have source maps in need of decoding
+                               ;; or if they are AOT decoded.
+                               (if (or (string/starts-with? sm-text "{\"version\"")
+                                       (string/starts-with? sm-text "{\n\"version\""))
+                                 (cljs/load-source-map! st ns-sym sm-text)
+                                 (swap! st assoc-in [:source-maps ns-sym] (common/transit-json->cljs sm-text)))
+                               (swap! st assoc-in [:source-maps ns-sym] {}))))]
+    (run! load-source-maps ns-syms)))
+
+(defn- load-core-macros-source-maps! []
+  (load-bundled-source-maps! '[cljs.core$macros]))
+
 (defn- load-bundled [name path file-path source cb]
   (when-let [cache-json (or (js/$$LUMO_GLOBALS.load (str file-path ".cache.json"))
                             (js/$$LUMO_GLOBALS.load (str path ".cache.json")))]
@@ -440,6 +470,128 @@
 ;; --------------------
 ;; Error handling
 
+(declare all-ns ns-syms)
+
+(defn- form-demunge-map
+  "Forms a map from munged function symbols (as they appear in stacktraces)
+  to their unmunged forms."
+  [ns]
+  {:pre [(symbol? ns)]}
+  (let [ns-str        (str ns)
+        munged-ns-str (string/escape ns-str {\- \_ \. \$})]
+    (into {munged-ns-str ns}      ;; adds the namespace itself
+          (for [sym (ns-syms ns)]
+            [(str munged-ns-str "$" (munge sym)) (symbol ns-str (str sym))]))))
+
+(def core-demunge-map
+  (delay (form-demunge-map 'cljs.core)))
+
+(defn non-core-demunge-maps
+  []
+  (let [non-core-nss (remove #{'cljs.core 'cljs.core$macros} (all-ns))]
+    (map form-demunge-map non-core-nss)))
+
+(defn lookup-sym
+  [demunge-maps munged-sym]
+  (some #(% munged-sym) demunge-maps))
+
+(defn demunge-local
+  [demunge-maps munged-sym]
+  (let [[_ fn local] (re-find #"(.*)_\$_(.*)" munged-sym)]
+    (when fn
+      (when-let [fn-sym (lookup-sym demunge-maps fn)]
+        {:sym fn-sym
+         :local (demunge local)}))))
+
+(defn demunge-protocol-fn
+  [demunge-maps munged-sym]
+  (let [[_ obj ns prot fn] (re-find #"(.*)\.(.*)\$(.*)\$(.*)\$arity\$.*" munged-sym)]
+    (when-let [ns-sym (lookup-sym demunge-maps ns)]
+      (when-let [prot-sym (lookup-sym demunge-maps (str ns "$" prot))]
+        (when-let [fn-sym (lookup-sym demunge-maps (str ns "$" fn))]
+          {:obj (symbol obj)
+           :ns ns-sym
+           :sym fn-sym
+           :protocol prot-sym})))))
+
+(defn- gensym?
+  [sym]
+  (string/starts-with? (name sym) "G__"))
+
+(defn- demunge-sym
+  "Demunge a string to a symbol.
+
+  Note that the string has to contain dollar signs for functions and
+  vars, but no dollars for something like protocol."
+  [munged-sym]
+  ;; these are two maps core first - from Planck
+  (let [demunge-maps (cons @core-demunge-map (non-core-demunge-maps))]
+    (or (when-let [sym (lookup-sym demunge-maps munged-sym)]
+          {:ns (some-> sym namespace symbol)
+           :sym sym})
+        (demunge-protocol-fn demunge-maps munged-sym)
+        (demunge-local demunge-maps munged-sym)
+        (if (gensym? munged-sym)
+          {:sym munged-sym}
+          (when-let [sym (some-> munged-sym not-empty demunge symbol)]
+            (merge {:ns (some-> sym namespace symbol)
+                    :sym sym}))))))
+
+(def ^:private demunge-sym-memo
+  (memoize demunge-sym))
+
+(defn- js-file? [file]
+  (string/ends-with? file ".js"))
+
+(defn- file->ns-sym [file]
+  (-> file
+      st/remove-ext
+      (string/replace "/" ".")
+      (string/replace "_" "-")
+      symbol))
+
+(defn- qualify [name file]
+  (cond->> name
+    (not (or (string/includes? name "/")
+             (js-file? file)))
+    (str (file->ns-sym file) "/")))
+
+(defn stacktrace-function->sym
+  [s]
+  (let [protocol? #(re-find #"arity\$[0-9]+" %)
+        ;; the below includes function objects
+        obj? #(re-find #"Object|Function\." %)]
+    (cond
+      (string/blank? s) nil
+      (protocol? s) s
+      (obj? s) (->> (string/split s #"\.")
+                    (drop 1)
+                    (string/join "$"))
+      :else (string/escape s {\- \_ \. \$}))))
+
+(defn demunge-stacktrace-entry
+  [st-entry]
+  (let [{:keys [ns sym protocol local] :as ds} (demunge-sym-memo
+                                                (stacktrace-function->sym
+                                                 (:function st-entry)))
+        s (cond
+            protocol (str sym " [" protocol "]")
+            local (str sym " " local)
+            sym (str sym)
+            :else nil)]
+    (and s (qualify s (:file st-entry)))))
+
+(defn- mapped-stacktrace-str
+  ([stacktrace sms]
+   (mapped-stacktrace-str stacktrace sms nil))
+  ([stacktrace sms opts]
+   (apply str
+          (for [{:keys [function file line column] :as st-entry} (st/mapped-stacktrace stacktrace sms opts)
+                :let [demunged (when function (demunge-stacktrace-entry st-entry))]
+                :when (not= demunged "cljs.core/-invoke [cljs.core/IFn]")]
+            (str \tab (or demunged "NO_SOURCE_FILE") " (" file (when line (str ":" line))
+                 (when column (str ":" column)) ")" \newline)))))
+
 (defn- ^:boolean could-not-eval? [msg]
   (and (not (nil? msg)) (boolean (re-find could-not-eval-regex msg))))
 
@@ -471,14 +623,54 @@
   [e]
   (keyword-identical? :reader-exception (:type (ex-data e))))
 
+(defn- analysis-error?
+  [e]
+  (= :cljs/analysis-error (:tag (ex-data e))))
+
+(defn- reader-or-analysis?
+  "Indicates if an exception is a reader or analysis exception."
+  [e]
+  (or (reader-error? e)
+      (analysis-error? e)))
+
 (defn- location-info
   [error]
   (let [data (ex-data error)]
     (when (and (:line data)
                (:file data))
-      (str " at line " (:line data) " " (:file data)#_(file-path (:file data))))))
+      (str " at line " (:line data) " " (:file data)))))
 
-(declare all-ns ns-syms)
+(defn ensure-newline
+  "Ensure that s terminates by \n, adding it if necessary."
+  [s]
+  (str s (when-not (= \newline (last s)) \newline)))
+
+(def lumo-embedded-string? #{"<embedded>" "evalmachine.<anonymous>"})
+
+(defn patch-missing-function-stacktrace
+  "Patch a stacktrace entry that does not have :function but has :file."
+  [{:keys [function file] :as st-entry}]
+  (if (and (not function) file)
+    (merge st-entry
+           {:function file
+            :file "<embedded>"})
+    st-entry))
+
+(defn patch-embedded-stacktrace
+  [{:keys [function file] :as st-entry}]
+  (if (and function (lumo-embedded-string? file))
+    (let [{:keys [ns]} (demunge-sym-memo (stacktrace-function->sym function))
+          bundled-js-path (ns->bundled-js-path ns)]
+      (if (and bundled-js-path (js/$$LUMO_GLOBALS.isBundled (str bundled-js-path ".map")))
+        (assoc st-entry :file (str (cljs/ns->relpath ns) ".js"))
+        st-entry))
+    st-entry))
+
+(def ^{:doc "Patch the stacktrace coming from the JS enging"}
+  stacktrace-patch-xf
+  (comp (map patch-missing-function-stacktrace)
+        (map patch-embedded-stacktrace)
+        (filter (complement (comp lumo-embedded-string? :file)))))
 
 (defn- print-error
   ([error stacktrace?]
@@ -490,24 +682,42 @@
             printed-message printed-message]
        (print-error-column-indicator error)
        (let [error (extract-cljs-js-error error)
-             message (ex-message error)]
+             roa? (reader-or-analysis? error)
+             staktrace? (and stacktrace? (not roa?))
+             message  (if (instance? ExceptionInfo error)
+                        (ex-message error)
+                        (.-message error))]
          (when (or (not ((fnil string/starts-with? "") printed-message message))
                    stacktrace?)
-           (println (str message (when (reader-error? error)
-                                   (location-info error)))))
+           (println (-> message
+                        (str (when (reader-error? error)
+                               (location-info error)))
+                        ensure-newline)))
          #_(when-let [data (and print-ex-data? (ex-data error))]
              (print-value data {::as-code? false}))
          (when stacktrace?
-           (let [canonical-stacktrace (st/parse-stacktrace
-                                       {}
-                                       (.-stack error)
-                                       {:ua-product :nodejs}
-                                       {:output-dir "file://(/goog/..)?"})]
-             (println
-              (st/mapped-stacktrace-str
+           (let [opts {:output-dir "file://(/goog/..)?"}
+                 canonical-stacktrace (into []
+                                            stacktrace-patch-xf
+                                            (st/parse-stacktrace
+                                             {}
+                                             (.-stack error)
+                                             {:ua-product :nodejs}
+                                             opts))
+                 namespaces (->> canonical-stacktrace
+                                 (remove (comp lumo-embedded-string? :file))
+                                 (map (comp file->ns-sym :file))
+                                 distinct)
+                 core-ns? (some #(= 'cljs.core %) namespaces)]
+             (when core-ns?
+               (load-core-macros-source-maps!))
+             (when (seq namespaces)
+               (load-bundled-source-maps! namespaces))
+             (print
+              (mapped-stacktrace-str
                canonical-stacktrace
-               {}
-               nil))))
+               (or (:source-maps @st) {})
+               opts))))
          (when-let [cause (.-cause error)]
            (recur cause stacktrace? message)))))))
 
@@ -590,10 +800,15 @@
              (get-in @st [::ana/namespaces cur-ns :require-macros])))))
 
 (defn- ns-syms
-  [nsname pred]
-  (into []
-    (comp (filter pred) (map key))
-    (:defs (get-namespace nsname))))
+  "Returns a sequence of the symbols in a namespace."
+  ([ns]
+   (ns-syms ns (constantly true)))
+  ([ns pred]
+   {:pre [(symbol? ns)]}
+   (->> (get-namespace ns)
+     :defs
+     (filter pred)
+     (map key))))
 
 (defn- public-syms
   "Returns a sequence of the public symbols in a namespace."
@@ -925,11 +1140,36 @@
 ;; --------------------
 ;; Code evaluation
 
-(defn- make-eval-opts []
+(defn- call-form?
+  [form allowed-operators]
+  (contains? allowed-operators (and (list? form)
+                                    (first form))))
+
+(defn- load-form?
+  "Determines if the expression is a form that loads code."
+  [expression-form]
+  (call-form? expression-form '#{require require-macros import
+                                 cljs.core/require cljs.core/require-macros cljs.core/import
+                                 clojure.core/require clojure.core/require-macros clojure.core/import
+                                 ns load load-file}))
+
+(defn- def-form?
+  "Determines if the expression is a def expression which returns a Var."
+  [form]
+  (call-form? form '#{def defn defn- defonce defmulti defmacro}))
+
+(defn make-eval-opts [& [{:keys [form initial-ns expression?]}]]
   (merge
-    {:ns @current-ns
-     :target :nodejs}
-    (select-keys @app-opts [:verbose :static-fns :fn-invoke-direct :checked-arrays])))
+   {:ns (or initial-ns @current-ns)
+    :target :nodejs}
+   (select-keys @app-opts [:verbose :static-fns :fn-invoke-direct :checked-arrays])
+   (if expression?
+     (merge {:context :expr
+             :def-emits-var true
+             :source-map-timestamp false}
+            (when (and form (load-form? form))
+              {:source-map true}))
+     {:source-map false})))
 
 (defn- current-alias?
   [ns]
@@ -1006,7 +1246,9 @@
               r/*alias-map* (current-alias-map)]
       [(r/read {:read-cond :allow :features #{:cljs}} reader) (read-chars reader)])))
 
-(defn- ns-for-source [source]
+(defn- ns-for-source
+  "Read the namespace iff source is a :ns or :ns* form."
+  [source]
   (let [[ns-form] (repl-read-string source)
         {:keys [op name]} (no-warn (ana/analyze (ana/empty-env) ns-form))]
     (when (or (keyword-identical? op :ns)
@@ -1086,16 +1328,6 @@
     (set! *2 *1)
     (set! *1 value)))
 
-(defn- call-form?
-  [form allowed-operators]
-  (contains? allowed-operators (and (list? form)
-                                    (first form))))
-
-(defn- def-form?
-  "Determines if the expression is a def expression which returns a Var."
-  [form]
-  (call-form? form '#{def defn defn- defonce defmulti defmacro}))
-
 (defn- warning-handler [warning-type env extra]
   (let [warning-string (with-err-str
                          (ana/default-warning-handler warning-type env
@@ -1150,10 +1382,7 @@
               tags/*cljs-data-readers* (merge tags/*cljs-data-readers* (load-data-readers! st))
               r/*alias-map*    (current-alias-map)]
       (let [form (and expression? (first (repl-read-string source)))
-            eval-opts (merge (make-eval-opts)
-                        (when expression?
-                          {:context :expr
-                           :def-emits-var true}))
+            eval-opts (make-eval-opts {:expression? expression? :form form})
             source-name (when (some? filename)
                           (or (ns-for-source source) filename))]
         (if (repl-special? form)
@@ -1163,7 +1392,7 @@
               st
               source
               (cond
-                expression? source
+                expression? (ns-for-source source)
                 (some? source-name) source-name
                 :else "source")
               eval-opts
@@ -1215,20 +1444,19 @@
 
 (defn- ^:export run-main
   [main-ns & args]
-  (let [main-args (js->clj args)
-        opts (make-eval-opts)]
+  (let [main-args (js->clj args)]
     (binding [cljs/*load-fn* load
               cljs/*eval-fn* caching-node-eval]
       (cljs/eval st
         `(~'require (quote ~(symbol main-ns)))
-        opts
+        (make-eval-opts)
         (fn [{:keys [ns value error] :as ret}]
           (if error
             (handle-error error true)
             (cljs/eval-str st
               (str "(var -main)")
               nil
-              (merge opts {:ns (symbol main-ns)})
+              (make-eval-opts {:initial-ns (symbol main-ns)})
               (fn [{:keys [ns value error] :as ret}]
                 (try
                   (apply value main-args)
@@ -1507,20 +1735,19 @@ This was taken from the reader specification plus tests at the Clojure REPL."}
 (defn ^:export run-accept-fn [accept-fn socket args]
   (let [ns-sym (ns-symbol accept-fn)
         fn-str (fn-string accept-fn)
-        opts (make-eval-opts)
         fn-args (js->clj args)]
     (binding [cljs/*load-fn* load
               cljs/*eval-fn* caching-node-eval]
       (cljs/eval st
         `(~'require (quote ~ns-sym))
-        opts
+        (make-eval-opts)
         (fn [{:keys [ns value error] :as ret}]
           (if error
             (handle-error error true)
             (cljs/eval-str st
               (str "(var " fn-str ")")
               nil
-              (merge opts {:ns (symbol ns-sym)})
+              (make-eval-opts {:initial-ns (symbol ns-sym)})
               (fn [{:keys [ns value error] :as ret}]
                 (try
                   ;; TODO: do we wanna splice args?
