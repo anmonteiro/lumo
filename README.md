@@ -5,8 +5,8 @@
 [![Sponsors on Open Collective](https://opencollective.com/lumo/sponsors/badge.svg)](#sponsors)
 
 Lumo is a standalone ClojureScript environment that runs on Node.js and the V8
-JavaScript engine. It starts up instantaneously and has out-of-the-box access to
-the entire Node.js ecosystem.
+JavaScript engine. It starts up instantaneously and provides out-of-the-box access to
+the entire Node.js ecosystem, including a ClojureScript REPL.
 
 Lumo also provides a ClojureScript build API, making it possible to
 [compile ClojureScript projects entirely without the JVM](https://anmonteiro.com/2017/02/compiling-clojurescript-projects-without-the-jvm/),
@@ -85,9 +85,34 @@ $ docker run -it anmonteiro/lumo
 
 ## Using Lumo
 
-Enter `lumo` at the command line to launch it.
+### Interactive ClojureScript REPL
+
+Enter `lumo` at the command line to launch the ClojureScript REPL.
+
+```clojure
+$ npm init -y && npm install express request request-promise
+$ lumo
+Lumo 1.10.1
+ClojureScript 1.10.520
+...
+cljs.user=> (require 'express)
+cljs.user=> (require '[request-promise :as rp])
+cljs.user=> (def port 3000)
+#'cljs.user/port
+cljs.user=> (-> (express)
+       #_=>     (.get "/" (fn [req res] (.send res "Hello Lumo")))
+       #_=>     (.listen port))
+#object[Server [object Object]]
+cljs.user=> (-> (str "http://localhost:" port)
+       #_=>     rp
+       #_=>     (.then (fn [body] (println "\nReceived:" body)))
+       #_=>     (.catch (fn [err] (println "\nOops:" (.-stack err)))))
+#object[Promise [object Promise]]
+Received: Hello Lumo
+```
 
 Check out `lumo -h` for usage instructions and supported command line options.
+Also, see the [announcement blog post](https://anmonteiro.com/2016/11/the-fastest-clojure-repl-in-the-world/).
 
 ### Compile ClojureScript
 
