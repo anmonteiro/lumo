@@ -10,7 +10,7 @@ the entire Node.js ecosystem, including a ClojureScript REPL.
 
 Lumo also provides a ClojureScript build API, making it possible to
 [compile ClojureScript projects entirely without the JVM](https://anmonteiro.com/2017/02/compiling-clojurescript-projects-without-the-jvm/),
-thanks to the [experimental JavaScript version](https://github.com/google/closure-compiler-js)
+thanks to the [experimental JavaScript version](https://www.npmjs.com/package/google-closure-compiler)
 of the [Google Closure Compiler](https://github.com/google/closure-compiler).
 
 Read the [announcement blog post](https://anmonteiro.com/2016/11/the-fastest-clojure-repl-in-the-world/)
