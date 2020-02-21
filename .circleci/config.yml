@@ -33,7 +33,7 @@ build-shared: &build-shared
     <<: *defaults
     machine: true
     macos:
-      xcode: '8.3.3'
+      xcode: '11.1.0'
     steps:
     - run:
         # https://discuss.circleci.com/t/how-to-change-node-version-in-circleci-2-0/17455/4
