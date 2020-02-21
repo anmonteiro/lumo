@@ -2,7 +2,7 @@
                                  "1.10.520"))
 
 (def +node-version+ (or (System/getenv "BUILD_NODE_VERSION")
-                        "12.2.0"))
+                        "13.8.0"))
 
 (def +build-static-binary+ (-> (System/getenv "BUILD_STATIC_BINARY") boolean str))
 
