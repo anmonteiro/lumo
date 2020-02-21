@@ -59,3 +59,5 @@ third_party/org/*
 
 third_party/org/clojure/*
 !third_party/org/clojure/clojurescript/
+
+docs/_build

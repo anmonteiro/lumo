@@ -1,0 +1,8 @@
+/* Fixes code blocks that get squeezed by sidebars */
+div.highlight-clojure {
+  clear: right;
+}
+
+a.headerlink {
+  float: right;
+}
