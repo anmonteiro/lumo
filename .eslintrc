@@ -1,7 +1,7 @@
 {
   "parser": "babel-eslint",
   "extends": [
-    "airbnb"
+    "eslint-config-airbnb-base"
   ],
   "env": {
     "jest": true
@@ -12,7 +12,6 @@
   },
   "plugins": [
     "flowtype",
-    "import",
     "babel"
   ],
   "rules": {
@@ -39,7 +38,7 @@
       }
     ],
     "object-curly-newline": 0,
-    "babel/array-bracket-spacing": 2,
+    "array-bracket-spacing": 2,
     "implicit-arrow-linebreak": 0,
     "operator-linebreak": 0,
     "import/no-cycle": 0,
