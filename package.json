@@ -60,7 +60,7 @@
     "eslint-plugin-flowtype": "^4.6.0",
     "eslint-plugin-import": "^2.20.1",
     "flow-bin": "0.117.0",
-    "google-closure-compiler-js": "20200204.0.0",
+    "google-closure-compiler": "^20200204.0.0",
     "jest-cli": "^25.1.0",
     "jszip": "github:anmonteiro/jszip#patch-1",
     "nexe": "./vendor/nexe",

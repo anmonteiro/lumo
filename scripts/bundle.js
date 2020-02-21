@@ -76,6 +76,8 @@ if (!isDevBuild) {
       comments: false,
       removeConsole: true,
       removeDebugger: true,
+      evaluate: false,
+      mangle: false,
     }),
   );
 }

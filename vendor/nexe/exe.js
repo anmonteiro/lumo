@@ -203,7 +203,12 @@ return initModule._compile(${JSON.stringify(source)}, process.execPath);
       function moveLibs(next) {
         fs.writeFileSync(
           `${nodeCompiler.dir}/google-closure-compiler-js.js`,
-          fs.readFileSync(`target/google-closure-compiler-js.js`),
+          fs.readFileSync(
+            path.resolve(
+              __dirname,
+              '../../target/google-closure-compiler-js.js',
+            ),
+          ),
         );
 
         next();
@@ -273,9 +278,7 @@ return initModule._compile(${JSON.stringify(source)}, process.execPath);
        */
 
       function makeOutputDirectory(next) {
-        mkdirp(path.dirname(options.output), function() {
-          next();
-        });
+        mkdirp(path.dirname(options.output)).then(() => next());
       },
 
       /**
