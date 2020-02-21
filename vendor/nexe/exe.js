@@ -841,83 +841,16 @@ function _monkeyPatchConfigure(compiler, complete, options) {
 /**
  * Patch node.cc to not check the internal arguments.
  */
-
 function _monkeyPatchMainCc(compiler, complete) {
-  let finalContents;
-
   let mainPath = path.join(compiler.dir, 'src', 'node.cc');
   let mainC = fs.readFileSync(mainPath, {
     encoding: 'utf8',
   });
 
-  // content split, and original start/end
-  let constant_loc = 1;
-  let lines = mainC.split('\n');
-  let startLine = lines.indexOf('  // TODO use parse opts');
-  let endLine = lines.indexOf('  option_end_index = i;'); // pre node 0.11.6 compat
-  let isPatched = lines.indexOf('// NEXE_PATCH_IGNOREFLAGS');
-
-  if (isPatched !== -1) {
-    _log('already patched node.cc');
-    return complete();
-  }
-
-  /**
-   * This is the new method of passing the args. Tested on node.js 0.12.5
-   * and iojs 2.3.1
-   **/
-  if (endLine === -1 && startLine === -1) {
-    // only if the pre-0.12.5 failed.
-    _log('using the after 0.12.5 method of ignoring flags.');
-
-    startLine = lines.indexOf(
-      "  while (index < nargs && argv[index][0] == '-') {",
-    ); // beginning of the function
-    endLine = lines.indexOf('  // Copy remaining arguments.');
-    endLine--; // space, then it's at the }
-
-    constant_loc = lines.length + 1;
-  } else {
-    _log('using 0.10.x > method of ignoring flags');
-    lines[endLine] = '  option_end_index = 1;';
-  }
-
-  /**
-   * This is the method for 5.5.0
-   **/
-  if (endLine === -1 || startLine === -1) {
-    _log('using the after 5.5.0 method of ignoring flags.');
-
-    startLine = lines.indexOf(
-      "  while (index < nargs && argv[index][0] == '-' && !short_circuit) {",
-    ); // beginning of the function
-    endLine = lines.indexOf('  // Copy remaining arguments.');
-    endLine--; // space, then it's at the }
-
-    constant_loc = lines.length + 1;
-  }
-
-  // other versions here.
-  if (endLine === -1 || startLine === -1) {
-    // failsafe.
-    _log('error', 'Failed to find a way to patch node.cc to ignoreFlags');
-    _log('startLine =', startLine, '| endLine =', endLine);
-    if (!/^1(1|2)\./.test(compiler.version)) {
-      process.exit(1);
-    }
-  }
-
-  // check if it's been done
-  lines[constant_loc] = '// NEXE_PATCH_IGNOREFLAGS';
-
-  for (var i = startLine; i < endLine; i++) {
-    lines[i] = undefined; // set the value to undefined so it's skipped by the join
-  }
-
-  _log('patched node.cc');
-
-  finalContents = lines.join('\n');
-
+  const finalContents = mainC.replace(
+    /(?<!int )ProcessGlobalArgs\(argv/g,
+    '0;//$&',
+  );
   // write the file contents
   fs.writeFile(
     mainPath,
@@ -1153,7 +1086,7 @@ exports.package = function(path, options) {
   let obj = {
     input: _package.nexe.input || options.i,
     output: _package.nexe.output || options.o,
-    flags: _package.nexe.runtime.ignoreFlags || (options.f || false),
+    flags: _package.nexe.runtime.ignoreFlags || options.f || false,
     resourceFiles: _package.nexe.resourceFiles,
     nodeVersion: _package.nexe.runtime.version || options.r,
     nodeConfigureArgs: _package.nexe.runtime.nodeConfigureArgs || [],
