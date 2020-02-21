@@ -98,7 +98,7 @@ exports.compile = function(options, complete) {
         // check iojs version
         if (framework === 'iojs' && version === 'latest') {
           _log('fetching iojs versions');
-          mkdirp(options.nodeTempDir); // make temp dir, probably repetive.
+          mkdirp.sync(options.nodeTempDir); // make temp dir, probably repetive.
 
           // create write stream so we have control over events
           var output = fs.createWriteStream(
@@ -278,7 +278,8 @@ return initModule._compile(${JSON.stringify(source)}, process.execPath);
        */
 
       function makeOutputDirectory(next) {
-        mkdirp(path.dirname(options.output)).then(() => next());
+        mkdirp.sync(path.dirname(options.output));
+        next();
       },
 
       /**
