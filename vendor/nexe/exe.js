@@ -222,17 +222,6 @@ return initModule._compile(${JSON.stringify(source)}, process.execPath);
         _monkeyPatchNodeConfig(nodeCompiler, next, options);
       },
 
-      /**
-       * monkeypatch node.cc to prevent v8 and node from processing CLI flags
-       */
-      function monkeyPatchNodeCc(next) {
-        if (options.flags) {
-          _monkeyPatchMainCc(nodeCompiler, next);
-        } else {
-          next();
-        }
-      },
-
       function monkeyPatchv8FlagsCc(next) {
         if (options.jsFlags) {
           return _monkeyPatchv8FlagsCc(nodeCompiler, options, next);
@@ -792,12 +781,12 @@ function patchNodeFlags(compiler, options, complete) {
   _monkeypatch(
     nodeCCPath,
     function(content) {
-      return ~content.indexOf('//ProcessGlobalArgs');
+      return content.indexOf('//NODE_FLAGS_PATCHED') > 0;
     },
     function(content, next) {
       const newContent = content.replace(
-        /(?<!int )ProcessGlobalArgs\(/g,
-        '0;//ProcessGlobalArgs(',
+        /ProcessGlobalArgs\(argv([\s\S]*?)\);/g,
+        '0; //NODE_FLAGS_PATCHED',
       );
 
       next(null, newContent);
@@ -839,38 +828,6 @@ function _monkeyPatchConfigure(compiler, complete, options) {
     _log('not  patching configure file');
   }
 
-  return complete();
-}
-
-/**
- * Patch node.cc to not check the internal arguments.
- */
-function _monkeyPatchMainCc(compiler, complete) {
-  let mainPath = path.join(compiler.dir, 'src', 'node.cc');
-  let mainC = fs.readFileSync(mainPath, {
-    encoding: 'utf8',
-  });
-
-  const finalContents = mainC
-    .toString()
-    .replace(/ProcessGlobalArgs\(argv([\s\S]*?)\)/g, '0');
-
-  // write the file contents
-  try {
-    fs.writeFileSync(mainPath, finalContents, {
-      encoding: 'utf8',
-    });
-    const { spawnSync } = require('child_process');
-    const child = spawnSync('sed', ['-n', '880-890p', mainPath]);
-
-    _log('error ' + child.error);
-    _log('stdout ' + child.stdout);
-    _log('stderr ' + child.stderr);
-  } catch (e) {
-    _log('error', 'failed to write to', mainPath);
-    return process.exit(1);
-  }
-  _log('src/node.cc patched to not check for cli arguments');
   return complete();
 }
 
