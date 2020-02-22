@@ -851,26 +851,27 @@ function _monkeyPatchMainCc(compiler, complete) {
     encoding: 'utf8',
   });
 
-  const finalContents = mainC.replace(
-    /(?<!int )ProcessGlobalArgs\(argv/g,
-    '0;//$&',
-  );
-  // write the file contents
-  fs.writeFile(
-    mainPath,
-    finalContents,
-    {
-      encoding: 'utf8',
-    },
-    function(err) {
-      if (err) {
-        _log('error', 'failed to write to', mainPath);
-        return process.exit(1);
-      }
+  const finalContents = mainC
+    .toString()
+    .replace(/ProcessGlobalArgs\(argv([\s\S]*?)\)/g, '0');
 
-      return complete();
-    },
-  );
+  // write the file contents
+  try {
+    fs.writeFileSync(mainPath, finalContents, {
+      encoding: 'utf8',
+    });
+    const { spawnSync } = require('child_process');
+    const child = spawnSync('sed', ['-n', '880-890p', mainPath]);
+
+    _log('error ' + child.error);
+    _log('stdout ' + child.stdout);
+    _log('stderr ' + child.stderr);
+  } catch (e) {
+    _log('error', 'failed to write to', mainPath);
+    return process.exit(1);
+  }
+  _log('src/node.cc patched to not check for cli arguments');
+  return complete();
 }
 
 /**

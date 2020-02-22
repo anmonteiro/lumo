@@ -19,10 +19,6 @@ cache:
   directories:
   - node_modules
   - "~/.m2"
-  - tmp
-  - "~/.boot/cache/lib"
-  - "~/.boot/cache/bin"
-  - yarn
 before_install:
 - eval "${MATRIX_EVAL}"
 - sudo fallocate -l 4G /swapfile
