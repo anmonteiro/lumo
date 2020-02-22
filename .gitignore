@@ -49,6 +49,7 @@ target/
 /build/
 lumo-cache/
 test-lumo-cache/
+resources_bak/
 .vagrant
 
 third_party/*

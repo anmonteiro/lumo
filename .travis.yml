@@ -1,14 +1,16 @@
 sudo: required
-dist: trusty
+dist: bionic
 addons:
   apt:
     sources:
       - ubuntu-toolchain-r-test
     packages:
-      - g++-6
+      - g++-7
+    env:
+      - MATRIX_EVAL="CC=gcc-7 && CXX=g++-7"
 language: node_js
 node_js:
-- 12
+- 13
 # safelist
 branches:
   only:
@@ -17,11 +19,8 @@ cache:
   directories:
   - node_modules
   - "~/.m2"
-  - tmp
-  - "~/.boot/cache/lib"
-  - "~/.boot/cache/bin"
-  - yarn
 before_install:
+- eval "${MATRIX_EVAL}"
 - sudo fallocate -l 4G /swapfile
 - sudo chmod 600 /swapfile
 - sudo mkswap /swapfile
@@ -69,9 +68,9 @@ env:
       -XX:+CMSClassUnloadingEnabled
       -Xverify:none'
       BUILD_ARCH=linux
-    - CC=gcc-6 && CXX=g++-6
+    - eval "${MATRIX_EVAL}"
 matrix:
   fast_finish: true
   include:
     - env:
-      - BUILD_NODE_VERSION=12.2.0
+      - BUILD_NODE_VERSION=13.8.0

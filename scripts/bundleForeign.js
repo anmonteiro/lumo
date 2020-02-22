@@ -4,7 +4,7 @@ const replace = require('rollup-plugin-replace');
 const commonjs = require('rollup-plugin-commonjs');
 
 rollup({
-  input: 'node_modules/google-closure-compiler-js/compile.js',
+  input: 'node_modules/google-closure-compiler/lib/node/closure-compiler-js.js',
   plugins: [
     replace({
       'process.env.NODE_ENV': JSON.stringify('production'),

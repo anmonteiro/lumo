@@ -1,4 +1,3 @@
-const async = require('async');
 const nexe = require('../vendor/nexe');
 const monkeyPatch = require('../vendor/nexe/monkeypatch');
 const fs = require('fs');
@@ -65,11 +64,7 @@ Promise.all(resources.map(deflate)).then(() => {
       '--without-etw',
       '--with-snapshot',
     ].concat(
-      isWindows
-        ? ['--openssl-no-asm']
-        : staticBinary
-        ? ['--fully-static']
-        : [],
+      isWindows ? ['--openssl-no-asm'] : staticBinary ? ['--fully-static'] : [],
     ),
     nodeMakeArgs: ['-j', '8'],
     nodeVCBuildArgs: ['nosign', 'x64', 'noetw'],
@@ -82,15 +77,10 @@ Promise.all(resources.map(deflate)).then(() => {
 
   console.dir(options);
 
-  nexe.compile(
-    options,
-    err => {
-      if (err) {
-        throw err;
-      }
-      console.log(
-        `Finished bundling. Nexe binary can be found in ${outputPath}`,
-      );
-    },
-  );
+  nexe.compile(options, err => {
+    if (err) {
+      throw err;
+    }
+    console.log(`Finished bundling. Nexe binary can be found in ${outputPath}`);
+  });
 });
