@@ -5284,9 +5284,9 @@ neo-async@^2.5.0, neo-async@^2.6.1:
   resolved "https://registry.npmjs.org/neo-async/-/neo-async-2.6.2.tgz"
   integrity sha512-Yd3UES5mWCSqR+qNT93S3UoYUkqAZ9lLg8a7g9rimsWmYGK8cVToA4/sF3RrshdyV3sAGMXVUmpMYOw+dLpOuw==
 
-"nexe@github:anmonteiro/nexe#anmonteiro-patch-1":
+"nexe@https://github.com/anmonteiro/nexe#anmonteiro-patch-1":
   version "1.1.2"
-  resolved "git+ssh://git@github.com/anmonteiro/nexe.git#bbc05e357651b44e3b4bc28574b627876e1d1d2e"
+  resolved "https://github.com/anmonteiro/nexe#bbc05e357651b44e3b4bc28574b627876e1d1d2e"
   dependencies:
     async "^1.5.2"
     browserify "^13.0.0"
@@ -5881,9 +5881,9 @@ posix-character-classes@^0.1.0:
   resolved "https://registry.npmjs.org/posix-character-classes/-/posix-character-classes-0.1.1.tgz"
   integrity sha1-AerA/jta9xoqbAL+q7jB/vfgDqs=
 
-"posix-getopt@github:anmonteiro/node-getopt#master":
+"posix-getopt@https://github.com/anmonteiro/node-getopt#master":
   version "1.2.0"
-  resolved "git+ssh://git@github.com/anmonteiro/node-getopt.git#a3123885e3559c9b70903948d6e5c34852520d74"
+  resolved "https://github.com/anmonteiro/node-getopt#a3123885e3559c9b70903948d6e5c34852520d74"
 
 prelude-ls@~1.1.2:
   version "1.1.2"
